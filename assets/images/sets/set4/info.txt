@@ -1,0 +1,4 @@
+name: Ancient Scorpion
+price: 4800 EGP
+description: This exclusive scorpion grillz set features premium silver construction with rich gold plating for a bold two-tone glow. A fierce, intricately detailed scorpion motif dominates, crowned by a vibrant emerald green stone at its core for intense jewel-like brilliance.
+images: 000011.jpg

@@ -1,0 +1,3 @@
+price: 1000 EGP
+description: Full diamond iced-out grillz set in 18K yellow gold with custom engraving. High-shine finish, perfect for special occasions.
+images: 000001.jpg,000002.jpg,000003.jpg

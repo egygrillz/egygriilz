@@ -1,0 +1,4 @@
+name: Diamond Boy Set
+price: 21900 EGP
+description: This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.
+images: 000003.jpg,000004.jpg,000006.jpg

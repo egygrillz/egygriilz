@@ -1,0 +1,4 @@
+name: FLEX Set
+price: 12300 EGP
+description: This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading "Flex" in elegant red script.
+images: 000005.jpg,000007.jpg,000008.jpg

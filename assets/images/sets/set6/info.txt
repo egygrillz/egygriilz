@@ -1,0 +1,4 @@
+name: Black Gold Snake 
+price: 8900 EGP
+description: his exclusive black snake grillz set is masterfully crafted in 925 sterling silver with sleek black gold plating for a dark, menacing shine. A coiled, intricately detailed black snake motif slithers across the teeth, its fierce head centered with a glowing green stone eye that radiates vivid emerald intensity.
+images: 000001.jpg

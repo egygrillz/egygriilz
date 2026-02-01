@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EGYGRILLZ – Custom Grillz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
+  <style>
+    /* RESET & BASE */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; }
+
+    /* STICKY HEADER */
+    header {
+      position: sticky; top:0; left:0; right:0; height:90px;
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
+      border-bottom:1px solid #eee; z-index:1000;
+      display:flex; align-items:center; justify-content:space-between; padding:0 3%;
+    }
+    .logo-text { font-family: 'Playfair Display', serif; font-size:30px; font-weight:700; letter-spacing:4px; text-decoration: none; color: #000; }
+    
+    nav { display: flex; align-items: center; }
+    nav a { margin-left:20px; text-decoration:none; color:#000; font-size:11px; text-transform:uppercase; letter-spacing:1px; font-weight: 400; transition: 0.3s; }
+    nav a:hover { color:#888; }
+    
+    /* Active State for Home */
+    .nav-home { font-weight: 900 !important; border-bottom: 2px solid #000; padding-bottom: 5px; }
+
+    /* HERO */
+    .hero { position: relative; height: 0; padding-bottom: 38%; overflow: hidden; }
+    .hero img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    .hero-btn-container { position: absolute; bottom: 10%; left: 0; right: 0; display: flex; justify-content: center; z-index: 10; }
+    .hero-schedule-btn { padding: 15px 35px; background: rgba(255, 255, 255, 0.9); color: #000; text-decoration: none; text-transform: uppercase; font-size: 14px; font-weight: 700; letter-spacing: 2px; transition: 0.3s; }
+    .hero-schedule-btn:hover { background: #000; color: #fff; }
+
+    /* CONTAINERS */
+    .container { max-width: 1800px; margin: 0 auto; padding: 0 6%; }
+    section { padding: 80px 0; text-align: center; }
+    h1 { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 400; letter-spacing: 3px; margin-bottom: 20px; text-transform: uppercase; }
+    h2 { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 400; letter-spacing: 3px; margin-bottom: 40px; text-transform: uppercase; }
+    p.tagline { font-size: 24px; font-style: italic; color: #444; margin-bottom: 60px; }
+
+    /* LATEST DESIGNS */
+    .design-block { margin-bottom: 60px; padding: 40px; background: #f9f9f9; text-align: center; border-radius: 4px; }
+    .design-title { font-family: 'Playfair Display', serif; font-size: 32px; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; color: #000; }
+    .design-desc { max-width: 800px; margin: 0 auto 25px; font-size: 15px; color: #555; font-style: italic; }
+    .design-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 25px; }
+    .design-images img { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid #ddd; }
+    .design-price { font-weight: 700; font-size: 22px; color: #000; letter-spacing: 1px; }
+
+    /* SLIDERS (Golds, Diamonds, Silvers) */
+    .wide-slider-container { position: relative; width: 100%; overflow: hidden; border-radius: 4px; background: #000; }
+    .slider-track { display: flex; transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1); }
+    .wide-card { min-width: 100%; position: relative; height: 0; padding-bottom: 38%; }
+    .wide-card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+    .card-content { position: absolute; top: 50%; left: 6%; transform: translateY(-50%); color: #fff; z-index: 2; text-align: left; }
+    .card-content h3 { font-family: 'Playfair Display', serif; font-size: 42px; text-transform: uppercase; }
+    .card-content .price { font-weight: 700; font-size: 24px; border-left: 3px solid #fff; padding-left: 15px; margin-top: 15px; }
+
+    /* GALLERY GRID */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 50px; }
+    .set-card { border: 1px solid #eee; background: #f9f9f9; text-align: left; transition: 0.3s; }
+    .mini-slider { position: relative; height: 320px; overflow: hidden; }
+    .mini-slider img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.6s; }
+    .mini-slider img.active { opacity: 1; }
+    .set-info { padding: 20px; }
+    .set-info .name { font-family: 'Playfair Display', serif; font-size: 24px; color: #000; margin-bottom: 5px; }
+    .set-info .price { font-weight: 700; font-size: 16px; color: #666; letter-spacing: 1px; }
+
+    .view-more-btn { display: inline-block; padding: 12px 40px; border: 1px solid #000; color: #000; text-decoration: none; text-transform: uppercase; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin-top: 30px; transition: 0.3s; }
+    .view-more-btn:hover { background: #000; color: #fff; }
+
+    /* COMPACT FOOTER */
+    footer { background: #000; color: #fff; padding: 40px 6%; border-top: 1px solid #222; }
+    .footer-container { display: flex; align-items: center; justify-content: space-between; max-width: 1800px; margin: 0 auto; }
+    .footer-left { flex: 1; text-align: left; }
+    .footer-middle { flex: 1; text-align: center; }
+    .footer-brand { font-family: 'Playfair Display'; font-size: 24px; letter-spacing: 4px; margin-bottom: 5px; }
+    .footer-logo-img { height: 50px; width: auto; }
+    .footer-right { flex: 1; text-align: right; }
+    .ceo-name { font-family: 'Alex Brush'; font-size: 24px; color: #fff; }
+    .footer-links { margin-top: 10px; display: flex; gap: 15px; }
+    .footer-links svg { fill: #fff; transition: 0.3s; }
+    .footer-links a:hover svg { fill: #888; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="home.html" class="logo-text">EGYGRILLZ</a>
+    <nav>
+      <a href="home.html" class="nav-home">Home</a>
+      <a href="latest-designs.html">Latest Designs</a>
+      <a href="booking.html">Schedule</a>
+      <a href="grillz-gallery.html">Gallery</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="golds.html">Golds</a>
+      <a href="diamonds.html">Diamonds</a>
+      <a href="silvers.html">Silvers</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <img src="assets/images/hero-grillz.jpg">
+    <div class="hero-btn-container">
+      <a href="booking.html" class="hero-schedule-btn">Schedule an Appointment</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <section>
+      <h1>All about the bling.</h1>
+      <p class="tagline">Pioneering custom grillz in Egypt – the first.</p>
+    </section>
+
+    <section>
+      <h2>Latest Designs</h2>
+      <div id="latest-designs-container"></div>
+      <a href="latest-designs.html" class="view-more-btn">View All Latest Designs</a>
+    </section>
+
+    <section><h2>Golds</h2><div class="wide-slider-container"><div id="golds-track" class="slider-track"></div></div><a href="golds.html" class="view-more-btn">View All Gold Sets</a></section>
+    <section><h2>Diamonds</h2><div class="wide-slider-container"><div id="diamonds-track" class="slider-track"></div></div><a href="diamonds.html" class="view-more-btn">View All Diamond Sets</a></section>
+    <section><h2>Silvers</h2><div class="wide-slider-container"><div id="silvers-track" class="slider-track"></div></div><a href="silvers.html" class="view-more-btn">View All Silver Sets</a></section>
+
+    <section>
+      <h2>Grillz Gallery</h2>
+      <div class="grid" id="home-sets-grid"></div>
+      <a href="grillz-gallery.html" class="view-more-btn">Explore Gallery</a>
+    </section>
+  </div>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-left">
+        <p style="font-size: 13px; color: #aaa;">Beyond Jewelry</p>
+        <p style="font-size: 13px; color: #aaa;">© 2026 EGYGRILLZ</p>
+        <div class="footer-links">
+          <a href="https://www.instagram.com/egygrillz" target="_blank">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          <a href="https://www.google.com/maps/search/egygrillz" target="_blank">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 0c-4.198 0-8 3.403-8 7.602 0 4.198 3.469 9.21 8 16.398 4.531-7.188 8-12.2 8-16.398 0-4.199-3.801-7.602-8-7.602zm0 11c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-middle">
+        <div class="footer-brand">EGYGRILLZ</div>
+        <img src="logo/logo_white.png" class="footer-logo-img" alt="Logo Icon">
+      </div>
+      <div class="footer-right">
+        <p style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #666; margin-bottom: -5px;">Founder & CEO</p>
+        <p class="ceo-name">DR Mohamed Mahdy</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 1. CATEGORY SLIDERS LOADER (Updated with Diamond-Style Price Logic)
+    function loadCategorySlides(jsonPath, trackId, basePath) {
+      const track = document.getElementById(trackId);
+      fetch(jsonPath).then(res => res.json()).then(folders => {
+        folders.forEach(folder => {
+          fetch(`${basePath}/${folder}/info.txt`).then(res => res.text()).then(text => {
+            let title = folder, price = 'Contact for Price', img = '000000.jpeg';
+            
+            const lines = text.split('\n');
+            lines.forEach(line => {
+              const parts = line.split(':');
+              if (parts.length < 2) return;
+              
+              const key = parts[0].trim().toLowerCase();
+              const value = parts.slice(1).join(':').trim();
+
+              if(key === 'title' || key === 'name') title = value;
+              else if(key === 'price') price = value;
+              else if(key === 'images') img = value.split(',')[0].trim();
+            });
+
+            track.innerHTML += `
+              <div class="wide-card">
+                <img src="${basePath}/${folder}/${img}">
+                <div class="card-content"><h3>${title}</h3><p class="price">${price}</p></div>
+              </div>`;
+          });
+        });
+        let idx = 0;
+        setInterval(() => {
+          const cards = track.querySelectorAll('.wide-card');
+          if(cards.length > 0) { idx = (idx + 1) % cards.length; track.style.transform = `translateX(-${idx * 100}%)`; }
+        }, 5000);
+      });
+    }
+
+    loadCategorySlides('assets/images/golds/golds.json', 'golds-track', 'assets/images/golds');
+    loadCategorySlides('assets/images/diamonds/diamonds.json', 'diamonds-track', 'assets/images/diamonds');
+    loadCategorySlides('assets/images/silvers/silvers.json', 'silvers-track', 'assets/images/silvers');
+
+    // 2. LATEST DESIGNS LOADER
+    fetch('assets/images/latest-designs/designs.json').then(res => res.json()).then(names => {
+      const container = document.getElementById('latest-designs-container');
+      names.forEach(name => {
+        fetch(`assets/images/latest-designs/${name}/info.txt`).then(res => res.text()).then(text => {
+          let title=name, price='', desc='', imagesLine='';
+          text.split('\n').forEach(line => {
+            const low = line.toLowerCase();
+            if(low.startsWith('title:') || low.startsWith('name:')) title = line.split(':')[1].trim();
+            if(low.startsWith('price:')) price = line.split(':')[1].trim();
+            if(low.startsWith('description:')) desc = line.split(':')[1].trim();
+            if(low.startsWith('images:')) imagesLine = line;
+          });
+          let images = imagesLine.replace(/images:/i, '').split(',').map(f => f.trim());
+          let html = `
+            <div class="design-block">
+              <div class="design-title">${title}</div>
+              <p class="design-desc">${desc}</p>
+              <div class="design-images">`;
+          images.slice(0, 3).forEach(img => { html += `<img src="assets/images/latest-designs/${name}/${img}">`; });
+          html += `</div><p class="design-price">${price}</p></div>`;
+          container.innerHTML += html;
+        });
+      });
+    });
+
+    // 3. GRILLZ GALLERY LOADER
+    fetch('assets/images/sets/sets.json').then(res => res.json()).then(sets => {
+      const grid = document.getElementById('home-sets-grid');
+      sets.slice(0, 3).forEach(set => {
+        fetch(`assets/images/sets/${set}/info.txt`).then(res => res.text()).then(text => {
+          let name=set, price='', images=[];
+          text.split('\n').forEach(l => {
+            const low = l.toLowerCase();
+            if(low.startsWith('name:') || low.startsWith('title:')) name = l.split(':')[1].trim();
+            if(low.startsWith('price:')) price = l.split(':')[1].trim();
+            if(low.startsWith('images:')) images = l.split(':')[1].split(',').map(f=>f.trim());
+          });
+          let slider = '<div class="mini-slider">';
+          images.forEach((img, i) => slider += `<img src="assets/images/sets/${set}/${img}" class="${i===0?'active':''}">`);
+          slider += '</div>';
+          const card = document.createElement('div');
+          card.className = 'set-card';
+          card.innerHTML = `${slider}<div class="set-info"><div class="name">${name}</div><div class="price">${price}</div></div>`;
+          grid.appendChild(card);
+          let idx=0; 
+          const imgs = card.querySelectorAll('.mini-slider img');
+          if(imgs.length > 1) setInterval(() => { imgs[idx].classList.remove('active'); idx=(idx+1)%imgs.length; imgs[idx].classList.add('active'); }, 3000);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
