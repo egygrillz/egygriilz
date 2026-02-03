@@ -15,20 +15,18 @@
     body.menu-open { overflow: hidden; }
 
     /* ==========================================================================
-       HEADER (Original Layout: Left Logo, Right Nav)
+       HEADER
        ========================================================================== */
     header {
       position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
       display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
     }
     .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
-    
+   
     .main-nav { display: flex; gap: 20px; }
     .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-
     .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
     .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
-
     @media (max-width: 980px) {
       .menu-toggle { display: flex; }
       .main-nav {
@@ -40,47 +38,121 @@
     }
 
     /* ==========================================================================
-       HERO & GENERAL SECTIONS
+       HERO & GENERAL
        ========================================================================== */
     .hero { position: relative; width: 100%; height: 65vh; overflow: hidden; background: #000; }
     .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
     .hero-btn-container { position: absolute; bottom: 10%; width: 100%; display: flex; justify-content: center; }
     .hero-schedule-btn { padding: 12px 35px; background: #fff; color: #000; text-decoration: none; text-transform: uppercase; font-weight: 700; font-size: 12px; letter-spacing: 1px; }
-
     .container { max-width: 1400px; margin: 0 auto; padding: 0 5%; }
     section { padding: 60px 0; text-align: center; }
     h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 30px; text-transform: uppercase; }
 
-    /* Latest Designs Styling */
+    /* Latest Designs */
     .latest-desc { font-size: 13px; color: #555; margin: 10px auto 25px; max-width: 600px; line-height: 1.4; }
     .latest-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
     .latest-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; }
 
     /* ==========================================================================
-       SLIDERS (With Descriptions & Centered Button)
+       NEW CATEGORY SLIDESHOWS (Golds, Diamonds, Silvers)
        ========================================================================== */
-    .wide-slider-container { position: relative; width: 100%; overflow: hidden; height: 450px; background: #000; margin-bottom: 20px; }
-    .slider-track { display: flex; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-    .wide-card { min-width: 100%; height: 100%; position: relative; }
-    .wide-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
-    
-    /* Text Overlay */
-    .card-content { position: absolute; bottom: 100px; width: 100%; text-align: center; color: #fff; padding: 0 20px; pointer-events: none; }
-    .card-content h3 { font-size: 28px; font-family: 'Playfair Display'; margin-bottom: 5px; text-transform: uppercase; }
-    .card-desc { font-size: 12px; opacity: 0.9; margin-bottom: 5px; font-style: italic; }
-    .card-price { font-size: 15px; font-weight: bold; }
-
-    /* Inner Button (Centered Bottom) */
-    .inner-view-btn {
-        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-        padding: 10px 30px; background: #fff; color: #000;
-        text-decoration: none; font-size: 10px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 1px; z-index: 10; transition: 0.3s;
+    .slideshow-container {
+      position: relative;
+      width: 100%;
+      height: 65vh;
+      overflow: hidden;
+      background: #000;
+      margin: 30px 0 40px;
     }
-    .inner-view-btn:hover { background: #000; color: #fff; }
+
+    .slides-wrapper {
+      display: flex;
+      height: 100%;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+    }
+
+    .slide {
+      flex: 0 0 100%;
+      height: 100%;
+    }
+
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.92;
+    }
+
+    .slide-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .overlay-view-btn {
+      pointer-events: auto;
+      padding: 14px 38px;
+      background: rgba(255,255,255,0.18);
+      color: white;
+      border: 1px solid white;
+      border-radius: 0;
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .overlay-view-btn:hover {
+      background: white;
+      color: black;
+      border-color: white;
+    }
+
+    /* Info block below slideshow */
+    .category-info {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 5%;
+      text-align: left;
+    }
+
+    .category-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .category-desc {
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 18px;
+      line-height: 1.55;
+    }
+
+    .category-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    @media (max-width: 768px) {
+      .slideshow-container { height: 55vh; }
+      .overlay-view-btn { padding: 12px 28px; font-size: 10px; }
+      .category-title { font-size: 22px; }
+    }
 
     /* ==========================================================================
-       GALLERY PREVIEW (3 items across)
+       GALLERY PREVIEW
        ========================================================================== */
     .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px; }
     .set-card { border: 1px solid #eee; text-align: center; background: #fff; }
@@ -90,37 +162,33 @@
     .set-info { padding: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* ==========================================================================
-       FOOTER (Centered Logo, Icons Left, Small Founder Right)
+       FOOTER
        ========================================================================== */
     footer { background: #000; color: #fff; padding: 40px 5% 20px; }
-    .footer-content { 
-      display: grid; 
-      grid-template-columns: 1fr auto 1fr; /* Center Logic */
-      align-items: center; 
-      max-width: 1200px; 
+    .footer-content {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      max-width: 1200px;
       margin: 0 auto;
     }
     .footer-icons { display: flex; gap: 15px; font-size: 16px; }
     .footer-icons a { color: #fff; opacity: 0.8; transition: 0.3s; }
     .footer-icons a:hover { opacity: 1; }
-    
+   
     .footer-logo-wrap { text-align: center; }
     .footer-logo-img { height: 40px; filter: brightness(0) invert(1); }
-    
+   
     .ceo-wrap { text-align: right; }
     .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
     .ceo-name { font-family: 'Alex Brush'; font-size: 16px; color: #888; margin-top: -2px; }
-
     @media (max-width: 600px) {
         .footer-content { grid-template-columns: 1fr; gap: 20px; text-align: center; }
         .footer-icons, .ceo-wrap { justify-content: center; }
-        .wide-slider-container { height: 350px; }
-        .card-content h3 { font-size: 22px; }
     }
   </style>
 </head>
 <body>
-
   <header>
     <a href="home.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -145,33 +213,64 @@
   </div>
 
   <div class="container">
+
     <section>
       <h2>Latest Designs</h2>
       <div id="latest-container"></div>
       <a href="latest-designs.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700;">View All</a>
     </section>
 
+    <!-- ────────────────────────────────────────────────
+         Redesigned Golds Section
+    ──────────────────────────────────────────────── -->
     <section>
       <h2>Golds</h2>
-      <div class="wide-slider-container">
-          <div id="golds-track" class="slider-track"></div>
-          <a href="golds.html" class="inner-view-btn">View Gold</a>
+      <div class="slideshow-container" id="golds-slideshow">
+        <div class="slides-wrapper" id="golds-track"></div>
+        <div class="slide-overlay">
+          <a href="golds.html" class="overlay-view-btn">View Golds</a>
+        </div>
+      </div>
+      <div class="category-info" id="golds-info">
+        <h3 class="category-title"></h3>
+        <p class="category-desc"></p>
+        <p class="category-price"></p>
       </div>
     </section>
 
+    <!-- ────────────────────────────────────────────────
+         Redesigned Diamonds Section
+    ──────────────────────────────────────────────── -->
     <section>
       <h2>Diamonds</h2>
-      <div class="wide-slider-container">
-          <div id="diamonds-track" class="slider-track"></div>
-          <a href="diamonds.html" class="inner-view-btn">View Diamonds</a>
+      <div class="slideshow-container" id="diamonds-slideshow">
+        <div class="slides-wrapper" id="diamonds-track"></div>
+        <div class="slide-overlay">
+          <a href="diamonds.html" class="overlay-view-btn">View Diamonds</a>
+        </div>
+      </div>
+      <div class="category-info" id="diamonds-info">
+        <h3 class="category-title"></h3>
+        <p class="category-desc"></p>
+        <p class="category-price"></p>
       </div>
     </section>
 
+    <!-- ────────────────────────────────────────────────
+         Redesigned Silvers Section
+    ──────────────────────────────────────────────── -->
     <section>
       <h2>Silvers</h2>
-      <div class="wide-slider-container">
-          <div id="silvers-track" class="slider-track"></div>
-          <a href="silvers.html" class="inner-view-btn">View Silver</a>
+      <div class="slideshow-container" id="silvers-slideshow">
+        <div class="slides-wrapper" id="silvers-track"></div>
+        <div class="slide-overlay">
+          <a href="silvers.html" class="overlay-view-btn">View Silvers</a>
+        </div>
+      </div>
+      <div class="category-info" id="silvers-info">
+        <h3 class="category-title"></h3>
+        <p class="category-desc"></p>
+        <p class="category-price"></p>
       </div>
     </section>
 
@@ -180,6 +279,7 @@
       <div class="gallery-grid" id="gallery-preview"></div>
       <a href="grillz-gallery.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700;">Full Gallery</a>
     </section>
+
   </div>
 
   <footer>
@@ -199,11 +299,13 @@
   </footer>
 
   <script>
+    // Mobile menu toggle
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
 
+    // Parse info.txt
     function parseInfo(text) {
       const info = { name: '', price: '', desc: '', images: [] };
       text.split('\n').forEach(line => {
@@ -219,69 +321,131 @@
       return info;
     }
 
-    async function init() {
+    // Load latest designs (unchanged)
+    async function loadLatest() {
       try {
         const latestRes = await fetch('assets/images/latest-designs/designs.json');
         const latestArr = await latestRes.json();
         const designFolder = Array.isArray(latestArr) ? latestArr[0] : Object.values(latestArr)[0];
-
         if (designFolder) {
-            const lTxt = await fetch(`assets/images/latest-designs/${designFolder}/info.txt`).then(r => r.text());
-            const lData = parseInfo(lTxt);
-            const lImgs = lData.images.slice(0, 3).map(i => `<img src="assets/images/latest-designs/${designFolder}/${i}">`).join('');
-            
-            document.getElementById('latest-container').innerHTML = `
-                <h3>${lData.name}</h3>
-                <p class="latest-desc">${lData.desc}</p>
-                <div class="latest-grid">${lImgs}</div>
-                <p style="font-weight:700; margin-bottom:20px;">${lData.price}</p>`;
+          const lTxt = await fetch(`assets/images/latest-designs/${designFolder}/info.txt`).then(r => r.text());
+          const lData = parseInfo(lTxt);
+          const lImgs = lData.images.slice(0, 3).map(i => `<img src="assets/images/latest-designs/${designFolder}/${i}">`).join('');
+         
+          document.getElementById('latest-container').innerHTML = `
+              <h3>${lData.name}</h3>
+              <p class="latest-desc">${lData.desc}</p>
+              <div class="latest-grid">${lImgs}</div>
+              <p style="font-weight:700; margin-bottom:20px;">${lData.price}</p>`;
         }
+      } catch (err) {
+        console.warn("Latest designs load error:", err);
+      }
+    }
 
-        async function loadSlider(cat, trackId) {
-          const list = await fetch(`assets/images/${cat}/${cat}.json`).then(r => r.json());
-          const track = document.getElementById(trackId);
-          const items = Array.isArray(list) ? list : Object.values(list);
-          for (const item of items) {
-            const txt = await fetch(`assets/images/${cat}/${item}/info.txt`).then(r => r.text());
-            const d = parseInfo(txt);
-            track.innerHTML += `
-              <div class="wide-card">
-                <img src="assets/images/${cat}/${item}/${d.images[0]}">
-                <div class="card-content">
-                    <h3>${d.name}</h3>
-                    <p class="card-desc">${d.desc}</p>
-                    <p class="card-price">${d.price}</p>
-                </div>
+    // New category slideshow + info loader
+    async function loadCategorySlideshow(category, trackId, infoId) {
+      try {
+        const listRes = await fetch(`assets/images/${category}/${category}.json`);
+        const list = await listRes.json();
+        const items = Array.isArray(list) ? list : Object.values(list);
+
+        if (!items.length) return;
+
+        const track = document.getElementById(trackId);
+        let slidesHTML = '';
+
+        // Build slides (using first image of each set)
+        for (const item of items) {
+          const txt = await fetch(`assets/images/${category}/${item}/info.txt`).then(r => r.text());
+          const d = parseInfo(txt);
+          if (d.images && d.images.length > 0) {
+            slidesHTML += `
+              <div class="slide">
+                <img src="assets/images/${category}/${item}/${d.images[0]}" alt="${d.name || category}">
               </div>`;
           }
-          let pos = 0; setInterval(() => { pos = (pos + 1) % items.length; track.style.transform = `translateX(-${pos * 100}%)`; }, 5000);
         }
-        loadSlider('golds', 'golds-track');
-        loadSlider('diamonds', 'diamonds-track');
-        loadSlider('silvers', 'silvers-track');
 
+        track.innerHTML = slidesHTML;
+
+        // Auto slide every 4.5 seconds
+        let pos = 0;
+        const slidesCount = items.length;
+        if (slidesCount > 1) {
+          setInterval(() => {
+            pos = (pos + 1) % slidesCount;
+            track.style.transform = `translateX(-${pos * 100}%)`;
+          }, 4500);
+        }
+
+        // Show info from FIRST set
+        if (items.length > 0) {
+          const firstItem = items[0];
+          const firstTxt = await fetch(`assets/images/${category}/${firstItem}/info.txt`).then(r => r.text());
+          const firstData = parseInfo(firstTxt);
+
+          const infoBlock = document.getElementById(infoId);
+
+          infoBlock.querySelector('.category-title').textContent = firstData.name || firstItem;
+          infoBlock.querySelector('.category-desc').textContent = firstData.desc || '';
+
+          const priceEl = infoBlock.querySelector('.category-price');
+          if (firstData.price) {
+            priceEl.textContent = firstData.price;
+          } else {
+            priceEl.style.display = 'none';
+          }
+        }
+
+      } catch (err) {
+        console.warn(`Error loading ${category}:`, err);
+      }
+    }
+
+    // Load gallery preview (unchanged)
+    async function loadGalleryPreview() {
+      try {
         const setsData = await fetch('assets/images/sets/sets.json').then(r => r.json());
         const sets = Array.isArray(setsData) ? setsData : Object.values(setsData);
         const gallery = document.getElementById('gallery-preview');
+
         for (const set of sets.slice(0, 3)) {
           const txt = await fetch(`assets/images/sets/${set}/info.txt`).then(r => r.text());
           const d = parseInfo(txt);
           const imgs = d.images.map((img, i) => `<img src="assets/images/sets/${set}/${img}" class="${i===0?'active':''}">`).join('');
           gallery.innerHTML += `<div class="set-card"><div class="mini-slider">${imgs}</div><div class="set-info"><strong>${d.name}</strong><br>${d.price}</div></div>`;
         }
-        
+
+        // Mini slider animation
         setInterval(() => {
           document.querySelectorAll('.mini-slider').forEach(ms => {
-            const imgs = ms.querySelectorAll('img'); if(imgs.length < 2) return;
+            const imgs = ms.querySelectorAll('img');
+            if (imgs.length < 2) return;
             let active = ms.querySelector('img.active');
             let next = active.nextElementSibling || imgs[0];
-            active.classList.remove('active'); next.classList.add('active');
+            active.classList.remove('active');
+            next.classList.add('active');
           });
         }, 3000);
 
-      } catch (err) { console.warn("Load error:", err); }
+      } catch (err) {
+        console.warn("Gallery preview error:", err);
+      }
     }
+
+    // Initialize everything
+    async function init() {
+      await loadLatest();
+      await Promise.all([
+        loadCategorySlideshow('golds',    'golds-track',    'golds-info'),
+        loadCategorySlideshow('diamonds', 'diamonds-track', 'diamonds-info'),
+        loadCategorySlideshow('silvers',  'silvers-track',  'silvers-info')
+      ]);
+      await loadGalleryPreview();
+    }
+
     init();
   </script>
 </body>
-</html> 	
+</html>
