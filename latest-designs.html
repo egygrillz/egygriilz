@@ -54,7 +54,7 @@
     .design-price { font-size: 18px; font-weight: 700; color: #000; margin-top: 5px; display: block; }
 
     .design-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; margin-bottom: 30px; }
-    .design-images img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #f9f9f9; border-radius: 2px; }
+    .design-images img, .design-images video { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #f9f9f9; border-radius: 2px; }
 
     .design-desc { font-size: 15px; color: #444; line-height: 1.6; max-width: 850px; text-align: left; }
 
@@ -156,6 +156,17 @@
       document.body.classList.toggle('menu-open');
     });
 
+    // INTERSECTION OBSERVER FOR VIDEOS
+    const videoObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.play().catch(err => {}); // Play when visible
+        } else {
+          entry.target.pause(); // Pause when off-screen
+        }
+      });
+    }, { threshold: 0.3 }); // Adjusts sensitivity (30% visibility)
+
     // LOAD DESIGNS SCRIPT
     fetch('assets/images/latest-designs/designs.json')
       .then(res => res.json())
@@ -175,28 +186,42 @@
               });
 
               let imagesLine = lines.find(l => l.toLowerCase().startsWith('images:'));
-              let images = [];
+              let mediaList = [];
               if (imagesLine) {
-                images = imagesLine.replace(/images:/i, '').trim().split(',').map(f => f.trim());
+                mediaList = imagesLine.replace(/images:/i, '').trim().split(',').map(f => f.trim());
               }
 
-              let html = `
-              <div class="design-block">
+              // Build the block as a DOM element to attach observer immediately
+              const designBlock = document.createElement('div');
+              designBlock.className = 'design-block';
+
+              let mediaHtml = '';
+              mediaList.forEach(file => {
+                const filePath = `assets/images/latest-designs/${designName}/${file}`;
+                if (file.toLowerCase().endsWith('.mp4')) {
+                  mediaHtml += `<video src="${filePath}" loop playsinline preload="metadata"></video>`;
+                } else {
+                  mediaHtml += `<img src="${filePath}" alt="${title}" loading="lazy">`;
+                }
+              });
+
+              designBlock.innerHTML = `
                 <div class="design-header">
                   <h2 class="design-title">${title}</h2>
                   <span class="design-price">${price}</span>
                 </div>
-                <div class="design-images">`;
-
-              images.forEach(img => {
-                html += `<img src="assets/images/latest-designs/${designName}/${img}" alt="${title}" loading="lazy">`;
-              });
-
-              html += `</div>
+                <div class="design-images">
+                  ${mediaHtml}
+                </div>
                 ${desc ? `<div class="design-desc">${desc}</div>` : ''}
-              </div>`;
+              `;
 
-              container.insertAdjacentHTML('beforeend', html);
+              container.appendChild(designBlock);
+
+              // Observe any videos within the newly added block
+              designBlock.querySelectorAll('video').forEach(video => {
+                videoObserver.observe(video);
+              });
             })
             .catch(err => console.error('Error loading design:', designName, err));
         });
