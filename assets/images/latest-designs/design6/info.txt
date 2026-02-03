@@ -1,0 +1,4 @@
+name: ELMOND's Set
+price: Contact us for details
+description: This custom Silver grillz set, crafted exclusively for rapper Muhab AKA ELMond , to be part of his unreleased vide clip HELW .
+images: 000.jpeg,001.jpeg,002.jpeg
