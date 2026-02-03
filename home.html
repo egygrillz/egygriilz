@@ -9,7 +9,7 @@
   <style>
     /* ========================================================================== RESET & BASE ========================================================================== */
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     body.menu-open { overflow: hidden; }
 
     /* ========================================================================== HEADER ========================================================================== */
@@ -34,68 +34,81 @@
     }
 
     /* ========================================================================== HERO ========================================================================== */
-    .hero { position: relative; width: 100%; height: 65vh; overflow: hidden; background: #000; }
-    .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-    .hero-btn-container { position: absolute; bottom: 10%; width: 100%; display: flex; justify-content: center; }
-    .hero-schedule-btn { padding: 12px 35px; background: #fff; color: #000; text-decoration: none; text-transform: uppercase; font-weight: 700; font-size: 12px; letter-spacing: 1px; }
+    .hero { 
+      position: relative; 
+      width: 100%; 
+      height: 80vh; 
+      overflow: hidden; 
+      background: #000; 
+      display: flex; 
+      align-items: flex-end; /* Moves content to bottom */
+      justify-content: center; 
+    }
+    .hero img { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.8; pointer-events: none; -webkit-user-drag: none; }
+    .hero-content { position: relative; text-align: center; color: #fff; z-index: 2; padding-bottom: 50px; }
+    .hero-content h1 { font-family: 'Playfair Display', serif; font-size: clamp(22px, 5vw, 36px); text-transform: uppercase; letter-spacing: 6px; margin-bottom: 15px; font-weight: 400; }
+    
+    .hero-schedule-btn { 
+      display: inline-block; 
+      color: #fff; 
+      text-decoration: underline; 
+      text-underline-offset: 6px;
+      text-transform: uppercase; 
+      font-weight: 700; 
+      font-size: 10px; 
+      letter-spacing: 2px; 
+      transition: 0.3s; 
+    }
+    .hero-schedule-btn:hover { opacity: 0.6; }
+
+    /* ========================================================================== REVEAL ANIMATION ========================================================================== */
+    .reveal { opacity: 0; transform: translateY(20px); transition: all 1s ease-out; }
+    .reveal.active { opacity: 1; transform: translateY(0); }
 
     .container { max-width: 1400px; margin: 0 auto; padding: 0 5%; }
-    section { padding: 60px 0; text-align: center; }
-    h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 30px; text-transform: uppercase; }
+    section { padding: 80px 0; text-align: center; }
+    h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 4px; }
 
-    /* Latest & Slider Styling */
-    .latest-desc, .card-desc { font-size: 13px; color: #555; margin: 15px auto 10px; max-width: 600px; line-height: 1.4; }
-    .latest-grid, .slider-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-    .latest-grid img, .slider-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+    /* Interaction & Protection */
+    img { -webkit-user-drag: none; user-select: none; transition: transform 0.6s ease; }
+    .wide-card:hover img { transform: scale(1.04); }
 
     /* ========================================================================== SLIDERS ========================================================================== */
     .wide-slider-container { position: relative; width: 100%; overflow: hidden; margin-bottom: 20px; }
-    .slider-track { display: flex; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-    .wide-card { min-width: 100%; display: flex; flex-direction: column; background: #fff; }
-    .wide-card img { width: 100%; height: auto; object-fit: cover; }
-    .card-content { text-align: center; padding: 15px 10px; }
-    .card-content h3 { font-size: 22px; font-family: 'Playfair Display'; margin-bottom: 5px; text-transform: uppercase; }
-    .card-price { font-size: 15px; font-weight: bold; margin-bottom: 0; }
-
-    /* Inner Button */
-    .inner-view-btn {
-        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-        padding: 10px 30px; background: #fff; color: #000;
-        text-decoration: none; font-size: 10px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 1px; z-index: 10; transition: 0.3s;
-    }
-    .inner-view-btn:hover { background: #000; color: #fff; }
+    .slider-track { display: flex; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .wide-card { min-width: 100%; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
+    .card-content { text-align: center; padding: 25px 10px; }
+    .card-content h3 { font-size: 18px; font-family: 'Playfair Display'; margin-bottom: 5px; text-transform: uppercase; }
+    .card-price { font-size: 13px; font-weight: bold; }
+    .inner-view-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); padding: 10px 25px; background: #fff; color: #000; text-decoration: none; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; z-index: 10; transition: 0.3s; border: 1px solid #000; }
 
     /* ========================================================================== GALLERY ========================================================================== */
-    .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px; }
-    .set-card { border: 1px solid #eee; text-align: center; background: #fff; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
+    .set-card { border: 1px solid #f5f5f5; text-align: center; }
     .mini-slider { width: 100%; aspect-ratio: 1; position: relative; overflow: hidden; }
-    .mini-slider img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: 0.6s; }
+    .mini-slider img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: 0.8s; }
     .mini-slider img.active { opacity: 1; }
-    .set-info { padding: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .set-info { padding: 15px; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
 
     /* ========================================================================== FOOTER ========================================================================== */
-    footer { background: #000; color: #fff; padding: 40px 5% 20px; }
-    .footer-content { 
-      display: flex; justify-content: space-between; align-items: center;
-      max-width: 1200px; margin: 0 auto; flex-wrap: wrap;
-    }
-    .footer-icons { display: flex; gap: 15px; font-size: 16px; }
-    .footer-icons a { color: #fff; opacity: 0.8; transition: 0.3s; }
-    .footer-icons a:hover { opacity: 1; }
-    .footer-logo-wrap { text-align: center; }
-    .footer-logo-img { height: 40px; filter: brightness(0) invert(1); }
-    .ceo-wrap { text-align: right; }
-    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .ceo-name { font-family: 'Alex Brush'; font-size: 16px; color: #888; margin-top: -2px; }
+    footer { background: #000; color: #fff; padding: 60px 5% 30px; }
+    .footer-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; }
+    .footer-icons { display: flex; gap: 20px; font-size: 16px; flex: 1; }
+    .footer-icons a { color: #fff; opacity: 0.6; }
+    .footer-logo-wrap { text-align: center; flex: 1; }
+    .footer-logo-img { height: 30px; filter: brightness(0) invert(1); }
+    .ceo-wrap { text-align: right; flex: 1; }
+    .ceo-label { font-size: 8px; color: #444; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0px; }
+    .ceo-name { font-family: 'Alex Brush'; font-size: 9px; color: #777; } /* 9px per request */
 
-    @media (max-width: 980px) {
-      /* Menu mobile handled above */
-    }
+    /* Mobile Sticky */
+    .mobile-sticky-btn { display: none; position: fixed; bottom: 15px; right: 15px; left: 15px; background: #000; color: #fff; text-align: center; padding: 12px; text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-decoration: none; z-index: 999; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
     @media (max-width: 600px) {
-        .wide-slider-container { height: auto; }
-        .card-content h3 { font-size: 20px; }
-        .footer-content { flex-wrap: nowrap; justify-content: space-between; text-align: center; }
+      .footer-content { flex-direction: column; gap: 40px; text-align: center; }
+      .ceo-wrap { text-align: center; }
+      .mobile-sticky-btn { display: block; }
+      .hero { height: 70vh; }
     }
   </style>
 </head>
@@ -118,29 +131,29 @@
   </header>
 
   <div class="hero">
-    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ">
-    <div class="hero-btn-container">
+    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ Custom Grillz">
+    <div class="hero-content">
+      <h1>Egypt's First Custom Grillz</h1>
       <a href="booking.html" class="hero-schedule-btn">Schedule Appointment</a>
     </div>
   </div>
 
+  <a href="booking.html" class="mobile-sticky-btn">Book Consultation</a>
+
   <div class="container">
-    <!-- Latest Designs -->
-    <section>
+    <section class="reveal">
       <h2>Latest Designs</h2>
       <div id="latest-container"></div>
       <a href="latest-designs.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700;">View All</a>
     </section>
 
-    <!-- Grillz Gallery -->
-    <section>
+    <section class="reveal">
       <h2>Grillz Gallery</h2>
       <div class="gallery-grid" id="gallery-preview"></div>
       <a href="grillz-gallery.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700;">Full Gallery</a>
     </section>
 
-    <!-- Golds -->
-    <section>
+    <section class="reveal">
       <h2>Golds</h2>
       <div class="wide-slider-container">
           <div id="golds-track" class="slider-track"></div>
@@ -148,8 +161,7 @@
       </div>
     </section>
 
-    <!-- Diamonds -->
-    <section>
+    <section class="reveal">
       <h2>Diamonds</h2>
       <div class="wide-slider-container">
           <div id="diamonds-track" class="slider-track"></div>
@@ -157,8 +169,7 @@
       </div>
     </section>
 
-    <!-- Silvers -->
-    <section>
+    <section class="reveal">
       <h2>Silvers</h2>
       <div class="wide-slider-container">
           <div id="silvers-track" class="slider-track"></div>
@@ -178,7 +189,7 @@
       </div>
       <div class="ceo-wrap">
         <p class="ceo-label">Founder</p>
-        <p class="ceo-name">DR Mohamed Mahdy</p>
+        <p class="ceo-name">Dr. Mohamed Mahdy</p>
       </div>
     </div>
   </footer>
@@ -190,6 +201,15 @@
       document.body.classList.toggle('menu-open');
     });
 
+    // Reveal Animation Logic
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('active');
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Data Parsing Logic
     function parseInfo(text) {
       const info = { name: '', price: '', desc: '', images: [] };
       text.split('\n').forEach(line => {
@@ -214,8 +234,8 @@
         const lImgs = lData.images.slice(0, 3).map(i => `<img src="assets/images/latest-designs/${latestArr[0]}/${i}">`).join('');
         document.getElementById('latest-container').innerHTML = `
             <h3>${lData.name}</h3>
-            <p class="latest-desc">${lData.desc}</p>
-            <div class="latest-grid">${lImgs}</div>
+            <p style="font-size:12px; color:#777; margin:15px auto; max-width:600px;">${lData.desc}</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:20px 0;">${lImgs}</div>
             <p style="font-weight:700; margin-bottom:20px;">${lData.price}</p>`;
 
         // Sliders
@@ -230,7 +250,6 @@
                 <img src="assets/images/${cat}/${item}/${d.images[0]}">
                 <div class="card-content">
                     <h3>${d.name}</h3>
-                    <p class="card-desc">${d.desc}</p>
                     <p class="card-price">${d.price}</p>
                 </div>
               </div>`;
@@ -259,7 +278,6 @@
             active.classList.remove('active'); next.classList.add('active');
           });
         }, 3000);
-
       } catch (err) { console.warn("Load error:", err); }
     }
     init();
