@@ -7,15 +7,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    /* ==========================================================================
-       RESET & BASE
+    /* ========================================================================== 
+       RESET & BASE 
        ========================================================================== */
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
-    body.menu-open { overflow: hidden; }
-
-    /* ==========================================================================
-       HEADER (Original Layout: Left Logo, Right Nav)
+    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    
+    /* ========================================================================== 
+       EXACT HEADER & NAVIGATION 
        ========================================================================== */
     header {
       position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
@@ -24,7 +23,8 @@
     .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
     
     .main-nav { display: flex; gap: 20px; }
-    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: opacity 0.3s; }
+    .main-nav a:hover { opacity: 0.5; }
 
     .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
     .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
@@ -33,89 +33,75 @@
       .menu-toggle { display: flex; }
       .main-nav {
         position: fixed; top: 60px; right: -100%; width: 100%; height: auto; background: #fff;
-        flex-direction: column; padding: 10px 5%; transition: 0.3s ease-in-out; box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
+        flex-direction: column; padding: 20px 5%; transition: 0.3s ease-in-out; box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
       }
       .main-nav.active { right: 0; }
       .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
     }
 
-    /* ==========================================================================
-       HERO & GENERAL SECTIONS
+    /* ========================================================================== 
+       HERO 
        ========================================================================== */
-    .hero { position: relative; width: 100%; height: 65vh; overflow: hidden; background: #000; }
-    .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-    .hero-btn-container { position: absolute; bottom: 10%; width: 100%; display: flex; justify-content: center; }
-    .hero-schedule-btn { padding: 12px 35px; background: #fff; color: #000; text-decoration: none; text-transform: uppercase; font-weight: 700; font-size: 12px; letter-spacing: 1px; }
-
-    .container { max-width: 1400px; margin: 0 auto; padding: 0 5%; }
-    section { padding: 60px 0; text-align: center; }
-    h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 30px; text-transform: uppercase; }
-
-    /* Latest Designs Styling */
-    .latest-desc { font-size: 13px; color: #555; margin: -15px auto 25px; max-width: 600px; line-height: 1.4; }
-    .latest-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-    .latest-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-
-    /* ==========================================================================
-       SLIDERS (With Descriptions & Centered Button)
-       ========================================================================== */
-    .wide-slider-container { position: relative; width: 100%; overflow: hidden; height: 450px; background: #000; margin-bottom: 20px; }
-    .slider-track { display: flex; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-    .wide-card { min-width: 100%; height: 100%; position: relative; }
-    .wide-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
-    
-    /* Text Overlay */
-    .card-content { position: absolute; bottom: 100px; width: 100%; text-align: center; color: #fff; padding: 0 20px; pointer-events: none; }
-    .card-content h3 { font-size: 28px; font-family: 'Playfair Display'; margin-bottom: 5px; text-transform: uppercase; }
-    .card-desc { font-size: 12px; opacity: 0.9; margin-bottom: 5px; font-style: italic; }
-    .card-price { font-size: 15px; font-weight: bold; }
-
-    /* Inner Button (Centered Bottom) */
-    .inner-view-btn {
-        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-        padding: 10px 30px; background: #fff; color: #000;
-        text-decoration: none; font-size: 10px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 1px; z-index: 10; transition: 0.3s;
+    .hero {
+      position: relative; width: 100%; height: 80vh; overflow: hidden; background: #000;
+      display: flex; align-items: flex-end; justify-content: center;
     }
-    .inner-view-btn:hover { background: #000; color: #fff; }
+    .hero img { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+    .hero-content { position: relative; text-align: center; color: #fff; z-index: 2; padding-bottom: 50px; }
+    .hero-content h1 { font-family: 'Playfair Display', serif; font-size: clamp(22px, 5vw, 36px); text-transform: uppercase; letter-spacing: 6px; margin-bottom: 15px; font-weight: 400; }
+    .hero-schedule-btn { display: inline-block; color: #fff; text-decoration: underline; text-underline-offset: 6px; text-transform: uppercase; font-weight: 700; font-size: 10px; letter-spacing: 2px; }
 
-    /* ==========================================================================
-       GALLERY PREVIEW (3 items across)
+    /* ========================================================================== 
+       REDESIGN: FULL WIDTH SLIDESHOW SECTIONS 
        ========================================================================== */
-    .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px; }
-    .set-card { border: 1px solid #eee; text-align: center; background: #fff; }
-    .mini-slider { width: 100%; aspect-ratio: 1; position: relative; overflow: hidden; }
-    .mini-slider img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: 0.6s; }
-    .mini-slider img.active { opacity: 1; }
-    .set-info { padding: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    h2 { font-family: 'Playfair Display', serif; font-size: 24px; text-align: center; margin: 80px 0 40px; text-transform: uppercase; letter-spacing: 4px; }
 
-    /* ==========================================================================
-       FOOTER (Centered Logo, Icons Left, Small Founder Right)
-       ========================================================================== */
-    footer { background: #000; color: #fff; padding: 40px 5% 20px; }
-    .footer-content { 
-      display: grid; 
-      grid-template-columns: 1fr auto 1fr; /* Center Logic */
-      align-items: center; 
-      max-width: 1200px; 
-      margin: 0 auto;
+    .set-wrapper { width: 100%; margin-bottom: 100px; }
+
+    .slideshow-container { 
+      position: relative; width: 100%; height: 80vh; 
+      overflow: hidden; background: #000; 
     }
-    .footer-icons { display: flex; gap: 15px; font-size: 16px; }
-    .footer-icons a { color: #fff; opacity: 0.8; transition: 0.3s; }
-    .footer-icons a:hover { opacity: 1; }
-    
-    .footer-logo-wrap { text-align: center; }
-    .footer-logo-img { height: 40px; filter: brightness(0) invert(1); }
-    
-    .ceo-wrap { text-align: right; }
-    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .ceo-name { font-family: 'Alex Brush'; font-size: 16px; color: #888; margin-top: -2px; }
 
-    @media (max-width: 600px) {
-        .footer-content { grid-template-columns: 1fr; gap: 20px; text-align: center; }
-        .footer-icons, .ceo-wrap { justify-content: center; }
-        .wide-slider-container { height: 350px; }
-        .card-content h3 { font-size: 22px; }
+    .slideshow-track {
+      display: flex; width: 100%; height: 100%;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .slideshow-track img { 
+      min-width: 100%; height: 100%; object-fit: cover; 
+    }
+
+    .view-cat-btn {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 10; padding: 12px 30px; border: 1px solid #fff; color: #fff;
+      text-decoration: none; text-transform: uppercase; font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; background: rgba(0,0,0,0.3); transition: 0.3s;
+    }
+    .view-cat-btn:hover { background: #fff; color: #000; }
+
+    .info-display { 
+      padding: 30px 5% 0; max-width: 1400px; margin: 0 auto; text-align: left; 
+    }
+    .info-display h3 { font-family: 'Playfair Display', serif; font-size: 20px; text-transform: uppercase; margin-bottom: 10px; }
+    .info-display .desc { font-size: 14px; margin-bottom: 5px; color: #333; max-width: 800px; }
+    .info-display .others { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .info-display .price { font-weight: 700; font-size: 16px; border-top: 1px solid #eee; padding-top: 15px; display: inline-block; }
+
+    /* ========================================================================== 
+       FOOTER 
+       ========================================================================== */
+    footer { background: #000; color: #fff; padding: 30px 5%; margin-top: 60px; }
+    .footer-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; }
+    .footer-icons a { color: #fff; opacity: 0.5; margin-right: 15px; text-decoration: none; }
+    .ceo-wrap { text-align: right; line-height: 1.2; }
+    .ceo-label { font-size: 7px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
+    .ceo-name { font-family: 'Alex Brush'; font-size: 14px; color: #666; display: block; }
+
+    @media (max-width: 768px) {
+      .slideshow-container { height: 60vh; }
+      .footer-content { flex-direction: column; gap: 20px; text-align: center; }
+      .ceo-wrap { text-align: center; }
     }
   </style>
 </head>
@@ -138,47 +124,37 @@
   </header>
 
   <div class="hero">
-    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ">
-    <div class="hero-btn-container">
+    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ Custom Grillz">
+    <div class="hero-content">
+      <h1>Egypt's First Custom Grillz</h1>
       <a href="booking.html" class="hero-schedule-btn">Schedule Appointment</a>
     </div>
   </div>
 
-  <div class="container">
-    <section>
+  <div id="dynamic-sections">
+    <section id="latest-designs-sec">
       <h2>Latest Designs</h2>
       <div id="latest-container"></div>
-      <a href="latest-designs.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700;">View All</a>
     </section>
 
-    <section>
-      <h2>Golds</h2>
-      <div class="wide-slider-container">
-          <div id="golds-track" class="slider-track"></div>
-          <a href="golds.html" class="inner-view-btn">View Gold</a>
-      </div>
-    </section>
-
-    <section>
-      <h2>Diamonds</h2>
-      <div class="wide-slider-container">
-          <div id="diamonds-track" class="slider-track"></div>
-          <a href="diamonds.html" class="inner-view-btn">View Diamonds</a>
-      </div>
-    </section>
-
-    <section>
-      <h2>Silvers</h2>
-      <div class="wide-slider-container">
-          <div id="silvers-track" class="slider-track"></div>
-          <a href="silvers.html" class="inner-view-btn">View Silver</a>
-      </div>
-    </section>
-
-    <section>
+    <section id="grillz-gallery-sec">
       <h2>Grillz Gallery</h2>
-      <div class="gallery-grid" id="gallery-preview"></div>
-      <a href="grillz-gallery.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700;">Full Gallery</a>
+      <div id="gallery-container"></div>
+    </section>
+
+    <section id="golds-sec">
+      <h2>Golds</h2>
+      <div id="golds-container"></div>
+    </section>
+
+    <section id="diamonds-sec">
+      <h2>Diamonds</h2>
+      <div id="diamonds-container"></div>
+    </section>
+
+    <section id="silvers-sec">
+      <h2>Silvers</h2>
+      <div id="silvers-container"></div>
     </section>
   </div>
 
@@ -189,99 +165,110 @@
         <a href="#"><i class="fas fa-location-dot"></i></a>
       </div>
       <div class="footer-logo-wrap">
-        <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+        <img src="logo/logo_white.png" style="height:20px; filter:brightness(0) invert(1);" alt="EGYGRILLZ">
       </div>
       <div class="ceo-wrap">
-        <p class="ceo-label">Founder</p>
-        <p class="ceo-name">DR Mohamed Mahdy</p>
+        <span class="ceo-label">Founder</span>
+        <span class="ceo-name">Dr. Mohamed Mahdy</span>
       </div>
     </div>
   </footer>
 
   <script>
-    // Navigation Toggle
+    // Navigation Toggle Logic
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
-      document.body.classList.toggle('menu-open');
     });
 
-    // Info Parser (Handles Descriptions)
+    // Info.txt Parser
     function parseInfo(text) {
-      const info = { name: '', price: '', desc: '', images: [] };
-      text.split('\n').forEach(line => {
-        const [key, ...val] = line.split(':');
-        if (!val.length) return;
-        const value = val.join(':').trim();
-        const k = key.trim().toLowerCase();
-        if (k === 'name') info.name = value;
-        else if (k === 'price') info.price = value;
-        else if (k === 'description' || k === 'desc') info.desc = value;
-        else if (k === 'images') info.images = value.split(',').map(i => i.trim());
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+      const info = { name: 'Piece', price: '', desc: '', others: [], images: [] };
+      lines.forEach(line => {
+        const parts = line.split(':');
+        const key = parts[0].toLowerCase().trim();
+        const value = parts.slice(1).join(':').trim();
+        if (key === 'name') info.name = value;
+        else if (key === 'price') info.price = value;
+        else if (key === 'description' || key === 'desc') info.desc = value;
+        else if (key === 'images') info.images = value.split(',').map(i => i.trim());
+        else info.others.push(`${parts[0]}: ${value}`);
       });
       return info;
     }
 
-    async function init() {
-      try {
-        // 1. Latest Designs (Title -> Desc -> Images -> Price)
-        const latestArr = await fetch('assets/images/latest-designs/designs.json').then(r => r.json());
-        const lTxt = await fetch(`assets/images/latest-designs/${latestArr[0]}/info.txt`).then(r => r.text());
-        const lData = parseInfo(lTxt);
-        const lImgs = lData.images.slice(0, 3).map(i => `<img src="assets/images/latest-designs/${latestArr[0]}/${i}">`).join('');
-        
-        document.getElementById('latest-container').innerHTML = `
-            <h3>${lData.name}</h3>
-            <p class="latest-desc">${lData.desc}</p>
-            <div class="latest-grid">${lImgs}</div>
-            <p style="font-weight:700; margin-bottom:20px;">${lData.price}</p>`;
+    // Slideshow Builder
+    function buildSlideshow(category, folder, data, targetEl, catLink, catLabel) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'set-wrapper';
+      const imagesHtml = data.images.map(img => 
+        `<img src="assets/images/${category}/${folder}/${img}" alt="${data.name}">`
+      ).join('');
 
-        // 2. Sliders (Name -> Desc -> Price)
-        async function loadSlider(cat, trackId) {
-          const list = await fetch(`assets/images/${cat}/${cat}.json`).then(r => r.json());
-          const track = document.getElementById(trackId);
-          for (const item of list) {
-            const txt = await fetch(`assets/images/${cat}/${item}/info.txt`).then(r => r.text());
-            const d = parseInfo(txt);
-            track.innerHTML += `
-              <div class="wide-card">
-                <img src="assets/images/${cat}/${item}/${d.images[0]}">
-                <div class="card-content">
-                    <h3>${d.name}</h3>
-                    <p class="card-desc">${d.desc}</p>
-                    <p class="card-price">${d.price}</p>
-                </div>
-              </div>`;
-          }
-          let pos = 0; setInterval(() => { pos = (pos + 1) % list.length; track.style.transform = `translateX(-${pos * 100}%)`; }, 5000);
-        }
-        loadSlider('golds', 'golds-track');
-        loadSlider('diamonds', 'diamonds-track');
-        loadSlider('silvers', 'silvers-track');
+      wrapper.innerHTML = `
+        <div class="slideshow-container">
+          <div class="slideshow-track">${imagesHtml}</div>
+          <a href="${catLink}" class="view-cat-btn">View ${catLabel}</a>
+        </div>
+        <div class="info-display">
+          <h3>${data.name}</h3>
+          <p class="desc">${data.desc}</p>
+          <div class="others">${data.others.map(o => `<p>${o}</p>`).join('')}</div>
+          <p class="price">${data.price}</p>
+        </div>
+      `;
+      targetEl.appendChild(wrapper);
 
-        // 3. Gallery (3 Across)
-        const sets = await fetch('assets/images/sets/sets.json').then(r => r.json());
-        const gallery = document.getElementById('gallery-preview');
-        for (const set of sets.slice(0, 3)) {
-          const txt = await fetch(`assets/images/sets/${set}/info.txt`).then(r => r.text());
-          const d = parseInfo(txt);
-          const imgs = d.images.map((img, i) => `<img src="assets/images/sets/${set}/${img}" class="${i===0?'active':''}">`).join('');
-          gallery.innerHTML += `<div class="set-card"><div class="mini-slider">${imgs}</div><div class="set-info"><strong>${d.name}</strong><br>${d.price}</div></div>`;
-        }
-        
-        // Internal Gallery Fading
+      if (data.images.length > 1) {
+        let current = 0;
+        const track = wrapper.querySelector('.slideshow-track');
         setInterval(() => {
-          document.querySelectorAll('.mini-slider').forEach(ms => {
-            const imgs = ms.querySelectorAll('img'); if(imgs.length < 2) return;
-            let active = ms.querySelector('img.active');
-            let next = active.nextElementSibling || imgs[0];
-            active.classList.remove('active'); next.classList.add('active');
-          });
-        }, 3000);
-
-      } catch (err) { console.warn("Load error:", err); }
+          current = (current + 1) % data.images.length;
+          track.style.transform = `translateX(-${current * 100}%)`;
+        }, 4000 + (Math.random() * 1000));
+      }
     }
-    init();
+
+    // Load Specific Categories
+    async function loadCategory(folderName, targetId, catLabel) {
+      try {
+        const list = await fetch(`assets/images/${folderName}/${folderName}.json`).then(r => r.json());
+        const target = document.getElementById(targetId);
+        for (const setFolder of list) {
+          const txt = await fetch(`assets/images/${folderName}/${setFolder}/info.txt`).then(r => r.text());
+          const data = parseInfo(txt);
+          buildSlideshow(folderName, setFolder, data, target, `${folderName}.html`, catLabel);
+        }
+      } catch (e) { console.warn("Error loading " + folderName, e); }
+    }
+
+    // Combined Gallery Logic
+    async function loadCombinedGallery() {
+      try {
+        const list = await fetch(`assets/images/sets/sets.json`).then(r => r.json());
+        const target = document.getElementById('gallery-container');
+        let combinedData = { name: "Featured Collection", desc: "A selection from our master archive.", others: ["Custom Handcrafted"], price: "Priced per Design", images: [] };
+        
+        for (const folder of list) {
+          const txt = await fetch(`assets/images/sets/${folder}/info.txt`).then(r => r.text());
+          const data = parseInfo(txt);
+          if (data.images.length > 0) {
+            // Push first image relative to sets/
+            combinedData.images.push(`${folder}/${data.images[0]}`);
+          }
+        }
+        buildSlideshow('sets', '', combinedData, target, 'grillz-gallery.html', 'Gallery');
+      } catch (e) { console.warn("Error loading gallery", e); }
+    }
+
+    // Initialize All
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCategory('latest-designs', 'latest-container', 'Latest');
+      loadCategory('golds', 'golds-container', 'Golds');
+      loadCategory('diamonds', 'diamonds-container', 'Diamonds');
+      loadCategory('silvers', 'silvers-container', 'Silvers');
+      loadCombinedGallery();
+    });
   </script>
 </body>
 </html>
-
