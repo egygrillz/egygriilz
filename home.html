@@ -35,56 +35,51 @@
 
     /* ========================================================================== HERO ========================================================================== */
     .hero { 
-      position: relative; 
-      width: 100%; 
-      height: 80vh; 
-      overflow: hidden; 
-      background: #000; 
-      display: flex; 
-      align-items: flex-end; 
-      justify-content: center; 
+      position: relative; width: 100%; height: 80vh; overflow: hidden; background: #000; 
+      display: flex; align-items: flex-end; justify-content: center; 
     }
-    .hero img { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.8; pointer-events: none; -webkit-user-drag: none; }
+    .hero img { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
     .hero-content { position: relative; text-align: center; color: #fff; z-index: 2; padding-bottom: 50px; }
     .hero-content h1 { font-family: 'Playfair Display', serif; font-size: clamp(22px, 5vw, 36px); text-transform: uppercase; letter-spacing: 6px; margin-bottom: 15px; font-weight: 400; }
+    .hero-schedule-btn { display: inline-block; color: #fff; text-decoration: underline; text-underline-offset: 6px; text-transform: uppercase; font-weight: 700; font-size: 10px; letter-spacing: 2px; }
+
+    /* ========================================================================== LATEST DESIGNS REDESIGN ========================================================================== */
+    #latest-designs-sec { padding: 60px 5%; background: #fff; }
+    .set-container { margin-bottom: 80px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .set-header h3 { font-family: 'Playfair Display', serif; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+    .set-header .desc { font-size: 14px; color: #444; max-width: 600px; margin: 0 auto 25px; }
     
-    .hero-schedule-btn { 
-      display: inline-block; 
-      color: #fff; 
-      text-decoration: underline; 
-      text-underline-offset: 6px;
-      text-transform: uppercase; 
-      font-weight: 700; 
-      font-size: 10px; 
-      letter-spacing: 2px; 
+    .set-images-row { display: flex; justify-content: center; gap: 15px; width: 100%; margin-bottom: 20px; }
+    .set-images-row img { 
+      width: 100%; max-width: 300px; height: auto; object-fit: contain; 
+      background: #fafafa; border: 1px solid #f0f0f0; 
     }
+    
+    .set-price { font-weight: 700; font-size: 16px; margin-bottom: 20px; }
+    .view-set-btn { 
+      display: inline-block; padding: 12px 35px; border: 1px solid #000; 
+      color: #000; text-decoration: none; text-transform: uppercase; 
+      font-size: 10px; font-weight: 700; letter-spacing: 2px; transition: 0.3s;
+    }
+    .view-set-btn:hover { background: #000; color: #fff; }
 
-    /* ========================================================================== REVEAL ANIMATION ========================================================================== */
-    .reveal { opacity: 0; transform: translateY(20px); transition: all 1s ease-out; }
-    .reveal.active { opacity: 1; transform: translateY(0); }
-
-    section { padding: 40px 0; text-align: center; }
+    /* ========================================================================== SLIDESHOW SECTIONS (OTHER) ========================================================================== */
+    .full-width-section { width: 100%; position: relative; padding: 40px 0; text-align: center; }
     h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 4px; }
-
-    /* ========================================================================== NEW REDESIGNED SECTIONS ========================================================================== */
-    .full-width-section { width: 100%; position: relative; }
     .slideshow-container { position: relative; width: 100%; height: 80vh; overflow: hidden; background: #000; }
     .slideshow-container img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s ease-in-out; }
     .slideshow-container img.active { opacity: 1; }
-    
     .view-cat-btn { 
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
       z-index: 10; padding: 12px 30px; border: 1px solid #fff; color: #fff; 
       text-decoration: none; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 2px; background: rgba(0,0,0,0.2);
     }
-
     .info-display { padding: 40px 5% 60px; max-width: 800px; margin: 0 auto; }
     .info-display h3 { font-family: 'Playfair Display', serif; font-size: 20px; text-transform: uppercase; margin-bottom: 15px; }
     .info-display .desc { font-size: 14px; margin-bottom: 10px; color: #333; }
-    .info-display .other-info { font-size: 12px; margin-bottom: 10px; color: #666; }
     .info-display .price { font-weight: 700; font-size: 16px; margin-top: 15px; }
 
-    /* ========================================================================== ULTRA-THIN FOOTER ========================================================================== */
+    /* ========================================================================== FOOTER ========================================================================== */
     footer { background: #000; color: #fff; padding: 15px 5%; }
     .footer-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; }
     .footer-icons { display: flex; gap: 15px; font-size: 14px; flex: 1; }
@@ -95,9 +90,15 @@
     .ceo-label { font-size: 7px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
     .ceo-name { font-family: 'Alex Brush'; font-size: 9px; color: #666; display: block; }
 
+    /* ========================================================================== REVEAL ========================================================================== */
+    .reveal { opacity: 0; transform: translateY(20px); transition: all 1s ease-out; }
+    .reveal.active { opacity: 1; transform: translateY(0); }
+
     @media (max-width: 600px) {
       .footer-content { flex-direction: row; font-size: 10px; }
       .slideshow-container { height: 60vh; }
+      .set-images-row { flex-direction: column; align-items: center; }
+      .set-images-row img { max-width: 90%; }
     }
   </style>
 </head>
@@ -128,38 +129,40 @@
   </div>
 
   <div id="dynamic-sections">
-    <section class="full-width-section reveal" id="latest-designs-sec">
+    <section class="reveal" id="latest-designs-sec">
         <h2>Latest Designs</h2>
-        <div class="slideshow-container" id="latest-slideshow"></div>
-        <a href="latest-designs.html" class="view-cat-btn">View Latest</a>
-        <div class="info-display" id="latest-info"></div>
+        <div id="latest-sets-container"></div>
     </section>
 
     <section class="full-width-section reveal" id="grillz-gallery-sec">
         <h2>Grillz Gallery</h2>
-        <div class="slideshow-container" id="gallery-slideshow"></div>
-        <a href="grillz-gallery.html" class="view-cat-btn">View Gallery</a>
+        <div class="slideshow-container" id="gallery-slideshow">
+            <a href="grillz-gallery.html" class="view-cat-btn">View Gallery</a>
+        </div>
         <div class="info-display" id="gallery-info"></div>
     </section>
 
     <section class="full-width-section reveal" id="golds-sec">
         <h2>Golds</h2>
-        <div class="slideshow-container" id="golds-slideshow"></div>
-        <a href="golds.html" class="view-cat-btn">View Golds</a>
+        <div class="slideshow-container" id="golds-slideshow">
+            <a href="golds.html" class="view-cat-btn">View Golds</a>
+        </div>
         <div class="info-display" id="golds-info"></div>
     </section>
 
     <section class="full-width-section reveal" id="diamonds-sec">
         <h2>Diamonds</h2>
-        <div class="slideshow-container" id="diamonds-slideshow"></div>
-        <a href="diamonds.html" class="view-cat-btn">View Diamonds</a>
+        <div class="slideshow-container" id="diamonds-slideshow">
+            <a href="diamonds.html" class="view-cat-btn">View Diamonds</a>
+        </div>
         <div class="info-display" id="diamonds-info"></div>
     </section>
 
     <section class="full-width-section reveal" id="silvers-sec">
         <h2>Silvers</h2>
-        <div class="slideshow-container" id="silvers-slideshow"></div>
-        <a href="silvers.html" class="view-cat-btn">View Silvers</a>
+        <div class="slideshow-container" id="silvers-slideshow">
+            <a href="silvers.html" class="view-cat-btn">View Silvers</a>
+        </div>
         <div class="info-display" id="silvers-info"></div>
     </section>
   </div>
@@ -199,24 +202,53 @@
       const lines = text.split('\n').map(l => l.trim()).filter(l => l);
       const info = { name: '', price: '', desc: '', others: [], images: [] };
       lines.forEach(line => {
-        const [key, ...val] = line.split(':');
-        const value = val.join(':').trim();
-        const k = key.toLowerCase();
-        if (k === 'name') info.name = value;
-        else if (k === 'price') info.price = value;
-        else if (k === 'description' || k === 'desc') info.desc = value;
-        else if (k === 'images') info.images = value.split(',').map(i => i.trim());
-        else info.others.push(`${key}: ${value}`);
+        const parts = line.split(':');
+        const key = parts[0].toLowerCase().trim();
+        const value = parts.slice(1).join(':').trim();
+        if (key === 'name') info.name = value;
+        else if (key === 'price') info.price = value;
+        else if (key === 'description' || key === 'desc') info.desc = value;
+        else if (key === 'images') info.images = value.split(',').map(i => i.trim());
+        else info.others.push(`${parts[0]}: ${value}`);
       });
       return info;
     }
 
+    // NEW LATEST DESIGNS LOGIC
+    async function loadLatestDesigns() {
+        const folder = 'latest-designs';
+        const container = document.getElementById('latest-sets-container');
+        try {
+            const list = await fetch(`assets/images/${folder}/${folder}.json`).then(r => r.json());
+            for (const setFolder of list) {
+                const txt = await fetch(`assets/images/${folder}/${setFolder}/info.txt`).then(r => r.text());
+                const data = parseInfo(txt);
+                const displayImages = data.images.slice(0, 3);
+
+                const setHtml = `
+                    <div class="set-container">
+                        <div class="set-header">
+                            <h3>${data.name}</h3>
+                            <p class="desc">${data.desc}</p>
+                        </div>
+                        <div class="set-images-row">
+                            ${displayImages.map(img => `<img src="assets/images/${folder}/${setFolder}/${img}" alt="${data.name}">`).join('')}
+                        </div>
+                        <p class="set-price">${data.price}</p>
+                        <a href="latest-designs.html" class="view-set-btn">View Set</a>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', setHtml);
+            }
+        } catch (e) { console.error("Error loading latest", e); }
+    }
+
+    // ORIGINAL SLIDESHOW LOGIC (For other sections)
     async function loadSection(category, folderName, containerId, infoId) {
       try {
         const list = await fetch(`assets/images/${folderName}/${folderName}.json`).then(r => r.json());
         const slideshow = document.getElementById(containerId);
         const infoDiv = document.getElementById(infoId);
-        
         let allSetsData = [];
 
         for (const item of list) {
@@ -231,13 +263,17 @@
 
         function updateDisplay() {
           const set = allSetsData[currentSetIdx];
+          const btn = slideshow.querySelector('.view-cat-btn');
           
-          // Update Images
-          slideshow.innerHTML = set.images.map((img, i) => 
-            `<img src="assets/images/${folderName}/${set.folder}/${img}" class="${i === currentImgIdx ? 'active' : ''}">`
-          ).join('') + slideshow.querySelector('.view-cat-btn')?.outerHTML || '';
+          slideshow.querySelectorAll('img').forEach(img => img.remove());
+          set.images.forEach((img, i) => {
+            const imgEl = document.createElement('img');
+            imgEl.src = `assets/images/${folderName}/${set.folder}/${img}`;
+            if (i === currentImgIdx) imgEl.classList.add('active');
+            slideshow.appendChild(imgEl);
+          });
+          if(btn) slideshow.appendChild(btn);
 
-          // Update Text
           infoDiv.innerHTML = `
             <h3>${set.name}</h3>
             <p class="desc">${set.desc}</p>
@@ -245,23 +281,19 @@
             <p class="price">${set.price}</p>
           `;
 
-          // Logic to cycle images then sets
           currentImgIdx++;
           if (currentImgIdx >= set.images.length) {
             currentImgIdx = 0;
             currentSetIdx = (currentSetIdx + 1) % allSetsData.length;
           }
         }
-
         updateDisplay();
         setInterval(updateDisplay, 4000);
-
       } catch (e) { console.error("Error loading " + folderName, e); }
     }
 
-    // Initialize all sections
-    // Note: 'sets' is the folder for Grillz Gallery as per your original code
-    loadSection('Latest', 'latest-designs', 'latest-slideshow', 'latest-info');
+    // Initialize
+    loadLatestDesigns();
     loadSection('Gallery', 'sets', 'gallery-slideshow', 'gallery-info');
     loadSection('Golds', 'golds', 'golds-slideshow', 'golds-info');
     loadSection('Diamonds', 'diamonds', 'diamonds-slideshow', 'diamonds-info');
