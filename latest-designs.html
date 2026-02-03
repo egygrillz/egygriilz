@@ -3,98 +3,203 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Latest Designs – EGYGRILLZ</title>
+  <title>Latest Designs – EGYGRILLZ | Premium Custom Grillz</title>
+  <meta name="description" content="Discover the latest custom grillz designs from EGYGRILLZ Egypt – handcrafted luxury dental jewelry in gold, diamonds, and unique styles.">
+  
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:title" content="Latest Designs – EGYGRILLZ">
+  <meta property="og:description" content="Explore our newest exclusive grillz creations. Handcrafted in Egypt with premium materials.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://egygrillz.com/latest-designs.html">
+  <!-- You can add og:image later when you have a good preview image -->
+
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
   <style>
-    /* ==========================================================================
-       RESET & BASE
-       ========================================================================== */
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
+    body { 
+      font-family: 'Arimo', sans-serif; 
+      background:#fff; 
+      color:#000; 
+      line-height:1.6; 
+      -webkit-font-smoothing: antialiased; 
+    }
     body.menu-open { overflow: hidden; }
 
-    /* ==========================================================================
-       HEADER & NAV
-       ========================================================================== */
     header {
-      position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
-      display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
+      position: sticky; top: 0; height: 60px; 
+      background: #fff; border-bottom: 1px solid #eee; 
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between; 
+      padding: 0 5%;
     }
-    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
+    .logo-text { 
+      font-family: 'Playfair Display', serif; 
+      font-size: 22px; font-weight: 700; 
+      letter-spacing: 2px; text-decoration: none; color: #000; 
+    }
     
     .main-nav { display: flex; gap: 20px; }
-    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
+    .main-nav a { 
+      text-decoration: none; color: #000; 
+      font-size: 11px; text-transform: uppercase; 
+      letter-spacing: 1px; transition: color 0.3s; 
+    }
     .main-nav a:hover { color: #666; }
     .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
-
-    .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
-    .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
     
+    .menu-toggle { 
+      display: none; flex-direction: column; gap: 6px; 
+      background: none; border: none; cursor: pointer; 
+    }
+    .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
+
+    .container { max-width:1400px; margin: 0 auto; padding: 40px 5% 100px; }
+    h1 { 
+      font-family:'Playfair Display',serif; 
+      font-size: clamp(32px, 8vw, 56px); 
+      font-weight:400; letter-spacing:3px; 
+      margin-bottom:50px; text-align:center; 
+      text-transform: uppercase; 
+    }
+
+    .loading-state, .error-state {
+      text-align: center;
+      padding: 80px 20px;
+      font-size: 1.1rem;
+      color: #555;
+    }
+    .error-state { color: #c0392b; }
+
+    .design-block { 
+      margin-bottom: 90px; 
+      border-bottom: 1px solid #eee; 
+      padding-bottom: 70px; 
+      opacity: 0; 
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .design-block.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .design-header { margin-bottom: 28px; }
+    .design-title { 
+      font-family: 'Playfair Display', serif; 
+      font-size: clamp(22px, 5vw, 34px); 
+      font-weight: 600; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+    }
+    .design-price { 
+      font-size: 19px; font-weight: 700; 
+      color: #000; margin-top: 8px; display: block; 
+    }
+
+    .design-images { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 12px; 
+      margin: 28px 0 40px; 
+    }
+    .video-wrapper, .design-images img { 
+      width: 100%; 
+      aspect-ratio: 4 / 5; 
+      background: #f8f8f8; 
+      border-radius: 4px; 
+      overflow: hidden; 
+      transition: transform 0.25s ease;
+    }
+    .video-wrapper:hover, .design-images img:hover {
+      transform: scale(1.015);
+    }
+
+    .video-wrapper video, .design-images img { 
+      width: 100%; height: 100%; 
+      object-fit: cover; display: block; 
+    }
+
+    .mute-overlay {
+      position: absolute; bottom: 14px; right: 14px;
+      background: rgba(0,0,0,0.55);
+      color: white; width: 38px; height: 38px;
+      border-radius: 50%; display: flex; 
+      align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; 
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .mute-overlay:hover { background: rgba(0,0,0,0.85); transform: scale(1.1); }
+
+    .design-desc { 
+      font-size: 15.5px; color: #444; 
+      line-height: 1.65; max-width: 860px; 
+      text-align: left; 
+    }
+
     @media (max-width: 980px) {
       .menu-toggle { display: flex; }
       .main-nav {
-        position: fixed; top: 60px; right: -100%; width: 100%; height: auto; background: #fff;
-        flex-direction: column; padding: 10px 5%; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-        box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
+        position: fixed; top: 60px; right: -100%;
+        width: 100%; height: auto; background: #fff;
+        flex-direction: column; padding: 20px 5%;
+        transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
       }
       .main-nav.active { right: 0; }
-      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
+      .main-nav a { font-size: 13px; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
     }
 
-    /* ==========================================================================
-       CONTENT LAYOUT
-       ========================================================================== */
-    .container { max-width:1400px; margin: 0 auto; padding: 40px 5% 80px; }
-    h1 { font-family:'Playfair Display',serif; font-size: clamp(32px, 8vw, 56px); font-weight:400; letter-spacing:3px; margin-bottom:40px; text-align:center; text-transform: uppercase; }
-
-    .design-block { margin-bottom: 80px; border-bottom: 1px solid #eee; padding-bottom: 60px; }
-    .design-header { margin-bottom: 25px; text-align: left; }
-    .design-title { font-family: 'Playfair Display', serif; font-size: clamp(22px, 5vw, 32px); font-weight: 600; text-transform: uppercase; letter-spacing: 2px; }
-    .design-price { font-size: 18px; font-weight: 700; color: #000; margin-top: 5px; display: block; }
-
-    .design-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; margin-bottom: 30px; }
-    
-    /* Video Wrapper for Sound Controls */
-    .video-wrapper { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #f2f2f2; cursor: pointer; overflow: hidden; }
-    .video-wrapper video, .design-images img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 2px; }
-
-    /* Mute/Unmute Overlay */
-    .mute-overlay {
-      position: absolute; bottom: 12px; right: 12px; background: rgba(0, 0, 0, 0.5);
-      color: #fff; width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; font-size: 14px;
-      pointer-events: none; transition: background 0.3s;
+    @media (max-width: 768px) { 
+      .design-images { grid-template-columns: repeat(2, 1fr); gap: 10px; } 
     }
-    .video-wrapper:hover .mute-overlay { background: rgba(0, 0, 0, 0.8); }
+    @media (max-width: 480px) { 
+      .design-images { grid-template-columns: 1fr; } 
+    }
 
-    .design-desc { font-size: 15px; color: #444; line-height: 1.6; max-width: 850px; text-align: left; }
+    footer { 
+      background: #000; color: #fff; 
+      padding: 60px 5% 30px; margin-top: 60px; 
+    }
+    .footer-main { 
+      display: grid; grid-template-columns: 1.5fr 1fr 1fr; 
+      gap: 50px; padding-bottom: 50px; 
+      border-bottom: 1px solid #222; 
+    }
+    .footer-col h4 { 
+      font-size: 11px; text-transform: uppercase; 
+      letter-spacing: 2px; margin-bottom: 24px; 
+      color: #aaa; 
+    }
+    .footer-col a { 
+      display: block; color: #fff; 
+      text-decoration: none; font-size: 13px; 
+      margin-bottom: 10px; transition: 0.25s; 
+    }
+    .footer-col a:hover { color: #bbb; }
 
-    @media (max-width: 768px) { .design-images { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px) { .design-images { grid-template-columns: 1fr; } }
-
-    /* ==========================================================================
-       FOOTER
-       ========================================================================== */
-    footer { background: #000; color: #fff; padding: 50px 5% 20px; margin-top: 50px; }
-    .footer-main { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid #222; }
-    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
-    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
-    .footer-col a:hover { color: #888; }
-    .footer-bottom { padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
-    .footer-logo-img { height: 10px; filter: brightness(0) invert(1); }
-    .ceo-wrap { display: flex; align-items: center; gap: 8px; }
-    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .ceo-name { font-family: 'Alex Brush'; font-size: 12px; color: #888; }
-    .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
+    .footer-bottom { 
+      padding-top: 30px; 
+      display: flex; justify-content: space-between; 
+      align-items: center; flex-wrap: wrap; gap: 25px; 
+      font-size: 13px; 
+    }
+    .footer-logo-img { height: 12px; filter: brightness(0) invert(1); }
+    .ceo-wrap { display: flex; align-items: center; gap: 10px; }
+    .ceo-label { font-size: 8px; color: #777; text-transform: uppercase; letter-spacing: 1.2px; }
+    .ceo-name { font-family: 'Alex Brush'; font-size: 15px; color: #aaa; }
   </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
   <header>
     <a href="home.html" class="logo-text">EGYGRILLZ</a>
-    <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
-    <nav class="main-nav">
+    <button class="menu-toggle" aria-label="Toggle navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="main-nav" aria-label="Main navigation">
       <a href="home.html">Home</a>
       <a href="latest-designs.html" class="nav-active">Latest</a>
       <a href="booking.html">Schedule</a>
@@ -109,49 +214,76 @@
 
   <div class="container">
     <h1>Latest Designs</h1>
-    <div id="designs-container"></div>
+    
+    <div id="loading-state" class="loading-state">
+      <i class="fas fa-circle-notch fa-spin" style="font-size:2rem; margin-bottom:16px; color:#888;"></i><br>
+      Loading latest creations...
+    </div>
+    
+    <div id="designs-container" style="display:none;"></div>
+    
+    <div id="error-state" class="error-state" style="display:none;">
+      Sorry, we couldn't load the latest designs right now.<br>
+      Please try again later or contact us directly.
+    </div>
   </div>
 
   <footer>
     <div class="footer-main">
-        <div class="footer-col">
-            <h4>EGYGRILLZ Egypt</h4>
-            <p style="font-size: 13px; color: #888; max-width: 300px;">Handcrafting Egypt's most exclusive dental jewelry.</p>
-        </div>
-        <div class="footer-col">
-            <h4>Information</h4>
-            <a href="about.html">About Us</a>
-            <a href="contact.html">Contact</a>
-        </div>
-        <div class="footer-col">
-            <h4>Legal</h4>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms</a>
-        </div>
-    </div>
-    <div class="footer-bottom">
-      <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff;"><i class="fab fa-instagram"></i></a>
+      <div class="footer-col">
+        <h4>EGYGRILLZ Egypt</h4>
+        <p style="font-size: 14px; color: #aaa; max-width: 320px; line-height:1.5;">
+          Handcrafting Egypt's most exclusive dental jewelry.
+        </p>
       </div>
-      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
-      <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
-      <div class="legal-text">© 2026 EGYGRILLZ</div>
+      <div class="footer-col">
+        <h4>Information</h4>
+        <a href="about.html">About Us</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>
+        <a href="https://instagram.com/egygrillz" target="_blank" aria-label="Instagram" style="color:#fff; font-size:1.6rem;">
+          <i class="fab fa-instagram"></i>
+        </a>
+      </div>
+      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ logo">
+      <div class="ceo-wrap">
+        <span class="ceo-label">Founder</span>
+        <span class="ceo-name">DR Mohamed Mahdy</span>
+      </div>
+      <div>© 2026 EGYGRILLZ</div>
     </div>
   </footer>
 
   <script>
-    // MOBILE MENU
+    // Mobile menu toggle
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
 
-    // PERFORMANCE: Intersection Observer for Lazy Loading Videos
+    // Format price with thousand separator
+    function formatPrice(priceStr) {
+      if (!priceStr) return '';
+      const num = priceStr.replace(/[^0-9]/g, '');
+      if (!num) return priceStr;
+      return num.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' EGP';
+    }
+
+    // Lazy load observer for videos
     const mediaObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         const video = entry.target;
         if (entry.isIntersecting) {
-          if (!video.src && video.dataset.src) {
+          if (video.dataset.src && !video.src) {
             video.src = video.dataset.src;
             video.load();
           }
@@ -160,40 +292,61 @@
           video.pause();
         }
       });
-    }, { threshold: 0.1, rootMargin: "200px" });
+    }, { threshold: 0.15, rootMargin: "250px" });
 
-    // FUNCTION: Toggle Mute/Unmute
     function toggleMute(wrapper) {
       const video = wrapper.querySelector('video');
       const icon = wrapper.querySelector('.mute-overlay i');
-      if (video.muted) {
-        video.muted = false;
-        icon.className = 'fas fa-volume-up';
-      } else {
-        video.muted = true;
-        icon.className = 'fas fa-volume-mute';
-      }
+      if (!video || !icon) return;
+      
+      video.muted = !video.muted;
+      icon.className = video.muted 
+        ? 'fas fa-volume-mute' 
+        : 'fas fa-volume-up';
     }
 
-    // MAIN DATA LOAD
+    // Main content loading
+    const container = document.getElementById('designs-container');
+    const loadingState = document.getElementById('loading-state');
+    const errorState = document.getElementById('error-state');
+
     fetch('assets/images/latest-designs/designs.json')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('designs.json not found');
+        return res.json();
+      })
       .then(designNames => {
-        const container = document.getElementById('designs-container');
-        designNames.forEach(designName => {
+        if (!Array.isArray(designNames) || designNames.length === 0) {
+          throw new Error('No designs found');
+        }
+
+        loadingState.style.display = 'none';
+        container.style.display = 'block';
+
+        const promises = designNames.map(designName => 
           fetch(`assets/images/latest-designs/${designName}/info.txt`)
-            .then(res => res.text())
+            .then(res => {
+              if (!res.ok) throw new Error(`Missing info.txt for ${designName}`);
+              return res.text();
+            })
             .then(text => {
-              const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-              let title = designName, price = '', desc = '';
+              const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+              let title = designName;
+              let price = '';
+              let desc = '';
+              let imagesLine = '';
+
               lines.forEach(line => {
-                if (line.toLowerCase().startsWith('name:')) title = line.replace(/name:/i, '').trim();
-                if (line.toLowerCase().startsWith('price:')) price = line.replace(/price:/i, '').trim();
-                if (line.toLowerCase().startsWith('description:')) desc = line.replace(/description:/i, '').trim();
+                const lower = line.toLowerCase();
+                if (lower.startsWith('name:')) title = line.replace(/name:/i, '').trim();
+                if (lower.startsWith('price:')) price = line.replace(/price:/i, '').trim();
+                if (lower.startsWith('description:')) desc = line.replace(/description:/i, '').trim();
+                if (lower.startsWith('images:')) imagesLine = line.replace(/images:/i, '').trim();
               });
 
-              let imagesLine = lines.find(l => l.toLowerCase().startsWith('images:'));
-              let mediaList = imagesLine ? imagesLine.replace(/images:/i, '').trim().split(',').map(f => f.trim()) : [];
+              const mediaList = imagesLine 
+                ? imagesLine.split(',').map(f => f.trim()).filter(Boolean) 
+                : [];
 
               const designBlock = document.createElement('div');
               designBlock.className = 'design-block';
@@ -201,29 +354,54 @@
               let mediaHtml = '';
               mediaList.forEach(file => {
                 const filePath = `assets/images/latest-designs/${designName}/${file}`;
+                const altText = `${title} - ${file.includes('.mp4') ? 'video' : 'photo'}`;
+
                 if (file.toLowerCase().endsWith('.mp4')) {
+                  // You can add poster="poster.jpg" if you create poster images
                   mediaHtml += `
-                    <div class="video-wrapper" onclick="toggleMute(this)">
-                      <video data-src="${filePath}" loop playsinline preload="none" muted></video>
-                      <div class="mute-overlay"><i class="fas fa-volume-mute"></i></div>
+                    <div class="video-wrapper" role="button" tabindex="0" 
+                         aria-label="Play ${title} video (click to toggle sound)"
+                         onclick="toggleMute(this)" onkeydown="if(event.key==='Enter'||event.key===' ')toggleMute(this)">
+                      <video data-src="${filePath}" loop playsinline preload="none" muted 
+                             aria-label="${title} showcase video"></video>
+                      <div class="mute-overlay" aria-hidden="true">
+                        <i class="fas fa-volume-mute"></i>
+                      </div>
                     </div>`;
                 } else {
-                  mediaHtml += `<img src="${filePath}" alt="${title}" loading="lazy">`;
+                  mediaHtml += `<img src="${filePath}" alt="${altText}" loading="lazy">`;
                 }
               });
 
               designBlock.innerHTML = `
                 <div class="design-header">
                   <h2 class="design-title">${title}</h2>
-                  <span class="design-price">${price}</span>
+                  ${price ? `<span class="design-price">${formatPrice(price)}</span>` : ''}
                 </div>
-                <div class="design-images">${mediaHtml}</div>
+                ${mediaHtml ? `<div class="design-images" role="region" aria-label="${title} media gallery">${mediaHtml}</div>` : ''}
                 ${desc ? `<div class="design-desc">${desc}</div>` : ''}
               `;
+
               container.appendChild(designBlock);
-              designBlock.querySelectorAll('video').forEach(video => mediaObserver.observe(video));
-            });
-        });
+
+              // Observe videos
+              designBlock.querySelectorAll('video').forEach(v => mediaObserver.observe(v));
+
+              // Fade in
+              setTimeout(() => designBlock.classList.add('visible'), 100);
+            })
+            .catch(err => {
+              console.warn(`Failed to load ${designName}:`, err);
+              // You can decide whether to skip or show placeholder
+            })
+        );
+
+        return Promise.all(promises);
+      })
+      .catch(err => {
+        console.error('Failed to load designs:', err);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'block';
       });
   </script>
 </body>
