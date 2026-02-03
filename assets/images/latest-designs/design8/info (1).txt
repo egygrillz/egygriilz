@@ -1,6 +1,0 @@
-name: Maged El Kedwany Signature Fronts
-price: Contact us for details
-description: Exclusive custom grillz featuring "Maged" across the 6 lower anterior teeth, masterfully crafted in premium white gold and set with premium VVS diamonds for ultimate shine. Handcrafted in Cairo. This iconic design was showcased in the Madinet Masr Ramadan 2024 TV advertisement — a bold, personalized tribute to the legendary Egyptian actor, perfect for fans and statement makers.
-
-images: 000000.jpg,003.mp4
-
