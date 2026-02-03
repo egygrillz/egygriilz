@@ -1,0 +1,4 @@
+name: LELLA FADA's Set
+price: Contact us for details
+description: This custom Silver grillz set, crafted exclusively for rapper Lella Fada , to complement her latest album MAGNUN.
+images: 000.jpeg,001.jpeg,002.jpeg
