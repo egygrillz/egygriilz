@@ -7,26 +7,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    /* ==========================================================================
-       RESET & BASE
-       ========================================================================== */
+    /* RESET & BASE */
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
-    body.menu-open { overflow: hidden; }
 
-    /* ==========================================================================
-       HEADER (RESPONSIVE)
-       ========================================================================== */
+    /* HEADER */
     header {
-      position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
+      position: sticky; top: 0; height: 70px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
       display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
     }
-    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; letter-spacing: 3px; text-decoration: none; color: #000; }
     
     .main-nav { display: flex; gap: 20px; }
-    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
-    .main-nav a:hover { color: #666; }
-    .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
+    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+    .nav-active { font-weight: 900; border-bottom: 1.5px solid #000; padding-bottom: 2px; }
 
     .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
     .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
@@ -34,76 +28,58 @@
     @media (max-width: 980px) {
       .menu-toggle { display: flex; }
       .main-nav {
-        position: fixed; top: 60px; right: -100%; width: 100%; height: auto; background: #fff;
-        flex-direction: column; padding: 10px 5%; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-        box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
+        position: fixed; top: 70px; right: -100%; width: 100%; height: auto; background: #fff;
+        flex-direction: column; padding: 20px 5%; transition: 0.4s; box-shadow: 0 10px 15px rgba(0,0,0,0.05);
       }
       .main-nav.active { right: 0; }
-      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
     }
 
-    /* ==========================================================================
-       PAGE HEADER
-       ========================================================================== */
-    .page-header { margin-top: 40px; text-align: center; padding: 0 5% 40px; }
+    /* GRID */
+    .container { max-width: 1600px; margin: 0 auto; padding: 40px 5% 100px; }
+    .page-header { text-align: center; margin-bottom: 60px; }
     .page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 8vw, 56px); text-transform: uppercase; letter-spacing: 4px; }
-    .page-header p { font-size: 16px; color: #666; font-style: italic; margin-top: 10px; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 40px; }
+    .set-card { border: 1px solid #eee; background: #fff; transition: 0.3s; border-radius: 4px; overflow: hidden; }
+    .set-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.06); }
 
-    /* ==========================================================================
-       GALLERY GRID
-       ========================================================================== */
-    .container { max-width: 1600px; margin: 0 auto; padding: 0 5% 100px; }
-    .grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
-      gap: 30px; 
-    }
-
-    .set-card { border: 1px solid #eee; background: #fdfdfd; transition: 0.3s; border-radius: 2px; overflow: hidden; }
-    .set-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-
-    .mini-slider { position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #f4f4f4; }
-    .mini-slider img { 
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-      object-fit: cover; opacity: 0; transition: opacity 0.8s ease-in-out; 
-      pointer-events: none; /* Privacy protection */
-    }
+    .mini-slider { position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #f8f8f8; }
+    .mini-slider img { position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.8s; pointer-events: none; }
     .mini-slider img.active { opacity: 1; }
 
-    .set-info { padding: 25px; text-align: left; }
-    .set-info .name { font-family: 'Playfair Display', serif; font-size: 24px; color: #000; margin-bottom: 8px; text-transform: uppercase; }
-    .set-info .desc { font-size: 14px; color: #555; margin-bottom: 15px; line-height: 1.5; }
-    .set-info .price { font-weight: 700; font-size: 18px; color: #000; border-top: 1px solid #eee; padding-top: 15px; }
+    .set-info { padding: 30px; }
+    .set-info .name { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 10px; }
+    .set-info .desc { font-size: 14px; color: #666; margin-bottom: 20px; }
+    .set-info .price { font-weight: 700; font-size: 18px; border-top: 1px solid #eee; padding-top: 20px; }
 
-    @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
-
-    /* ==========================================================================
-       FOOTER (MATCHING HOME)
-       ========================================================================== */
-    footer { background: #000; color: #fff; padding: 50px 5% 20px; margin-top: 50px; }
+    /* FOOTER - CENTERED STYLE */
+    footer { background: #000; color: #fff; padding: 80px 5% 40px; margin-top: 80px; }
     .footer-main {
         display: grid;
-        grid-template-columns: 1.5fr 1fr 1fr;
-        gap: 40px;
-        padding-bottom: 40px;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 60px;
+        padding-bottom: 60px;
         border-bottom: 1px solid #222;
+        text-align: center; /* This centers the titles and text */
     }
-    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
-    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
+    .footer-col { display: flex; flex-direction: column; align-items: center; } /* Centers content in column */
+    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; color: #999; }
+    .footer-col p { font-size: 14px; color: #888; line-height: 1.8; max-width: 320px; }
+    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 13px; margin-bottom: 12px; transition: 0.3s; }
     .footer-col a:hover { color: #888; }
     
     .footer-bottom {
-        padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+        padding-top: 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
     }
-    .footer-logo-img { height: 12px; filter: brightness(0) invert(1); }
-    .ceo-wrap { display: flex; align-items: center; gap: 8px; }
-    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .ceo-name { font-family: 'Alex Brush'; font-size: 14px; color: #888; }
-    .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
+    .footer-logo-img { height: 18px; filter: brightness(0) invert(1); }
+    .ceo-wrap { display: flex; align-items: center; gap: 10px; }
+    .ceo-label { font-size: 8px; color: #555; text-transform: uppercase; letter-spacing: 1.5px; }
+    .ceo-name { font-family: 'Alex Brush'; font-size: 20px; color: #aaa; }
+    .legal-text { font-size: 10px; color: #444; text-transform: uppercase; }
 
-    @media (max-width: 768px) {
-      .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; }
-      .footer-bottom { flex-direction: column; text-align: center; }
+    @media (max-width: 850px) {
+      .footer-main { grid-template-columns: 1fr; gap: 40px; }
+      .footer-bottom { flex-direction: column; }
     }
   </style>
 </head>
@@ -111,7 +87,7 @@
 
   <header>
     <a href="home.html" class="logo-text">EGYGRILLZ</a>
-    <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <button class="menu-toggle"><span></span><span></span><span></span></button>
     <nav class="main-nav">
       <a href="home.html">Home</a>
       <a href="latest-designs.html">Latest</a>
@@ -125,12 +101,11 @@
     </nav>
   </header>
 
-  <div class="page-header">
-    <h1>Gold Collection</h1>
-    <p>Premium 18K and 21K solid gold handcrafted to perfection.</p>
-  </div>
-
   <div class="container">
+    <div class="page-header">
+      <h1>Gold Collection</h1>
+      <p style="font-style: italic; color: #666;">Premium 18K and 21K solid gold handcrafted to perfection.</p>
+    </div>
     <div class="grid" id="golds-container"></div>
   </div>
 
@@ -138,26 +113,26 @@
     <div class="footer-main">
         <div class="footer-col">
             <h4>EGYGRILLZ Egypt</h4>
-            <p style="font-size: 13px; color: #888; max-width: 300px;">Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
+            <p>Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
         </div>
         <div class="footer-col">
             <h4>Information</h4>
             <a href="about.html">About Us</a>
-            <a href="booking.html">Schedule</a>
-            <a href="contact.html">Contact</a>
+            <a href="booking.html">Schedule Appointment</a>
+            <a href="contact.html">Contact Us</a>
         </div>
         <div class="footer-col">
-            <h4>Legal</h4>
+            <h4>Support</h4>
             <a href="privacy.html">Privacy Policy</a>
             <a href="terms.html">Terms of Service</a>
-            <a href="shipping.html">Care & Shipping</a>
+            <a href="shipping.html">Care & Maintenance</a>
         </div>
     </div>
     
     <div class="footer-bottom">
       <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff; margin-right: 15px;"><i class="fab fa-instagram"></i></a>
-        <a href="#" style="color:#fff;"><i class="fas fa-location-dot"></i></a>
+        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff; margin-right: 20px; font-size: 18px;"><i class="fab fa-instagram"></i></a>
+        <a href="#" style="color:#fff; font-size: 18px;"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
       <div class="ceo-wrap">
@@ -169,67 +144,55 @@
   </footer>
 
   <script>
-    // Mobile Menu Toggle
-    document.querySelector('.menu-toggle').addEventListener('click', () => {
-      document.querySelector('.main-nav').classList.toggle('active');
-      document.body.classList.toggle('menu-open');
-    });
+    // Menu
+    const toggle = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('.main-nav');
+    toggle.addEventListener('click', () => { nav.classList.toggle('active'); });
 
-    // Fetch and Build Grid
+    // Dynamic Loader
     fetch('assets/images/golds/golds.json')
       .then(res => res.json())
       .then(folders => {
         const container = document.getElementById('golds-container');
-        
         folders.forEach(folder => {
           fetch(`assets/images/golds/${folder}/info.txt`)
             .then(res => res.text())
             .then(text => {
               let title='', desc='', price='', images=[];
-              const lines = text.split('\n');
-              
-              lines.forEach(line => {
-                const lowerLine = line.toLowerCase().trim();
-                if(lowerLine.startsWith('title:')) title = line.split(':')[1].trim();
-                if(lowerLine.startsWith('description:')) desc = line.split(':')[1].trim();
-                if(lowerLine.startsWith('price:')) price = line.split(':')[1].trim();
-                if(lowerLine.startsWith('images:')) images = line.split(':')[1].trim().split(',').map(i => i.trim());
+              text.split('\n').forEach(line => {
+                const parts = line.split(':');
+                if(parts.length < 2) return;
+                const key = parts[0].trim().toLowerCase();
+                const val = parts.slice(1).join(':').trim();
+                if(key === 'title') title = val;
+                if(key === 'description') desc = val;
+                if(key === 'price') price = val;
+                if(key === 'images') images = val.split(',').map(i => i.trim());
               });
 
-              let sliderHtml = '<div class="mini-slider">';
-              images.forEach((imgName, index) => {
-                sliderHtml += `<img src="assets/images/golds/${folder}/${imgName}" class="${index === 0 ? 'active' : ''}" alt="${title}">`;
+              let slider = '<div class="mini-slider">';
+              images.forEach((img, idx) => {
+                slider += `<img src="assets/images/golds/${folder}/${img}" class="${idx === 0 ? 'active' : ''}">`;
               });
-              sliderHtml += '</div>';
+              slider += '</div>';
 
               const card = document.createElement('div');
               card.className = 'set-card';
-              card.innerHTML = `
-                ${sliderHtml}
-                <div class="set-info">
-                  <div class="name">${title || folder}</div>
-                  <div class="desc">${desc}</div>
-                  <div class="price">${price}</div>
-                </div>
-              `;
-
+              card.innerHTML = `${slider}<div class="set-info"><div class="name">${title || folder}</div><div class="desc">${desc}</div><div class="price">${price}</div></div>`;
               container.appendChild(card);
 
-              // Auto-sliding logic
-              let currentImg = 0;
-              const imgElements = card.querySelectorAll('.mini-slider img');
-              if(imgElements.length > 1) {
+              let current = 0;
+              const imgs = card.querySelectorAll('img');
+              if(imgs.length > 1) {
                 setInterval(() => {
-                  imgElements[currentImg].classList.remove('active');
-                  currentImg = (currentImg + 1) % imgElements.length;
-                  imgElements[currentImg].classList.add('active');
-                }, 4000);
+                  imgs[current].classList.remove('active');
+                  current = (current + 1) % imgs.length;
+                  imgs[current].classList.add('active');
+                }, 3500);
               }
-            })
-            .catch(err => console.error("Error loading info.txt for " + folder));
+            });
         });
-      })
-      .catch(err => console.error("Error loading golds.json"));
+      });
   </script>
 </body>
 </html>
