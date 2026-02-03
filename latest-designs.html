@@ -15,7 +15,7 @@
     body.menu-open { overflow: hidden; }
 
     /* ==========================================================================
-       HEADER & NAV (MATCHING GOLDS)
+       HEADER & NAV
        ========================================================================== */
     header {
       position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
@@ -54,7 +54,10 @@
     .design-price { font-size: 18px; font-weight: 700; color: #000; margin-top: 5px; display: block; }
 
     .design-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; margin-bottom: 30px; }
-    .design-images img, .design-images video { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #f9f9f9; border-radius: 2px; }
+    .design-images img, .design-images video { 
+      width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #f2f2f2; border-radius: 2px; 
+      display: block;
+    }
 
     .design-desc { font-size: 15px; color: #444; line-height: 1.6; max-width: 850px; text-align: left; }
 
@@ -62,7 +65,7 @@
     @media (max-width: 480px) { .design-images { grid-template-columns: 1fr; } }
 
     /* ==========================================================================
-       FOOTER (MATCHING GOLDS)
+       FOOTER
        ========================================================================== */
     footer { background: #000; color: #fff; padding: 50px 5% 20px; margin-top: 50px; }
     .footer-main {
@@ -156,16 +159,29 @@
       document.body.classList.toggle('menu-open');
     });
 
-    // INTERSECTION OBSERVER FOR VIDEOS
-    const videoObserver = new IntersectionObserver((entries) => {
+    // OPTIMIZED INTERSECTION OBSERVER
+    const mediaObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
+        const video = entry.target;
+
         if (entry.isIntersecting) {
-          entry.target.play().catch(err => {}); // Play when visible
+          // If the video hasn't loaded its source yet, load it now
+          if (!video.src && video.dataset.src) {
+            video.src = video.dataset.src;
+            video.load();
+          }
+          video.play().catch(err => {
+            // Silently fail if autoplay is blocked by browser
+          });
         } else {
-          entry.target.pause(); // Pause when off-screen
+          // Pause and reset slightly to save memory when off-screen
+          video.pause();
         }
       });
-    }, { threshold: 0.3 }); // Adjusts sensitivity (30% visibility)
+    }, { 
+      threshold: 0.1, // Trigger as soon as 10% is visible
+      rootMargin: "100px" // Start loading 100px before it even hits the viewport
+    });
 
     // LOAD DESIGNS SCRIPT
     fetch('assets/images/latest-designs/designs.json')
@@ -191,7 +207,6 @@
                 mediaList = imagesLine.replace(/images:/i, '').trim().split(',').map(f => f.trim());
               }
 
-              // Build the block as a DOM element to attach observer immediately
               const designBlock = document.createElement('div');
               designBlock.className = 'design-block';
 
@@ -199,7 +214,8 @@
               mediaList.forEach(file => {
                 const filePath = `assets/images/latest-designs/${designName}/${file}`;
                 if (file.toLowerCase().endsWith('.mp4')) {
-                  mediaHtml += `<video src="${filePath}" loop playsinline preload="metadata"></video>`;
+                  // Use data-src and preload="none" for extreme performance
+                  mediaHtml += `<video data-src="${filePath}" loop playsinline preload="none" muted></video>`;
                 } else {
                   mediaHtml += `<img src="${filePath}" alt="${title}" loading="lazy">`;
                 }
@@ -218,9 +234,9 @@
 
               container.appendChild(designBlock);
 
-              // Observe any videos within the newly added block
+              // Observe any videos in this block
               designBlock.querySelectorAll('video').forEach(video => {
-                videoObserver.observe(video);
+                mediaObserver.observe(video);
               });
             })
             .catch(err => console.error('Error loading design:', designName, err));
