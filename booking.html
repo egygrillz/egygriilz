@@ -15,7 +15,7 @@
     body.menu-open { overflow: hidden; }
 
     /* ==========================================================================
-       HEADER (SYNCED)
+       HEADER
        ========================================================================== */
     header {
       position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
@@ -31,7 +31,7 @@
     .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
 
     /* ==========================================================================
-       BOOKING CONTENT
+       CONTENT
        ========================================================================== */
     .container { max-width: 800px; margin: 0 auto; padding: 60px 5% 100px; text-align: center; }
     h1 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 8vw, 56px); font-weight: 400; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
@@ -39,6 +39,7 @@
 
     .section-label { display: block; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; color: #000; margin-top: 40px; }
     
+    /* Services Grid */
     .service-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 40px; }
     .service-option {
       border: 1px solid #eee; padding: 18px 25px; cursor: pointer; transition: 0.2s ease-in-out;
@@ -52,10 +53,10 @@
     .service-option.active { background: #000; color: #fff; border-color: #000; }
     .service-option.active .service-meta { color: #888; }
 
-    /* FORM UI */
+    /* Form UI */
     .booking-form { text-align: left; max-width: 600px; margin: 0 auto; }
     .form-group { margin-bottom: 30px; }
-    label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; color: #999; }
+    label.field-label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; color: #999; }
     
     input, textarea, select {
       width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid #eee; 
@@ -65,16 +66,23 @@
     input:focus, textarea:focus, select:focus { border-bottom-color: #000; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 
+    /* Terms Section */
+    .terms-container { margin: 35px 0; display: flex; align-items: flex-start; gap: 12px; }
+    .terms-text { color: #666; font-size: 11px; line-height: 1.5; cursor: pointer; }
+    .terms-text a { color: #000; text-decoration: underline; }
+    #termsBox { width: 18px; height: 18px; margin-top: 2px; accent-color: #000; cursor: pointer; }
+
     .submit-btn {
       width: 100%; padding: 22px; background: #000; color: #fff; border: none;
       font-family: inherit; text-transform: uppercase; letter-spacing: 3px;
-      font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 20px;
+      font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px;
+      opacity: 0.5; /* Disabled look initially */
     }
-    .submit-btn:hover { background: #222; letter-spacing: 4px; }
-    .submit-btn:disabled { background: #eee; color: #aaa; cursor: not-allowed; }
+    .submit-btn:hover:not(:disabled) { background: #222; letter-spacing: 4px; }
+    .submit-btn:disabled { cursor: not-allowed; }
 
     /* ==========================================================================
-       FOOTER (SYNCED)
+       FOOTER
        ========================================================================== */
     footer { background: #000; color: #fff; padding: 50px 5% 20px; margin-top: 80px; }
     .footer-main {
@@ -108,7 +116,6 @@
     @media (max-width: 600px) {
       .row { grid-template-columns: 1fr; gap: 0; }
       .footer-main { grid-template-columns: 1fr; text-align: center; }
-      .footer-col { align-items: center; }
       .footer-bottom { flex-direction: column; text-align: center; }
     }
   </style>
@@ -162,11 +169,11 @@
         <span class="section-label">2. Date & Time</span>
         <div class="row">
           <div class="form-group">
-            <label>Select Day</label>
+            <label class="field-label">Select Day</label>
             <input type="date" name="Date" id="datePicker" required>
           </div>
           <div class="form-group">
-            <label>Preferred Time</label>
+            <label class="field-label">Preferred Time</label>
             <select name="Time" required>
               <option value="" disabled selected>Select Time</option>
               <option value="04:00 PM">04:00 PM</option>
@@ -181,19 +188,26 @@
         </div>
 
         <span class="section-label">3. Personal Details</span>
-        <div class="form-group"><label>Full Name</label><input type="text" name="Name" placeholder="Enter name" required></div>
+        <div class="form-group"><label class="field-label">Full Name</label><input type="text" name="Name" placeholder="Enter name" required></div>
         <div class="row">
-          <div class="form-group"><label>Phone</label><input type="tel" name="Phone" placeholder="+20..." required></div>
-          <div class="form-group"><label>Email</label><input type="email" name="Email" placeholder="your@email.com" required></div>
+          <div class="form-group"><label class="field-label">Phone</label><input type="tel" name="Phone" placeholder="+20..." required></div>
+          <div class="form-group"><label class="field-label">Email</label><input type="email" name="Email" placeholder="your@email.com" required></div>
         </div>
 
         <div class="form-group">
-          <label>Additional Notes</label>
+          <label class="field-label">Additional Notes</label>
           <textarea name="Notes" rows="1" placeholder="Any special requests?"></textarea>
         </div>
 
+        <div class="terms-container">
+          <input type="checkbox" id="termsBox" required>
+          <label for="termsBox" class="terms-text">
+            I agree to the <a href="terms.html">Terms & Conditions</a>, including the studio policy regarding impressions and non-refundable deposits for custom work.
+          </label>
+        </div>
+
         <input type="hidden" name="_subject" value="New Appointment Request - EGYGRILLZ">
-        <button type="submit" class="submit-btn">Request Appointment</button>
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>Request Appointment</button>
       </form>
     </div>
   </div>
@@ -233,7 +247,7 @@
   </footer>
 
   <script>
-    // Menu Logic
+    // Header Menu Toggle
     const toggle = document.querySelector('.menu-toggle');
     const nav = document.querySelector('.main-nav');
     toggle.addEventListener('click', () => { 
@@ -241,7 +255,7 @@
       document.body.classList.toggle('menu-open');
     });
 
-    // Service Selection
+    // Service Selection Logic
     let selectedServices = [];
     function toggleService(element, val) {
       if (selectedServices.includes(val)) {
@@ -254,7 +268,7 @@
       document.getElementById('serviceInput').value = selectedServices.join(', ');
     }
 
-    // Date Logic
+    // Friday Blocker
     const datePicker = document.getElementById('datePicker');
     datePicker.addEventListener('input', function(e){
       var day = new Date(this.value).getUTCDay();
@@ -264,32 +278,48 @@
       }
     });
 
-    // AJAX Form Submission
+    // Terms & Conditions Logic
+    const termsBox = document.getElementById('termsBox');
+    const submitBtn = document.getElementById('submitBtn');
+
+    termsBox.addEventListener('change', function() {
+      submitBtn.disabled = !this.checked;
+      submitBtn.style.opacity = this.checked ? "1" : "0.5";
+    });
+
+    // AJAX Submission Logic
     const form = document.getElementById("appForm");
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
-      if(selectedServices.length === 0) { alert('Please select a service.'); return; }
+      
+      if(selectedServices.length === 0) {
+        alert('Please select at least one service.');
+        return;
+      }
 
-      const submitBtn = document.querySelector('.submit-btn');
       submitBtn.innerText = "SENDING...";
       submitBtn.disabled = true;
 
-      const response = await fetch(form.action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { 'Accept': 'application/json' }
-      });
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'Accept': 'application/json' }
+        });
 
-      if (response.ok) {
-        form.innerHTML = `
-          <div style="text-align:center; padding: 40px 0;">
-            <h2 style="font-family:'Playfair Display'; font-size: 28px; text-transform:uppercase;">Request Received</h2>
-            <p style="font-size:12px; color:#888; margin-top:15px; text-transform:uppercase; letter-spacing:1px;">
-              Thank you for choosing EGYGRILLZ. <br> We will contact you shortly to confirm.
-            </p>
-          </div>`;
-      } else {
-        alert("Error sending request. Please try again.");
+        if (response.ok) {
+          form.innerHTML = `
+            <div style="text-align:center; padding: 40px 0;">
+              <h2 style="font-family:'Playfair Display'; font-size: 28px; text-transform:uppercase;">Request Received</h2>
+              <p style="font-size:12px; color:#888; margin-top:15px; text-transform:uppercase; letter-spacing:1px;">
+                Thank you for choosing EGYGRILLZ. <br> We will contact you shortly to confirm your booking.
+              </p>
+            </div>`;
+        } else {
+          throw new Error();
+        }
+      } catch (error) {
+        alert("Oops! There was a problem. Please check your connection and try again.");
         submitBtn.innerText = "REQUEST APPOINTMENT";
         submitBtn.disabled = false;
       }
