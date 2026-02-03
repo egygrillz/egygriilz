@@ -1,4 +1,5 @@
 name: FARES SOKAR's Set
-price: 7200 EGP
+price: Contact us for details
 description: This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name "للا" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.
+
 images: 000002.jpg
