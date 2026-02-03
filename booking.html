@@ -12,18 +12,23 @@
        ========================================================================== */
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
-    
+    body.menu-open { overflow: hidden; }
+
     /* ==========================================================================
-       HEADER
+       HEADER (RESTORED PREVIOUS VERSION)
        ========================================================================== */
     header {
       position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
       display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
     }
     .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
+    
     .main-nav { display: flex; gap: 20px; }
-    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
     .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
+
+    .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
+    .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
 
     /* ==========================================================================
        CONTENT
@@ -34,15 +39,19 @@
 
     .section-label { display: block; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; color: #000; margin-top: 40px; }
     
-    /* Services Grid */
+    /* Services Grid (RESTORED ALL OPTIONS) */
     .service-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 40px; }
     .service-option {
-      border: 1px solid #eee; padding: 18px 25px; cursor: pointer; transition: 0.2s;
-      background: #fff; display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid #eee; padding: 18px 25px; cursor: pointer; transition: 0.2s ease-in-out;
+      background: #fff; display: flex; justify-content: space-between; align-items: center; border-radius: 2px;
     }
+    .service-name { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .service-meta { font-size: 10px; color: #999; margin-top: 3px; display: block; }
+    .service-price { font-size: 12px; font-weight: 700; }
+    
+    .service-option:hover { border-color: #000; }
     .service-option.active { background: #000; color: #fff; border-color: #000; }
-    .service-name { font-size: 12px; text-transform: uppercase; font-weight: 700; }
-    .service-meta { font-size: 10px; color: #999; display: block; }
+    .service-option.active .service-meta { color: #888; }
 
     /* Form UI */
     .booking-form { text-align: left; max-width: 600px; margin: 0 auto; }
@@ -51,18 +60,19 @@
     
     input[type="text"], input[type="tel"], input[type="email"], input[type="date"], textarea, select {
       width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid #eee; 
-      font-family: inherit; font-size: 15px; outline: none; background: transparent; border-radius: 0;
+      font-family: inherit; font-size: 15px; outline: none; transition: 0.3s; background: transparent;
+      border-radius: 0; appearance: none;
     }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 
-    /* VISIBLE CHECKBOX FIX */
+    /* REINFORCED CHECKBOX SECTION */
     .terms-container { 
       margin: 35px 0; 
       display: flex; 
       align-items: center; 
       gap: 15px; 
       padding: 15px;
-      background: #f9f9f9; /* Light background to make the box pop */
+      background: #f9f9f9; 
       border-radius: 4px;
     }
     #termsBox { 
@@ -71,7 +81,7 @@
       cursor: pointer; 
       accent-color: #000; 
       border: 1px solid #000;
-      appearance: checkbox !important; /* Forces standard checkbox rendering */
+      appearance: checkbox !important;
       -webkit-appearance: checkbox !important;
     }
     .terms-text { color: #666; font-size: 11px; line-height: 1.4; cursor: pointer; }
@@ -79,9 +89,11 @@
 
     .submit-btn {
       width: 100%; padding: 22px; background: #000; color: #fff; border: none;
-      text-transform: uppercase; letter-spacing: 3px; font-weight: 700; cursor: pointer; 
-      transition: 0.3s; opacity: 0.5;
+      font-family: inherit; text-transform: uppercase; letter-spacing: 3px;
+      font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px;
+      opacity: 0.5;
     }
+    .submit-btn:hover:not(:disabled) { background: #222; }
 
     /* ==========================================================================
        CENTERED FOOTER
@@ -92,7 +104,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 40px;
+        gap: 30px;
         padding-bottom: 40px;
         border-bottom: 1px solid #222;
     }
@@ -113,6 +125,16 @@
     .ceo-name { font-family: 'Alex Brush'; font-size: 16px; color: #999; }
     .legal-text { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
 
+    /* RESPONSIVE */
+    @media (max-width: 980px) {
+      .menu-toggle { display: flex; }
+      .main-nav {
+        position: fixed; top: 60px; right: -100%; width: 100%; height: auto; background: #fff;
+        flex-direction: column; padding: 10px 5%; transition: 0.4s; box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
+      }
+      .main-nav.active { right: 0; }
+      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; text-align: left; }
+    }
     @media (max-width: 600px) {
       .row { grid-template-columns: 1fr; gap: 0; }
     }
@@ -122,9 +144,17 @@
 
   <header>
     <a href="home.html" class="logo-text">EGYGRILLZ</a>
+    <button class="menu-toggle"><span></span><span></span><span></span></button>
     <nav class="main-nav">
       <a href="home.html">Home</a>
+      <a href="latest-designs.html">Latest</a>
       <a href="booking.html" class="nav-active">Schedule</a>
+      <a href="grillz-gallery.html">Gallery</a>
+      <a href="golds.html">Golds</a>
+      <a href="diamonds.html">Diamonds</a>
+      <a href="silvers.html">Silvers</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
     </nav>
   </header>
 
@@ -135,24 +165,58 @@
     <div class="booking-form">
       <form action="https://formspree.io/f/xojlazkb" method="POST" id="appForm">
         
-        <span class="section-label">1. Select Services</span>
+        <span class="section-label">1. Services</span>
         <div class="service-grid">
           <div class="service-option" onclick="toggleService(this, 'Impression')">
             <div><span class="service-name">Impression</span><span class="service-meta">30 min</span></div>
-            <span style="font-size:12px; font-weight:700;">200 EGP</span>
+            <span class="service-price">200 EGP / Arch</span>
           </div>
           <div class="service-option" onclick="toggleService(this, 'Consultation')">
             <div><span class="service-name">Consultation</span><span class="service-meta">1 hour</span></div>
-            <span style="font-size:12px; font-weight:700;">1000 EGP</span>
+            <span class="service-price">1000 EGP / hr</span>
+          </div>
+          <div class="service-option" onclick="toggleService(this, 'Pickup')">
+            <div><span class="service-name">Pickup</span><span class="service-meta">10 min</span></div>
+            <span class="service-price">Free</span>
+          </div>
+          <div class="service-option" onclick="toggleService(this, 'Toothgem Application')">
+            <div><span class="service-name">Gem Applying</span><span class="service-meta">30 min</span></div>
+            <span class="service-price">From 500 EGP</span>
           </div>
         </div>
         <input type="hidden" name="Services" id="serviceInput" required>
 
-        <span class="section-label">2. Personal Details</span>
-        <div class="form-group"><label class="field-label">Full Name</label><input type="text" name="Name" required></div>
+        <span class="section-label">2. Date & Time</span>
         <div class="row">
-          <div class="form-group"><label class="field-label">Phone</label><input type="tel" name="Phone" required></div>
-          <div class="form-group"><label class="field-label">Date</label><input type="date" name="Date" id="datePicker" required></div>
+          <div class="form-group">
+            <label class="field-label">Select Day</label>
+            <input type="date" name="Date" id="datePicker" required>
+          </div>
+          <div class="form-group">
+            <label class="field-label">Preferred Time</label>
+            <select name="Time" required>
+              <option value="" disabled selected>Select Time</option>
+              <option value="04:00 PM">04:00 PM</option>
+              <option value="05:00 PM">05:00 PM</option>
+              <option value="06:00 PM">06:00 PM</option>
+              <option value="07:00 PM">07:00 PM</option>
+              <option value="08:00 PM">08:00 PM</option>
+              <option value="09:00 PM">09:00 PM</option>
+              <option value="10:00 PM">10:00 PM</option>
+            </select>
+          </div>
+        </div>
+
+        <span class="section-label">3. Personal Details</span>
+        <div class="form-group"><label class="field-label">Full Name</label><input type="text" name="Name" placeholder="Enter name" required></div>
+        <div class="row">
+          <div class="form-group"><label class="field-label">Phone</label><input type="tel" name="Phone" placeholder="+20..." required></div>
+          <div class="form-group"><label class="field-label">Email</label><input type="email" name="Email" placeholder="your@email.com" required></div>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Additional Notes</label>
+          <textarea name="Notes" rows="1" placeholder="Any special requests?"></textarea>
         </div>
 
         <div class="terms-container">
@@ -162,6 +226,7 @@
           </label>
         </div>
 
+        <input type="hidden" name="_subject" value="New Appointment Request - EGYGRILLZ">
         <button type="submit" class="submit-btn" id="submitBtn" disabled>Request Appointment</button>
       </form>
     </div>
@@ -192,7 +257,15 @@
   </footer>
 
   <script>
-    // Service Selection
+    // Header Menu Toggle
+    const toggle = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('.main-nav');
+    toggle.addEventListener('click', () => { 
+      nav.classList.toggle('active'); 
+      document.body.classList.toggle('menu-open');
+    });
+
+    // Service Selection Logic
     let selectedServices = [];
     function toggleService(element, val) {
       if (selectedServices.includes(val)) {
@@ -206,13 +279,16 @@
     }
 
     // Friday Blocker
-    document.getElementById('datePicker').addEventListener('input', function(e){
-      if(new Date(this.value).getUTCDay() === 5){ 
-        alert('Studio is closed on Fridays.'); this.value = ''; 
+    const datePicker = document.getElementById('datePicker');
+    datePicker.addEventListener('input', function(e){
+      var day = new Date(this.value).getUTCDay();
+      if(day === 5){ 
+        this.value = '';
+        alert('Studio is closed on Fridays.');
       }
     });
 
-    // Checkbox & Button Logic
+    // Terms & Conditions Logic
     const termsBox = document.getElementById('termsBox');
     const submitBtn = document.getElementById('submitBtn');
 
@@ -221,21 +297,40 @@
       submitBtn.style.opacity = this.checked ? "1" : "0.5";
     });
 
-    // Form Submission
+    // AJAX Submission Logic
     const form = document.getElementById("appForm");
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
-      if(selectedServices.length === 0) return alert('Select a service');
-      
-      submitBtn.innerText = "SENDING...";
-      const response = await fetch(form.action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { 'Accept': 'application/json' }
-      });
+      if(selectedServices.length === 0) {
+        alert('Please select at least one service.');
+        return;
+      }
 
-      if (response.ok) {
-        form.innerHTML = `<h2 style="text-align:center; text-transform:uppercase;">Request Sent</h2><p style="text-align:center; font-size:12px; color:#888;">We will contact you shortly.</p>`;
+      submitBtn.innerText = "SENDING...";
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (response.ok) {
+          form.innerHTML = `
+            <div style="text-align:center; padding: 40px 0;">
+              <h2 style="font-family:'Playfair Display'; font-size: 28px; text-transform:uppercase;">Request Received</h2>
+              <p style="font-size:12px; color:#888; margin-top:15px; text-transform:uppercase; letter-spacing:1px;">
+                Thank you for choosing EGYGRILLZ. <br> We will contact you shortly.
+              </p>
+            </div>`;
+        } else {
+          throw new Error();
+        }
+      } catch (error) {
+        alert("Oops! There was a problem. Please try again.");
+        submitBtn.innerText = "REQUEST APPOINTMENT";
+        submitBtn.disabled = false;
       }
     });
   </script>
