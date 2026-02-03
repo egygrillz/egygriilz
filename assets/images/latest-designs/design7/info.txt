@@ -2,4 +2,5 @@ name: MARWAN PABLO's Set
 price: Contact us for details
 description: This custom silver grillz set, crafted exclusively for rapper Marwan Pablo, featured in his video clip Dejavu and preformed with it in his festival .Show cased in VOUGE magzine.
 
-images: 000.jpeg,001.jpeg,002.jpeg
+images: 000.jpeg,001.jpeg,002.jpeg,003.mp4
+
