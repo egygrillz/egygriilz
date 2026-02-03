@@ -1,0 +1,4 @@
+name: FARES SOKAR's Set
+price: Contact us for details
+description: This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .Show cased in GQ magzine.
+images: 000.jpeg,001.jpeg,002.jpeg
