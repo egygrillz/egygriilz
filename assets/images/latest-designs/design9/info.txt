@@ -1,4 +1,5 @@
 name: ADIDAS's Set
 price: Contact us for details
 description: Latest with Adidas, showcased in the adidas Italia 60 campaign, to tell a story about what it means to be ‘Made In Italy’. Now live on the #adidasConfirmed app.
-images: 000.jpeg,001.jpeg,002.jpeg,003.mp4
+
+images: 000.jpeg,001.jpeg,002.jpeg
