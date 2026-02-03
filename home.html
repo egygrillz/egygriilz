@@ -19,14 +19,14 @@
     }
 
     /* ==========================================================================
-       HEADER
+       HEADER – thinner on mobile
        ========================================================================== */
     header {
       position: sticky;
       top: 0;
       left: 0;
       right: 0;
-      height: 80px;
+      height: 70px;  /* reduced from 80px */
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid #eee;
@@ -39,7 +39,7 @@
 
     .logo-text {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(22px, 5.5vw, 32px);
+      font-size: clamp(20px, 5vw, 28px);  /* slightly smaller */
       font-weight: 700;
       letter-spacing: 3px;
       text-decoration: none;
@@ -51,8 +51,8 @@
       display: none;
       flex-direction: column;
       justify-content: space-between;
-      width: 28px;
-      height: 20px;
+      width: 24px;  /* smaller hamburger */
+      height: 18px;
       background: none;
       border: none;
       cursor: pointer;
@@ -61,24 +61,24 @@
 
     .menu-toggle span {
       width: 100%;
-      height: 3px;
+      height: 2px;  /* thinner lines */
       background: #000;
       border-radius: 2px;
       transition: all 0.35s ease;
     }
 
     .menu-toggle.active span:nth-child(1) {
-      transform: rotate(45deg) translate(6px, 6px);
+      transform: rotate(45deg) translate(5px, 5px);
     }
     .menu-toggle.active span:nth-child(2) {
       opacity: 0;
     }
     .menu-toggle.active span:nth-child(3) {
-      transform: rotate(-45deg) translate(7px, -7px);
+      transform: rotate(-45deg) translate(6px, -6px);
     }
 
     /* ==========================================================================
-       NAVIGATION
+       NAVIGATION – more compact menu on mobile (narrower width)
        ========================================================================== */
     .main-nav {
       display: flex;
@@ -111,15 +111,15 @@
         position: fixed;
         top: 0;
         right: -100%;
-        width: 220px;
-        max-width: 80vw;
+        width: 180px;  /* reduced from 220px for more compact */
+        max-width: 70vw;
         height: 100vh;
         background: rgba(255, 255, 255, 0.98);
         backdrop-filter: blur(10px);
         flex-direction: column;
         align-items: flex-start;
         justify-content: flex-start;
-        padding: 100px 24px 40px;
+        padding: 80px 20px 40px;  /* reduced top padding */
         transition: right 0.4s ease;
         box-shadow: -10px 0 30px rgba(0,0,0,0.12);
         z-index: 1000;
@@ -127,14 +127,15 @@
       }
       .main-nav.active { right: 0; }
       .main-nav a {
-        font-size: 15px;
-        padding: 16px 0;
+        font-size: 14px;  /* slightly smaller text */
+        padding: 12px 0;  /* tighter spacing */
         width: 100%;
         text-align: left;
         border-bottom: 1px solid #eee;
       }
       .main-nav a:hover,
       .main-nav a:focus { color: #555; }
+      header { height: 60px; padding: 0 4%; }  /* thinner header on mobile */
     }
 
     body.menu-open { overflow: hidden; }
@@ -451,12 +452,13 @@
     }
 
     /* ==========================================================================
-       FOOTER – very compact on mobile
+       FOOTER – very short on mobile as per request
        ========================================================================== */
     footer {
       background: #000;
       color: #fff;
       padding: 40px 5% 32px;
+      text-align: center;
     }
 
     .footer-container {
@@ -467,7 +469,6 @@
       align-items: center;
       max-width: 1800px;
       margin: 0 auto;
-      text-align: center;
     }
 
     .footer-left,
@@ -511,74 +512,73 @@
       fill: #aaa;
     }
 
-    @media (max-width: 768px) {
-      footer {
-        padding: 20px 5% 16px;           /* very reduced height */
-      }
-
-      .footer-container {
-        flex-direction: column;
-        gap: 16px;
-        align-items: center;
-      }
-
-      .footer-left,
-      .footer-middle,
-      .footer-right {
-        width: 100%;
-        max-width: 360px;
-      }
-
-      .footer-brand {
-        font-size: 20px;
-        margin-bottom: 4px;
-      }
-
-      .footer-logo-img {
-        height: 36px;
-      }
-
-      .ceo-name {
-        font-size: 20px;
-        margin: 2px 0 6px;
-      }
-
-      .footer-left p {
-        font-size: 11px;
-        margin: 2px 0;
-        line-height: 1.3;
-      }
-
-      .footer-links {
-        gap: 32px;
-        margin: 8px 0 4px;
-      }
-
-      .footer-links svg {
-        width: 20px;
-        height: 20px;
-      }
-
-      .footer-right {
-        margin-bottom: 0;
-      }
+    .footer-copyright {
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 8px;
     }
 
-    @media (max-width: 480px) {
+    /* Mobile footer – very short, logo middle, CEO small on right, icons small on left, copyright small at end */
+    @media (max-width: 768px) {
       footer {
         padding: 16px 5% 12px;
       }
+
       .footer-container {
-        gap: 12px;
+        flex-direction: row;
+        gap: 0;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
       }
-      .footer-brand {
-        font-size: 18px;
+
+      .footer-left {
+        text-align: left;
+        flex: 0 0 auto;
       }
+
+      .footer-middle {
+        flex: 0 0 auto;
+      }
+
+      .footer-right {
+        text-align: right;
+        flex: 0 0 auto;
+      }
+
+      .footer-brand { display: none; } /* remove EGYGRILLZ text */
+
       .footer-logo-img {
         height: 32px;
       }
+
+      .footer-links {
+        justify-content: flex-start;
+        gap: 16px;
+        margin-top: 0;
+      }
+
+      .footer-links svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .footer-right p:first-child {
+        font-size: 9px;
+        margin-bottom: -4px;
+        color: #666;
+      }
+
       .ceo-name {
-        font-size: 18px;
+        font-size: 16px;
+      }
+
+      .footer-copyright {
+        font-size: 9px;
+        margin-top: 12px;
+        color: #777;
+        text-align: center;
+        width: 100%;
       }
     }
   </style>
@@ -660,8 +660,6 @@
   <footer>
     <div class="footer-container">
       <div class="footer-left">
-        <p style="font-size: 13px; color: #aaa; margin-bottom: 4px;">Beyond Jewelry</p>
-        <p style="font-size: 13px; color: #aaa;">© 2026 EGYGRILLZ</p>
         <div class="footer-links">
           <a href="https://www.instagram.com/egygrillz" target="_blank">
             <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
@@ -672,7 +670,6 @@
         </div>
       </div>
       <div class="footer-middle">
-        <div class="footer-brand">EGYGRILLZ</div>
         <img src="logo/logo_white.png" class="footer-logo-img" alt="Logo Icon">
       </div>
       <div class="footer-right">
@@ -680,6 +677,7 @@
         <p class="ceo-name">DR Mohamed Mahdy</p>
       </div>
     </div>
+    <p class="footer-copyright">Beyond Jewelry © 2026 EGYGRILLZ</p>
   </footer>
 
   <script>
@@ -761,8 +759,8 @@
           text.split('\n').forEach(line => {
             const low = line.toLowerCase();
             if(low.startsWith('title:') || low.startsWith('name:')) title = line.split(':')[1].trim();
-            if(low.startsWith('price:')) price = line.split(':')[1].trim();
-            if(low.startsWith('description:')) desc = line.split(':')[1].trim();
+            if(low.startsWith('price:') ) price = line.split(':')[1].trim();
+            if(low.startsWith('description:') ) desc = line.split(':')[1].trim();
             if(low.startsWith('images:')) imagesLine = line;
           });
           let images = imagesLine.replace(/images:/i, '').split(',').map(f => f.trim());
@@ -791,7 +789,7 @@
             if(low.startsWith('images:')) images = l.split(':')[1].split(',').map(f=>f.trim());
           });
           let slider = '<div class="mini-slider">';
-          images.forEach((img, i) => slider += `<img src="assets/images/sets/${set}/${img}" class="${i===0?'active':''}">`);
+          images.forEach((img, i) => slider += `<img src="assets/images/sets/${set}/${img}" class="${i===0?'active':''}">`;
           slider += '</div>';
           const card = document.createElement('div');
           card.className = 'set-card';
