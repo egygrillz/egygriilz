@@ -1,4 +1,5 @@
 name: Ziad ZAZA's Set
 price: Contact us for details
 description: This custom Chrome grillz set, crafted exclusively for singer Ziad Zaza , featured in his video clip EH EL ARAF DA.
-images: 000.jpeg,001.jpeg,002.jpeg
+
+images: 000.jpeg,001.jpeg,002.jpeg,003.mp4
