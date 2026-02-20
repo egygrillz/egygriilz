@@ -1,4 +1,4 @@
-Title: Selene Bloom
-Description: Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.
-Price: Contact us for details
-Images: 000011.jpg
+name: Selene Bloom
+price: Contact us for details
+description: Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.
+images: 000011.jpg
