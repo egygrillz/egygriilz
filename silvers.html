@@ -171,39 +171,48 @@
   </footer>
 
   <script>
-    // MOBILE MENU TOGGLE
+
+    // Menu Toggle Logic
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
 
-    const basePath = 'assets/images/silvers';
-    const jsonPath = 'assets/images/silvers/silvers.json';
+    // FIXED: robust info.txt parser — handles "name:" and "title:", values with colons
+    function parseInfo(text) {
+      let name = '', desc = '', price = '', images = [];
+      text.split('\n').forEach(line => {
+        line = line.replace(/\r/g, '').trim();
+        const colonIdx = line.indexOf(':');
+        if (colonIdx === -1) return;
+        const key = line.slice(0, colonIdx).trim().toLowerCase();
+        const val = line.slice(colonIdx + 1).trim();
+        if (key === 'name' || key === 'title') name = val;
+        else if (key === 'description' || key === 'desc') desc = val;
+        else if (key === 'price') price = val;
+        else if (key === 'images') images = val.split(',').map(i => i.trim()).filter(Boolean);
+      });
+      return { name, desc, price, images };
+    }
 
-    fetch(jsonPath)
+    const basePath = 'assets/images/silvers';
+    fetch(`${basePath}/silvers.json`)
       .then(res => res.json())
       .then(folders => {
         const grid = document.getElementById('silvers-grid');
-        
+        if (!folders.length) {
+          grid.innerHTML = '<p style="color:#aaa;text-align:center;padding:60px 0;font-size:14px;">No silvers yet — check back soon.</p>';
+          return;
+        }
         folders.forEach(folder => {
           fetch(`${basePath}/${folder}/info.txt`)
-            .then(res => res.text())
+            .then(res => { if (!res.ok) throw new Error('not found'); return res.text(); })
             .then(text => {
-              let title = folder, description = '', price = '', imagesLine = '';
-              
-              text.split('\n').forEach(line => {
-                const lowLine = line.toLowerCase();
-                if(lowLine.startsWith('title:')) title = line.split(':')[1].trim();
-                if(lowLine.startsWith('description:')) description = line.split(':')[1].trim();
-                if(lowLine.startsWith('price:')) price = line.split(':')[1].trim();
-                if(lowLine.startsWith('images:')) imagesLine = line;
-              });
+              const { name, desc, price, images } = parseInfo(text);
 
-              const images = imagesLine ? imagesLine.replace(/images:/i, '').split(',').map(img => img.trim()).filter(Boolean) : [];
-              
               let sliderHtml = '<div class="mini-slider">';
               images.forEach((img, index) => {
-                sliderHtml += `<img src="${basePath}/${folder}/${img}" class="${index === 0 ? 'active' : ''}" alt="${title}">`;
+                sliderHtml += `<img src="${basePath}/${folder}/${img}" class="${index === 0 ? 'active' : ''}" alt="${name}" loading="lazy">`;
               });
               sliderHtml += '</div>';
 
@@ -212,31 +221,29 @@
               card.innerHTML = `
                 ${sliderHtml}
                 <div class="set-info">
-                  <div class="name">${title}</div>
-                  <div class="desc">${description}</div>
+                  <div class="name">${name || folder}</div>
+                  <div class="desc">${desc}</div>
                   <div class="price">${price}</div>
                 </div>
               `;
-
               grid.appendChild(card);
 
-              // Slider functionality
               let currentImg = 0;
               const imgElements = card.querySelectorAll('.mini-slider img');
-              if(imgElements.length > 1) {
+              if (imgElements.length > 1) {
                 setInterval(() => {
                   imgElements[currentImg].classList.remove('active');
                   currentImg = (currentImg + 1) % imgElements.length;
                   imgElements[currentImg].classList.add('active');
                 }, 3500);
               }
-            });
+            })
+            .catch(e => console.warn('Could not load', folder, e));
         });
       })
-      .catch(err => {
-        console.error('Error:', err);
-        document.getElementById('silvers-grid').innerHTML = '<p style="text-align:center; width:100%;">Collection coming soon.</p>';
-      });
+      .catch(err => console.error('Error loading silvers:', err));
+
   </script>
+
 </body>
 </html>
