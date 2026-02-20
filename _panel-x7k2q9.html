@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EGYGRILLZ</title>
+  <!-- NO "Admin" in title — doesn't reveal purpose -->
+  <meta name="robots" content="noindex, nofollow">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arimo', sans-serif; background: #fff; color: #000; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    body.menu-open { overflow: hidden; }
+
+    /* ── BLOCKED SCREEN (shown when URL token is wrong) ── */
+    #blocked-screen {
+      display: none;
+      position: fixed; inset: 0;
+      background: #fff;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #blocked-screen p { font-size: 13px; color: #999; text-transform: uppercase; letter-spacing: 2px; }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; height: 60px; background: #fff;
+      border-bottom: 1px solid #eee; z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
+    }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
+    .main-nav { display: flex; gap: 20px; align-items: center; }
+    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
+    .main-nav a:hover { color: #666; }
+    .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
+    .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
+    .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
+    @media (max-width: 980px) {
+      .menu-toggle { display: flex; }
+      .main-nav {
+        position: fixed; top: 60px; right: -100%; width: 100%; background: #fff;
+        flex-direction: column; padding: 10px 5%; transition: 0.4s cubic-bezier(0.4,0,0.2,1);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
+      }
+      .main-nav.active { right: 0; }
+      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
+    }
+
+    /* ── SHARED FORM STYLES ── */
+    .form-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #888; margin-bottom: 8px; }
+    .form-input, .form-textarea {
+      width: 100%; border: 1px solid #ddd; background: #fff; color: #000;
+      padding: 12px 14px; font-family: 'Arimo', sans-serif; font-size: 13px;
+      outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: #000; }
+    .form-textarea { resize: vertical; min-height: 90px; }
+    .form-group { margin-bottom: 22px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .btn-black {
+      background: #000; color: #fff; border: 1px solid #000;
+      padding: 12px 28px; font-family: 'Arimo', sans-serif;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 2px; cursor: pointer; transition: 0.3s;
+    }
+    .btn-black:hover { background: #fff; color: #000; }
+    .btn-black:disabled { background: #ccc; border-color: #ccc; color: #fff; cursor: not-allowed; }
+    .btn-outline {
+      background: #fff; color: #000; border: 1px solid #000;
+      padding: 10px 24px; font-family: 'Arimo', sans-serif;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; cursor: pointer; transition: 0.3s;
+    }
+    .btn-outline:hover { background: #000; color: #fff; }
+    .btn-muted {
+      background: #fff; color: #888; border: 1px solid #ddd;
+      padding: 10px 24px; font-family: 'Arimo', sans-serif;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; cursor: pointer; transition: 0.2s;
+    }
+    .btn-muted:hover { border-color: #000; color: #000; }
+
+    /* ── LOGIN ── */
+    #login-screen { display: block; }
+    .login-wrap { max-width: 480px; margin: 0 auto; padding: 70px 5% 100px; }
+    .login-heading { font-family: 'Playfair Display', serif; font-size: clamp(28px, 6vw, 44px); text-transform: uppercase; letter-spacing: 4px; margin-bottom: 6px; }
+    .login-sub { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #888; font-style: italic; margin-bottom: 40px; }
+    .err-msg { font-size: 11px; color: #c0392b; margin-bottom: 14px; min-height: 16px; }
+    .lockout-msg { font-size: 11px; color: #c0392b; background: #fff5f5; border: 1px solid #f5c6c2; padding: 12px 14px; margin-bottom: 20px; display: none; }
+
+    /* ── APP ── */
+    #app { display: none; }
+
+    /* Tabs */
+    .tabs-bar {
+      border-bottom: 1px solid #eee;
+      display: flex; align-items: center;
+      padding: 0 5%; gap: 0;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tabs-bar::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: #888; padding: 16px 18px;
+      border: none; border-bottom: 2px solid transparent;
+      background: none; cursor: pointer; transition: 0.2s; white-space: nowrap;
+      font-family: 'Arimo', sans-serif; font-weight: 400;
+    }
+    .tab-btn:hover { color: #000; }
+    .tab-btn.active { color: #000; border-bottom-color: #000; font-weight: 700; }
+    .tab-spacer { flex: 1; }
+    .tab-logout {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: #bbb; background: none; border: none; cursor: pointer;
+      padding: 16px 0; font-family: 'Arimo', sans-serif; transition: color 0.2s;
+    }
+    .tab-logout:hover { color: #000; }
+
+    /* Content */
+    .container { max-width: 1600px; margin: 0 auto; padding: 50px 5% 100px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .page-header-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 50px; flex-wrap: wrap; gap: 20px;
+    }
+    .ph-title { font-family: 'Playfair Display', serif; font-size: clamp(26px, 5vw, 44px); text-transform: uppercase; letter-spacing: 4px; margin-bottom: 4px; }
+    .ph-sub { font-size: 13px; color: #888; font-style: italic; }
+
+    /* Grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
+    .set-card { border: 1px solid #eee; background: #fff; transition: 0.3s; border-radius: 4px; overflow: hidden; }
+    .set-card:hover { transform: translateY(-6px); box-shadow: 0 15px 35px rgba(0,0,0,0.06); }
+
+    .mini-slider { position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #f8f8f8; }
+    .mini-slider img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.8s; pointer-events: none; }
+    .mini-slider img.active { opacity: 1; }
+    .no-img { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 36px; }
+
+    .set-info { padding: 20px 22px; }
+    .set-info .name { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 6px; }
+    .set-info .desc { font-size: 13px; color: #666; margin-bottom: 14px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .set-info .price { font-weight: 700; font-size: 15px; border-top: 1px solid #eee; padding-top: 14px; }
+
+    .card-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .btn-sm {
+      flex: 1; padding: 8px; font-size: 10px; letter-spacing: 1px;
+      text-transform: uppercase; font-weight: 700;
+      font-family: 'Arimo', sans-serif; border: 1px solid; cursor: pointer; transition: 0.2s;
+    }
+    .btn-edit { background: #fff; color: #000; border-color: #ddd; }
+    .btn-edit:hover { border-color: #000; }
+    .btn-delete { background: #fff; color: #c0392b; border-color: #f5c6c2; }
+    .btn-delete:hover { background: #c0392b; color: #fff; border-color: #c0392b; }
+
+    .empty-state { grid-column: 1/-1; text-align: center; padding: 80px 20px; border: 1px dashed #ddd; color: #bbb; }
+    .empty-state i { font-size: 32px; display: block; margin-bottom: 14px; }
+    .empty-state p { font-size: 13px; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 2000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: #fff; border: 1px solid #eee;
+      width: 620px; max-width: 95vw; max-height: 90vh;
+      display: flex; flex-direction: column;
+      transform: translateY(24px); transition: transform 0.25s;
+      border-radius: 4px; overflow: hidden;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-header { padding: 24px 28px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h2 { font-family: 'Playfair Display', serif; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; }
+    .modal-close { background: none; border: none; font-size: 26px; cursor: pointer; color: #bbb; line-height: 1; transition: color 0.2s; }
+    .modal-close:hover { color: #000; }
+    .modal-body { padding: 28px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 18px 28px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 12px; }
+
+    /* Upload */
+    .upload-zone { border: 2px dashed #ddd; padding: 32px; text-align: center; cursor: pointer; transition: 0.2s; }
+    .upload-zone:hover, .upload-zone.drag { border-color: #000; background: #fafafa; }
+    .upload-zone input { display: none; }
+    .upload-zone i { font-size: 26px; color: #ccc; margin-bottom: 10px; display: block; }
+    .upload-zone p { font-size: 12px; color: #888; }
+    .upload-zone strong { color: #000; }
+
+    .image-previews { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+    .img-preview-wrap { position: relative; aspect-ratio: 1; }
+    .img-preview-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .remove-img {
+      position: absolute; top: 4px; right: 4px;
+      width: 22px; height: 22px; background: rgba(255,255,255,0.92);
+      color: #c0392b; border: 1px solid #ddd; cursor: pointer;
+      font-size: 14px; line-height: 20px; text-align: center;
+    }
+    .img-order { position: absolute; bottom: 0; left: 0; background: rgba(0,0,0,0.55); font-size: 9px; color: #fff; padding: 2px 6px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ── CONFIRM ── */
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 3000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .confirm-overlay.open { opacity: 1; pointer-events: all; }
+    .confirm-box { background: #fff; border: 1px solid #eee; padding: 42px; width: 380px; max-width: 95vw; text-align: center; border-radius: 4px; }
+    .confirm-box h3 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 10px; }
+    .confirm-box p { font-size: 13px; color: #666; margin-bottom: 28px; line-height: 1.6; }
+    .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+    .btn-del { padding: 10px 24px; border: 1px solid #c0392b; background: #c0392b; color: #fff; font-family: 'Arimo', sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; }
+    .btn-del:hover { background: #fff; color: #c0392b; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: #000; color: #fff;
+      padding: 12px 30px; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s;
+      z-index: 4000; pointer-events: none; white-space: nowrap; border-radius: 2px;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #27ae60; }
+    .toast.error { background: #c0392b; }
+
+    /* ── SETUP ── */
+    .setup-wrap { max-width: 520px; }
+    .step-list { margin: 24px 0 30px; }
+    .step-item { display: flex; gap: 16px; margin-bottom: 16px; font-size: 13px; color: #444; line-height: 1.6; }
+    .step-num { min-width: 26px; height: 26px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .step-item a { color: #000; }
+    .saved-ok { font-size: 11px; color: #27ae60; margin-top: 12px; display: none; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ── FOOTER ── */
+    footer { background: #000; color: #fff; padding: 50px 5% 20px; margin-top: 80px; }
+    .footer-main { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid #222; }
+    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
+    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
+    .footer-col a:hover { color: #888; }
+    .footer-bottom { padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+    .footer-logo-img { height: 10px; filter: brightness(0) invert(1); }
+    .ceo-wrap { display: flex; align-items: center; gap: 8px; }
+    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .ceo-name { font-family: 'Alex Brush'; font-size: 12px; color: #888; }
+    .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
+
+    @media (max-width: 768px) {
+      .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; }
+      .footer-col { display: flex; flex-direction: column; align-items: center; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+      .image-previews { grid-template-columns: repeat(3, 1fr); }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SECURITY LAYER 1: URL TOKEN CHECK runs before anything renders -->
+<div id="blocked-screen" style="display:flex;">
+  <p>404 — Page not found</p>
+</div>
+
+<div id="site-content" style="display:none;">
+
+<!-- HEADER -->
+<header>
+  <a href="index.html" class="logo-text">EGYGRILLZ</a>
+  <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+  <nav class="main-nav">
+    <a href="index.html">Home</a>
+    <a href="latest-designs.html">Latest</a>
+    <a href="booking.html">Schedule</a>
+    <a href="grillz-gallery.html">Gallery</a>
+    <a href="golds.html">Golds</a>
+    <a href="diamonds.html">Diamonds</a>
+    <a href="silvers.html">Silvers</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+</header>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <h1 class="login-heading">Access</h1>
+    <p class="login-sub">Restricted</p>
+
+    <div class="lockout-msg" id="lockout-msg"></div>
+
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="pw-input" placeholder="••••••••••••••••" autocomplete="current-password">
+    </div>
+    <div class="err-msg" id="pw-err"></div>
+    <button class="btn-black" style="width:100%;" id="login-btn" onclick="doLogin()">Enter</button>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="showPanel('sets',this)">Sets</button>
+    <button class="tab-btn" onclick="showPanel('golds',this)">Golds</button>
+    <button class="tab-btn" onclick="showPanel('silvers',this)">Silvers</button>
+    <button class="tab-btn" onclick="showPanel('diamonds',this)">Diamonds</button>
+    <button class="tab-btn" onclick="showPanel('latest',this)">Latest Designs</button>
+    <button class="tab-btn" onclick="showPanel('setup',this)">⚙ GitHub Setup</button>
+    <div class="tab-spacer"></div>
+    <button class="tab-logout" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container">
+
+    <!-- SETS -->
+    <div class="panel active" id="panel-sets">
+      <div class="page-header-row">
+        <div><p class="ph-title">Sets</p><p class="ph-sub">Full grillz sets with multiple images</p></div>
+        <button class="btn-outline" onclick="openModal('sets')">+ Add Set</button>
+      </div>
+      <div class="grid" id="grid-sets"><div class="empty-state"><i class="fas fa-images"></i><p>Loading…</p></div></div>
+    </div>
+
+    <!-- GOLDS -->
+    <div class="panel" id="panel-golds">
+      <div class="page-header-row">
+        <div><p class="ph-title">Golds</p><p class="ph-sub">Gold grillz designs</p></div>
+        <button class="btn-outline" onclick="openModal('golds')">+ Add Gold</button>
+      </div>
+      <div class="grid" id="grid-golds"></div>
+    </div>
+
+    <!-- SILVERS -->
+    <div class="panel" id="panel-silvers">
+      <div class="page-header-row">
+        <div><p class="ph-title">Silvers</p><p class="ph-sub">Silver grillz designs</p></div>
+        <button class="btn-outline" onclick="openModal('silvers')">+ Add Silver</button>
+      </div>
+      <div class="grid" id="grid-silvers"></div>
+    </div>
+
+    <!-- DIAMONDS -->
+    <div class="panel" id="panel-diamonds">
+      <div class="page-header-row">
+        <div><p class="ph-title">Diamonds</p><p class="ph-sub">Diamond grillz designs</p></div>
+        <button class="btn-outline" onclick="openModal('diamonds')">+ Add Diamond</button>
+      </div>
+      <div class="grid" id="grid-diamonds"></div>
+    </div>
+
+    <!-- LATEST -->
+    <div class="panel" id="panel-latest">
+      <div class="page-header-row">
+        <div><p class="ph-title">Latest Designs</p><p class="ph-sub">Newest pieces shown on the homepage</p></div>
+        <button class="btn-outline" onclick="openModal('latest')">+ Add Design</button>
+      </div>
+      <div class="grid" id="grid-latest"></div>
+    </div>
+
+    <!-- SETUP -->
+    <div class="panel" id="panel-setup">
+      <div class="page-header-row" style="margin-bottom:30px;">
+        <div><p class="ph-title">GitHub Setup</p><p class="ph-sub">Connect your repository to publish changes live</p></div>
+      </div>
+      <div class="setup-wrap">
+        <p style="font-size:13px; color:#666; line-height:1.7; margin-bottom:10px;">
+          The dashboard commits directly to your GitHub repo using the API. Your token is stored only in your browser — it never leaves your device.
+        </p>
+        <div class="step-list">
+          <div class="step-item"><span class="step-num">1</span>Go to <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a>, set expiry to <strong>No expiration</strong>, choose <strong>Fine-grained token</strong>, select your repo, and grant <strong>Contents: Read & Write</strong> only — nothing else.</div>
+          <div class="step-item"><span class="step-num">2</span>Paste your token and repository details below and click Save.</div>
+          <div class="step-item"><span class="step-num">3</span>Every time you publish an item it commits directly to GitHub — your site updates within seconds.</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">GitHub Username</label>
+            <input type="text" class="form-input" id="cfg-owner" placeholder="your-username">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Repository Name</label>
+            <input type="text" class="form-input" id="cfg-repo" placeholder="egygrillz">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Branch</label>
+          <input type="text" class="form-input" id="cfg-branch" placeholder="main">
+        </div>
+        <div class="form-group">
+          <label class="form-label">GitHub Token (github_pat_... or ghp_...)</label>
+          <input type="password" class="form-input" id="cfg-token" placeholder="github_pat_xxxxxxxxxxxx" autocomplete="off">
+        </div>
+        <button class="btn-black" onclick="saveConfig()">Save Configuration</button>
+        <p class="saved-ok" id="saved-ok">✓ Configuration saved successfully</p>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-main">
+      <div class="footer-col">
+        <h4>EGYGRILLZ Egypt</h4>
+        <p style="font-size:13px; color:#888; max-width:300px;">Handcrafting Egypt's most exclusive dental jewelry.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Information</h4>
+        <a href="about.html">About Us</a>
+        <a href="booking.html">Schedule</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="shipping.html">Care & Shipping</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>
+        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff;margin-right:15px;"><i class="fab fa-instagram"></i></a>
+      </div>
+      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+      <div class="ceo-wrap">
+        <span class="ceo-label">Founder</span>
+        <span class="ceo-name">DR Mohamed Mahdy</span>
+      </div>
+      <div class="legal-text">© 2026 EGYGRILLZ</div>
+    </div>
+  </footer>
+</div><!-- /#app -->
+
+</div><!-- /#site-content -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Add Item</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <input type="hidden" id="edit-category">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Name *</label>
+          <input type="text" class="form-input" id="f-name" placeholder="e.g. Diamond Boy Set">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price</label>
+          <input type="text" class="form-input" id="f-price" placeholder="e.g. 21,900 EGP">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="f-desc" placeholder="Describe this piece in detail..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Images — first image is the cover</label>
+        <div class="upload-zone" id="upload-zone"
+             onclick="document.getElementById('file-input').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleDrop(event)">
+          <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
+          <i class="fas fa-camera"></i>
+          <p><strong>Click or drag images here</strong><br>JPG, PNG, WEBP — first image = cover photo</p>
+        </div>
+        <div class="image-previews" id="image-previews"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-muted" onclick="closeModal()">Cancel</button>
+      <button class="btn-black" id="publish-btn" onclick="publishItem()">Publish to Site</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Delete Item?</h3>
+    <p>This will remove the item from your live site. You can always add it back later.</p>
+    <div class="confirm-actions">
+      <button class="btn-muted" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-del" id="confirm-del-btn">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// SECURITY LAYER 1: SECRET URL TOKEN
+// The page is completely invisible without ?key=TOKEN in the URL.
+// Hash of the URL token — never store the token itself in code.
+// ════════════════════════════════════════════
+const URL_TOKEN_HASH = '40704da077486cc5266c20a0b17c2fa95f89a95cfa11d8dc834a1f789834d556';
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+(async function checkUrlToken() {
+  const params = new URLSearchParams(window.location.search);
+  const key    = params.get('key') || '';
+  const hash   = await sha256(key);
+
+  if (hash !== URL_TOKEN_HASH) {
+    // Wrong or missing key — show 404, nothing else loads
+    document.getElementById('blocked-screen').style.display  = 'flex';
+    document.getElementById('site-content').style.display    = 'none';
+    document.title = '404 — Not Found';
+    return;
+  }
+
+  // Correct key — show the site, save token in sessionStorage so
+  // page refreshes don't lose access (but closing tab clears it)
+  sessionStorage.setItem('eq_url_verified', '1');
+  document.getElementById('blocked-screen').style.display = 'none';
+  document.getElementById('site-content').style.display   = 'block';
+
+  // Now boot the rest of the app
+  bootApp();
+})();
+
+// ════════════════════════════════════════════
+// SECURITY LAYER 2: HASHED PASSWORD
+// Password: KLoeAwffT4xMdtEa
+// This is the SHA-256 hash — the real password is never stored.
+// ════════════════════════════════════════════
+const ADMIN_PW_HASH = '8e48868fbb1f1066dade8e5decd84645eec47ca1cf653776413a86cb4b9a2f6b';
+
+// ════════════════════════════════════════════
+// SECURITY LAYER 3: BRUTE-FORCE LOCKOUT
+// 5 wrong attempts = 15 min lockout, stored in localStorage
+// ════════════════════════════════════════════
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 15 * 60 * 1000;
+
+function getLockout()     { return JSON.parse(localStorage.getItem('eq_lockout') || '{"attempts":0,"until":0}'); }
+function setLockout(d)    { localStorage.setItem('eq_lockout', JSON.stringify(d)); }
+function isLockedOut()    { const d = getLockout(); return Date.now() < d.until ? d.until : false; }
+
+// ════════════════════════════════════════════
+// APP BOOT — only runs after URL token passes
+// ════════════════════════════════════════════
+function bootApp() {
+  // Clear old plain-text passwords from previous versions
+  localStorage.removeItem('eq_pw');
+  localStorage.removeItem('eq_pw_hash');
+
+  // Wire up Enter key on password input
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  // Check lockout on load
+  const until = isLockedOut();
+  if (until) {
+    const mins = Math.ceil((until - Date.now()) / 60000);
+    document.getElementById('login-btn').disabled = true;
+    document.getElementById('lockout-msg').style.display = 'block';
+    document.getElementById('lockout-msg').textContent   = `Too many failed attempts. Try again in ${mins} minute(s).`;
+  }
+
+  // Mobile menu
+  document.querySelector('.menu-toggle').addEventListener('click', () => {
+    document.querySelector('.main-nav').classList.toggle('active');
+    document.body.classList.toggle('menu-open');
+  });
+}
+
+// ── LOGIN ──────────────────────────────────
+async function doLogin() {
+  const until = isLockedOut();
+  if (until) {
+    const mins = Math.ceil((until - Date.now()) / 60000);
+    document.getElementById('pw-err').textContent = `Locked out. Try again in ${mins} minute(s).`;
+    return;
+  }
+
+  const entered     = document.getElementById('pw-input').value;
+  const enteredHash = await sha256(entered);
+
+  if (enteredHash === ADMIN_PW_HASH) {
+    setLockout({ attempts: 0, until: 0 });
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display          = 'block';
+    loadConfig();
+    loadAllPanels();
+  } else {
+    const d    = getLockout();
+    d.attempts = (d.attempts || 0) + 1;
+    const left = MAX_ATTEMPTS - d.attempts;
+
+    if (d.attempts >= MAX_ATTEMPTS) {
+      d.until = Date.now() + LOCKOUT_MS;
+      document.getElementById('lockout-msg').style.display = 'block';
+      document.getElementById('lockout-msg').textContent   = 'Too many failed attempts. Locked out for 15 minutes.';
+      document.getElementById('login-btn').disabled        = true;
+    }
+    setLockout(d);
+    document.getElementById('pw-err').textContent = left > 0
+      ? `Incorrect password. ${left} attempt(s) remaining.`
+      : 'Account locked. Try again in 15 minutes.';
+    document.getElementById('pw-input').value = '';
+  }
+}
+
+function logout() {
+  document.getElementById('login-screen').style.display = 'block';
+  document.getElementById('app').style.display          = 'none';
+  document.getElementById('pw-input').value             = '';
+  document.getElementById('pw-err').textContent         = '';
+}
+
+// ── CATEGORY CONFIG ────────────────────────
+const CAT = {
+  sets:     { folder: 'sets',           json: 'assets/images/sets/sets.json',               prefix: 'set' },
+  golds:    { folder: 'golds',          json: 'assets/images/golds/golds.json',             prefix: 'golds' },
+  silvers:  { folder: 'silvers',        json: 'assets/images/silvers/silvers.json',         prefix: 'silvers' },
+  diamonds: { folder: 'diamonds',       json: 'assets/images/diamonds/diamonds.json',       prefix: 'diamonds' },
+  latest:   { folder: 'latest-designs', json: 'assets/images/latest-designs/designs.json', prefix: 'design' },
+};
+
+const GH = {
+  token:  localStorage.getItem('eq_token')  || '',
+  owner:  localStorage.getItem('eq_owner')  || '',
+  repo:   localStorage.getItem('eq_repo')   || '',
+  branch: localStorage.getItem('eq_branch') || 'main',
+};
+
+function loadConfig() {
+  GH.token  = localStorage.getItem('eq_token')  || '';
+  GH.owner  = localStorage.getItem('eq_owner')  || '';
+  GH.repo   = localStorage.getItem('eq_repo')   || '';
+  GH.branch = localStorage.getItem('eq_branch') || 'main';
+  document.getElementById('cfg-token').value  = GH.token;
+  document.getElementById('cfg-owner').value  = GH.owner;
+  document.getElementById('cfg-repo').value   = GH.repo;
+  document.getElementById('cfg-branch').value = GH.branch;
+}
+
+function saveConfig() {
+  GH.token  = document.getElementById('cfg-token').value.trim();
+  GH.owner  = document.getElementById('cfg-owner').value.trim();
+  GH.repo   = document.getElementById('cfg-repo').value.trim();
+  GH.branch = document.getElementById('cfg-branch').value.trim() || 'main';
+  if (!GH.token || !GH.owner || !GH.repo) { alert('Please fill in all fields.'); return; }
+  localStorage.setItem('eq_token',  GH.token);
+  localStorage.setItem('eq_owner',  GH.owner);
+  localStorage.setItem('eq_repo',   GH.repo);
+  localStorage.setItem('eq_branch', GH.branch);
+  const ok = document.getElementById('saved-ok');
+  ok.style.display = 'block';
+  setTimeout(() => ok.style.display = 'none', 3000);
+  loadAllPanels();
+}
+
+// ── PANELS ─────────────────────────────────
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── GITHUB API ─────────────────────────────
+async function ghFetch(path, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `token ${GH.token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res  = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/${path}`, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'GitHub API error');
+  return data;
+}
+
+async function getFileSHA(path) {
+  try { return (await ghFetch(`contents/${path}?ref=${GH.branch}`)).sha; }
+  catch { return null; }
+}
+
+async function putFile(path, content, message) {
+  const sha  = await getFileSHA(path);
+  const body = { message, content, branch: GH.branch };
+  if (sha) body.sha = sha;
+  return ghFetch(`contents/${path}`, 'PUT', body);
+}
+
+// ── DATA ───────────────────────────────────
+const cache = {};
+
+function parseInfo(text) {
+  const info = { name: '', price: '', desc: '', images: [] };
+  text.split('\n').forEach(line => {
+    const idx = line.indexOf(':');
+    if (idx === -1) return;
+    const key = line.slice(0, idx).trim().toLowerCase();
+    const val = line.slice(idx + 1).trim();
+    if (key === 'name' || key === 'title')            info.name   = val;
+    else if (key === 'price')                         info.price  = val;
+    else if (key === 'description' || key === 'desc') info.desc   = val;
+    else if (key === 'images') info.images = val.split(',').map(i => i.trim()).filter(Boolean);
+  });
+  return info;
+}
+
+async function loadAllPanels() {
+  for (const cat of Object.keys(CAT)) { loadCategory(cat).catch(() => {}); }
+}
+
+async function loadCategory(cat) {
+  if (!GH.owner || !GH.repo) { renderEmpty(cat, 'Go to ⚙ GitHub Setup and enter your repo details.'); return; }
+  const { folder, json } = CAT[cat];
+  const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/`;
+  let list = [];
+  try { list = await (await fetch(raw + json + '?t=' + Date.now())).json(); } catch {}
+  const items = [];
+  for (const id of list) {
+    try {
+      const txt  = await (await fetch(`${raw}assets/images/${folder}/${id}/info.txt?t=${Date.now()}`)).text();
+      const info = parseInfo(txt);
+      info.id = id;
+      items.push(info);
+    } catch {}
+  }
+  cache[cat] = { list, items, folder };
+  renderGrid(cat);
+}
+
+function renderEmpty(cat, msg) {
+  document.getElementById('grid-' + cat).innerHTML =
+    `<div class="empty-state"><i class="fas fa-images"></i><p>${msg}</p></div>`;
+}
+
+function renderGrid(cat) {
+  const grid = document.getElementById('grid-' + cat);
+  const { items = [], folder } = cache[cat] || {};
+  const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/`;
+  if (!items.length) { renderEmpty(cat, 'No items yet. Click "+ Add" to publish your first one.'); return; }
+
+  grid.innerHTML = items.map(item => {
+    const imgs = item.images.map((img, i) =>
+      `<img src="${raw}assets/images/${folder}/${item.id}/${img}" class="${i===0?'active':''}" alt="" loading="lazy">`
+    ).join('');
+    return `<div class="set-card">
+      <div class="mini-slider">${imgs || '<div class="no-img"><i class="fas fa-camera"></i></div>'}</div>
+      <div class="set-info">
+        <div class="name">${item.name || '(Unnamed)'}</div>
+        <div class="desc">${item.desc || ''}</div>
+        <div class="price">${item.price || ''}</div>
+        <div class="card-actions">
+          <button class="btn-sm btn-edit"   onclick="editItem('${cat}','${item.id}')">Edit</button>
+          <button class="btn-sm btn-delete" onclick="confirmDelete('${cat}','${item.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.mini-slider').forEach(ms => {
+    const imgs = ms.querySelectorAll('img');
+    if (imgs.length > 1) {
+      let cur = 0;
+      setInterval(() => {
+        imgs[cur].classList.remove('active');
+        cur = (cur + 1) % imgs.length;
+        imgs[cur].classList.add('active');
+      }, 3500);
+    }
+  });
+}
+
+// ── MODAL STATE ────────────────────────────
+let pendingImages = [], existingImages = [], currentMode = 'add', currentEditId = '';
+
+function resetModal() {
+  pendingImages = []; existingImages = []; currentEditId = '';
+  document.getElementById('edit-id').value            = '';
+  document.getElementById('edit-category').value      = '';
+  document.getElementById('f-name').value             = '';
+  document.getElementById('f-price').value            = '';
+  document.getElementById('f-desc').value             = '';
+  document.getElementById('file-input').value         = '';
+  document.getElementById('image-previews').innerHTML = '';
+  document.getElementById('publish-btn').disabled     = false;
+}
+
+function openModal(cat) {
+  currentMode = 'add'; resetModal();
+  document.getElementById('edit-category').value     = cat;
+  document.getElementById('modal-title').textContent = 'Add ' + cap(cat);
+  document.getElementById('publish-btn').textContent = 'Publish to Site';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function editItem(cat, id) {
+  const item = cache[cat]?.items.find(i => i.id === id);
+  if (!item) { showToast('Could not load item — try refreshing.', 'error'); return; }
+  currentMode = 'edit'; currentEditId = id;
+  pendingImages = []; existingImages = [...item.images];
+  document.getElementById('edit-id').value            = id;
+  document.getElementById('edit-category').value      = cat;
+  document.getElementById('f-name').value             = item.name  || '';
+  document.getElementById('f-price').value            = item.price || '';
+  document.getElementById('f-desc').value             = item.desc  || '';
+  document.getElementById('file-input').value         = '';
+  document.getElementById('modal-title').textContent  = 'Edit — ' + (item.name || id);
+  document.getElementById('publish-btn').textContent  = 'Save Changes';
+  document.getElementById('publish-btn').disabled     = false;
+  renderPreviews();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function renderPreviews() {
+  const cat = document.getElementById('edit-category').value;
+  const id  = document.getElementById('edit-id').value;
+  let html  = '';
+  if (id && cat) {
+    const { folder } = CAT[cat];
+    const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/`;
+    existingImages.forEach((img, i) => {
+      html += `<div class="img-preview-wrap">
+        <img src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" alt="">
+        <button class="remove-img" onclick="removeExisting(${i})">×</button>
+        <span class="img-order">#${i + 1}</span>
+      </div>`;
+    });
+  }
+  pendingImages.forEach((p, i) => {
+    html += `<div class="img-preview-wrap">
+      <img src="${p.dataUrl}" alt="">
+      <button class="remove-img" onclick="removePending(${i})">×</button>
+      <span class="img-order">New ${i + 1}</span>
+    </div>`;
+  });
+  document.getElementById('image-previews').innerHTML = html;
+}
+
+function removeExisting(i) { existingImages.splice(i, 1); renderPreviews(); }
+function removePending(i)  { pendingImages.splice(i, 1);  renderPreviews(); }
+function closeModal()      { document.getElementById('modal-overlay').classList.remove('open'); resetModal(); }
+function closeModalOnBg(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const r = new FileReader();
+    r.onload = e => { pendingImages.push({ file, dataUrl: e.target.result }); renderPreviews(); };
+    r.readAsDataURL(file);
+  });
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+
+// ── PUBLISH ────────────────────────────────
+async function publishItem() {
+  if (!GH.token || !GH.owner || !GH.repo) {
+    alert(`GitHub Setup incomplete!\n\nGo to ⚙ GitHub Setup tab and fill in all fields, then click Save.`);
+    return;
+  }
+  const cat    = document.getElementById('edit-category').value;
+  const name   = document.getElementById('f-name').value.trim();
+  const price  = document.getElementById('f-price').value.trim();
+  const desc   = document.getElementById('f-desc').value.trim();
+  const editId = document.getElementById('edit-id').value.trim();
+  if (!name) { showToast('Please enter a name.', 'error'); return; }
+  if (!editId && existingImages.length === 0 && pendingImages.length === 0) {
+    showToast('Please add at least one image.', 'error'); return;
+  }
+
+  const btn = document.getElementById('publish-btn');
+  btn.disabled = true; btn.textContent = 'Publishing…';
+  showToast('Publishing to GitHub…', '');
+
+  try {
+    const { folder, json, prefix } = CAT[cat];
+    let itemId = editId;
+    if (!itemId) {
+      const list = cache[cat]?.list || [];
+      let num = list.length + 1;
+      while (list.includes(prefix + num)) num++;
+      itemId = prefix + num;
+    }
+    const basePath = `assets/images/${folder}/${itemId}`;
+    const allExistingNums = existingImages.map(n => parseInt(n.replace(/\D/g,''),10)).filter(n => !isNaN(n));
+    let imgCounter = allExistingNums.length > 0 ? Math.max(...allExistingNums) + 1 : 0;
+
+    const newNames = [];
+    for (let i = 0; i < pendingImages.length; i++) {
+      const img   = pendingImages[i];
+      const ext   = (img.file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const fname = String(imgCounter).padStart(6,'0') + '.' + ext;
+      await putFile(`${basePath}/${fname}`, img.dataUrl.split(',')[1], `Upload ${fname} for ${itemId}`);
+      newNames.push(fname); imgCounter++;
+      btn.textContent = `Uploading ${i+1} / ${pendingImages.length}…`;
+    }
+
+    const allImages = [...existingImages, ...newNames];
+    const infoStr   = `name: ${name}\nprice: ${price}\ndescription: ${desc}\nimages: ${allImages.join(',')}`;
+    await putFile(`${basePath}/info.txt`, btoa(unescape(encodeURIComponent(infoStr))), `${currentMode === 'edit' ? 'Update' : 'Add'} ${itemId}`);
+
+    const currentList = cache[cat]?.list || [];
+    const newList     = currentList.includes(itemId) ? currentList : [...currentList, itemId];
+    await putFile(json, btoa(JSON.stringify(newList, null, 2)), `Update ${cat} index`);
+
+    if (!cache[cat]) cache[cat] = { list: newList, items: [], folder };
+    cache[cat].list = newList;
+    const existingEntry = cache[cat].items.find(i => i.id === itemId);
+    const updatedEntry  = { id: itemId, name, price, desc, images: allImages };
+    existingEntry ? Object.assign(existingEntry, updatedEntry) : cache[cat].items.push(updatedEntry);
+    renderGrid(cat);
+
+    showToast('✓ ' + (currentMode === 'edit' ? 'Changes saved!' : 'Published!'), 'success');
+    closeModal();
+    setTimeout(() => loadCategory(cat), 3000);
+  } catch (err) {
+    console.error(err);
+    showToast('Error: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = currentMode === 'edit' ? 'Save Changes' : 'Publish to Site';
+  }
+}
+
+// ── DELETE ─────────────────────────────────
+let _dCat, _dId;
+function confirmDelete(cat, id) {
+  _dCat = cat; _dId = id;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-del-btn').onclick = doDelete;
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
+
+async function doDelete() {
+  closeConfirm(); showToast('Removing…', '');
+  try {
+    const { json } = CAT[_dCat];
+    const newList  = (cache[_dCat]?.list || []).filter(i => i !== _dId);
+    await putFile(json, btoa(JSON.stringify(newList, null, 2)), `Remove ${_dId}`);
+    if (cache[_dCat]) {
+      cache[_dCat].list  = newList;
+      cache[_dCat].items = cache[_dCat].items.filter(i => i.id !== _dId);
+      renderGrid(_dCat);
+    }
+    showToast('✓ Item removed', 'success');
+    setTimeout(() => loadCategory(_dCat), 2000);
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+// ── TOAST ──────────────────────────────────
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show ' + (type || '');
+  clearTimeout(toastTimer);
+  if (type !== '') toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+</script>
+</body>
+</html>
