@@ -261,11 +261,11 @@
 <body>
 
 <!-- SECURITY LAYER 1: URL TOKEN CHECK runs before anything renders -->
-<div id="blocked-screen" style="display:flex;">
+<div id="blocked-screen" style="display:none;">
   <p>404 — Page not found</p>
 </div>
 
-<div id="site-content" style="display:none;">
+<div id="site-content" style="display:block;">
 
 <!-- HEADER -->
 <header>
@@ -501,35 +501,15 @@
 // The page is completely invisible without ?key=TOKEN in the URL.
 // Hash of the URL token — never store the token itself in code.
 // ════════════════════════════════════════════
-const URL_TOKEN_HASH = '42f00404974050e03a341f9287006464ac1f1aefffc5f0a052fef3433101d16a';
+const URL_TOKEN_HASH = '40704da077486cc5266c20a0b17c2fa95f89a95cfa11d8dc834a1f789834d556';
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-(async function checkUrlToken() {
-  const params = new URLSearchParams(window.location.search);
-  const key    = params.get('key') || '';
-  const hash   = await sha256(key);
-
-  if (hash !== URL_TOKEN_HASH) {
-    // Wrong or missing key — show 404, nothing else loads
-    document.getElementById('blocked-screen').style.display  = 'flex';
-    document.getElementById('site-content').style.display    = 'none';
-    document.title = '404 — Not Found';
-    return;
-  }
-
-  // Correct key — show the site, save token in sessionStorage so
-  // page refreshes don't lose access (but closing tab clears it)
-  sessionStorage.setItem('eq_url_verified', '1');
-  document.getElementById('blocked-screen').style.display = 'none';
-  document.getElementById('site-content').style.display   = 'block';
-
-  // Now boot the rest of the app
-  bootApp();
-})();
+// No URL token required — boot directly
+bootApp();
 
 // ════════════════════════════════════════════
 // SECURITY LAYER 2: HASHED PASSWORD
