@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery – EGYGRILLZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    /* ==========================================================================
+       RESET & BASE
+       ========================================================================== */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
+    body.menu-open { overflow: hidden; }
+
+    /* ==========================================================================
+       HEADER (CONSISTENT DESIGN)
+       ========================================================================== */
+    header {
+      position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
+    }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
+    
+    .main-nav { display: flex; gap: 20px; }
+    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
+    .main-nav a:hover { color: #666; }
+    .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
+
+    .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
+    .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
+    
+    @media (max-width: 980px) {
+      .menu-toggle { display: flex; }
+      .main-nav {
+        position: fixed; top: 60px; right: -100%; width: 100%; height: auto; background: #fff;
+        flex-direction: column; padding: 10px 5%; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
+      }
+      .main-nav.active { right: 0; }
+      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
+    }
+
+    /* ==========================================================================
+       GALLERY GRID
+       ========================================================================== */
+    .container { max-width: 1600px; margin: 0 auto; padding: 40px 5% 100px; }
+    .page-header { text-align: center; margin-bottom: 60px; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 8vw, 56px); text-transform: uppercase; letter-spacing: 4px; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 40px; }
+    .set-card { cursor: pointer; border: 1px solid #eee; background: #fff; transition: 0.3s; border-radius: 4px; overflow: hidden; }
+    .set-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.06); }
+
+    .mini-slider { position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #f8f8f8; }
+    .mini-slider img { 
+        position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; 
+        opacity:0; transition:opacity 0.8s; 
+        pointer-events: none; -webkit-user-drag: none;
+    }
+    .mini-slider img.active { opacity: 1; }
+
+    .set-info { padding: 25px; text-align: left; }
+    .set-info .name { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 8px; font-weight: 700; }
+    .set-info .desc { font-size: 13px; color: #666; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .set-info .price { font-weight: 700; font-size: 16px; color: #000; border-top: 1px solid #f0f0f0; padding-top: 15px; }
+
+    /* ==========================================================================
+       MODAL VIEW
+       ========================================================================== */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; align-items:center; justify-content:center; padding: 20px; }
+    .modal-content { background:#fff; width:100%; max-width:1000px; max-height:90vh; border-radius:4px; overflow:hidden; position:relative; }
+    .close { position:absolute; top:20px; right:20px; font-size:30px; color:#000; cursor:pointer; z-index:10; }
+    
+    .full-slider { position:relative; height:60vh; background:#000; }
+    .full-slider img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:0.5s; pointer-events: none; }
+    .full-slider img.active { opacity:1; }
+
+    .slider-nav { position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; padding:0 20px; pointer-events:none; }
+    .slider-nav button { pointer-events:all; background:rgba(255,255,255,0.9); color:#000; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; }
+
+    .modal-info { padding:40px; text-align:center; }
+    .modal-info .name { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; }
+    .modal-info .description { font-size: 15px; color: #555; margin-top: 15px; max-width: 600px; margin-inline: auto; }
+
+    /* ==========================================================================
+       FOOTER (CONSISTENT DESIGN)
+       ========================================================================== */
+    footer { background: #000; color: #fff; padding: 50px 5% 20px; margin-top: 80px; }
+    .footer-main { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid #222; }
+    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
+    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
+    .footer-col a:hover { color: #888; }
+    
+    .footer-bottom { padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+    .footer-logo-img { height: 10px; filter: brightness(0) invert(1); }
+    .ceo-wrap { display: flex; align-items: center; gap: 8px; }
+    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .ceo-name { font-family: 'Alex Brush'; font-size: 12px; color: #888; }
+    .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
+
+    @media (max-width: 768px) {
+      .footer-main { grid-template-columns: 1fr; text-align: center; }
+      .footer-col { display: flex; flex-direction: column; align-items: center; }
+      .footer-bottom { flex-direction: column; }
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+  <header>
+    <a href="index.html" class="logo-text">EGYGRILLZ</a>
+    <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="latest-designs.html">Latest</a>
+      <a href="booking.html">Schedule</a>
+      <a href="grillz-gallery.html" class="nav-active">Gallery</a>
+      <a href="golds.html">Golds</a>
+      <a href="diamonds.html">Diamonds</a>
+      <a href="silvers.html">Silvers</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Custom Creations</h1>
+      <p style="font-style: italic; color: #666;">A portfolio of our most iconic handcrafted smiles.</p>
+    </div>
+    <div class="grid" id="sets-grid"></div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">×</span>
+      <div class="full-slider" id="full-slider"></div>
+      <div class="slider-nav">
+        <button onclick="prevSlide()">‹</button>
+        <button onclick="nextSlide()">›</button>
+      </div>
+      <div class="modal-info">
+        <div class="name" id="modal-name"></div>
+        <div class="price" id="modal-price"></div>
+        <div class="description" id="modal-desc"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-main">
+        <div class="footer-col">
+            <h4>EGYGRILLZ Egypt</h4>
+            <p style="font-size: 13px; color: #888; max-width: 300px;">Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Information</h4>
+            <a href="about.html">About Us</a>
+            <a href="booking.html">Schedule</a>
+            <a href="contact.html">Contact</a>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="shipping.html">Care & Shipping</a>
+        </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="footer-icons">
+        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff; margin-right: 15px;"><i class="fab fa-instagram"></i></a>
+        <a href="#" style="color:#fff;"><i class="fas fa-location-dot"></i></a>
+      </div>
+      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+      <div class="ceo-wrap">
+        <span class="ceo-label">Founder</span>
+        <span class="ceo-name">DR Mohamed Mahdy</span>
+      </div>
+      <div class="legal-text">© 2026 EGYGRILLZ</div>
+    </div>
+  </footer>
+
+  <script>
+    // Menu Toggle Logic
+    const toggle = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('.main-nav');
+    toggle.addEventListener('click', () => { 
+        nav.classList.toggle('active');
+        document.body.classList.toggle('menu-open');
+    });
+
+    let currentSetImages = [];
+    let currentSlideIndex = 0;
+
+    fetch('assets/images/sets/sets.json')
+      .then(res => res.json())
+      .then(setNames => {
+        const grid = document.getElementById('sets-grid');
+        setNames.forEach(setName => {
+          fetch(`assets/images/sets/${setName}/info.txt`)
+            .then(res => res.text())
+            .then(text => {
+              const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+              let name = setName, price = '', desc = '', images = [];
+
+              lines.forEach(line => {
+                if (line.toLowerCase().startsWith('name:')) name = line.split(':')[1].trim();
+                if (line.toLowerCase().startsWith('price:')) price = line.split(':')[1].trim();
+                if (line.toLowerCase().startsWith('description:')) desc = line.split(':')[1].trim();
+                if (line.toLowerCase().startsWith('images:')) {
+                  images = line.split(':')[1].trim().split(',').map(f => f.trim());
+                }
+              });
+
+              let sliderHTML = '<div class="mini-slider">';
+              images.forEach((img, i) => {
+                sliderHTML += `<img src="assets/images/sets/${setName}/${img}" class="${i===0?'active':''}" draggable="false">`;
+              });
+              sliderHTML += '</div>';
+
+              const card = document.createElement('div');
+              card.className = 'set-card';
+              card.innerHTML = `${sliderHTML}<div class="set-info"><div class="name">${name}</div><div class="desc">${desc}</div><div class="price">${price}</div></div>`;
+              card.onclick = () => openModal(images, name, price, desc, setName);
+              grid.appendChild(card);
+
+              // Auto-slider for card thumbnails
+              const imgs = card.querySelectorAll('.mini-slider img');
+              let idx = 0;
+              if (imgs.length > 1) {
+                setInterval(() => {
+                  imgs[idx].classList.remove('active');
+                  idx = (idx + 1) % imgs.length;
+                  imgs[idx].classList.add('active');
+                }, 3500);
+              }
+            });
+        });
+      });
+
+    function openModal(images, name, price, desc, setName) {
+      currentSetImages = images.map(img => `assets/images/sets/${setName}/${img}`);
+      currentSlideIndex = 0;
+      const slider = document.getElementById('full-slider');
+      slider.innerHTML = '';
+      currentSetImages.forEach((src, i) => {
+        const img = document.createElement('img');
+        img.src = src;
+        if (i === 0) img.classList.add('active');
+        slider.appendChild(img);
+      });
+      document.getElementById('modal-name').textContent = name;
+      document.getElementById('modal-price').textContent = price;
+      document.getElementById('modal-desc').textContent = desc;
+      document.getElementById('modal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    function nextSlide() {
+      const imgs = document.getElementById('full-slider').querySelectorAll('img');
+      if (imgs.length <= 1) return;
+      imgs[currentSlideIndex].classList.remove('active');
+      currentSlideIndex = (currentSlideIndex + 1) % imgs.length;
+      imgs[currentSlideIndex].classList.add('active');
+    }
+
+    function prevSlide() {
+      const imgs = document.getElementById('full-slider').querySelectorAll('img');
+      if (imgs.length <= 1) return;
+      imgs[currentSlideIndex].classList.remove('active');
+      currentSlideIndex = (currentSlideIndex - 1 + imgs.length) % imgs.length;
+      imgs[currentSlideIndex].classList.add('active');
+    }
+
+    window.onclick = (e) => { if (e.target.id === 'modal') closeModal(); };
+  </script>
+</body>
+</html>
