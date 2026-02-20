@@ -251,6 +251,46 @@
     .page-editor-area:focus { border-color: #000; }
     .pages-hint { font-size: 11px; color: #aaa; margin-top: 10px; font-style: italic; }
 
+    /* ── SEARCH & FILTER BAR ── */
+    .filter-bar { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; align-items: center; }
+    .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-input-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #bbb; font-size: 13px; }
+    .search-input { width: 100%; border: 1px solid #ddd; padding: 10px 14px 10px 34px; font-family: 'Arimo', sans-serif; font-size: 13px; outline: none; }
+    .search-input:focus { border-color: #000; }
+    .filter-select { border: 1px solid #ddd; padding: 10px 14px; font-family: 'Arimo', sans-serif; font-size: 12px; outline: none; background: #fff; cursor: pointer; }
+    .filter-select:focus { border-color: #000; }
+    .filter-count { font-size: 11px; color: #aaa; letter-spacing: 1px; white-space: nowrap; }
+
+    /* ── BULK ACTIONS ── */
+    .bulk-bar { display: none; align-items: center; gap: 12px; background: #f8f8f8; border: 1px solid #eee; padding: 12px 18px; margin-bottom: 20px; flex-wrap: wrap; }
+    .bulk-bar.visible { display: flex; }
+    .bulk-count { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; flex: 1; }
+    .btn-bulk-del { background: #c0392b; color: #fff; border: 1px solid #c0392b; padding: 8px 18px; font-family: 'Arimo', sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; }
+    .btn-bulk-del:hover { background: #fff; color: #c0392b; }
+    .btn-bulk-clear { background: #fff; color: #888; border: 1px solid #ddd; padding: 8px 18px; font-family: 'Arimo', sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+
+    /* ── CARD CHECKBOX & TAGS ── */
+    .card-checkbox { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; cursor: pointer; z-index: 10; accent-color: #000; }
+    .set-card { position: relative; }
+    .set-card.bulk-selected { outline: 2px solid #000; }
+    .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .tag { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 3px 8px; border-radius: 2px; cursor: pointer; border: 1px solid; transition: 0.2s; }
+    .tag-new     { color: #2980b9; border-color: #aed6f1; background: #eaf4fc; }
+    .tag-featured{ color: #8e44ad; border-color: #d7bde2; background: #f5eef8; }
+    .tag-sold    { color: #c0392b; border-color: #f5c6c2; background: #fdf2f2; }
+    .tag-sale    { color: #27ae60; border-color: #a9dfbf; background: #eafaf1; }
+
+    /* ── DRAG & DROP REORDER ── */
+    .img-preview-wrap { cursor: grab; user-select: none; }
+    .img-preview-wrap.dragging { opacity: 0.4; cursor: grabbing; }
+    .img-preview-wrap.drag-over { outline: 2px dashed #000; }
+
+    /* ── TAGS IN MODAL ── */
+    .tag-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .tag-toggle { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 6px 12px; border: 1px solid #ddd; background: #fff; cursor: pointer; transition: 0.2s; font-family: 'Arimo', sans-serif; border-radius: 2px; }
+    .tag-toggle:hover { border-color: #000; }
+    .tag-toggle.active { background: #000; color: #fff; border-color: #000; }
+
     /* ── SETUP ── */
     .setup-wrap { max-width: 520px; }
     .step-list { margin: 24px 0 30px; }
@@ -333,6 +373,7 @@
     <button class="tab-btn" onclick="showPanel('diamonds',this)">Diamonds</button>
     <button class="tab-btn" onclick="showPanel('latest',this)">Latest Designs</button>
     <button class="tab-btn" onclick="showPanel('pages',this)">📝 Pages Editor</button>
+    <button class="tab-btn" onclick="showPanel('backup',this)">💾 Backup</button>
     <button class="tab-btn" onclick="showPanel('setup',this)">⚙ GitHub Setup</button>
     <div class="tab-spacer"></div>
     <button class="tab-logout" onclick="logout()">Logout</button>
@@ -346,6 +387,18 @@
         <div><p class="ph-title">Sets</p><p class="ph-sub">Full grillz sets with multiple images</p></div>
         <button class="btn-outline" onclick="openModal('sets')">+ Add Set</button>
       </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search sets…" oninput="filterGrid('sets',this.value,document.getElementById('sort-sets').value)"></div>
+        <select class="filter-select" id="sort-sets" onchange="filterGrid('sets',document.querySelector('#panel-sets .search-input').value,this.value)">
+          <option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option>
+        </select>
+        <span class="filter-count" id="count-sets"></span>
+      </div>
+      <div class="bulk-bar" id="bulk-sets">
+        <span class="bulk-count" id="bulk-count-sets">0 selected</span>
+        <button class="btn-bulk-del" onclick="bulkDelete('sets')">Delete Selected</button>
+        <button class="btn-bulk-clear" onclick="clearBulk('sets')">Clear</button>
+      </div>
       <div class="grid" id="grid-sets"><div class="empty-state"><i class="fas fa-images"></i><p>Loading…</p></div></div>
     </div>
 
@@ -354,6 +407,18 @@
       <div class="page-header-row">
         <div><p class="ph-title">Golds</p><p class="ph-sub">Gold grillz designs</p></div>
         <button class="btn-outline" onclick="openModal('golds')">+ Add Gold</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search golds…" oninput="filterGrid('golds',this.value,document.getElementById('sort-golds').value)"></div>
+        <select class="filter-select" id="sort-golds" onchange="filterGrid('golds',document.querySelector('#panel-golds .search-input').value,this.value)">
+          <option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option>
+        </select>
+        <span class="filter-count" id="count-golds"></span>
+      </div>
+      <div class="bulk-bar" id="bulk-golds">
+        <span class="bulk-count" id="bulk-count-golds">0 selected</span>
+        <button class="btn-bulk-del" onclick="bulkDelete('golds')">Delete Selected</button>
+        <button class="btn-bulk-clear" onclick="clearBulk('golds')">Clear</button>
       </div>
       <div class="grid" id="grid-golds"></div>
     </div>
@@ -364,6 +429,18 @@
         <div><p class="ph-title">Silvers</p><p class="ph-sub">Silver grillz designs</p></div>
         <button class="btn-outline" onclick="openModal('silvers')">+ Add Silver</button>
       </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search silvers…" oninput="filterGrid('silvers',this.value,document.getElementById('sort-silvers').value)"></div>
+        <select class="filter-select" id="sort-silvers" onchange="filterGrid('silvers',document.querySelector('#panel-silvers .search-input').value,this.value)">
+          <option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option>
+        </select>
+        <span class="filter-count" id="count-silvers"></span>
+      </div>
+      <div class="bulk-bar" id="bulk-silvers">
+        <span class="bulk-count" id="bulk-count-silvers">0 selected</span>
+        <button class="btn-bulk-del" onclick="bulkDelete('silvers')">Delete Selected</button>
+        <button class="btn-bulk-clear" onclick="clearBulk('silvers')">Clear</button>
+      </div>
       <div class="grid" id="grid-silvers"></div>
     </div>
 
@@ -372,6 +449,18 @@
       <div class="page-header-row">
         <div><p class="ph-title">Diamonds</p><p class="ph-sub">Diamond grillz designs</p></div>
         <button class="btn-outline" onclick="openModal('diamonds')">+ Add Diamond</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search diamonds…" oninput="filterGrid('diamonds',this.value,document.getElementById('sort-diamonds').value)"></div>
+        <select class="filter-select" id="sort-diamonds" onchange="filterGrid('diamonds',document.querySelector('#panel-diamonds .search-input').value,this.value)">
+          <option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option>
+        </select>
+        <span class="filter-count" id="count-diamonds"></span>
+      </div>
+      <div class="bulk-bar" id="bulk-diamonds">
+        <span class="bulk-count" id="bulk-count-diamonds">0 selected</span>
+        <button class="btn-bulk-del" onclick="bulkDelete('diamonds')">Delete Selected</button>
+        <button class="btn-bulk-clear" onclick="clearBulk('diamonds')">Clear</button>
       </div>
       <div class="grid" id="grid-diamonds"></div>
     </div>
@@ -382,7 +471,44 @@
         <div><p class="ph-title">Latest Designs</p><p class="ph-sub">Newest pieces shown on the homepage</p></div>
         <button class="btn-outline" onclick="openModal('latest')">+ Add Design</button>
       </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search latest…" oninput="filterGrid('latest',this.value,document.getElementById('sort-latest').value)"></div>
+        <select class="filter-select" id="sort-latest" onchange="filterGrid('latest',document.querySelector('#panel-latest .search-input').value,this.value)">
+          <option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option>
+        </select>
+        <span class="filter-count" id="count-latest"></span>
+      </div>
+      <div class="bulk-bar" id="bulk-latest">
+        <span class="bulk-count" id="bulk-count-latest">0 selected</span>
+        <button class="btn-bulk-del" onclick="bulkDelete('latest')">Delete Selected</button>
+        <button class="btn-bulk-clear" onclick="clearBulk('latest')">Clear</button>
+      </div>
       <div class="grid" id="grid-latest"></div>
+    </div>
+
+    <!-- BACKUP -->
+    <div class="panel" id="panel-backup">
+      <div class="page-header-row">
+        <div><p class="ph-title">Backup</p><p class="ph-sub">Export all your data or restore from a backup file</p></div>
+      </div>
+      <div style="max-width:600px;">
+        <div style="border:1px solid #eee;padding:32px;margin-bottom:24px;">
+          <p style="font-family:'Playfair Display',serif;font-size:18px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">Export Backup</p>
+          <p style="font-size:13px;color:#666;margin-bottom:24px;line-height:1.7;">Downloads a full JSON file of all your items — sets, golds, silvers, diamonds, and latest designs — including names, prices, descriptions, tags, and image lists.</p>
+          <button class="btn-black" onclick="exportBackup()">⬇ Download Backup JSON</button>
+        </div>
+        <div style="border:1px solid #eee;padding:32px;">
+          <p style="font-family:'Playfair Display',serif;font-size:18px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">Restore from Backup</p>
+          <p style="font-size:13px;color:#666;margin-bottom:24px;line-height:1.7;">Upload a previously exported JSON backup to restore your data. This will overwrite the current index files in your GitHub repo.</p>
+          <div class="upload-zone" style="margin-bottom:16px;" onclick="document.getElementById('backup-file').click()">
+            <input type="file" id="backup-file" accept=".json" style="display:none" onchange="previewRestore(this.files[0])">
+            <i class="fas fa-file-import" style="font-size:26px;color:#ccc;margin-bottom:10px;display:block;"></i>
+            <p><strong>Click to select backup JSON file</strong></p>
+          </div>
+          <div id="restore-preview" style="display:none;margin-bottom:16px;background:#f8f8f8;border:1px solid #eee;padding:16px;font-size:12px;line-height:1.8;"></div>
+          <button class="btn-black" id="restore-btn" style="display:none;" onclick="doRestore()">⬆ Restore to GitHub</button>
+        </div>
+      </div>
     </div>
 
     <!-- PAGES EDITOR -->
@@ -538,6 +664,15 @@
         </div>
         <div class="image-previews" id="image-previews"></div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Tags</label>
+        <div class="tag-selector">
+          <button type="button" class="tag-toggle" data-tag="new" onclick="toggleTag(this)">🆕 New</button>
+          <button type="button" class="tag-toggle" data-tag="featured" onclick="toggleTag(this)">⭐ Featured</button>
+          <button type="button" class="tag-toggle" data-tag="sold" onclick="toggleTag(this)">🔴 Sold</button>
+          <button type="button" class="tag-toggle" data-tag="sale" onclick="toggleTag(this)">💚 Sale</button>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-muted" onclick="closeModal()">Cancel</button>
@@ -561,113 +696,68 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ════════════════════════════════════════════
-// SECURITY LAYER 1: SECRET URL TOKEN
-// The page is completely invisible without ?key=TOKEN in the URL.
-// Hash of the URL token — never store the token itself in code.
-// ════════════════════════════════════════════
 const URL_TOKEN_HASH = '40704da077486cc5266c20a0b17c2fa95f89a95cfa11d8dc834a1f789834d556';
-
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
-
 // No URL token required — boot directly
 bootApp();
 
-// ════════════════════════════════════════════
-// SECURITY LAYER 2: HASHED PASSWORD
-// Password: KLoeAwffT4xMdtEa
-// This is the SHA-256 hash — the real password is never stored.
-// ════════════════════════════════════════════
 const ADMIN_PW_HASH = '8e48868fbb1f1066dade8e5decd84645eec47ca1cf653776413a86cb4b9a2f6b';
-
-// ════════════════════════════════════════════
-// SECURITY LAYER 3: BRUTE-FORCE LOCKOUT
-// 5 wrong attempts = 15 min lockout, stored in localStorage
-// ════════════════════════════════════════════
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS   = 15 * 60 * 1000;
+function getLockout()  { return JSON.parse(localStorage.getItem('eq_lockout') || '{"attempts":0,"until":0}'); }
+function setLockout(d) { localStorage.setItem('eq_lockout', JSON.stringify(d)); }
+function isLockedOut() { const d = getLockout(); return Date.now() < d.until ? d.until : false; }
 
-function getLockout()     { return JSON.parse(localStorage.getItem('eq_lockout') || '{"attempts":0,"until":0}'); }
-function setLockout(d)    { localStorage.setItem('eq_lockout', JSON.stringify(d)); }
-function isLockedOut()    { const d = getLockout(); return Date.now() < d.until ? d.until : false; }
-
-// ════════════════════════════════════════════
-// APP BOOT — only runs after URL token passes
-// ════════════════════════════════════════════
 function bootApp() {
-  // Clear old plain-text passwords from previous versions
-  localStorage.removeItem('eq_pw');
-  localStorage.removeItem('eq_pw_hash');
-
-  // Wire up Enter key on password input
-  document.getElementById('pw-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
-
-  // Check lockout on load
+  localStorage.removeItem('eq_pw'); localStorage.removeItem('eq_pw_hash');
+  document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   const until = isLockedOut();
   if (until) {
     const mins = Math.ceil((until - Date.now()) / 60000);
     document.getElementById('login-btn').disabled = true;
     document.getElementById('lockout-msg').style.display = 'block';
-    document.getElementById('lockout-msg').textContent   = `Too many failed attempts. Try again in ${mins} minute(s).`;
+    document.getElementById('lockout-msg').textContent = `Too many failed attempts. Try again in ${mins} minute(s).`;
   }
-
-  // Mobile menu
   document.querySelector('.menu-toggle').addEventListener('click', () => {
     document.querySelector('.main-nav').classList.toggle('active');
     document.body.classList.toggle('menu-open');
   });
 }
 
-// ── LOGIN ──────────────────────────────────
 async function doLogin() {
   const until = isLockedOut();
-  if (until) {
-    const mins = Math.ceil((until - Date.now()) / 60000);
-    document.getElementById('pw-err').textContent = `Locked out. Try again in ${mins} minute(s).`;
-    return;
-  }
-
-  const entered     = document.getElementById('pw-input').value;
-  const enteredHash = await sha256(entered);
-
+  if (until) { document.getElementById('pw-err').textContent = `Locked out. Try again in ${Math.ceil((until-Date.now())/60000)} minute(s).`; return; }
+  const enteredHash = await sha256(document.getElementById('pw-input').value);
   if (enteredHash === ADMIN_PW_HASH) {
     setLockout({ attempts: 0, until: 0 });
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display          = 'block';
-    loadConfig();
-    loadAllPanels();
+    document.getElementById('app').style.display = 'block';
+    loadConfig(); loadAllPanels();
   } else {
-    const d    = getLockout();
-    d.attempts = (d.attempts || 0) + 1;
+    const d = getLockout(); d.attempts = (d.attempts || 0) + 1;
     const left = MAX_ATTEMPTS - d.attempts;
-
     if (d.attempts >= MAX_ATTEMPTS) {
       d.until = Date.now() + LOCKOUT_MS;
       document.getElementById('lockout-msg').style.display = 'block';
-      document.getElementById('lockout-msg').textContent   = 'Too many failed attempts. Locked out for 15 minutes.';
-      document.getElementById('login-btn').disabled        = true;
+      document.getElementById('lockout-msg').textContent = 'Too many failed attempts. Locked out for 15 minutes.';
+      document.getElementById('login-btn').disabled = true;
     }
     setLockout(d);
-    document.getElementById('pw-err').textContent = left > 0
-      ? `Incorrect password. ${left} attempt(s) remaining.`
-      : 'Account locked. Try again in 15 minutes.';
+    document.getElementById('pw-err').textContent = left > 0 ? `Incorrect password. ${left} attempt(s) remaining.` : 'Account locked. Try again in 15 minutes.';
     document.getElementById('pw-input').value = '';
   }
 }
 
 function logout() {
   document.getElementById('login-screen').style.display = 'block';
-  document.getElementById('app').style.display          = 'none';
-  document.getElementById('pw-input').value             = '';
-  document.getElementById('pw-err').textContent         = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-err').textContent = '';
 }
 
-// ── CATEGORY CONFIG ────────────────────────
 const CAT = {
   sets:     { folder: 'sets',           json: 'assets/images/sets/sets.json',               prefix: 'set' },
   golds:    { folder: 'golds',          json: 'assets/images/golds/golds.json',             prefix: 'golds' },
@@ -675,7 +765,6 @@ const CAT = {
   diamonds: { folder: 'diamonds',       json: 'assets/images/diamonds/diamonds.json',       prefix: 'diamonds' },
   latest:   { folder: 'latest-designs', json: 'assets/images/latest-designs/designs.json', prefix: 'design' },
 };
-
 const GH = {
   token:  localStorage.getItem('eq_token')  || '',
   owner:  localStorage.getItem('eq_owner')  || '',
@@ -684,30 +773,19 @@ const GH = {
 };
 
 function loadConfig() {
-  GH.token  = localStorage.getItem('eq_token')  || '';
-  GH.owner  = localStorage.getItem('eq_owner')  || '';
-  GH.repo   = localStorage.getItem('eq_repo')   || '';
-  GH.branch = localStorage.getItem('eq_branch') || 'main';
-  document.getElementById('cfg-token').value  = GH.token;
-  document.getElementById('cfg-owner').value  = GH.owner;
-  document.getElementById('cfg-repo').value   = GH.repo;
-  document.getElementById('cfg-branch').value = GH.branch;
+  GH.token = localStorage.getItem('eq_token') || ''; GH.owner = localStorage.getItem('eq_owner') || '';
+  GH.repo = localStorage.getItem('eq_repo') || ''; GH.branch = localStorage.getItem('eq_branch') || 'main';
+  document.getElementById('cfg-token').value = GH.token; document.getElementById('cfg-owner').value = GH.owner;
+  document.getElementById('cfg-repo').value = GH.repo; document.getElementById('cfg-branch').value = GH.branch;
 }
-
 function saveConfig() {
-  GH.token  = document.getElementById('cfg-token').value.trim();
-  GH.owner  = document.getElementById('cfg-owner').value.trim();
-  GH.repo   = document.getElementById('cfg-repo').value.trim();
-  GH.branch = document.getElementById('cfg-branch').value.trim() || 'main';
+  GH.token = document.getElementById('cfg-token').value.trim(); GH.owner = document.getElementById('cfg-owner').value.trim();
+  GH.repo = document.getElementById('cfg-repo').value.trim(); GH.branch = document.getElementById('cfg-branch').value.trim() || 'main';
   if (!GH.token || !GH.owner || !GH.repo) { alert('Please fill in all fields.'); return; }
-  localStorage.setItem('eq_token',  GH.token);
-  localStorage.setItem('eq_owner',  GH.owner);
-  localStorage.setItem('eq_repo',   GH.repo);
-  localStorage.setItem('eq_branch', GH.branch);
-  const ok = document.getElementById('saved-ok');
-  ok.style.display = 'block';
-  setTimeout(() => ok.style.display = 'none', 3000);
-  loadAllPanels();
+  localStorage.setItem('eq_token', GH.token); localStorage.setItem('eq_owner', GH.owner);
+  localStorage.setItem('eq_repo', GH.repo); localStorage.setItem('eq_branch', GH.branch);
+  const ok = document.getElementById('saved-ok'); ok.style.display = 'block';
+  setTimeout(() => ok.style.display = 'none', 3000); loadAllPanels();
 }
 
 // ── PANELS ─────────────────────────────────
@@ -720,28 +798,16 @@ function showPanel(name, btn) {
 
 // ── GITHUB API ─────────────────────────────
 async function ghFetch(path, method = 'GET', body = null) {
-  const opts = {
-    method,
-    headers: {
-      'Authorization': `token ${GH.token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json'
-    }
-  };
+  const opts = { method, headers: { 'Authorization': `token ${GH.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
-  const res  = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/${path}`, opts);
+  const res = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/${path}`, opts);
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'GitHub API error');
   return data;
 }
-
-async function getFileSHA(path) {
-  try { return (await ghFetch(`contents/${path}?ref=${GH.branch}`)).sha; }
-  catch { return null; }
-}
-
+async function getFileSHA(path) { try { return (await ghFetch(`contents/${path}?ref=${GH.branch}`)).sha; } catch { return null; } }
 async function putFile(path, content, message) {
-  const sha  = await getFileSHA(path);
+  const sha = await getFileSHA(path);
   const body = { message, content, branch: GH.branch };
   if (sha) body.sha = sha;
   return ghFetch(`contents/${path}`, 'PUT', body);
@@ -749,25 +815,24 @@ async function putFile(path, content, message) {
 
 // ── DATA ───────────────────────────────────
 const cache = {};
+// Tags stored in localStorage keyed by "tags_CAT_ID"
+function getTags(cat, id) { return JSON.parse(localStorage.getItem(`tags_${cat}_${id}`) || '[]'); }
+function setTags(cat, id, tags) { localStorage.setItem(`tags_${cat}_${id}`, JSON.stringify(tags)); }
 
 function parseInfo(text) {
   const info = { name: '', price: '', desc: '', images: [] };
   text.split('\n').forEach(line => {
-    const idx = line.indexOf(':');
-    if (idx === -1) return;
-    const key = line.slice(0, idx).trim().toLowerCase();
-    const val = line.slice(idx + 1).trim();
-    if (key === 'name' || key === 'title')            info.name   = val;
-    else if (key === 'price')                         info.price  = val;
-    else if (key === 'description' || key === 'desc') info.desc   = val;
+    const idx = line.indexOf(':'); if (idx === -1) return;
+    const key = line.slice(0, idx).trim().toLowerCase(); const val = line.slice(idx + 1).trim();
+    if (key === 'name' || key === 'title') info.name = val;
+    else if (key === 'price') info.price = val;
+    else if (key === 'description' || key === 'desc') info.desc = val;
     else if (key === 'images') info.images = val.split(',').map(i => i.trim()).filter(Boolean);
   });
   return info;
 }
 
-async function loadAllPanels() {
-  for (const cat of Object.keys(CAT)) { loadCategory(cat).catch(() => {}); }
-}
+async function loadAllPanels() { for (const cat of Object.keys(CAT)) { loadCategory(cat).catch(() => {}); } }
 
 async function loadCategory(cat) {
   if (!GH.owner || !GH.repo) { renderEmpty(cat, 'Go to ⚙ GitHub Setup and enter your repo details.'); return; }
@@ -778,10 +843,8 @@ async function loadCategory(cat) {
   const items = [];
   for (const id of list) {
     try {
-      const txt  = await (await fetch(`${raw}assets/images/${folder}/${id}/info.txt?t=${Date.now()}`)).text();
-      const info = parseInfo(txt);
-      info.id = id;
-      items.push(info);
+      const txt = await (await fetch(`${raw}assets/images/${folder}/${id}/info.txt?t=${Date.now()}`)).text();
+      const info = parseInfo(txt); info.id = id; items.push(info);
     } catch {}
   }
   cache[cat] = { list, items, folder };
@@ -789,25 +852,93 @@ async function loadCategory(cat) {
 }
 
 function renderEmpty(cat, msg) {
-  document.getElementById('grid-' + cat).innerHTML =
-    `<div class="empty-state"><i class="fas fa-images"></i><p>${msg}</p></div>`;
+  document.getElementById('grid-' + cat).innerHTML = `<div class="empty-state"><i class="fas fa-images"></i><p>${msg}</p></div>`;
+  const el = document.getElementById('count-' + cat); if (el) el.textContent = '';
 }
 
+// ── BULK SELECTION ──────────────────────────
+const bulkSelected = { sets: new Set(), golds: new Set(), silvers: new Set(), diamonds: new Set(), latest: new Set() };
+
+function toggleBulkSelect(cat, id, checkbox) {
+  if (checkbox.checked) bulkSelected[cat].add(id); else bulkSelected[cat].delete(id);
+  updateBulkBar(cat);
+  const card = checkbox.closest('.set-card');
+  card.classList.toggle('bulk-selected', checkbox.checked);
+}
+function updateBulkBar(cat) {
+  const count = bulkSelected[cat].size;
+  const bar = document.getElementById('bulk-' + cat);
+  bar.classList.toggle('visible', count > 0);
+  document.getElementById('bulk-count-' + cat).textContent = `${count} item${count !== 1 ? 's' : ''} selected`;
+}
+function clearBulk(cat) {
+  bulkSelected[cat].clear();
+  document.querySelectorAll(`#grid-${cat} .card-checkbox`).forEach(cb => { cb.checked = false; cb.closest('.set-card').classList.remove('bulk-selected'); });
+  updateBulkBar(cat);
+}
+async function bulkDelete(cat) {
+  const ids = [...bulkSelected[cat]];
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} item(s)? This cannot be undone.`)) return;
+  showToast(`Deleting ${ids.length} items…`, '');
+  try {
+    const { json } = CAT[cat];
+    const newList = (cache[cat]?.list || []).filter(i => !ids.includes(i));
+    await putFile(json, btoa(JSON.stringify(newList, null, 2)), `Bulk remove ${ids.length} items from ${cat}`);
+    if (cache[cat]) { cache[cat].list = newList; cache[cat].items = cache[cat].items.filter(i => !ids.includes(i.id)); }
+    bulkSelected[cat].clear();
+    updateBulkBar(cat);
+    renderGrid(cat);
+    showToast(`✓ ${ids.length} items deleted`, 'success');
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+// ── SEARCH & FILTER ─────────────────────────
+function filterGrid(cat, query, sort) {
+  const { items = [] } = cache[cat] || {};
+  let filtered = items.filter(item => {
+    const q = (query || '').toLowerCase();
+    if (!q) return true;
+    return (item.name || '').toLowerCase().includes(q) || (item.desc || '').toLowerCase().includes(q);
+  });
+  if (sort === 'tag-featured') filtered = filtered.filter(i => getTags(cat, i.id).includes('featured'));
+  if (sort === 'tag-sold') filtered = filtered.filter(i => getTags(cat, i.id).includes('sold'));
+  if (sort === 'name') filtered = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  if (sort === 'newest') filtered = [...filtered].reverse();
+  renderGridItems(cat, filtered);
+}
+
+// ── RENDER GRID ─────────────────────────────
+function isVideoFile(name) { return /\.(mp4|mov|webm|ogg|avi)$/i.test(name); }
+
 function renderGrid(cat) {
+  const { items = [] } = cache[cat] || {};
+  const el = document.getElementById('count-' + cat);
+  if (el) el.textContent = items.length ? `${items.length} item${items.length !== 1 ? 's' : ''}` : '';
+  renderGridItems(cat, items);
+}
+
+function renderGridItems(cat, items) {
   const grid = document.getElementById('grid-' + cat);
-  const { items = [], folder } = cache[cat] || {};
+  const { folder } = cache[cat] || CAT[cat];
   const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/`;
-  if (!items.length) { renderEmpty(cat, 'No items yet. Click "+ Add" to publish your first one.'); return; }
+  if (!items.length) { renderEmpty(cat, 'No items match. Try a different search.'); return; }
+
+  const TAGS_MAP = { new: { label: 'New', cls: 'tag-new' }, featured: { label: '⭐ Featured', cls: 'tag-featured' }, sold: { label: 'Sold', cls: 'tag-sold' }, sale: { label: 'Sale', cls: 'tag-sale' } };
 
   grid.innerHTML = items.map(item => {
+    const tags = getTags(cat, item.id);
+    const tagHtml = tags.length ? `<div class="tag-row">${tags.map(t => `<span class="tag ${TAGS_MAP[t]?.cls||''}">${TAGS_MAP[t]?.label||t}</span>`).join('')}</div>` : '';
     const mediaHtml = item.images.map((file, i) => {
-      if (isVideoFile(file)) {
-        return `<video src="${raw}assets/images/${folder}/${item.id}/${file}" class="${i===0?'active':''}" muted playsinline loop></video>`;
-      }
+      if (isVideoFile(file)) return `<video src="${raw}assets/images/${folder}/${item.id}/${file}" class="${i===0?'active':''}" muted playsinline loop></video>`;
       return `<img src="${raw}assets/images/${folder}/${item.id}/${file}" class="${i===0?'active':''}" alt="" loading="lazy">`;
     }).join('');
     const hasVideo = item.images.some(f => isVideoFile(f));
-    return `<div class="set-card">
+    const isChecked = bulkSelected[cat].has(item.id);
+    // Live preview URL
+    const previewUrl = GH.owner ? `https://${GH.owner}.github.io/${GH.repo}/${cat === 'sets' ? 'grillz-gallery' : cat === 'latest' ? 'latest-designs' : cat}.html` : '#';
+    return `<div class="set-card ${isChecked ? 'bulk-selected' : ''}">
+      <input type="checkbox" class="card-checkbox" ${isChecked?'checked':''} onchange="toggleBulkSelect('${cat}','${item.id}',this)" title="Select for bulk action">
       <div class="mini-slider">
         ${mediaHtml || '<div class="no-img"><i class="fas fa-camera"></i></div>'}
         ${hasVideo ? '<span class="video-badge">▶ Video</span>' : ''}
@@ -815,10 +946,12 @@ function renderGrid(cat) {
       <div class="set-info">
         <div class="name">${item.name || '(Unnamed)'}</div>
         <div class="desc">${item.desc || ''}</div>
+        ${tagHtml}
         <div class="price">${item.price || ''}</div>
         <div class="card-actions">
-          <button class="btn-sm btn-edit"   onclick="editItem('${cat}','${item.id}')">Edit</button>
+          <button class="btn-sm btn-edit" onclick="editItem('${cat}','${item.id}')">Edit</button>
           <button class="btn-sm btn-delete" onclick="confirmDelete('${cat}','${item.id}')">Delete</button>
+          <a class="btn-sm btn-edit" href="${previewUrl}" target="_blank" title="Preview live page" style="text-decoration:none;text-align:center;">↗</a>
         </div>
       </div>
     </div>`;
@@ -833,35 +966,34 @@ function renderGrid(cat) {
         if (media[cur].tagName === 'VIDEO') media[cur].pause();
         cur = (cur + 1) % media.length;
         media[cur].classList.add('active');
-        if (media[cur].tagName === 'VIDEO') media[cur].play().catch(()=>{});
+        if (media[cur].tagName === 'VIDEO') media[cur].play().catch(() => {});
       }, 3500);
     } else if (media.length === 1 && media[0].tagName === 'VIDEO') {
-      media[0].play().catch(()=>{});
+      media[0].play().catch(() => {});
     }
   });
 }
 
-// ── MODAL STATE ────────────────────────────
-let pendingImages = [], existingImages = [], currentMode = 'add', currentEditId = '';
-
-function resetModal() {
-  pendingImages = []; existingImages = []; currentEditId = '';
-  document.getElementById('edit-id').value            = '';
-  document.getElementById('edit-category').value      = '';
-  document.getElementById('f-name').value             = '';
-  document.getElementById('f-price').value            = '';
-  document.getElementById('f-desc').value             = '';
-  document.getElementById('file-input').value         = '';
-  document.getElementById('image-previews').innerHTML = '';
-  document.getElementById('publish-btn').disabled     = false;
+// ── TAGS IN MODAL ───────────────────────────
+function toggleTag(btn) { btn.classList.toggle('active'); }
+function getActiveTags() { return [...document.querySelectorAll('.tag-toggle.active')].map(b => b.dataset.tag); }
+function setActiveTagsFromList(tags) {
+  document.querySelectorAll('.tag-toggle').forEach(b => { b.classList.toggle('active', tags.includes(b.dataset.tag)); });
 }
 
-function openModal(cat) {
-  currentMode = 'add'; resetModal();
-  document.getElementById('edit-category').value     = cat;
-  document.getElementById('modal-title').textContent = 'Add ' + cap(cat);
-  document.getElementById('publish-btn').textContent = 'Publish to Site';
-  // Update upload hint for latest designs (supports video)
+// ── MODAL STATE ─────────────────────────────
+let pendingImages = [], existingImages = [], currentMode = 'add', currentEditId = '', currentEditCat = '';
+
+function resetModal() {
+  pendingImages = []; existingImages = []; currentEditId = ''; currentEditCat = '';
+  ['edit-id','edit-category','f-name','f-price','f-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('file-input').value = '';
+  document.getElementById('image-previews').innerHTML = '';
+  document.getElementById('publish-btn').disabled = false;
+  document.querySelectorAll('.tag-toggle').forEach(b => b.classList.remove('active'));
+}
+
+function setUploadHint(cat) {
   if (cat === 'latest') {
     document.getElementById('media-label').textContent = 'Images & Videos — first file is the cover';
     document.getElementById('upload-icon').className = 'fas fa-photo-video';
@@ -873,40 +1005,54 @@ function openModal(cat) {
     document.getElementById('upload-hint').innerHTML = '<strong>Click or drag images here</strong><br>JPG, PNG, WEBP — first image = cover photo';
     document.getElementById('file-input').accept = 'image/*';
   }
+}
+
+function openModal(cat) {
+  currentMode = 'add'; resetModal();
+  currentEditCat = cat;
+  document.getElementById('edit-category').value = cat;
+  document.getElementById('modal-title').textContent = 'Add ' + cap(cat);
+  document.getElementById('publish-btn').textContent = 'Publish to Site';
+  setUploadHint(cat);
   document.getElementById('modal-overlay').classList.add('open');
 }
 
 function editItem(cat, id) {
   const item = cache[cat]?.items.find(i => i.id === id);
   if (!item) { showToast('Could not load item — try refreshing.', 'error'); return; }
-  currentMode = 'edit'; currentEditId = id;
+  currentMode = 'edit'; currentEditId = id; currentEditCat = cat;
   pendingImages = []; existingImages = [...item.images];
-  document.getElementById('edit-id').value            = id;
-  document.getElementById('edit-category').value      = cat;
-  document.getElementById('f-name').value             = item.name  || '';
-  document.getElementById('f-price').value            = item.price || '';
-  document.getElementById('f-desc').value             = item.desc  || '';
-  document.getElementById('file-input').value         = '';
-  document.getElementById('modal-title').textContent  = 'Edit — ' + (item.name || id);
-  document.getElementById('publish-btn').textContent  = 'Save Changes';
-  document.getElementById('publish-btn').disabled     = false;
-  // Update upload hint for latest designs
-  if (cat === 'latest') {
-    document.getElementById('media-label').textContent = 'Images & Videos — first file is the cover';
-    document.getElementById('upload-icon').className = 'fas fa-photo-video';
-    document.getElementById('upload-hint').innerHTML = '<strong>Click or drag images or videos here</strong><br>JPG, PNG, WEBP, MP4, MOV — first file = cover';
-    document.getElementById('file-input').accept = 'image/*,video/*';
-  } else {
-    document.getElementById('media-label').textContent = 'Images — first image is the cover';
-    document.getElementById('upload-icon').className = 'fas fa-camera';
-    document.getElementById('upload-hint').innerHTML = '<strong>Click or drag images here</strong><br>JPG, PNG, WEBP — first image = cover photo';
-    document.getElementById('file-input').accept = 'image/*';
-  }
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-category').value = cat;
+  document.getElementById('f-name').value = item.name || '';
+  document.getElementById('f-price').value = item.price || '';
+  document.getElementById('f-desc').value = item.desc || '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('modal-title').textContent = 'Edit — ' + (item.name || id);
+  document.getElementById('publish-btn').textContent = 'Save Changes';
+  document.getElementById('publish-btn').disabled = false;
+  setActiveTagsFromList(getTags(cat, id));
+  setUploadHint(cat);
   renderPreviews();
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-function isVideoFile(name) { return /\.(mp4|mov|webm|ogg|avi)$/i.test(name); }
+// ── DRAG & DROP REORDER ─────────────────────
+let dragSrcIdx = null, dragSrcType = null;
+function onDragStart(e, idx, type) { dragSrcIdx = idx; dragSrcType = type; e.dataTransfer.effectAllowed = 'move'; }
+function onDragOver(e, wrap) { e.preventDefault(); wrap.classList.add('drag-over'); }
+function onDragLeave(wrap) { wrap.classList.remove('drag-over'); }
+function onDrop(e, idx, type) {
+  e.preventDefault();
+  document.querySelectorAll('.img-preview-wrap').forEach(w => w.classList.remove('drag-over'));
+  if (dragSrcIdx === null || dragSrcIdx === idx) return;
+  if (dragSrcType === 'existing' && type === 'existing') {
+    const moved = existingImages.splice(dragSrcIdx, 1)[0]; existingImages.splice(idx, 0, moved);
+  } else if (dragSrcType === 'pending' && type === 'pending') {
+    const moved = pendingImages.splice(dragSrcIdx, 1)[0]; pendingImages.splice(idx, 0, moved);
+  }
+  dragSrcIdx = null; renderPreviews();
+}
 
 function renderPreviews() {
   const cat = document.getElementById('edit-category').value;
@@ -917,38 +1063,20 @@ function renderPreviews() {
     const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/`;
     existingImages.forEach((img, i) => {
       const isVid = isVideoFile(img);
-      if (isVid) {
-        html += `<div class="img-preview-wrap">
-          <video src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" muted playsinline></video>
-          <span class="media-type-badge">▶ Video</span>
-          <button class="remove-img" onclick="removeExisting(${i})">×</button>
-          <span class="img-order">#${i + 1}</span>
-        </div>`;
-      } else {
-        html += `<div class="img-preview-wrap">
-          <img src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" alt="">
-          <button class="remove-img" onclick="removeExisting(${i})">×</button>
-          <span class="img-order">#${i + 1}</span>
-        </div>`;
-      }
+      html += `<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,${i},'existing')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,${i},'existing')">
+        ${isVid ? `<video src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" muted playsinline></video><span class="media-type-badge">▶ Video</span>` : `<img src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" alt="">`}
+        <button class="remove-img" onclick="removeExisting(${i})">×</button>
+        <span class="img-order">#${i + 1}</span>
+      </div>`;
     });
   }
   pendingImages.forEach((p, i) => {
     const isVid = p.file.type.startsWith('video/');
-    if (isVid) {
-      html += `<div class="img-preview-wrap">
-        <video src="${p.dataUrl}" muted playsinline></video>
-        <span class="media-type-badge">▶ Video</span>
-        <button class="remove-img" onclick="removePending(${i})">×</button>
-        <span class="img-order">New ${i + 1}</span>
-      </div>`;
-    } else {
-      html += `<div class="img-preview-wrap">
-        <img src="${p.dataUrl}" alt="">
-        <button class="remove-img" onclick="removePending(${i})">×</button>
-        <span class="img-order">New ${i + 1}</span>
-      </div>`;
-    }
+    html += `<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,${i},'pending')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,${i},'pending')">
+      ${isVid ? `<video src="${p.dataUrl}" muted playsinline></video><span class="media-type-badge">▶ Video</span>` : `<img src="${p.dataUrl}" alt="">`}
+      <button class="remove-img" onclick="removePending(${i})">×</button>
+      <span class="img-order">New ${i + 1}</span>
+    </div>`;
   });
   document.getElementById('image-previews').innerHTML = html;
 }
@@ -960,35 +1088,25 @@ function closeModalOnBg(e) { if (e.target === document.getElementById('modal-ove
 
 function handleFiles(files) {
   Array.from(files).forEach(file => {
-    const isImg = file.type.startsWith('image/');
-    const isVid = file.type.startsWith('video/');
+    const isImg = file.type.startsWith('image/'), isVid = file.type.startsWith('video/');
     if (!isImg && !isVid) return;
     const r = new FileReader();
     r.onload = e => { pendingImages.push({ file, dataUrl: e.target.result }); renderPreviews(); };
     r.readAsDataURL(file);
   });
 }
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('upload-zone').classList.remove('drag');
-  handleFiles(e.dataTransfer.files);
-}
+function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('drag'); handleFiles(e.dataTransfer.files); }
 
-// ── PUBLISH ────────────────────────────────
+// ── PUBLISH ─────────────────────────────────
 async function publishItem() {
-  if (!GH.token || !GH.owner || !GH.repo) {
-    alert(`GitHub Setup incomplete!\n\nGo to ⚙ GitHub Setup tab and fill in all fields, then click Save.`);
-    return;
-  }
-  const cat    = document.getElementById('edit-category').value;
-  const name   = document.getElementById('f-name').value.trim();
-  const price  = document.getElementById('f-price').value.trim();
-  const desc   = document.getElementById('f-desc').value.trim();
+  if (!GH.token || !GH.owner || !GH.repo) { alert('GitHub Setup incomplete! Go to ⚙ GitHub Setup tab.'); return; }
+  const cat = document.getElementById('edit-category').value;
+  const name = document.getElementById('f-name').value.trim();
+  const price = document.getElementById('f-price').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
   const editId = document.getElementById('edit-id').value.trim();
   if (!name) { showToast('Please enter a name.', 'error'); return; }
-  if (!editId && existingImages.length === 0 && pendingImages.length === 0) {
-    showToast('Please add at least one image.', 'error'); return;
-  }
+  if (!editId && existingImages.length === 0 && pendingImages.length === 0) { showToast('Please add at least one image.', 'error'); return; }
 
   const btn = document.getElementById('publish-btn');
   btn.disabled = true; btn.textContent = 'Publishing…';
@@ -998,96 +1116,125 @@ async function publishItem() {
     const { folder, json, prefix } = CAT[cat];
     let itemId = editId;
     if (!itemId) {
-      const list = cache[cat]?.list || [];
-      let num = list.length + 1;
+      const list = cache[cat]?.list || []; let num = list.length + 1;
       while (list.includes(prefix + num)) num++;
       itemId = prefix + num;
     }
     const basePath = `assets/images/${folder}/${itemId}`;
-    const allExistingNums = existingImages.map(n => parseInt(n.replace(/\D/g,''),10)).filter(n => !isNaN(n));
+    const allExistingNums = existingImages.map(n => parseInt(n.replace(/\D/g, ''), 10)).filter(n => !isNaN(n));
     let imgCounter = allExistingNums.length > 0 ? Math.max(...allExistingNums) + 1 : 0;
-
     const newNames = [];
     for (let i = 0; i < pendingImages.length; i++) {
-      const img   = pendingImages[i];
-      const ext   = (img.file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
-      const fname = String(imgCounter).padStart(6,'0') + '.' + ext;
+      const img = pendingImages[i];
+      const ext = (img.file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const fname = String(imgCounter).padStart(6, '0') + '.' + ext;
       await putFile(`${basePath}/${fname}`, img.dataUrl.split(',')[1], `Upload ${fname} for ${itemId}`);
       newNames.push(fname); imgCounter++;
-      btn.textContent = `Uploading ${i+1} / ${pendingImages.length}…`;
+      btn.textContent = `Uploading ${i + 1} / ${pendingImages.length}…`;
     }
-
     const allImages = [...existingImages, ...newNames];
-    const infoStr   = `name: ${name}\nprice: ${price}\ndescription: ${desc}\nimages: ${allImages.join(',')}`;
+    const infoStr = `name: ${name}\nprice: ${price}\ndescription: ${desc}\nimages: ${allImages.join(',')}`;
     await putFile(`${basePath}/info.txt`, btoa(unescape(encodeURIComponent(infoStr))), `${currentMode === 'edit' ? 'Update' : 'Add'} ${itemId}`);
-
     const currentList = cache[cat]?.list || [];
-    const newList     = currentList.includes(itemId) ? currentList : [...currentList, itemId];
+    const newList = currentList.includes(itemId) ? currentList : [...currentList, itemId];
     await putFile(json, btoa(JSON.stringify(newList, null, 2)), `Update ${cat} index`);
-
+    // Save tags
+    setTags(cat, itemId, getActiveTags());
     if (!cache[cat]) cache[cat] = { list: newList, items: [], folder };
     cache[cat].list = newList;
     const existingEntry = cache[cat].items.find(i => i.id === itemId);
-    const updatedEntry  = { id: itemId, name, price, desc, images: allImages };
+    const updatedEntry = { id: itemId, name, price, desc, images: allImages };
     existingEntry ? Object.assign(existingEntry, updatedEntry) : cache[cat].items.push(updatedEntry);
     renderGrid(cat);
-
     showToast('✓ ' + (currentMode === 'edit' ? 'Changes saved!' : 'Published!'), 'success');
     closeModal();
     setTimeout(() => loadCategory(cat), 3000);
   } catch (err) {
-    console.error(err);
-    showToast('Error: ' + err.message, 'error');
-    btn.disabled = false;
-    btn.textContent = currentMode === 'edit' ? 'Save Changes' : 'Publish to Site';
+    console.error(err); showToast('Error: ' + err.message, 'error');
+    btn.disabled = false; btn.textContent = currentMode === 'edit' ? 'Save Changes' : 'Publish to Site';
   }
 }
 
-// ── DELETE ─────────────────────────────────
+// ── DELETE ───────────────────────────────────
 let _dCat, _dId;
-function confirmDelete(cat, id) {
-  _dCat = cat; _dId = id;
-  document.getElementById('confirm-overlay').classList.add('open');
-  document.getElementById('confirm-del-btn').onclick = doDelete;
-}
+function confirmDelete(cat, id) { _dCat = cat; _dId = id; document.getElementById('confirm-overlay').classList.add('open'); document.getElementById('confirm-del-btn').onclick = doDelete; }
 function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
-
 async function doDelete() {
   closeConfirm(); showToast('Removing…', '');
   try {
     const { json } = CAT[_dCat];
-    const newList  = (cache[_dCat]?.list || []).filter(i => i !== _dId);
+    const newList = (cache[_dCat]?.list || []).filter(i => i !== _dId);
     await putFile(json, btoa(JSON.stringify(newList, null, 2)), `Remove ${_dId}`);
-    if (cache[_dCat]) {
-      cache[_dCat].list  = newList;
-      cache[_dCat].items = cache[_dCat].items.filter(i => i.id !== _dId);
-      renderGrid(_dCat);
-    }
+    if (cache[_dCat]) { cache[_dCat].list = newList; cache[_dCat].items = cache[_dCat].items.filter(i => i.id !== _dId); renderGrid(_dCat); }
     showToast('✓ Item removed', 'success');
     setTimeout(() => loadCategory(_dCat), 2000);
   } catch (err) { showToast('Error: ' + err.message, 'error'); }
 }
 
-// ── TOAST ──────────────────────────────────
+// ── BACKUP & RESTORE ─────────────────────────
+function exportBackup() {
+  const backup = { exported: new Date().toISOString(), categories: {} };
+  for (const cat of Object.keys(CAT)) {
+    const { items = [], list = [] } = cache[cat] || {};
+    backup.categories[cat] = { list, items: items.map(item => ({ ...item, tags: getTags(cat, item.id) })) };
+  }
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `egygrillz-backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  showToast('✓ Backup downloaded', 'success');
+}
+
+let restoreData = null;
+function previewRestore(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      restoreData = JSON.parse(e.target.result);
+      let summary = `<strong>Backup from:</strong> ${restoreData.exported || 'unknown'}<br><br>`;
+      for (const [cat, data] of Object.entries(restoreData.categories || {})) {
+        summary += `<strong>${cap(cat)}:</strong> ${(data.list || []).length} items<br>`;
+      }
+      document.getElementById('restore-preview').innerHTML = summary;
+      document.getElementById('restore-preview').style.display = 'block';
+      document.getElementById('restore-btn').style.display = 'inline-block';
+    } catch { showToast('Invalid backup file.', 'error'); }
+  };
+  r.readAsText(file);
+}
+async function doRestore() {
+  if (!restoreData) return;
+  if (!GH.token || !GH.owner || !GH.repo) { alert('Please set up GitHub first.'); return; }
+  if (!confirm('This will overwrite your current index files on GitHub. Continue?')) return;
+  const btn = document.getElementById('restore-btn');
+  btn.disabled = true; btn.textContent = 'Restoring…';
+  showToast('Restoring backup…', '');
+  try {
+    for (const [cat, data] of Object.entries(restoreData.categories || {})) {
+      const { json } = CAT[cat];
+      await putFile(json, btoa(JSON.stringify(data.list || [], null, 2)), `Restore ${cat} from backup`);
+      (data.items || []).forEach(item => { if (item.tags?.length) setTags(cat, item.id, item.tags); });
+    }
+    showToast('✓ Backup restored!', 'success');
+    loadAllPanels();
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+  btn.disabled = false; btn.textContent = '⬆ Restore to GitHub';
+}
+
+// ── TOAST ────────────────────────────────────
 let toastTimer;
 function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = 'toast show ' + (type || '');
-  clearTimeout(toastTimer);
+  const t = document.getElementById('toast'); t.textContent = msg;
+  t.className = 'toast show ' + (type || ''); clearTimeout(toastTimer);
   if (type !== '') toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-// ── PAGES EDITOR ───────────────────────────
+// ── PAGES EDITOR ─────────────────────────────
 let currentPageFile = '';
-
 async function selectPage(cardId, file, title) {
-  if (!GH.token || !GH.owner || !GH.repo) {
-    alert('Please set up GitHub first (⚙ GitHub Setup tab).');
-    return;
-  }
+  if (!GH.token || !GH.owner || !GH.repo) { alert('Please set up GitHub first (⚙ GitHub Setup tab).'); return; }
   document.querySelectorAll('.page-card').forEach(c => c.classList.remove('selected'));
   document.querySelector(`.page-card[onclick*="${cardId}"]`)?.classList.add('selected');
   currentPageFile = file;
@@ -1096,28 +1243,19 @@ async function selectPage(cardId, file, title) {
   document.getElementById('save-page-btn').textContent = 'Loading…';
   document.getElementById('page-editor-wrap').classList.add('active');
   document.getElementById('page-editor-area').value = 'Loading…';
-
   try {
     const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${file}?t=${Date.now()}`;
     const res = await fetch(raw);
-    if (res.ok) {
-      document.getElementById('page-editor-area').value = await res.text();
-    } else {
-      document.getElementById('page-editor-area').value = `<!-- ${file} not found — write your content here and save to create it -->\n\n`;
-    }
-  } catch {
-    document.getElementById('page-editor-area').value = '';
-  }
+    document.getElementById('page-editor-area').value = res.ok ? await res.text() : `<!-- ${file} not found — write your content here and save to create it -->\n\n`;
+  } catch { document.getElementById('page-editor-area').value = ''; }
   document.getElementById('save-page-btn').disabled = false;
   document.getElementById('save-page-btn').textContent = 'Save to GitHub';
 }
-
 function closePageEditor() {
   document.getElementById('page-editor-wrap').classList.remove('active');
   document.querySelectorAll('.page-card').forEach(c => c.classList.remove('selected'));
   currentPageFile = '';
 }
-
 async function savePage() {
   if (!currentPageFile) return;
   const content = document.getElementById('page-editor-area').value;
@@ -1126,9 +1264,7 @@ async function savePage() {
   try {
     await putFile(currentPageFile, btoa(unescape(encodeURIComponent(content))), `Update ${currentPageFile}`);
     showToast('✓ Page saved!', 'success');
-  } catch (err) {
-    showToast('Error: ' + err.message, 'error');
-  }
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
   btn.disabled = false; btn.textContent = 'Save to GitHub';
 }
 </script>
