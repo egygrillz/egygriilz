@@ -330,11 +330,14 @@
             
             let title = designName, price = '', desc = '', imagesLine = '';
             lines.forEach(line => {
-              const lower = line.toLowerCase();
-              if (lower.startsWith('name:')) title = line.replace(/name:/i, '').trim();
-              if (lower.startsWith('price:')) price = line.replace(/price:/i, '').trim();
-              if (lower.startsWith('description:')) desc = line.replace(/description:/i, '').trim();
-              if (lower.startsWith('images:')) imagesLine = line.replace(/images:/i, '').trim();
+              const colonIdx = line.indexOf(':');
+              if (colonIdx === -1) return;
+              const key = line.slice(0, colonIdx).trim().toLowerCase();
+              const val = line.slice(colonIdx + 1).trim();
+              if (key === 'name' || key === 'title') title = val;
+              else if (key === 'price') price = val;
+              else if (key === 'description' || key === 'desc') desc = val;
+              else if (key === 'images') imagesLine = val;
             });
 
             const mediaList = imagesLine ? imagesLine.split(',').map(f => f.trim()) : [];
@@ -344,7 +347,7 @@
             let mediaHtml = '';
             mediaList.forEach(file => {
               const filePath = `assets/images/latest-designs/${designName}/${file}`;
-              if (file.toLowerCase().endsWith('.mp4')) {
+              if (/\.(mp4|mov|webm|avi|m4v)$/i.test(file)) {
                 mediaHtml += `
                   <div class="video-wrapper" role="button" tabindex="0" onclick="toggleMute(this)">
                     <video data-src="${filePath}" loop playsinline preload="none" muted></video>

@@ -192,52 +192,58 @@
         document.body.classList.toggle('menu-open');
     });
 
-    let currentSetImages = [];
-    let currentSlideIndex = 0;
+    // FIXED: robust info.txt parser — handles "name:" and "title:", values with colons
+    function parseInfo(text) {
+      let name = '', desc = '', price = '', images = [];
+      text.split('\n').forEach(line => {
+        line = line.replace(/\r/g, '').trim();
+        const colonIdx = line.indexOf(':');
+        if (colonIdx === -1) return;
+        const key = line.slice(0, colonIdx).trim().toLowerCase();
+        const val = line.slice(colonIdx + 1).trim();
+        if (key === 'name' || key === 'title') name = val;
+        else if (key === 'description' || key === 'desc') desc = val;
+        else if (key === 'price') price = val;
+        else if (key === 'images') images = val.split(',').map(i => i.trim()).filter(Boolean);
+      });
+      return { name, desc, price, images };
+    }
 
     fetch('assets/images/sets/sets.json')
       .then(res => res.json())
       .then(setNames => {
-        const grid = document.getElementById('sets-grid');
+        const container = document.getElementById('sets-container');
         setNames.forEach(setName => {
           fetch(`assets/images/sets/${setName}/info.txt`)
-            .then(res => res.text())
+            .then(res => { if (!res.ok) throw new Error('not found'); return res.text(); })
             .then(text => {
-              const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-              let name = setName, price = '', desc = '', images = [];
-
-              lines.forEach(line => {
-                if (line.toLowerCase().startsWith('name:')) name = line.split(':')[1].trim();
-                if (line.toLowerCase().startsWith('price:')) price = line.split(':')[1].trim();
-                if (line.toLowerCase().startsWith('description:')) desc = line.split(':')[1].trim();
-                if (line.toLowerCase().startsWith('images:')) {
-                  images = line.split(':')[1].trim().split(',').map(f => f.trim());
-                }
-              });
+              const info = parseInfo(text);
+              const name = info.name || setName;
+              const { desc, price, images } = info;
 
               let sliderHTML = '<div class="mini-slider">';
               images.forEach((img, i) => {
-                sliderHTML += `<img src="assets/images/sets/${setName}/${img}" class="${i===0?'active':''}" draggable="false">`;
+                sliderHTML += `<img src="assets/images/sets/${setName}/${img}" class="${i === 0 ? 'active' : ''}" loading="lazy" draggable="false">`;
               });
               sliderHTML += '</div>';
 
               const card = document.createElement('div');
               card.className = 'set-card';
               card.innerHTML = `${sliderHTML}<div class="set-info"><div class="name">${name}</div><div class="desc">${desc}</div><div class="price">${price}</div></div>`;
+              container.appendChild(card);
               card.onclick = () => openModal(images, name, price, desc, setName);
-              grid.appendChild(card);
 
-              // Auto-slider for card thumbnails
-              const imgs = card.querySelectorAll('.mini-slider img');
-              let idx = 0;
+              let cur = 0;
+              const imgs = card.querySelectorAll('img');
               if (imgs.length > 1) {
                 setInterval(() => {
-                  imgs[idx].classList.remove('active');
-                  idx = (idx + 1) % imgs.length;
-                  imgs[idx].classList.add('active');
+                  imgs[cur].classList.remove('active');
+                  cur = (cur + 1) % imgs.length;
+                  imgs[cur].classList.add('active');
                 }, 3500);
               }
-            });
+            })
+            .catch(e => console.warn('Could not load set', setName, e));
         });
       });
 
@@ -281,6 +287,6 @@
     }
 
     window.onclick = (e) => { if (e.target.id === 'modal') closeModal(); };
-  </script>
+</script>
 </body>
 </html>
