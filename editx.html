@@ -1106,7 +1106,7 @@ async function publishItem() {
   const desc = document.getElementById('f-desc').value.trim();
   const editId = document.getElementById('edit-id').value.trim();
   if (!name) { showToast('Please enter a name.', 'error'); return; }
-  if (!editId && existingImages.length === 0 && pendingImages.length === 0) { showToast('Please add at least one image.', 'error'); return; }
+  if (!editId && existingImages.length === 0 && pendingImages.length === 0) { showToast('Please add at least one image or video.', 'error'); return; }
 
   const btn = document.getElementById('publish-btn');
   btn.disabled = true; btn.textContent = 'Publishing…';
