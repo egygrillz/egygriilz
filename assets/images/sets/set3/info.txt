@@ -1,4 +1,4 @@
-Title: Golden Tiger
-Description: Striking custom grillz featuring a fierce tiger engraving across two Chrome teeth with rich gold plating. Crafted for maximum contrast and commanding presence. Handcrafted in Cairo. A powerful statement piece that fuses raw strength with opulent shine — made for those who lead with dominance and style.
-Price: 3100 EGP
-Images: 000010.jpg
+name: Golden Tiger
+price: 3100 EGP
+description: Striking custom grillz featuring a fierce tiger engraving across two Chrome teeth with rich gold plating. Crafted for maximum contrast and commanding presence. Handcrafted in Cairo. A powerful statement piece that fuses raw strength with opulent shine — made for those who lead with dominance and style.
+images: 000010.jpg
