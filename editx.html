@@ -228,6 +228,29 @@
     .toast.success { background: #27ae60; }
     .toast.error { background: #c0392b; }
 
+    /* ── VIDEO PREVIEW ── */
+    .img-preview-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .media-type-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.65); color: #fff; font-size: 8px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 1px; }
+    .mini-slider video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.8s; }
+    .mini-slider video.active { opacity: 1; }
+    .video-badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); color: #fff; font-size: 9px; padding: 3px 8px; text-transform: uppercase; letter-spacing: 1px; border-radius: 2px; }
+
+    /* ── PAGES EDITOR ── */
+    .pages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; margin-bottom: 36px; }
+    .page-card { border: 1px solid #eee; padding: 22px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 14px; }
+    .page-card:hover { border-color: #000; }
+    .page-card.selected { border-color: #000; background: #fafafa; }
+    .page-card i { font-size: 20px; color: #bbb; }
+    .page-card-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .page-card-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .page-editor-wrap { display: none; }
+    .page-editor-wrap.active { display: block; }
+    .page-editor-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .page-editor-title { font-family: 'Playfair Display', serif; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; }
+    .page-editor-area { width: 100%; min-height: 420px; font-family: 'Arimo', sans-serif; font-size: 13px; line-height: 1.8; border: 1px solid #ddd; padding: 20px; outline: none; resize: vertical; }
+    .page-editor-area:focus { border-color: #000; }
+    .pages-hint { font-size: 11px; color: #aaa; margin-top: 10px; font-style: italic; }
+
     /* ── SETUP ── */
     .setup-wrap { max-width: 520px; }
     .step-list { margin: 24px 0 30px; }
@@ -309,6 +332,7 @@
     <button class="tab-btn" onclick="showPanel('silvers',this)">Silvers</button>
     <button class="tab-btn" onclick="showPanel('diamonds',this)">Diamonds</button>
     <button class="tab-btn" onclick="showPanel('latest',this)">Latest Designs</button>
+    <button class="tab-btn" onclick="showPanel('pages',this)">📝 Pages Editor</button>
     <button class="tab-btn" onclick="showPanel('setup',this)">⚙ GitHub Setup</button>
     <div class="tab-spacer"></div>
     <button class="tab-logout" onclick="logout()">Logout</button>
@@ -359,6 +383,47 @@
         <button class="btn-outline" onclick="openModal('latest')">+ Add Design</button>
       </div>
       <div class="grid" id="grid-latest"></div>
+    </div>
+
+    <!-- PAGES EDITOR -->
+    <div class="panel" id="panel-pages">
+      <div class="page-header-row">
+        <div><p class="ph-title">Pages Editor</p><p class="ph-sub">Edit your site pages directly — saves to GitHub</p></div>
+      </div>
+      <div class="pages-grid">
+        <div class="page-card" onclick="selectPage('terms','terms.html','Terms of Service')">
+          <i class="fas fa-file-contract"></i>
+          <div><div class="page-card-name">Terms of Service</div><div class="page-card-sub">terms.html</div></div>
+        </div>
+        <div class="page-card" onclick="selectPage('privacy','privacy.html','Privacy Policy')">
+          <i class="fas fa-shield-alt"></i>
+          <div><div class="page-card-name">Privacy Policy</div><div class="page-card-sub">privacy.html</div></div>
+        </div>
+        <div class="page-card" onclick="selectPage('shipping','shipping.html','Care & Shipping')">
+          <i class="fas fa-box"></i>
+          <div><div class="page-card-name">Care &amp; Shipping</div><div class="page-card-sub">shipping.html</div></div>
+        </div>
+        <div class="page-card" onclick="selectPage('about','about.html','About Us')">
+          <i class="fas fa-star"></i>
+          <div><div class="page-card-name">About Us</div><div class="page-card-sub">about.html</div></div>
+        </div>
+        <div class="page-card" onclick="selectPage('contact','contact.html','Contact')">
+          <i class="fas fa-envelope"></i>
+          <div><div class="page-card-name">Contact</div><div class="page-card-sub">contact.html</div></div>
+        </div>
+      </div>
+
+      <div class="page-editor-wrap" id="page-editor-wrap">
+        <div class="page-editor-header">
+          <span class="page-editor-title" id="page-editor-title">—</span>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-muted" onclick="closePageEditor()">Cancel</button>
+            <button class="btn-black" id="save-page-btn" onclick="savePage()">Save to GitHub</button>
+          </div>
+        </div>
+        <textarea class="page-editor-area" id="page-editor-area" spellcheck="false"></textarea>
+        <p class="pages-hint">💡 You can write plain text or full HTML. Changes go live on your site instantly after saving.</p>
+      </div>
     </div>
 
     <!-- SETUP -->
@@ -461,15 +526,15 @@
         <textarea class="form-textarea" id="f-desc" placeholder="Describe this piece in detail..."></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">Images — first image is the cover</label>
+        <label class="form-label" id="media-label">Images — first image is the cover</label>
         <div class="upload-zone" id="upload-zone"
              onclick="document.getElementById('file-input').click()"
              ondragover="event.preventDefault();this.classList.add('drag')"
              ondragleave="this.classList.remove('drag')"
              ondrop="handleDrop(event)">
-          <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
-          <i class="fas fa-camera"></i>
-          <p><strong>Click or drag images here</strong><br>JPG, PNG, WEBP — first image = cover photo</p>
+          <input type="file" id="file-input" multiple accept="image/*,video/*" onchange="handleFiles(this.files)">
+          <i class="fas fa-camera" id="upload-icon"></i>
+          <p id="upload-hint"><strong>Click or drag images here</strong><br>JPG, PNG, WEBP — first image = cover photo</p>
         </div>
         <div class="image-previews" id="image-previews"></div>
       </div>
@@ -735,11 +800,18 @@ function renderGrid(cat) {
   if (!items.length) { renderEmpty(cat, 'No items yet. Click "+ Add" to publish your first one.'); return; }
 
   grid.innerHTML = items.map(item => {
-    const imgs = item.images.map((img, i) =>
-      `<img src="${raw}assets/images/${folder}/${item.id}/${img}" class="${i===0?'active':''}" alt="" loading="lazy">`
-    ).join('');
+    const mediaHtml = item.images.map((file, i) => {
+      if (isVideoFile(file)) {
+        return `<video src="${raw}assets/images/${folder}/${item.id}/${file}" class="${i===0?'active':''}" muted playsinline loop></video>`;
+      }
+      return `<img src="${raw}assets/images/${folder}/${item.id}/${file}" class="${i===0?'active':''}" alt="" loading="lazy">`;
+    }).join('');
+    const hasVideo = item.images.some(f => isVideoFile(f));
     return `<div class="set-card">
-      <div class="mini-slider">${imgs || '<div class="no-img"><i class="fas fa-camera"></i></div>'}</div>
+      <div class="mini-slider">
+        ${mediaHtml || '<div class="no-img"><i class="fas fa-camera"></i></div>'}
+        ${hasVideo ? '<span class="video-badge">▶ Video</span>' : ''}
+      </div>
       <div class="set-info">
         <div class="name">${item.name || '(Unnamed)'}</div>
         <div class="desc">${item.desc || ''}</div>
@@ -753,14 +825,18 @@ function renderGrid(cat) {
   }).join('');
 
   grid.querySelectorAll('.mini-slider').forEach(ms => {
-    const imgs = ms.querySelectorAll('img');
-    if (imgs.length > 1) {
+    const media = ms.querySelectorAll('img, video');
+    if (media.length > 1) {
       let cur = 0;
       setInterval(() => {
-        imgs[cur].classList.remove('active');
-        cur = (cur + 1) % imgs.length;
-        imgs[cur].classList.add('active');
+        media[cur].classList.remove('active');
+        if (media[cur].tagName === 'VIDEO') media[cur].pause();
+        cur = (cur + 1) % media.length;
+        media[cur].classList.add('active');
+        if (media[cur].tagName === 'VIDEO') media[cur].play().catch(()=>{});
       }, 3500);
+    } else if (media.length === 1 && media[0].tagName === 'VIDEO') {
+      media[0].play().catch(()=>{});
     }
   });
 }
@@ -785,6 +861,18 @@ function openModal(cat) {
   document.getElementById('edit-category').value     = cat;
   document.getElementById('modal-title').textContent = 'Add ' + cap(cat);
   document.getElementById('publish-btn').textContent = 'Publish to Site';
+  // Update upload hint for latest designs (supports video)
+  if (cat === 'latest') {
+    document.getElementById('media-label').textContent = 'Images & Videos — first file is the cover';
+    document.getElementById('upload-icon').className = 'fas fa-photo-video';
+    document.getElementById('upload-hint').innerHTML = '<strong>Click or drag images or videos here</strong><br>JPG, PNG, WEBP, MP4, MOV — first file = cover';
+    document.getElementById('file-input').accept = 'image/*,video/*';
+  } else {
+    document.getElementById('media-label').textContent = 'Images — first image is the cover';
+    document.getElementById('upload-icon').className = 'fas fa-camera';
+    document.getElementById('upload-hint').innerHTML = '<strong>Click or drag images here</strong><br>JPG, PNG, WEBP — first image = cover photo';
+    document.getElementById('file-input').accept = 'image/*';
+  }
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -802,9 +890,23 @@ function editItem(cat, id) {
   document.getElementById('modal-title').textContent  = 'Edit — ' + (item.name || id);
   document.getElementById('publish-btn').textContent  = 'Save Changes';
   document.getElementById('publish-btn').disabled     = false;
+  // Update upload hint for latest designs
+  if (cat === 'latest') {
+    document.getElementById('media-label').textContent = 'Images & Videos — first file is the cover';
+    document.getElementById('upload-icon').className = 'fas fa-photo-video';
+    document.getElementById('upload-hint').innerHTML = '<strong>Click or drag images or videos here</strong><br>JPG, PNG, WEBP, MP4, MOV — first file = cover';
+    document.getElementById('file-input').accept = 'image/*,video/*';
+  } else {
+    document.getElementById('media-label').textContent = 'Images — first image is the cover';
+    document.getElementById('upload-icon').className = 'fas fa-camera';
+    document.getElementById('upload-hint').innerHTML = '<strong>Click or drag images here</strong><br>JPG, PNG, WEBP — first image = cover photo';
+    document.getElementById('file-input').accept = 'image/*';
+  }
   renderPreviews();
   document.getElementById('modal-overlay').classList.add('open');
 }
+
+function isVideoFile(name) { return /\.(mp4|mov|webm|ogg|avi)$/i.test(name); }
 
 function renderPreviews() {
   const cat = document.getElementById('edit-category').value;
@@ -814,19 +916,39 @@ function renderPreviews() {
     const { folder } = CAT[cat];
     const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/`;
     existingImages.forEach((img, i) => {
-      html += `<div class="img-preview-wrap">
-        <img src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" alt="">
-        <button class="remove-img" onclick="removeExisting(${i})">×</button>
-        <span class="img-order">#${i + 1}</span>
-      </div>`;
+      const isVid = isVideoFile(img);
+      if (isVid) {
+        html += `<div class="img-preview-wrap">
+          <video src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" muted playsinline></video>
+          <span class="media-type-badge">▶ Video</span>
+          <button class="remove-img" onclick="removeExisting(${i})">×</button>
+          <span class="img-order">#${i + 1}</span>
+        </div>`;
+      } else {
+        html += `<div class="img-preview-wrap">
+          <img src="${raw}assets/images/${folder}/${id}/${img}?t=${Date.now()}" alt="">
+          <button class="remove-img" onclick="removeExisting(${i})">×</button>
+          <span class="img-order">#${i + 1}</span>
+        </div>`;
+      }
     });
   }
   pendingImages.forEach((p, i) => {
-    html += `<div class="img-preview-wrap">
-      <img src="${p.dataUrl}" alt="">
-      <button class="remove-img" onclick="removePending(${i})">×</button>
-      <span class="img-order">New ${i + 1}</span>
-    </div>`;
+    const isVid = p.file.type.startsWith('video/');
+    if (isVid) {
+      html += `<div class="img-preview-wrap">
+        <video src="${p.dataUrl}" muted playsinline></video>
+        <span class="media-type-badge">▶ Video</span>
+        <button class="remove-img" onclick="removePending(${i})">×</button>
+        <span class="img-order">New ${i + 1}</span>
+      </div>`;
+    } else {
+      html += `<div class="img-preview-wrap">
+        <img src="${p.dataUrl}" alt="">
+        <button class="remove-img" onclick="removePending(${i})">×</button>
+        <span class="img-order">New ${i + 1}</span>
+      </div>`;
+    }
   });
   document.getElementById('image-previews').innerHTML = html;
 }
@@ -838,7 +960,9 @@ function closeModalOnBg(e) { if (e.target === document.getElementById('modal-ove
 
 function handleFiles(files) {
   Array.from(files).forEach(file => {
-    if (!file.type.startsWith('image/')) return;
+    const isImg = file.type.startsWith('image/');
+    const isVid = file.type.startsWith('video/');
+    if (!isImg && !isVid) return;
     const r = new FileReader();
     r.onload = e => { pendingImages.push({ file, dataUrl: e.target.result }); renderPreviews(); };
     r.readAsDataURL(file);
@@ -955,6 +1079,58 @@ function showToast(msg, type) {
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ── PAGES EDITOR ───────────────────────────
+let currentPageFile = '';
+
+async function selectPage(cardId, file, title) {
+  if (!GH.token || !GH.owner || !GH.repo) {
+    alert('Please set up GitHub first (⚙ GitHub Setup tab).');
+    return;
+  }
+  document.querySelectorAll('.page-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.page-card[onclick*="${cardId}"]`)?.classList.add('selected');
+  currentPageFile = file;
+  document.getElementById('page-editor-title').textContent = title;
+  document.getElementById('save-page-btn').disabled = true;
+  document.getElementById('save-page-btn').textContent = 'Loading…';
+  document.getElementById('page-editor-wrap').classList.add('active');
+  document.getElementById('page-editor-area').value = 'Loading…';
+
+  try {
+    const raw = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${file}?t=${Date.now()}`;
+    const res = await fetch(raw);
+    if (res.ok) {
+      document.getElementById('page-editor-area').value = await res.text();
+    } else {
+      document.getElementById('page-editor-area').value = `<!-- ${file} not found — write your content here and save to create it -->\n\n`;
+    }
+  } catch {
+    document.getElementById('page-editor-area').value = '';
+  }
+  document.getElementById('save-page-btn').disabled = false;
+  document.getElementById('save-page-btn').textContent = 'Save to GitHub';
+}
+
+function closePageEditor() {
+  document.getElementById('page-editor-wrap').classList.remove('active');
+  document.querySelectorAll('.page-card').forEach(c => c.classList.remove('selected'));
+  currentPageFile = '';
+}
+
+async function savePage() {
+  if (!currentPageFile) return;
+  const content = document.getElementById('page-editor-area').value;
+  const btn = document.getElementById('save-page-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    await putFile(currentPageFile, btoa(unescape(encodeURIComponent(content))), `Update ${currentPageFile}`);
+    showToast('✓ Page saved!', 'success');
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Save to GitHub';
+}
 </script>
 </body>
 </html>
