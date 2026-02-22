@@ -212,7 +212,7 @@
     fetch('assets/images/sets/sets.json')
       .then(res => res.json())
       .then(setNames => {
-        const container = document.getElementById('sets-container');
+        const container = document.getElementById('sets-grid');
         setNames.forEach(setName => {
           fetch(`assets/images/sets/${setName}/info.txt`)
             .then(res => { if (!res.ok) throw new Error('not found'); return res.text(); })
