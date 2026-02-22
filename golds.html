@@ -4,97 +4,116 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Golds – EGYGRILLZ</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    /* ==========================================================================
-       RESET & BASE
-       ========================================================================== */
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
-    body.menu-open { overflow: hidden; }
+    body { font-family:'Arimo',sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; }
+    body.menu-open, body.modal-open { overflow:hidden; }
 
-    /* ==========================================================================
-       HEADER (MATCHING HOME)
-       ========================================================================== */
-    header {
-      position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
-      display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
-    }
-    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
-    
-    .main-nav { display: flex; gap: 20px; }
-    .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
-    .main-nav a:hover { color: #666; }
-    .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
-
-    .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
-    .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
-    
-    @media (max-width: 980px) {
-      .menu-toggle { display: flex; }
-      .main-nav {
-        position: fixed; top: 60px; right: -100%; width: 100%; height: auto; background: #fff;
-        flex-direction: column; padding: 10px 5%; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-        box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
-      }
-      .main-nav.active { right: 0; }
-      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
+    /* ── HEADER ── */
+    header { position:sticky; top:0; height:60px; background:#fff; border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; }
+    .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; text-decoration:none; color:#000; }
+    .main-nav { display:flex; gap:20px; }
+    .main-nav a { text-decoration:none; color:#000; font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color 0.3s; }
+    .main-nav a:hover { color:#666; }
+    .nav-active { font-weight:900; border-bottom:1px solid #000; }
+    .menu-toggle { display:none; flex-direction:column; gap:6px; background:none; border:none; cursor:pointer; }
+    .menu-toggle span { width:25px; height:1.5px; background:#000; }
+    @media(max-width:980px) {
+      .menu-toggle { display:flex; }
+      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:#fff; flex-direction:column; padding:10px 5%; transition:0.4s cubic-bezier(0.4,0,0.2,1); box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
+      .main-nav.active { right:0; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; width:100%; }
     }
 
-    /* ==========================================================================
-       GOLDS GRID CONTENT
-       ========================================================================== */
-    .container { max-width: 1600px; margin: 0 auto; padding: 40px 5% 100px; }
-    .page-header { text-align: center; margin-bottom: 60px; }
-    .page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 8vw, 56px); text-transform: uppercase; letter-spacing: 4px; }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 40px; }
-    .set-card { border: 1px solid #eee; background: #fff; transition: 0.3s; border-radius: 4px; overflow: hidden; }
-    .set-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.06); }
+    /* ── PAGE HEADER ── */
+    .container { max-width:1800px; margin:0 auto; padding:60px 3% 120px; }
+    .page-header { text-align:center; margin-bottom:64px; }
+    .page-header .eyebrow { display:block; font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:16px; }
+    .page-header h1 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(28px,5vw,64px); letter-spacing:10px; text-transform:uppercase; line-height:1; }
+    .page-header .sub { font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(13px,1.4vw,16px); color:#888; margin-top:14px; letter-spacing:0.5px; }
+    .header-rule { width:36px; height:1px; background:#000; margin:22px auto 0; }
 
-    .mini-slider { position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #f8f8f8; }
-    .mini-slider img { 
-        position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; 
-        opacity:0; transition:opacity 0.8s; 
-        pointer-events: none; /* Prevents dragging/right-click on images */
-        -webkit-user-drag: none;
+    /* ── 4-COLUMN GRID (always) ── */
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#eee; }
+
+    /* ── CARD ── */
+    .set-card { cursor:pointer; background:#fff; overflow:hidden; display:flex; flex-direction:column; }
+    .set-card:hover .card-img img.active { transform:scale(1.05); }
+    .set-card:hover .card-overlay { opacity:1; }
+
+    .card-img { position:relative; width:100%; aspect-ratio:3/4; overflow:hidden; background:#f8f8f8; flex-shrink:0; }
+    .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease, transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
+    .card-img img.active { opacity:1; }
+
+    .card-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.2); opacity:0; transition:opacity 0.35s; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .card-overlay span { color:#fff; font-size:8px; letter-spacing:4px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.75); padding:9px 18px; }
+
+    .card-body { padding:14px 14px 18px; border-top:1px solid #eee; flex:1; }
+    .card-body .name { font-family:'Playfair Display',serif; font-weight:400; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:4px; line-height:1.3; }
+    .card-body .desc { font-size:10px; color:#888; line-height:1.5; margin-bottom:8px; display:none; } /* hidden on grid, shown in modal */
+    .card-body .price { font-size:11px; font-weight:700; letter-spacing:0.5px; color:#000; }
+
+    /* ── MODAL ── */
+    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; padding:0; }
+    .modal-bg.open { opacity:1; pointer-events:all; }
+
+    .modal { background:#fff; width:100%; max-width:960px; max-height:100vh; display:flex; flex-direction:row; transform:translateY(24px); transition:transform 0.35s; overflow:hidden; }
+    .modal-bg.open .modal { transform:translateY(0); }
+
+    /* LEFT: image slider */
+    .modal-left { position:relative; flex:0 0 58%; background:#f8f8f8; overflow:hidden; }
+    .modal-slides { position:relative; width:100%; height:100%; }
+    .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s; }
+    .modal-slide.active { opacity:1; }
+    .modal-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
+
+    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.9); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:12px; color:#000; transition:background 0.2s; }
+    .modal-arrow:hover { background:#fff; }
+    .modal-prev { left:14px; }
+    .modal-next { right:14px; }
+
+    .modal-dots { position:absolute; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:6px; }
+    .modal-dot { width:5px; height:5px; background:rgba(255,255,255,0.5); border-radius:50%; cursor:pointer; transition:background 0.2s; border:none; }
+    .modal-dot.active { background:#fff; }
+
+    /* RIGHT: info */
+    .modal-right { flex:1; display:flex; flex-direction:column; padding:40px 36px; overflow-y:auto; }
+    .modal-close { align-self:flex-end; background:none; border:none; font-size:18px; cursor:pointer; color:#000; margin-bottom:30px; padding:4px; line-height:1; }
+    .modal-close:hover { color:#666; }
+
+    .modal-eyebrow { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:14px; }
+    .modal-name { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.5vw,30px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:20px; }
+    .modal-rule { width:32px; height:1px; background:#eee; margin-bottom:20px; }
+    .modal-desc { font-size:13px; color:#666; line-height:1.8; margin-bottom:28px; flex:1; }
+    .modal-price { font-size:15px; font-weight:700; letter-spacing:1px; padding-top:20px; border-top:1px solid #eee; }
+
+    .modal-counter { font-size:9px; letter-spacing:2px; color:#999; margin-top:20px; text-transform:uppercase; }
+
+    /* mobile modal stacked */
+    @media(max-width:640px) {
+      .modal { flex-direction:column; max-height:100dvh; max-width:100%; }
+      .modal-left { flex:0 0 55vw; min-height:55vw; }
+      .modal-right { padding:24px 20px; }
     }
-    .mini-slider img.active { opacity: 1; }
 
-    .set-info { padding: 30px; }
-    .set-info .name { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 10px; }
-    .set-info .desc { font-size: 14px; color: #666; margin-bottom: 20px; }
-    .set-info .price { font-weight: 700; font-size: 18px; border-top: 1px solid #eee; padding-top: 20px; }
-
-    /* ==========================================================================
-       FOOTER (MATCHING HOME)
-       ========================================================================== */
-    footer { background: #000; color: #fff; padding: 50px 5% 20px; margin-top: 80px; }
-    .footer-main {
-        display: grid;
-        grid-template-columns: 1.5fr 1fr 1fr;
-        gap: 40px;
-        padding-bottom: 40px;
-        border-bottom: 1px solid #222;
-    }
-    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
-    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
-    .footer-col a:hover { color: #888; }
-    
-    .footer-bottom {
-        padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
-    }
-    .footer-logo-img { height: 10px; filter: brightness(0) invert(1); }
-    .ceo-wrap { display: flex; align-items: center; gap: 8px; }
-    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .ceo-name { font-family: 'Alex Brush'; font-size: 12px; color: #888; }
-    .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
-
-    @media (max-width: 768px) {
-      .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; }
-      .footer-col { display: flex; flex-direction: column; align-items: center; }
-      .footer-bottom { flex-direction: column; text-align: center; }
+    /* ── FOOTER ── */
+    footer { background:#000; color:#fff; padding:50px 5% 20px; margin-top:80px; }
+    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
+    .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
+    .footer-col a { display:block; color:#fff; text-decoration:none; font-size:12px; margin-bottom:8px; transition:0.3s; }
+    .footer-col a:hover { color:#888; }
+    .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+    .footer-logo-img { height:10px; filter:brightness(0) invert(1); }
+    .ceo-wrap { display:flex; align-items:center; gap:8px; }
+    .ceo-label { font-size:7px; color:#666; text-transform:uppercase; letter-spacing:1px; }
+    .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#888; }
+    .legal-text { font-size:9px; color:#444; text-transform:uppercase; }
+    @media(max-width:768px) {
+      .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; }
+      .footer-col { display:flex; flex-direction:column; align-items:center; }
+      .footer-bottom { flex-direction:column; text-align:center; }
     }
   </style>
 </head>
@@ -118,110 +137,195 @@
 
   <div class="container">
     <div class="page-header">
-      <h1>Gold Collection</h1>
-      <p style="font-style: italic; color: #666;">Premium 18K and 21K solid gold handcrafted to perfection.</p>
+      <span class="eyebrow">EGYGRILLZ Collection</span>
+      <h1>Gold</h1>
+      <p class="sub">Premium 18K and 21K solid gold, handcrafted to perfection.</p>
+      <div class="header-rule"></div>
     </div>
     <div class="grid" id="golds-container"></div>
   </div>
 
+  <!-- MODAL -->
+  <div class="modal-bg" id="modal-bg">
+    <div class="modal" id="modal">
+      <div class="modal-left">
+        <div class="modal-slides" id="modal-slides"></div>
+        <button class="modal-arrow modal-prev" id="modal-prev">&#8592;</button>
+        <button class="modal-arrow modal-next" id="modal-next">&#8594;</button>
+        <div class="modal-dots" id="modal-dots"></div>
+      </div>
+      <div class="modal-right">
+        <button class="modal-close" id="modal-close">&#x2715;</button>
+        <div class="modal-eyebrow">Gold Collection</div>
+        <div class="modal-name" id="modal-name"></div>
+        <div class="modal-rule"></div>
+        <div class="modal-desc" id="modal-desc"></div>
+        <div class="modal-price" id="modal-price"></div>
+        <div class="modal-counter" id="modal-counter"></div>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <div class="footer-main">
-        <div class="footer-col">
-            <h4>EGYGRILLZ Egypt</h4>
-            <p style="font-size: 13px; color: #888; max-width: 300px;">Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
-        </div>
-        <div class="footer-col">
-            <h4>Information</h4>
-            <a href="about.html">About Us</a>
-            <a href="booking.html">Schedule</a>
-            <a href="contact.html">Contact</a>
-        </div>
-        <div class="footer-col">
-            <h4>Legal</h4>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms of Service</a>
-            <a href="shipping.html">Care & Shipping</a>
-        </div>
+      <div class="footer-col">
+        <h4>EGYGRILLZ Egypt</h4>
+        <p style="font-size:13px;color:#888;max-width:300px;">Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Information</h4>
+        <a href="about.html">About Us</a>
+        <a href="booking.html">Schedule</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="shipping.html">Care & Shipping</a>
+      </div>
     </div>
-    
     <div class="footer-bottom">
-      <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff; margin-right: 15px;"><i class="fab fa-instagram"></i></a>
+      <div>
+        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff;margin-right:15px;"><i class="fab fa-instagram"></i></a>
         <a href="#" style="color:#fff;"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
-      <div class="ceo-wrap">
-        <span class="ceo-label">Founder</span>
-        <span class="ceo-name">DR Mohamed Mahdy</span>
-      </div>
+      <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
       <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
   </footer>
 
   <script>
-    // Menu Toggle Logic
-    const toggle = document.querySelector('.menu-toggle');
-    const nav = document.querySelector('.main-nav');
-    toggle.addEventListener('click', () => { 
-        nav.classList.toggle('active');
-        document.body.classList.toggle('menu-open');
+    // ── MENU ──
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.main-nav').classList.toggle('active');
+      document.body.classList.toggle('menu-open');
     });
 
-    // FIXED: robust info.txt parser — handles "name:" and "title:", and values with colons (e.g. "Contact us for details")
+    // ── PARSER ──
     function parseInfo(text) {
-      let name = '', desc = '', price = '', images = [];
+      let name='',desc='',price='',images=[];
       text.split('\n').forEach(line => {
-        line = line.replace(/\r/g, '').trim();
-        const colonIdx = line.indexOf(':');
-        if (colonIdx === -1) return;
-        const key = line.slice(0, colonIdx).trim().toLowerCase();
-        const val = line.slice(colonIdx + 1).trim();
-        if (key === 'name' || key === 'title') name = val;
-        else if (key === 'description' || key === 'desc') desc = val;
-        else if (key === 'price') price = val;
-        else if (key === 'images') images = val.split(',').map(i => i.trim()).filter(Boolean);
+        line=line.replace(/\r/g,'').trim();
+        const ci=line.indexOf(':'); if(ci===-1)return;
+        const key=line.slice(0,ci).trim().toLowerCase();
+        const val=line.slice(ci+1).trim();
+        if(key==='name'||key==='title') name=val;
+        else if(key==='description'||key==='desc') desc=val;
+        else if(key==='price') price=val;
+        else if(key==='images') images=val.split(',').map(i=>i.trim()).filter(Boolean);
       });
-      return { name, desc, price, images };
+      return {name,desc,price,images};
     }
 
-    // Dynamic Loader for Gold Gallery
-    fetch('assets/images/golds/golds.json')
-      .then(res => res.json())
-      .then(folders => {
-        const container = document.getElementById('golds-container');
-        folders.forEach(folder => {
-          fetch(`assets/images/golds/${folder}/info.txt`)
-            .then(res => { if (!res.ok) throw new Error('not found'); return res.text(); })
-            .then(text => {
-              const { name, desc, price, images } = parseInfo(text);
+    // ── MODAL ──
+    const modalBg=document.getElementById('modal-bg');
+    const modalSlides=document.getElementById('modal-slides');
+    const modalDots=document.getElementById('modal-dots');
+    const modalName=document.getElementById('modal-name');
+    const modalDesc=document.getElementById('modal-desc');
+    const modalPrice=document.getElementById('modal-price');
+    const modalCounter=document.getElementById('modal-counter');
+    let mCurrent=0, mTotal=0;
 
-              let slider = '<div class="mini-slider">';
-              images.forEach((img, idx) => {
-                slider += `<img src="assets/images/golds/${folder}/${img}" class="${idx === 0 ? 'active' : ''}" draggable="false" loading="lazy">`;
-              });
-              slider += '</div>';
+    function openModal(data){
+      const {name,desc,price,images}=data;
+      modalName.textContent=name;
+      modalDesc.textContent=desc;
+      modalPrice.textContent=price;
+      modalSlides.innerHTML='';
+      modalDots.innerHTML='';
+      mCurrent=0; mTotal=images.length;
 
-              const card = document.createElement('div');
-              card.className = 'set-card';
-              card.innerHTML = `${slider}<div class="set-info"><div class="name">${name || folder}</div><div class="desc">${desc}</div><div class="price">${price}</div></div>`;
+      images.forEach((src,i)=>{
+        const slide=document.createElement('div');
+        slide.className='modal-slide'+(i===0?' active':'');
+        slide.innerHTML=`<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'}">`;
+        modalSlides.appendChild(slide);
+
+        const dot=document.createElement('button');
+        dot.className='modal-dot'+(i===0?' active':'');
+        dot.addEventListener('click',()=>goTo(i));
+        modalDots.appendChild(dot);
+      });
+
+      updateCounter();
+      modalBg.classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+
+    function goTo(idx){
+      const slides=modalSlides.querySelectorAll('.modal-slide');
+      const dots=modalDots.querySelectorAll('.modal-dot');
+      slides[mCurrent].classList.remove('active');
+      dots[mCurrent].classList.remove('active');
+      mCurrent=(idx+mTotal)%mTotal;
+      slides[mCurrent].classList.add('active');
+      dots[mCurrent].classList.add('active');
+      updateCounter();
+    }
+
+    function updateCounter(){
+      if(mTotal>1) modalCounter.textContent=`${mCurrent+1} / ${mTotal}`;
+      else modalCounter.textContent='';
+    }
+
+    document.getElementById('modal-prev').addEventListener('click',()=>goTo(mCurrent-1));
+    document.getElementById('modal-next').addEventListener('click',()=>goTo(mCurrent+1));
+    document.getElementById('modal-close').addEventListener('click',closeModal);
+    modalBg.addEventListener('click',e=>{ if(e.target===modalBg)closeModal(); });
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModal(); if(e.key==='ArrowLeft')goTo(mCurrent-1); if(e.key==='ArrowRight')goTo(mCurrent+1); });
+
+    function closeModal(){
+      modalBg.classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
+    // ── LOADER ──
+    const basePath='assets/images/golds';
+    fetch(`${basePath}/golds.json`)
+      .then(r=>r.json())
+      .then(folders=>{
+        const container=document.getElementById('golds-container');
+        folders.forEach(folder=>{
+          fetch(`${basePath}/${folder}/info.txt`)
+            .then(r=>{ if(!r.ok)throw new Error(); return r.text(); })
+            .then(text=>{
+              const {name,desc,price,images}=parseInfo(text);
+              const fullImages=images.map(img=>`${basePath}/${folder}/${img}`);
+
+              const card=document.createElement('div');
+              card.className='set-card';
+              card.innerHTML=`
+                <div class="card-img">
+                  ${fullImages.map((src,i)=>`<img src="${src}" class="${i===0?'active':''}" draggable="false" loading="${i===0?'eager':'lazy'}">`).join('')}
+                  <div class="card-overlay"><span>View Details</span></div>
+                </div>
+                <div class="card-body">
+                  <div class="name">${name||folder}</div>
+                  <div class="price">${price}</div>
+                </div>`;
               container.appendChild(card);
 
-              let current = 0;
-              const imgs = card.querySelectorAll('img');
-              if (imgs.length > 1) {
-                setInterval(() => {
-                  imgs[current].classList.remove('active');
-                  current = (current + 1) % imgs.length;
-                  imgs[current].classList.add('active');
-                }, 3500);
+              // auto-rotate on card
+              let cur=0;
+              const imgs=card.querySelectorAll('.card-img img');
+              if(imgs.length>1){
+                setInterval(()=>{
+                  imgs[cur].classList.remove('active');
+                  cur=(cur+1)%imgs.length;
+                  imgs[cur].classList.add('active');
+                },3500);
               }
+
+              // click → modal
+              card.addEventListener('click',()=>openModal({name,desc,price,images:fullImages}));
             })
-            .catch(e => console.warn('Could not load', folder, e));
+            .catch(e=>console.warn('Could not load',folder,e));
         });
       })
-      .catch(err => console.error('Error loading golds:', err));
-
+      .catch(err=>console.error('Error loading golds:',err));
   </script>
-
 </body>
 </html>
