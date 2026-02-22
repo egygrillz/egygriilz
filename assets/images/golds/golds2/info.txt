@@ -1,4 +1,4 @@
-name: Diamond Pharaoh Fronts
-price: 22000 EGP
-description: Limited edition 18K gold grillz with real diamonds and pharaoh motif. Handcrafted in Cairo. Perfect for bold style.
-images: 000001.jpeg,000003.jpg
+name: 3WF
+price: WFEWEFR
+description: WFEEEF
+images: 000000.png
