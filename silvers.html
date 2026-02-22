@@ -35,8 +35,11 @@
     .page-header .sub { font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(13px,1.4vw,16px); color:#888; margin-top:14px; letter-spacing:0.5px; }
     .header-rule { width:36px; height:1px; background:#000; margin:22px auto 0; }
 
-    /* ── 4-COLUMN GRID (always) ── */
+    /* ── GRID: 4 → 3 → 2 → 1 ── */
     .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#eee; }
+    @media(max-width:1100px) { .grid { grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:680px)  { .grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:420px)  { .grid { grid-template-columns:1fr; } }
 
     /* ── CARD ── */
     .set-card { cursor:pointer; background:#fff; overflow:hidden; display:flex; flex-direction:column; }
@@ -47,50 +50,67 @@
     .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease, transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
     .card-img img.active { opacity:1; }
 
-    .card-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.2); opacity:0; transition:opacity 0.35s; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-    .card-overlay span { color:#fff; font-size:8px; letter-spacing:4px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.75); padding:9px 18px; }
+    .card-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.22); opacity:0; transition:opacity 0.3s; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .card-overlay span { color:#fff; font-size:8px; letter-spacing:3px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.8); padding:9px 16px; }
 
-    .card-body { padding:14px 14px 18px; border-top:1px solid #eee; flex:1; }
+    .card-body { padding:14px 16px 18px; border-top:1px solid #eee; flex:1; }
     .card-body .name { font-family:'Playfair Display',serif; font-weight:400; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:4px; line-height:1.3; }
-    .card-body .price { font-size:11px; font-weight:700; letter-spacing:0.5px; color:#000; }
+    .card-body .price { font-size:11px; font-weight:700; letter-spacing:0.5px; }
+
+    @media(max-width:680px) {
+      .card-body { padding:10px 12px 14px; }
+      .card-body .name { font-size:12px; letter-spacing:1px; }
+      .card-body .price { font-size:10px; }
+    }
 
     /* ── MODAL ── */
-    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; padding:0; }
+    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; padding:20px; }
     .modal-bg.open { opacity:1; pointer-events:all; }
 
-    .modal { background:#fff; width:100%; max-width:960px; max-height:100vh; display:flex; flex-direction:row; transform:translateY(24px); transition:transform 0.35s; overflow:hidden; }
+    .modal { background:#fff; width:100%; max-width:960px; max-height:90vh; display:flex; flex-direction:row; transform:translateY(28px); transition:transform 0.38s cubic-bezier(0.22,1,0.36,1); overflow:hidden; }
     .modal-bg.open .modal { transform:translateY(0); }
 
-    .modal-left { position:relative; flex:0 0 58%; background:#f8f8f8; overflow:hidden; }
-    .modal-slides { position:relative; width:100%; height:100%; }
+    .modal-left { position:relative; flex:0 0 55%; overflow:hidden; background:#f8f8f8; }
+    .modal-slides { position:relative; width:100%; height:100%; min-height:440px; }
     .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s; }
     .modal-slide.active { opacity:1; }
     .modal-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
 
-    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.9); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:12px; color:#000; transition:background 0.2s; }
+    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.88); border:none; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:#000; transition:background 0.2s; }
     .modal-arrow:hover { background:#fff; }
     .modal-prev { left:14px; }
     .modal-next { right:14px; }
 
-    .modal-dots { position:absolute; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:6px; }
-    .modal-dot { width:5px; height:5px; background:rgba(255,255,255,0.5); border-radius:50%; cursor:pointer; transition:background 0.2s; border:none; }
+    .modal-dots { position:absolute; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:7px; }
+    .modal-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.4); border:none; cursor:pointer; transition:background 0.2s; padding:0; }
     .modal-dot.active { background:#fff; }
 
-    .modal-right { flex:1; display:flex; flex-direction:column; padding:40px 36px; overflow-y:auto; }
-    .modal-close { align-self:flex-end; background:none; border:none; font-size:18px; cursor:pointer; color:#000; margin-bottom:30px; padding:4px; line-height:1; }
+    .modal-right { flex:1; display:flex; flex-direction:column; padding:36px 32px 32px; overflow-y:auto; }
+    .modal-close { align-self:flex-end; background:none; border:none; font-size:18px; cursor:pointer; color:#000; margin-bottom:20px; padding:4px; line-height:1; transition:color 0.2s; }
     .modal-close:hover { color:#666; }
 
-    .modal-eyebrow { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:14px; }
-    .modal-name { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.5vw,30px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:20px; }
-    .modal-rule { width:32px; height:1px; background:#eee; margin-bottom:20px; }
-    .modal-desc { font-size:13px; color:#666; line-height:1.8; margin-bottom:28px; flex:1; }
-    .modal-price { font-size:15px; font-weight:700; letter-spacing:1px; padding-top:20px; border-top:1px solid #eee; }
-    .modal-counter { font-size:9px; letter-spacing:2px; color:#999; margin-top:20px; text-transform:uppercase; }
+    .modal-eyebrow { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:12px; }
+    .modal-name { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.4vw,28px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:16px; }
+    .modal-rule { width:32px; height:1px; background:#eee; margin-bottom:16px; }
+    .modal-desc { font-size:13px; color:#666; line-height:1.8; margin-bottom:20px; flex:1; }
+    .modal-price { font-size:16px; font-weight:700; letter-spacing:1px; padding-top:18px; border-top:1px solid #eee; margin-bottom:18px; }
 
-    @media(max-width:640px) {
-      .modal { flex-direction:column; max-height:100dvh; max-width:100%; }
-      .modal-left { flex:0 0 55vw; min-height:55vw; }
-      .modal-right { padding:24px 20px; }
+    .modal-actions { display:flex; flex-direction:column; gap:10px; }
+    .modal-cta-primary { display:block; width:100%; text-align:center; background:#000; color:#fff; text-decoration:none; font-family:'Arimo',sans-serif; font-size:10px; letter-spacing:3px; text-transform:uppercase; padding:15px 20px; border:1px solid #000; transition:background 0.25s, color 0.25s; }
+    .modal-cta-primary:hover { background:#fff; color:#000; }
+    .modal-cta-secondary { display:block; width:100%; text-align:center; background:#fff; color:#000; text-decoration:none; font-family:'Arimo',sans-serif; font-size:10px; letter-spacing:3px; text-transform:uppercase; padding:14px 20px; border:1px solid #000; transition:background 0.25s, color 0.25s; }
+    .modal-cta-secondary:hover { background:#000; color:#fff; }
+
+    .modal-counter { font-size:9px; letter-spacing:2px; color:#999; margin-top:14px; text-transform:uppercase; }
+
+    @media(max-width:680px) {
+      .modal-bg { padding:0; align-items:flex-end; }
+      .modal { flex-direction:column; max-height:94dvh; max-width:100%; transform:translateY(60px); }
+      .modal-bg.open .modal { transform:translateY(0); }
+      .modal-slides { min-height:60vw; }
+      .modal-right { padding:20px 18px 30px; }
+      .modal-actions { flex-direction:row; }
+      .modal-cta-primary, .modal-cta-secondary { flex:1; font-size:9px; padding:13px 8px; letter-spacing:2px; }
     }
 
     /* ── FOOTER ── */
@@ -143,7 +163,7 @@
 
   <!-- MODAL -->
   <div class="modal-bg" id="modal-bg">
-    <div class="modal" id="modal">
+    <div class="modal">
       <div class="modal-left">
         <div class="modal-slides" id="modal-slides"></div>
         <button class="modal-arrow modal-prev" id="modal-prev">&#8592;</button>
@@ -157,6 +177,10 @@
         <div class="modal-rule"></div>
         <div class="modal-desc" id="modal-desc"></div>
         <div class="modal-price" id="modal-price"></div>
+        <div class="modal-actions">
+          <a href="booking.html" class="modal-cta-primary">Schedule an Appointment</a>
+          <a href="contact.html" class="modal-cta-secondary">Contact Us</a>
+        </div>
         <div class="modal-counter" id="modal-counter"></div>
       </div>
     </div>
@@ -213,97 +237,72 @@
       return {name,desc,price,images};
     }
 
-    const modalBg=document.getElementById('modal-bg');
-    const modalSlides=document.getElementById('modal-slides');
-    const modalDots=document.getElementById('modal-dots');
-    const modalName=document.getElementById('modal-name');
-    const modalDesc=document.getElementById('modal-desc');
-    const modalPrice=document.getElementById('modal-price');
-    const modalCounter=document.getElementById('modal-counter');
-    let mCurrent=0, mTotal=0;
+    const modalBg=document.getElementById('modal-bg'), modalSlides=document.getElementById('modal-slides'),
+          modalDots=document.getElementById('modal-dots'), modalName=document.getElementById('modal-name'),
+          modalDesc=document.getElementById('modal-desc'), modalPrice=document.getElementById('modal-price'),
+          modalCtr=document.getElementById('modal-counter');
+    let mCur=0, mTot=0;
 
-    function openModal(data){
-      const {name,desc,price,images}=data;
-      modalName.textContent=name;
-      modalDesc.textContent=desc;
-      modalPrice.textContent=price;
-      modalSlides.innerHTML='';
-      modalDots.innerHTML='';
-      mCurrent=0; mTotal=images.length;
+    function openModal({name,desc,price,images}){
+      modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price;
+      modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length;
       images.forEach((src,i)=>{
-        const slide=document.createElement('div');
-        slide.className='modal-slide'+(i===0?' active':'');
-        slide.innerHTML=`<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'}">`;
-        modalSlides.appendChild(slide);
-        const dot=document.createElement('button');
-        dot.className='modal-dot'+(i===0?' active':'');
-        dot.addEventListener('click',()=>goTo(i));
-        modalDots.appendChild(dot);
+        const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
+        s.innerHTML=`<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'}">`;
+        modalSlides.appendChild(s);
+        const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':'');
+        d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d);
       });
-      updateCounter();
-      modalBg.classList.add('open');
-      document.body.classList.add('modal-open');
+      updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open');
     }
-
     function goTo(idx){
-      const slides=modalSlides.querySelectorAll('.modal-slide');
-      const dots=modalDots.querySelectorAll('.modal-dot');
-      slides[mCurrent].classList.remove('active');
-      dots[mCurrent].classList.remove('active');
-      mCurrent=(idx+mTotal)%mTotal;
-      slides[mCurrent].classList.add('active');
-      dots[mCurrent].classList.add('active');
-      updateCounter();
+      modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active');
+      modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active');
+      mCur=(idx+mTot)%mTot;
+      modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active');
+      modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active');
+      updateCtr();
     }
+    function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
+    function closeModal(){ modalBg.classList.remove('open'); document.body.classList.remove('modal-open'); }
 
-    function updateCounter(){
-      modalCounter.textContent=mTotal>1?`${mCurrent+1} / ${mTotal}`:'';
-    }
-
-    document.getElementById('modal-prev').addEventListener('click',()=>goTo(mCurrent-1));
-    document.getElementById('modal-next').addEventListener('click',()=>goTo(mCurrent+1));
+    document.getElementById('modal-prev').addEventListener('click',()=>goTo(mCur-1));
+    document.getElementById('modal-next').addEventListener('click',()=>goTo(mCur+1));
     document.getElementById('modal-close').addEventListener('click',closeModal);
     modalBg.addEventListener('click',e=>{ if(e.target===modalBg)closeModal(); });
-    document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModal(); if(e.key==='ArrowLeft')goTo(mCurrent-1); if(e.key==='ArrowRight')goTo(mCurrent+1); });
+    document.addEventListener('keydown',e=>{
+      if(!modalBg.classList.contains('open'))return;
+      if(e.key==='Escape')closeModal();
+      if(e.key==='ArrowLeft')goTo(mCur-1);
+      if(e.key==='ArrowRight')goTo(mCur+1);
+    });
 
-    function closeModal(){
-      modalBg.classList.remove('open');
-      document.body.classList.remove('modal-open');
-    }
-
-    const basePath='assets/images/silvers';
-    fetch(`${basePath}/silvers.json`)
-      .then(r=>r.json())
-      .then(folders=>{
-        const grid=document.getElementById('silvers-grid');
-        if(!folders.length){ grid.innerHTML='<p style="color:#aaa;text-align:center;padding:60px 0;font-size:14px;grid-column:1/-1;">No silvers yet — check back soon.</p>'; return; }
-        folders.forEach(folder=>{
-          fetch(`${basePath}/${folder}/info.txt`)
-            .then(r=>{ if(!r.ok)throw new Error(); return r.text(); })
-            .then(text=>{
-              const {name,desc,price,images}=parseInfo(text);
-              const fullImages=images.map(img=>`${basePath}/${folder}/${img}`);
-              const card=document.createElement('div');
-              card.className='set-card';
-              card.innerHTML=`
-                <div class="card-img">
-                  ${fullImages.map((src,i)=>`<img src="${src}" class="${i===0?'active':''}" draggable="false" loading="${i===0?'eager':'lazy'}">`).join('')}
-                  <div class="card-overlay"><span>View Details</span></div>
-                </div>
-                <div class="card-body">
-                  <div class="name">${name||folder}</div>
-                  <div class="price">${price}</div>
-                </div>`;
-              grid.appendChild(card);
-              let cur=0;
-              const imgs=card.querySelectorAll('.card-img img');
-              if(imgs.length>1){ setInterval(()=>{ imgs[cur].classList.remove('active'); cur=(cur+1)%imgs.length; imgs[cur].classList.add('active'); },3500); }
-              card.addEventListener('click',()=>openModal({name,desc,price,images:fullImages}));
-            })
-            .catch(e=>console.warn('Could not load',folder,e));
-        });
-      })
-      .catch(err=>console.error('Error loading silvers:',err));
+    const base='assets/images/silvers';
+    fetch(`${base}/silvers.json`).then(r=>r.json()).then(folders=>{
+      const grid=document.getElementById('silvers-grid');
+      if(!folders.length){ grid.innerHTML='<p style="color:#aaa;text-align:center;padding:60px 0;font-size:14px;grid-column:1/-1;">No silvers yet — check back soon.</p>'; return; }
+      folders.forEach(folder=>{
+        fetch(`${base}/${folder}/info.txt`).then(r=>{ if(!r.ok)throw 0; return r.text(); })
+          .then(text=>{
+            const {name,desc,price,images}=parseInfo(text);
+            const full=images.map(img=>`${base}/${folder}/${img}`);
+            const card=document.createElement('div'); card.className='set-card';
+            card.innerHTML=`
+              <div class="card-img">
+                ${full.map((s,i)=>`<img src="${s}" class="${i===0?'active':''}" draggable="false" loading="${i===0?'eager':'lazy'}">`).join('')}
+                <div class="card-overlay"><span>View Details</span></div>
+              </div>
+              <div class="card-body">
+                <div class="name">${name||folder}</div>
+                <div class="price">${price}</div>
+              </div>`;
+            grid.appendChild(card);
+            let c=0; const imgs=card.querySelectorAll('.card-img img');
+            if(imgs.length>1) setInterval(()=>{ imgs[c].classList.remove('active'); c=(c+1)%imgs.length; imgs[c].classList.add('active'); },3500);
+            card.addEventListener('click',()=>openModal({name,desc,price,images:full}));
+          }).catch(e=>console.warn('Could not load',folder,e));
+      });
+    }).catch(e=>console.error(e));
   </script>
 </body>
 </html>
