@@ -1,0 +1,4 @@
+name: 4c
+price: 8800
+description: dfg
+images: 000000.jpeg,000001.jpeg,000002.jpeg,000003.jpeg,000004.jpeg,000005.jpeg,000006.jpeg,000007.jpeg,000008.jpeg
