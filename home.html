@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EGYGRILLZ – Egypt's First Custom Grillz</title>
   <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
-<link rel="shortcut icon" href="favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-<meta name="apple-mobile-web-app-title" content="EGYGRILLZ" />
-<link rel="manifest" href="site.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="EGYGRILLZ" />
+  <link rel="manifest" href="site.webmanifest" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
@@ -19,6 +19,7 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: 'Arimo', sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing: antialiased; }
     body.menu-open { overflow: hidden; }
+
     /* ==========================================================================
        HEADER
        ========================================================================== */
@@ -27,13 +28,11 @@
       display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
     }
     .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
-   
     .main-nav { display: flex; gap: 20px; }
     .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
     .main-nav a:hover { color: #666; }
     .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
     .menu-toggle span { width: 25px; height: 1.5px; background: #000; }
-   
     @media (max-width: 980px) {
       .menu-toggle { display: flex; }
       .main-nav {
@@ -43,8 +42,9 @@
       .main-nav.active { right: 0; }
       .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
     }
+
     /* ==========================================================================
-       HERO (EDITED)
+       HERO (main)
        ========================================================================== */
     .hero {
       position: relative;
@@ -63,7 +63,6 @@
       height: 100%;
       object-fit: cover;
       opacity: 0.7;
-      transform: scale(1.05);
       animation: heroZoom 10s infinite alternate linear;
     }
     @keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.1); } }
@@ -85,28 +84,134 @@
       font-weight: 700; font-size: 11px; letter-spacing: 2px; transition: 0.3s ease;
     }
     .hero-schedule-btn:hover { opacity: 0.8; letter-spacing: 3px; }
+
     /* ==========================================================================
-       SECTIONS & SLIDESHOWS
+       CATEGORY HERO SECTIONS (full screen like hero)
+       ========================================================================== */
+    .category-hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+    }
+    .category-hero-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.72;
+      transition: opacity 1.2s ease;
+    }
+    /* Slideshow images for category hero */
+    .category-hero-slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1.4s ease;
+    }
+    .category-hero-slide.active { opacity: 0.72; }
+
+    /* Text positioning variants */
+    .cat-content {
+      position: absolute;
+      z-index: 10;
+      color: #fff;
+      padding: 5%;
+    }
+    /* GOLDS – center */
+    .cat-content.center {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    /* SILVERS – right */
+    .cat-content.right {
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      text-align: right;
+      max-width: 480px;
+    }
+    /* DIAMONDS – bottom center */
+    .cat-content.bottom-center {
+      bottom: 8%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      width: 100%;
+    }
+
+    .cat-content h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 6vw, 58px);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 12px;
+      line-height: 1.1;
+    }
+    .cat-content p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.82);
+      max-width: 380px;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .cat-content.center p { margin: 0 auto 18px; }
+    .cat-content.right p { margin-left: auto; }
+    .cat-price {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 22px;
+      display: block;
+    }
+    .cat-cta {
+      display: inline-block;
+      padding: 13px 36px;
+      border: 1px solid #fff;
+      color: #fff;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: 0.3s;
+      backdrop-filter: blur(4px);
+      background: rgba(255,255,255,0.08);
+    }
+    .cat-cta:hover { background: #fff; color: #000; }
+
+    /* Slide indicator dots */
+    .cat-dots {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+    }
+    .cat-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      transition: background 0.4s;
+      cursor: pointer;
+    }
+    .cat-dot.active { background: #fff; }
+
+    /* ==========================================================================
+       LATEST & GALLERY SECTIONS
        ========================================================================== */
     .container { max-width: 1400px; margin: 0 auto; padding: 0 5%; }
     section { padding: 60px 0; text-align: center; }
-    h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px; }
-    .slideshow-container { position: relative; width: 100%; height: 65vh; overflow: hidden; background: #000; margin: 30px 0 20px; }
-    .slides-wrapper { display: flex; height: 100%; transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1); will-change: transform; }
-    .slide { flex: 0 0 100%; height: 100%; }
-    .slide img { width: 100%; height: 100%; object-fit: cover; opacity: 0.92; }
-    .slide-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5; }
-    .overlay-view-btn {
-      pointer-events: auto; padding: 14px 38px; background: rgba(255,255,255,0.1); color: white;
-      border: 1px solid white; font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1.5px; text-decoration: none; transition: 0.4s; backdrop-filter: blur(5px);
-    }
-    .overlay-view-btn:hover { background: white; color: black; }
-    .category-info { max-width: 900px; margin: 0 auto 40px; padding: 0 5%; text-align: left; min-height: 120px; transition: opacity 0.4s ease; }
-    .category-info.fade-out { opacity: 0; }
-    .category-title { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 8px; text-transform: uppercase; }
-    .category-desc { font-size: 14px; color: #444; margin-bottom: 10px; line-height: 1.55; }
-    .category-price { font-size: 18px; font-weight: 700; color: #000; }
+    h2.section-title { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px; }
     .latest-grid, .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
     .latest-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; transition: 0.5s; }
     .set-card { border: 1px solid #eee; background: #fff; transition: transform 0.3s; }
@@ -114,69 +219,129 @@
     .mini-slider img { position: absolute; inset: 0; opacity: 0; transition: 0.8s ease; object-fit: cover; width: 100%; height: 100%; }
     .mini-slider img.active { opacity: 1; }
     .set-info { padding: 10px; font-size: 11px; text-transform: uppercase; text-align: left; }
+
     /* ==========================================================================
-       FOOTER (EDITED WITH MOBILE CENTER FIX)
+       ABOUT SNIPPET
+       ========================================================================== */
+    .about-snippet {
+      background: #000;
+      color: #fff;
+      padding: 90px 5%;
+      text-align: center;
+    }
+    .about-snippet h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(24px, 4vw, 42px);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+    }
+    .about-snippet p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      max-width: 600px;
+      margin: 0 auto 30px;
+      line-height: 1.8;
+    }
+    .about-snippet a {
+      display: inline-block;
+      padding: 12px 34px;
+      border: 1px solid #fff;
+      color: #fff;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: 0.3s;
+    }
+    .about-snippet a:hover { background: #fff; color: #000; }
+
+    /* ==========================================================================
+       CONTACT SNIPPET
+       ========================================================================== */
+    .contact-snippet {
+      background: #f9f9f9;
+      padding: 80px 5%;
+      text-align: center;
+    }
+    .contact-snippet h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(22px, 4vw, 38px);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 14px;
+    }
+    .contact-snippet p {
+      font-size: 13px;
+      color: #555;
+      max-width: 500px;
+      margin: 0 auto 30px;
+      line-height: 1.8;
+    }
+    .contact-snippet .contact-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .contact-snippet .contact-links a {
+      display: inline-block;
+      padding: 12px 30px;
+      border: 1px solid #000;
+      color: #000;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: 0.3s;
+    }
+    .contact-snippet .contact-links a:hover { background: #000; color: #fff; }
+
+    /* ==========================================================================
+       FOOTER
        ========================================================================== */
     footer { background: #000; color: #fff; padding: 50px 5% 20px; }
     .footer-main {
-        display: grid;
-        grid-template-columns: 1.5fr 1fr 1fr;
-        gap: 40px;
-        padding-bottom: 40px;
-        border-bottom: 1px solid #222;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid #222;
     }
-    .footer-col h4 {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 20px;
-        color: #999;
-    }
-    .footer-col a {
-        display: block;
-        color: #fff;
-        text-decoration: none;
-        font-size: 12px;
-        margin-bottom: 8px;
-        transition: 0.3s;
-    }
+    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
+    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
     .footer-col a:hover { color: #888; }
-   
     .footer-bottom {
-        padding-top: 25px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 20px;
+      padding-top: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
     }
     .footer-logo-img { height: 10px; filter: brightness(0) invert(1); }
     .ceo-wrap { display: flex; align-items: center; gap: 8px; }
     .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
     .ceo-name { font-family: 'Alex Brush'; font-size: 12px; color: #888; }
     .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
+    .footer-icons a { color: #fff; margin-right: 14px; font-size: 16px; transition: 0.3s; }
+    .footer-icons a:hover { color: #888; }
+
     @media (max-width: 768px) {
-      .footer-main {
-        grid-template-columns: 1fr;
-        text-align: center;
-        gap: 30px;
-      }
-      .footer-col {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .footer-col p {
-        text-align: center;
-        margin: 0 auto;
-      }
+      .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; }
+      .footer-col { display: flex; flex-direction: column; align-items: center; }
+      .footer-col p { text-align: center; margin: 0 auto; }
       .footer-bottom { flex-direction: column; text-align: center; }
-      .slideshow-container { height: 50vh; }
       .latest-grid, .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+      .cat-content.right { max-width: 100%; right: 0; text-align: center; }
+      .cat-content.right p { margin: 0 auto 18px; }
     }
   </style>
 </head>
 <body oncontextmenu="return false;">
+
   <header>
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -192,6 +357,8 @@
       <a href="contact.html">Contact</a>
     </nav>
   </header>
+
+  <!-- ===== HERO ===== -->
   <div class="hero">
     <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ">
     <div class="hero-content">
@@ -199,74 +366,97 @@
       <a href="booking.html" class="hero-schedule-btn">Schedule Appointment</a>
     </div>
   </div>
+
+  <!-- ===== LATEST DESIGNS ===== -->
   <div class="container">
     <section>
-      <h2>Latest Designs</h2>
+      <h2 class="section-title">Latest Designs</h2>
       <div id="latest-container"></div>
       <a href="latest-designs.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700; transition:0.3s;" onmouseover="this.style.background='#000'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#000'">View All</a>
     </section>
+  </div>
+
+  <!-- ===== GOLDS – full screen hero, text CENTER ===== -->
+  <div class="category-hero" id="golds-hero">
+    <div id="golds-hero-slides"></div>
+    <div class="cat-content center" id="golds-hero-content">
+      <h2 id="golds-hero-name">Golds</h2>
+      <p id="golds-hero-desc"></p>
+      <span class="cat-price" id="golds-hero-price"></span>
+      <a href="golds.html" class="cat-cta">View Golds</a>
+    </div>
+    <div class="cat-dots" id="golds-dots"></div>
+  </div>
+
+  <!-- ===== GALLERY ===== -->
+  <div class="container">
     <section>
-      <h2>Golds</h2>
-      <div class="slideshow-container" id="golds-slideshow">
-        <div class="slides-wrapper" id="golds-track"></div>
-        <div class="slide-overlay"><a href="golds.html" class="overlay-view-btn">View Golds</a></div>
-      </div>
-      <div class="category-info" id="golds-info">
-        <h3 class="category-title"></h3>
-        <p class="category-desc"></p>
-        <p class="category-price"></p>
-      </div>
-    </section>
-    <section>
-      <h2>Diamonds</h2>
-      <div class="slideshow-container" id="diamonds-slideshow">
-        <div class="slides-wrapper" id="diamonds-track"></div>
-        <div class="slide-overlay"><a href="diamonds.html" class="overlay-view-btn">View Diamonds</a></div>
-      </div>
-      <div class="category-info" id="diamonds-info">
-        <h3 class="category-title"></h3>
-        <p class="category-desc"></p>
-        <p class="category-price"></p>
-      </div>
-    </section>
-    <section>
-      <h2>Silvers</h2>
-      <div class="slideshow-container" id="silvers-slideshow">
-        <div class="slides-wrapper" id="silvers-track"></div>
-        <div class="slide-overlay"><a href="silvers.html" class="overlay-view-btn">View Silvers</a></div>
-      </div>
-      <div class="category-info" id="silvers-info">
-        <h3 class="category-title"></h3>
-        <p class="category-desc"></p>
-        <p class="category-price"></p>
-      </div>
-    </section>
-    <section>
-      <h2>Grillz Gallery</h2>
+      <h2 class="section-title">Grillz Gallery</h2>
       <div class="gallery-grid" id="gallery-preview"></div>
       <a href="grillz-gallery.html" style="text-decoration:none; color:#000; border:1px solid #000; padding:10px 25px; text-transform:uppercase; font-size:10px; font-weight:700; transition:0.3s;" onmouseover="this.style.background='#000'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#000'">Full Gallery</a>
     </section>
   </div>
+
+  <!-- ===== SILVERS – full screen hero, text RIGHT ===== -->
+  <div class="category-hero" id="silvers-hero">
+    <div id="silvers-hero-slides"></div>
+    <div class="cat-content right" id="silvers-hero-content">
+      <h2 id="silvers-hero-name">Silvers</h2>
+      <p id="silvers-hero-desc"></p>
+      <span class="cat-price" id="silvers-hero-price"></span>
+      <a href="silvers.html" class="cat-cta">View Silvers</a>
+    </div>
+    <div class="cat-dots" id="silvers-dots"></div>
+  </div>
+
+  <!-- ===== ABOUT SNIPPET ===== -->
+  <div class="about-snippet">
+    <h2>Crafted in Egypt.<br>Worn Worldwide.</h2>
+    <p>EGYGRILLZ is Egypt's first and only custom dental jewelry studio. Every piece is handcrafted to fit your unique smile — from solid gold open-face sets to iced-out VVS diamond grillz. We combine old-world craftsmanship with a bold, modern aesthetic.</p>
+    <a href="about.html">Our Story</a>
+  </div>
+
+  <!-- ===== DIAMONDS – full screen hero, text BOTTOM CENTER ===== -->
+  <div class="category-hero" id="diamonds-hero">
+    <div id="diamonds-hero-slides"></div>
+    <div class="cat-content bottom-center" id="diamonds-hero-content">
+      <h2 id="diamonds-hero-name">Diamonds</h2>
+      <p id="diamonds-hero-desc" style="margin: 0 auto 18px;"></p>
+      <span class="cat-price" id="diamonds-hero-price"></span>
+      <a href="diamonds.html" class="cat-cta">View Diamonds</a>
+    </div>
+    <div class="cat-dots" id="diamonds-dots"></div>
+  </div>
+
+  <!-- ===== CONTACT SNIPPET ===== -->
+  <div class="contact-snippet">
+    <h2>Get In Touch</h2>
+    <p>Ready to get fitted? Schedule your appointment or reach out to us directly. We serve clients across Egypt and ship worldwide.</p>
+    <div class="contact-links">
+      <a href="booking.html">Schedule Appointment</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </div>
+
   <footer>
     <div class="footer-main">
-        <div class="footer-col">
-            <h4>EGYGRILLZ Egypt</h4>
-            <p style="font-size: 13px; color: #888; max-width: 300px;">Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
-        </div>
-        <div class="footer-col">
-            <h4>Information</h4>
-            <a href="about.html">About Us</a>
-            <a href="booking.html">Schedule</a>
-            <a href="contact.html">Contact</a>
-        </div>
-        <div class="footer-col">
-            <h4>Legal</h4>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms of Service</a>
-            <a href="shipping.html">Care & Shipping</a>
-        </div>
+      <div class="footer-col">
+        <h4>EGYGRILLZ Egypt</h4>
+        <p style="font-size: 13px; color: #888; max-width: 300px;">Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Information</h4>
+        <a href="about.html">About Us</a>
+        <a href="booking.html">Schedule</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="shipping.html">Care & Shipping</a>
+      </div>
     </div>
-   
     <div class="footer-bottom">
       <div class="footer-icons">
         <a href="https://instagram.com/egygrillz"><i class="fab fa-instagram"></i></a>
@@ -282,11 +472,14 @@
       <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
   </footer>
+
   <script>
+    // Mobile menu
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
+
     function parseInfo(text) {
       const info = { name: '', price: '', desc: '', images: [] };
       text.split('\n').forEach(line => {
@@ -301,46 +494,71 @@
       });
       return info;
     }
-    async function loadCategorySlideshow(category, trackId, infoId) {
+
+    // Load a category as full-screen hero with cycling slides
+    async function loadCategoryHero(category, slidesId, nameId, descId, priceId, dotsId) {
       try {
         const listRes = await fetch(`assets/images/${category}/${category}.json`);
         const list = await listRes.json();
         const items = Array.isArray(list) ? list : Object.values(list);
         if (!items.length) return;
-        const track = document.getElementById(trackId);
-        const infoBlock = document.getElementById(infoId);
-        let slidesHTML = '';
-        let itemData = [];
-        for (const item of items) {
-          const txt = await fetch(`assets/images/${category}/${item}/info.txt`).then(r => r.text());
+
+        const slidesContainer = document.getElementById(slidesId);
+        const dotsContainer = document.getElementById(dotsId);
+        let allData = [];
+        let allImgEls = [];
+
+        for (let i = 0; i < items.length; i++) {
+          const txt = await fetch(`assets/images/${category}/${items[i]}/info.txt`).then(r => r.text());
           const d = parseInfo(txt);
-          itemData.push(d);
+          allData.push(d);
+
           if (d.images.length > 0) {
-            slidesHTML += `<div class="slide"><img src="assets/images/${category}/${item}/${d.images[0]}"></div>`;
+            const img = document.createElement('img');
+            img.className = 'category-hero-slide' + (i === 0 ? ' active' : '');
+            img.src = `assets/images/${category}/${items[i]}/${d.images[0]}`;
+            img.alt = d.name;
+            slidesContainer.appendChild(img);
+            allImgEls.push(img);
+
+            // dot
+            const dot = document.createElement('div');
+            dot.className = 'cat-dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => goTo(i));
+            dotsContainer.appendChild(dot);
           }
         }
-        track.innerHTML = slidesHTML;
-        const updateText = (idx) => {
-          infoBlock.classList.add('fade-out');
-          setTimeout(() => {
-            const data = itemData[idx];
-            infoBlock.querySelector('.category-title').textContent = data.name;
-            infoBlock.querySelector('.category-desc').textContent = data.desc;
-            infoBlock.querySelector('.category-price').textContent = data.price || '';
-            infoBlock.classList.remove('fade-out');
-          }, 400);
-        };
+
+        const dots = dotsContainer.querySelectorAll('.cat-dot');
+
+        function updateText(idx) {
+          const d = allData[idx];
+          document.getElementById(nameId).textContent = d.name || category.charAt(0).toUpperCase() + category.slice(1);
+          document.getElementById(descId).textContent = d.desc || '';
+          document.getElementById(priceId).textContent = d.price || '';
+        }
+
+        let current = 0;
+
+        function goTo(idx) {
+          allImgEls[current].classList.remove('active');
+          if (dots[current]) dots[current].classList.remove('active');
+          current = idx;
+          allImgEls[current].classList.add('active');
+          if (dots[current]) dots[current].classList.add('active');
+          updateText(current);
+        }
+
         updateText(0);
-        let pos = 0;
+
         if (items.length > 1) {
           setInterval(() => {
-            pos = (pos + 1) % items.length;
-            track.style.transform = `translateX(-${pos * 100}%)`;
-            updateText(pos);
+            goTo((current + 1) % allImgEls.length);
           }, 5000);
         }
-      } catch (err) { console.warn(err); }
+      } catch (err) { console.warn(category, err); }
     }
+
     async function loadLatest() {
       try {
         const res = await fetch('assets/images/latest-designs/designs.json');
@@ -349,11 +567,13 @@
         const txt = await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r => r.text());
         const d = parseInfo(txt);
         document.getElementById('latest-container').innerHTML = `
-          <h3 style="font-family:'Playfair Display'; text-transform:uppercase;">${d.name}</h3><p class="latest-desc">${d.desc}</p>
+          <h3 style="font-family:'Playfair Display'; text-transform:uppercase;">${d.name}</h3>
+          <p style="font-size:14px; color:#444; max-width:600px; margin: 8px auto 16px;">${d.desc}</p>
           <div class="latest-grid">${d.images.slice(0,3).map(i => `<img src="assets/images/latest-designs/${folder}/${i}">`).join('')}</div>
           <p style="font-weight:700; margin-bottom:20px;">${d.price}</p>`;
       } catch (e) {}
     }
+
     async function loadGalleryPreview() {
       try {
         const res = await fetch('assets/images/sets/sets.json').then(r => r.json());
@@ -372,15 +592,15 @@
         }, 3500);
       } catch (e) {}
     }
+
     function init() {
       loadLatest();
-      loadCategorySlideshow('golds', 'golds-track', 'golds-info');
-      loadCategorySlideshow('diamonds', 'diamonds-track', 'diamonds-info');
-      loadCategorySlideshow('silvers', 'silvers-track', 'silvers-info');
+      loadCategoryHero('golds',    'golds-hero-slides',    'golds-hero-name',    'golds-hero-desc',    'golds-hero-price',    'golds-dots');
+      loadCategoryHero('silvers',  'silvers-hero-slides',  'silvers-hero-name',  'silvers-hero-desc',  'silvers-hero-price',  'silvers-dots');
+      loadCategoryHero('diamonds', 'diamonds-hero-slides', 'diamonds-hero-name', 'diamonds-hero-desc', 'diamonds-hero-price', 'diamonds-dots');
       loadGalleryPreview();
     }
     init();
   </script>
 </body>
 </html>
-
