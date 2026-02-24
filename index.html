@@ -24,9 +24,11 @@
        HEADER
        ========================================================================== */
     header {
-      position: sticky; top: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
+      position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
       display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    header.hidden { transform: translateY(-100%); }
     .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: #000; }
     .main-nav { display: flex; gap: 20px; }
     .main-nav a { text-decoration: none; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
@@ -330,13 +332,59 @@
     .footer-icons a:hover { color: #888; }
 
     @media (max-width: 768px) {
+      /* Footer */
       .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; }
       .footer-col { display: flex; flex-direction: column; align-items: center; }
       .footer-col p { text-align: center; margin: 0 auto; }
       .footer-bottom { flex-direction: column; text-align: center; }
+
+      /* Grids */
       .latest-grid, .gallery-grid { grid-template-columns: repeat(2, 1fr); }
-      .cat-content.right { max-width: 100%; right: 0; text-align: center; }
-      .cat-content.right p { margin: 0 auto 18px; }
+
+      /* Category hero – center everything on mobile */
+      .cat-content {
+        padding: 6% 7%;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center !important;
+      }
+      .cat-content.center {
+        top: 50%;
+        left: 50% !important;
+        right: auto !important;
+        transform: translate(-50%, -50%);
+        width: 90%;
+      }
+      .cat-content.right {
+        top: 50%;
+        right: auto !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%);
+        max-width: 90%;
+      }
+      .cat-content.bottom-center {
+        bottom: 8%;
+        left: 50% !important;
+        transform: translateX(-50%);
+        width: 90%;
+      }
+      .cat-content h2 {
+        font-size: clamp(26px, 8vw, 40px);
+        letter-spacing: 1.5px;
+      }
+      .cat-content p {
+        font-size: 13px;
+        max-width: 100%;
+        margin: 0 auto 14px !important;
+      }
+      .cat-price { font-size: 15px; }
+      .cat-cta { padding: 12px 28px; font-size: 10px; }
+
+      /* About & contact */
+      .about-snippet { padding: 60px 7%; }
+      .contact-snippet { padding: 55px 7%; }
+      .contact-snippet .contact-links { flex-direction: column; align-items: center; }
+      .contact-snippet .contact-links a { width: 100%; max-width: 260px; text-align: center; }
     }
   </style>
 </head>
@@ -474,6 +522,21 @@
   </footer>
 
   <script>
+    // Auto-hide header on scroll down, show on scroll up
+    (function() {
+      const header = document.querySelector('header');
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', () => {
+        const currentY = window.scrollY;
+        if (currentY > lastY && currentY > 80) {
+          header.classList.add('hidden');
+        } else {
+          header.classList.remove('hidden');
+        }
+        lastY = currentY;
+      }, { passive: true });
+    })();
+
     // Mobile menu
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
