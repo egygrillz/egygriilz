@@ -13,636 +13,241 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    /* ═══════════════════════════════════════
-       RESET & BASE
-    ═══════════════════════════════════════ */
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Arimo', sans-serif;
-      background: #fff;
-      color: #000;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
-    body.menu-open { overflow: hidden; }
-    img { display: block; max-width: 100%; }
-    a { text-decoration: none; color: inherit; }
+    body { font-family:'Arimo',sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+    body.menu-open { overflow:hidden; }
+    img { display:block; max-width:100%; }
+    a { text-decoration:none; color:inherit; }
 
-    /* ═══════════════════════════════════════
-       HEADER — UNTOUCHED
-    ═══════════════════════════════════════ */
+    /* ══ HEADER (UNTOUCHED) ══ */
     header {
-      position: fixed; top: 0; left: 0; right: 0; height: 60px;
-      background: #fff; border-bottom: 1px solid #eee; z-index: 1000;
-      display: flex; align-items: center; justify-content: space-between; padding: 0 5%;
-      transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+      position:fixed; top:0; left:0; right:0; height:60px;
+      background:#fff; border-bottom:1px solid #eee; z-index:1000;
+      display:flex; align-items:center; justify-content:space-between; padding:0 5%;
+      transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
     }
-    header.hidden { transform: translateY(-100%); }
-    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; color: #000; }
-    .main-nav { display: flex; gap: 20px; }
-    .main-nav a { color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
-    .main-nav a:hover { color: #666; }
-    .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
-    .menu-toggle { display: none; flex-direction: column; gap: 6px; background: none; border: none; cursor: pointer; }
-    .menu-toggle span { width: 25px; height: 1.5px; background: #000; display: block; }
+    header.hidden { transform:translateY(-100%); }
+    .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; color:#000; }
+    .main-nav { display:flex; gap:20px; }
+    .main-nav a { color:#000; font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color 0.3s; }
+    .main-nav a:hover { color:#666; }
+    .nav-active { font-weight:900; border-bottom:1px solid #000; }
+    .menu-toggle { display:none; flex-direction:column; gap:6px; background:none; border:none; cursor:pointer; }
+    .menu-toggle span { width:25px; height:1.5px; background:#000; display:block; }
     @media(max-width:980px) {
-      .menu-toggle { display: flex; }
-      .main-nav {
-        position: fixed; top: 60px; right: -100%; width: 100%; background: #fff;
-        flex-direction: column; padding: 10px 5%;
-        transition: 0.4s cubic-bezier(0.4,0,0.2,1);
-        box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
-      }
-      .main-nav.active { right: 0; }
-      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; width: 100%; }
+      .menu-toggle { display:flex; }
+      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:#fff; flex-direction:column; padding:10px 5%; transition:0.4s cubic-bezier(0.4,0,0.2,1); box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
+      .main-nav.active { right:0; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; width:100%; }
     }
 
-    /* ═══════════════════════════════════════
-       HERO — FULL SCREEN, LV STYLE
-    ═══════════════════════════════════════ */
-    .lv-hero {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      min-height: 600px;
-      overflow: hidden;
-      background: #111;
+    /* ══ FLOATING LOGO (shows when header hides) ══ */
+    .floating-logo {
+      position:fixed; top:0; left:0; right:0; height:48px;
+      display:flex; align-items:center; justify-content:center;
+      z-index:999; pointer-events:none;
+      opacity:0; transform:translateY(-8px);
+      transition:opacity 0.35s ease, transform 0.35s ease;
     }
-    .lv-hero-slide {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      transition: opacity 1.6s ease;
-      transform: scale(1.04);
-      animation: none;
-    }
-    .lv-hero-slide.active {
-      opacity: 0.82;
-      animation: slowZoom 12s linear forwards;
-    }
-    @keyframes slowZoom { from { transform: scale(1.04); } to { transform: scale(1); } }
-
-    /* Dark gradient bottom vignette */
-    .lv-hero::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 40%, rgba(0,0,0,0.55) 100%);
-      z-index: 2;
+    .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .floating-logo a {
+      font-family:'Playfair Display',serif; font-size:17px; font-weight:700;
+      letter-spacing:3px; color:#000;
+      background:rgba(255,255,255,0.94); padding:10px 28px;
+      backdrop-filter:blur(10px);
+      border:1px solid #eee;
+      box-shadow:0 2px 12px rgba(0,0,0,0.08);
     }
 
-    .lv-hero-content {
-      position: absolute;
-      z-index: 10;
-      bottom: 10%;
-      left: 0;
-      right: 0;
-      text-align: center;
-      color: #fff;
-      padding: 0 20px;
-    }
-    .lv-hero-eyebrow {
-      font-size: 9px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 14px;
-      opacity: 0;
-      animation: fadeUp 1s 0.4s forwards;
-    }
-    .lv-hero-title {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(32px, 6vw, 72px);
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      line-height: 1.08;
-      margin-bottom: 22px;
-      opacity: 0;
-      animation: fadeUp 1s 0.7s forwards;
-    }
-    .lv-hero-cta {
-      display: inline-block;
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      border-bottom: 1px solid rgba(255,255,255,0.6);
-      padding-bottom: 3px;
-      transition: border-color 0.3s, letter-spacing 0.3s;
-      opacity: 0;
-      animation: fadeUp 1s 1s forwards;
-    }
-    .lv-hero-cta:hover { border-color: #fff; letter-spacing: 4px; }
+    /* ══ HERO ══ */
+    .lv-hero { position:relative; width:100%; height:100vh; min-height:500px; overflow:hidden; background:#111; }
+    .lv-hero-slide { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1.6s ease; transform:scale(1.04); }
+    .lv-hero-slide.active { opacity:0.82; animation:slowZoom 12s linear forwards; }
+    @keyframes slowZoom { from{transform:scale(1.04);}to{transform:scale(1);} }
+    .lv-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, transparent 38%, rgba(0,0,0,0.62) 100%); z-index:2; }
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    .lv-hero-content { position:absolute; z-index:10; bottom:10%; left:0; right:0; text-align:center; color:#fff; padding:0 20px; }
+    .lv-hero-eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:14px; opacity:0; animation:fadeUp 1s 0.4s forwards; }
+    .lv-hero-title { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(32px,6vw,72px); letter-spacing:4px; text-transform:uppercase; line-height:1.08; margin-bottom:22px; opacity:0; animation:fadeUp 1s 0.7s forwards; }
+    .lv-hero-cta { display:inline-block; color:#fff; font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.6); padding-bottom:3px; transition:border-color 0.3s,letter-spacing 0.3s; opacity:0; animation:fadeUp 1s 1s forwards; }
+    .lv-hero-cta:hover { border-color:#fff; letter-spacing:4px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);} }
 
-    /* Hero nav arrows */
-    .lv-hero-arrow {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 20;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.25);
-      color: #fff;
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.2s;
-      backdrop-filter: blur(4px);
-    }
-    .lv-hero-arrow:hover { background: rgba(255,255,255,0.22); }
-    .lv-hero-prev { left: 24px; }
-    .lv-hero-next { right: 24px; }
+    .lv-hero-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:20; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:background 0.2s; backdrop-filter:blur(4px); }
+    .lv-hero-arrow:hover { background:rgba(255,255,255,0.22); }
+    .lv-hero-prev { left:24px; } .lv-hero-next { right:24px; }
+    @media(max-width:480px) { .lv-hero-prev{left:10px;} .lv-hero-next{right:10px;} .lv-hero-arrow{width:36px;height:36px;font-size:12px;} }
 
-    /* Hero dots */
-    .lv-hero-dots {
-      position: absolute;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 20;
-      display: flex;
-      gap: 8px;
-    }
-    .lv-hero-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.35);
-      border: none;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.3s;
-    }
-    .lv-hero-dot.active { background: #fff; transform: scale(1.2); }
+    .lv-hero-dots { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:8px; }
+    .lv-hero-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.35); border:none; cursor:pointer; transition:background 0.3s,transform 0.3s; }
+    .lv-hero-dot.active { background:#fff; transform:scale(1.2); }
 
-    /* ═══════════════════════════════════════
-       SECTION INTRO — thin LV editorial label
-    ═══════════════════════════════════════ */
-    .lv-section-intro {
-      text-align: center;
-      padding: 60px 20px 36px;
-    }
-    .lv-section-intro .eyebrow {
-      font-size: 9px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      color: #999;
-      margin-bottom: 10px;
-    }
-    .lv-section-intro h2 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(20px, 3vw, 34px);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-    .lv-section-intro .rule {
-      width: 32px;
-      height: 1px;
-      background: #000;
-      margin: 16px auto 0;
-    }
+    /* ══ SECTION INTRO ══ */
+    .lv-section-intro { text-align:center; padding:60px 20px 36px; }
+    .lv-section-intro .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:10px; }
+    .lv-section-intro h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,3vw,34px); letter-spacing:3px; text-transform:uppercase; }
+    .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:16px auto 0; }
 
-    /* ═══════════════════════════════════════
-       LV EDITORIAL: 2-COLUMN CATEGORY SPLIT
-    ═══════════════════════════════════════ */
-    .lv-two-up {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3px;
-      margin-bottom: 3px;
-    }
-    .lv-one-up {
-      display: grid;
-      grid-template-columns: 1fr;
-      margin-bottom: 3px;
-    }
-    .lv-three-up {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 3px;
-      margin-bottom: 3px;
-    }
-    @media(max-width:768px) {
-      .lv-two-up { grid-template-columns: 1fr; }
-      .lv-three-up { grid-template-columns: 1fr 1fr; }
-    }
-    @media(max-width:480px) {
-      .lv-three-up { grid-template-columns: 1fr; }
-    }
+    /* ══ CATEGORY GRIDS ══ */
+    .lv-two-up { display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-bottom:3px; }
+    .lv-one-up { display:grid; grid-template-columns:1fr; margin-bottom:3px; }
 
-    /* ── Editorial card (category block) ── */
-    .lv-cat-card {
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-      background: #f5f5f5;
-    }
-    /* Tall for 2-up, medium for 3-up, very tall for 1-up */
-    .lv-cat-card.tall  { aspect-ratio: 3/4; }
-    .lv-cat-card.med   { aspect-ratio: 4/5; }
-    .lv-cat-card.wide  { aspect-ratio: 16/7; }
-    .lv-cat-card.xwide { aspect-ratio: 16/5; }
+    /* Mobile: stack them each full-width */
+    @media(max-width:680px) { .lv-two-up { grid-template-columns:1fr; } }
 
-    .lv-cat-card img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      transition: opacity 1s ease, transform 0.7s ease;
-    }
-    .lv-cat-card img.active { opacity: 1; }
-    .lv-cat-card:hover img.active { transform: scale(1.03); }
-
-    /* Gradient overlay at bottom */
-    .lv-cat-card::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      height: 55%;
-      background: linear-gradient(to top, rgba(0,0,0,0.62) 0%, transparent 100%);
-      z-index: 2;
-      transition: height 0.4s;
-    }
-    .lv-cat-card:hover::after { height: 65%; }
-
-    .lv-cat-info {
-      position: absolute;
-      z-index: 10;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 28px 28px 32px;
-      color: #fff;
-      transition: padding-bottom 0.35s;
-    }
-    .lv-cat-card:hover .lv-cat-info { padding-bottom: 38px; }
-
-    .lv-cat-info .tag {
-      font-size: 8px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.65);
-      margin-bottom: 6px;
-      display: block;
-    }
-    .lv-cat-info h3 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(18px, 2.4vw, 28px);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      line-height: 1.15;
-      margin-bottom: 4px;
-    }
-    .lv-cat-info .sub {
-      font-size: 12px;
-      color: rgba(255,255,255,0.75);
-      margin-bottom: 16px;
-      max-width: 320px;
-      line-height: 1.55;
-    }
-    .lv-cat-link {
-      display: inline-block;
-      font-size: 9px;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      color: #fff;
-      border-bottom: 1px solid rgba(255,255,255,0.5);
-      padding-bottom: 2px;
-      transition: border-color 0.25s, letter-spacing 0.25s;
-    }
-    .lv-cat-link:hover { border-color: #fff; letter-spacing: 3.5px; }
-
-    /* Centered variant (for full-width card) */
-    .lv-cat-info.center-text { text-align: center; padding: 32px 5%; }
-    .lv-cat-info.center-text .sub { margin: 0 auto 16px; }
-
-    /* ═══════════════════════════════════════
-       NEW ARRIVALS HORIZONTAL SCROLL STRIP
-    ═══════════════════════════════════════ */
-    .lv-new-strip-wrap {
-      padding: 0 0 0 40px;
-      overflow: hidden;
-    }
-    .lv-new-strip-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      padding: 0 40px 20px 0;
-    }
-    .lv-new-strip-header h2 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(18px, 2.2vw, 26px);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    .lv-new-strip-header a {
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      border-bottom: 1px solid #000;
-      padding-bottom: 2px;
-      transition: opacity 0.2s;
-    }
-    .lv-new-strip-header a:hover { opacity: 0.6; }
-
-    .lv-new-strip {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding-right: 40px;
-      padding-bottom: 20px;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      cursor: grab;
-    }
-    .lv-new-strip:active { cursor: grabbing; }
-    .lv-new-strip::-webkit-scrollbar { display: none; }
-
-    .lv-new-card {
-      flex: 0 0 260px;
-      cursor: pointer;
-    }
-    .lv-new-card-img {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 3/4;
-      background: #f5f5f5;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .lv-new-card-img img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.5s ease;
-    }
-    .lv-new-card:hover .lv-new-card-img img { transform: scale(1.05); }
-    .lv-new-card-label {
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #888;
-      margin-bottom: 4px;
-    }
-    .lv-new-card-name {
-      font-size: 13px;
-      letter-spacing: 0.3px;
-      margin-bottom: 3px;
-      line-height: 1.35;
-    }
-    .lv-new-card-price {
-      font-size: 12px;
-      font-weight: 700;
-      color: #000;
-    }
-
-    /* ═══════════════════════════════════════
-       SERVICES / USP RIBBON — LV Icon Strip
-    ═══════════════════════════════════════ */
-    .lv-services {
-      border-top: 1px solid #eee;
-      border-bottom: 1px solid #eee;
-      margin: 60px 0 0;
-      padding: 40px 5%;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      text-align: center;
-    }
-    .lv-service i {
-      font-size: 20px;
-      color: #000;
-      margin-bottom: 12px;
-    }
-    .lv-service h4 {
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .lv-service p {
-      font-size: 12px;
-      color: #666;
-      line-height: 1.55;
-    }
-    @media(max-width:768px) {
-      .lv-services { grid-template-columns: repeat(2, 1fr); }
+    /* ── Category card ── */
+    .lv-cat-card { position:relative; overflow:hidden; cursor:pointer; background:#f5f5f5; }
+    .lv-cat-card.tall { aspect-ratio:3/4; }
+    .lv-cat-card.wide { aspect-ratio:16/7; }
+    @media(max-width:680px) {
+      .lv-cat-card.tall { aspect-ratio:4/5; }
+      .lv-cat-card.wide { aspect-ratio:4/5; }
     }
     @media(max-width:420px) {
-      .lv-services { grid-template-columns: 1fr; }
+      .lv-cat-card.tall { aspect-ratio:3/4; }
+      .lv-cat-card.wide { aspect-ratio:3/4; }
     }
 
-    /* ═══════════════════════════════════════
-       STORY / ABOUT EDITORIAL BLOCK
-    ═══════════════════════════════════════ */
-    .lv-story {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      min-height: 520px;
-      margin-top: 3px;
+    .lv-cat-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1s ease,transform 0.7s ease; }
+    .lv-cat-card img.active { opacity:1; }
+    .lv-cat-card:hover img.active { transform:scale(1.03); }
+    .lv-cat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:60%; background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 100%); z-index:2; transition:height 0.4s; }
+    .lv-cat-card:hover::after { height:72%; }
+
+    .lv-cat-info { position:absolute; z-index:10; bottom:0; left:0; right:0; padding:28px 28px 32px; color:#fff; transition:padding-bottom 0.35s; }
+    .lv-cat-card:hover .lv-cat-info { padding-bottom:42px; }
+    .lv-cat-info .tag { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.65); margin-bottom:6px; display:block; }
+    .lv-cat-info h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.8vw,30px); letter-spacing:2px; text-transform:uppercase; line-height:1.15; margin-bottom:6px; }
+    .lv-cat-info .sub { font-size:12px; color:rgba(255,255,255,0.75); margin-bottom:16px; max-width:320px; line-height:1.55; }
+    .lv-cat-link { display:inline-block; font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:#fff; border-bottom:1px solid rgba(255,255,255,0.5); padding-bottom:2px; transition:border-color 0.25s,letter-spacing 0.25s; }
+    .lv-cat-link:hover { border-color:#fff; letter-spacing:3.5px; }
+    .lv-cat-info.center-text { text-align:center; padding:32px 5%; }
+    .lv-cat-info.center-text .sub { margin:0 auto 16px; }
+    @media(max-width:480px) { .lv-cat-info{padding:18px 18px 24px;} }
+
+    /* ══ LATEST STRIP ══ */
+    .lv-strip-section { padding:60px 0 0; }
+    .lv-new-strip-wrap { padding:0 0 0 40px; overflow:hidden; }
+    .lv-new-strip-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 20px 0; }
+    .lv-new-strip-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; }
+    .lv-new-strip-header a { font-size:9px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; }
+    .lv-new-strip-header a:hover { opacity:0.6; }
+    .lv-new-strip { display:flex; gap:12px; overflow-x:auto; padding-right:40px; padding-bottom:20px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
+    .lv-new-strip:active { cursor:grabbing; }
+    .lv-new-strip::-webkit-scrollbar { display:none; }
+    .lv-new-card { flex:0 0 220px; cursor:pointer; }
+    .lv-new-card-img { position:relative; width:100%; aspect-ratio:3/4; background:#f5f5f5; overflow:hidden; margin-bottom:12px; }
+    .lv-new-card-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease; }
+    .lv-new-card:hover .lv-new-card-img img { transform:scale(1.05); }
+    .lv-new-card-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:4px; }
+    .lv-new-card-name { font-size:13px; margin-bottom:3px; line-height:1.35; }
+    .lv-new-card-price { font-size:12px; font-weight:700; }
+    @media(max-width:480px) {
+      .lv-new-strip-wrap { padding-left:16px; }
+      .lv-new-strip-header { padding-right:16px; }
+      .lv-new-strip { padding-right:16px; }
+      .lv-new-card { flex:0 0 150px; }
     }
-    .lv-story-img {
-      position: relative;
-      overflow: hidden;
-      background: #f0f0f0;
-    }
-    .lv-story-img img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.7s ease;
-    }
-    .lv-story:hover .lv-story-img img { transform: scale(1.03); }
-    .lv-story-text {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 64px 72px;
-      background: #fff;
-    }
-    .lv-story-text .eyebrow {
-      font-size: 9px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      color: #999;
-      margin-bottom: 16px;
-    }
-    .lv-story-text h2 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(22px, 3vw, 38px);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      line-height: 1.2;
-      margin-bottom: 20px;
-    }
-    .lv-story-text p {
-      font-size: 14px;
-      color: #555;
-      line-height: 1.85;
-      margin-bottom: 32px;
-      max-width: 420px;
-    }
-    .lv-story-text a {
-      display: inline-block;
-      font-size: 10px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      border: 1px solid #000;
-      padding: 14px 32px;
-      color: #000;
-      transition: background 0.25s, color 0.25s;
-      align-self: flex-start;
-    }
-    .lv-story-text a:hover { background: #000; color: #fff; }
+
+    /* ══ GALLERY SECTION ══ */
+    .lv-gallery-wrap { padding:60px 40px 0; }
+    .lv-gallery-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:20px; }
+    .lv-gallery-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; }
+    .lv-gallery-header a { font-size:9px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; }
+    .lv-gallery-header a:hover { opacity:0.6; }
+
+    /* 2 tall left + 4 square right — LV editorial mosaic */
+    .lv-gallery-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; grid-template-rows:auto auto; gap:3px; }
+    .lv-gal-item { position:relative; overflow:hidden; background:#f5f5f5; cursor:pointer; }
+    .lv-gal-item:nth-child(1), .lv-gal-item:nth-child(2) { grid-row:span 2; aspect-ratio:3/4; }
+    .lv-gal-item:nth-child(3), .lv-gal-item:nth-child(4),
+    .lv-gal-item:nth-child(5), .lv-gal-item:nth-child(6) { aspect-ratio:1/1; }
+    .lv-gal-item img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.6s ease; }
+    .lv-gal-item:hover img { transform:scale(1.05); }
+    .lv-gal-item::after { content:''; position:absolute; inset:0; background:rgba(0,0,0,0); transition:background 0.3s; }
+    .lv-gal-item:hover::after { background:rgba(0,0,0,0.1); }
+
     @media(max-width:768px) {
-      .lv-story { grid-template-columns: 1fr; }
-      .lv-story-text { padding: 40px 28px; }
-      .lv-story-text p { max-width: 100%; }
+      .lv-gallery-wrap { padding:50px 16px 0; }
+      .lv-gallery-grid { grid-template-columns:1fr 1fr; grid-template-rows:auto; }
+      .lv-gal-item:nth-child(1), .lv-gal-item:nth-child(2) { grid-row:span 1; aspect-ratio:1/1; }
+    }
+    @media(max-width:420px) {
+      .lv-gallery-grid { gap:2px; }
     }
 
-    /* ═══════════════════════════════════════
-       CONTACT CTA — dark band like LV newsletter
-    ═══════════════════════════════════════ */
-    .lv-cta-band {
-      background: #000;
-      color: #fff;
-      text-align: center;
-      padding: 72px 5%;
-      margin-top: 3px;
-    }
-    .lv-cta-band .eyebrow {
-      font-size: 9px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.5);
-      margin-bottom: 12px;
-    }
-    .lv-cta-band h2 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(22px, 3.5vw, 42px);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      line-height: 1.2;
-      margin-bottom: 14px;
-    }
-    .lv-cta-band p {
-      font-size: 13px;
-      color: rgba(255,255,255,0.65);
-      max-width: 480px;
-      margin: 0 auto 36px;
-      line-height: 1.75;
-    }
-    .lv-cta-btns {
-      display: flex;
-      justify-content: center;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-    .lv-cta-btn-white {
-      display: inline-block;
-      font-size: 10px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      border: 1px solid #fff;
-      padding: 14px 36px;
-      color: #fff;
-      transition: background 0.25s, color 0.25s;
-    }
-    .lv-cta-btn-white:hover { background: #fff; color: #000; }
-    .lv-cta-btn-outline {
-      display: inline-block;
-      font-size: 10px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      border: 1px solid rgba(255,255,255,0.35);
-      padding: 14px 36px;
-      color: rgba(255,255,255,0.75);
-      transition: border-color 0.25s, color 0.25s;
-    }
-    .lv-cta-btn-outline:hover { border-color: #fff; color: #fff; }
-
-    /* ═══════════════════════════════════════
-       FOOTER — UNTOUCHED
-    ═══════════════════════════════════════ */
-    footer { background: #000; color: #fff; padding: 50px 5% 20px; }
-    .footer-main {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 40px;
-      padding-bottom: 40px;
-      border-bottom: 1px solid #222;
-    }
-    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
-    .footer-col p { font-size: 13px; color: #888; max-width: 300px; line-height: 1.6; }
-    .footer-col a { display: block; color: #fff; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
-    .footer-col a:hover { color: #888; }
-    .footer-bottom {
-      padding-top: 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-    .footer-logo-img { height: 10px; filter: brightness(0) invert(1); }
-    .ceo-wrap { display: flex; align-items: center; gap: 8px; }
-    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .ceo-name { font-family: 'Alex Brush'; font-size: 12px; color: #888; }
-    .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
-    .footer-icons a { color: #fff; margin-right: 14px; font-size: 16px; transition: 0.3s; }
-    .footer-icons a:hover { color: #888; }
+    /* ══ STORY BLOCK ══ */
+    .lv-story { display:grid; grid-template-columns:1fr 1fr; min-height:520px; margin-top:60px; }
+    .lv-story-img { position:relative; overflow:hidden; background:#f0f0f0; min-height:400px; }
+    .lv-story-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.7s ease; }
+    .lv-story:hover .lv-story-img img { transform:scale(1.03); }
+    .lv-story-text { display:flex; flex-direction:column; justify-content:center; padding:64px 72px; background:#fff; }
+    .lv-story-text .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:16px; }
+    .lv-story-text h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3vw,38px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:20px; }
+    .lv-story-text p { font-size:14px; color:#555; line-height:1.85; margin-bottom:32px; max-width:420px; }
+    .lv-story-text a { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #000; padding:14px 32px; color:#000; transition:background 0.25s,color 0.25s; align-self:flex-start; }
+    .lv-story-text a:hover { background:#000; color:#fff; }
     @media(max-width:768px) {
-      .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; }
-      .footer-col { display: flex; flex-direction: column; align-items: center; }
-      .footer-bottom { flex-direction: column; text-align: center; }
+      .lv-story { grid-template-columns:1fr; }
+      .lv-story-text { padding:40px 24px; }
+      .lv-story-text p { max-width:100%; }
+      .lv-story-img { min-height:280px; }
     }
 
-    /* ═══════════════════════════════════════
-       SCROLL REVEAL
-    ═══════════════════════════════════════ */
-    .reveal {
-      opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.8s ease, transform 0.8s ease;
+    /* ══ CTA BAND ══ */
+    .lv-cta-band { background:#000; color:#fff; text-align:center; padding:72px 5%; margin-top:3px; }
+    .lv-cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:12px; }
+    .lv-cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; }
+    .lv-cta-band p { font-size:13px; color:rgba(255,255,255,0.65); max-width:480px; margin:0 auto 36px; line-height:1.75; }
+    .lv-cta-btns { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
+    .lv-cta-btn-white { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #fff; padding:14px 36px; color:#fff; transition:background 0.25s,color 0.25s; }
+    .lv-cta-btn-white:hover { background:#fff; color:#000; }
+    .lv-cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.35); padding:14px 36px; color:rgba(255,255,255,0.75); transition:border-color 0.25s,color 0.25s; }
+    .lv-cta-btn-outline:hover { border-color:#fff; color:#fff; }
+    @media(max-width:480px) {
+      .lv-cta-band { padding:50px 5%; }
+      .lv-cta-btns { flex-direction:column; align-items:center; }
+      .lv-cta-btn-white, .lv-cta-btn-outline { width:100%; max-width:280px; text-align:center; }
     }
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
+
+    /* ══ FOOTER (UNTOUCHED) ══ */
+    footer { background:#000; color:#fff; padding:50px 5% 20px; }
+    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
+    .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
+    .footer-col p { font-size:13px; color:#888; max-width:300px; line-height:1.6; }
+    .footer-col a { display:block; color:#fff; font-size:12px; margin-bottom:8px; transition:0.3s; }
+    .footer-col a:hover { color:#888; }
+    .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+    .footer-logo-img { height:10px; filter:brightness(0) invert(1); }
+    .ceo-wrap { display:flex; align-items:center; gap:8px; }
+    .ceo-label { font-size:7px; color:#666; text-transform:uppercase; letter-spacing:1px; }
+    .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#888; }
+    .legal-text { font-size:9px; color:#444; text-transform:uppercase; }
+    .footer-icons a { color:#fff; margin-right:14px; font-size:16px; transition:0.3s; }
+    .footer-icons a:hover { color:#888; }
+    @media(max-width:768px) {
+      .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; }
+      .footer-col { display:flex; flex-direction:column; align-items:center; }
+      .footer-bottom { flex-direction:column; text-align:center; }
     }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.35s; }
+
+    /* ══ SCROLL REVEAL ══ */
+    .reveal { opacity:0; transform:translateY(24px); transition:opacity 0.8s ease,transform 0.8s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+    .reveal-d1 { transition-delay:0.12s; }
+    .reveal-d2 { transition-delay:0.24s; }
   </style>
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- ══════════════ HEADER (UNTOUCHED) ══════════════ -->
-  <header>
+  <!-- Floating logo -->
+  <div class="floating-logo" id="floating-logo">
+    <a href="index.html">EGYGRILLZ</a>
+  </div>
+
+  <!-- HEADER (UNTOUCHED) -->
+  <header id="site-header">
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="main-nav">
@@ -658,35 +263,27 @@
     </nav>
   </header>
 
-  <!-- ══════════════ HERO ══════════════ -->
+  <!-- HERO -->
   <section class="lv-hero" id="hero">
-    <!-- slides populated by JS from golds/silvers/diamonds first image -->
     <div id="hero-slides-container"></div>
-
-    <!-- arrows -->
     <button class="lv-hero-arrow lv-hero-prev" id="hero-prev">&#8592;</button>
     <button class="lv-hero-arrow lv-hero-next" id="hero-next">&#8594;</button>
-
-    <!-- dots -->
     <div class="lv-hero-dots" id="hero-dots"></div>
-
     <div class="lv-hero-content">
-      <div class="lv-hero-eyebrow">EGYGRILLZ · Egypt's First Custom Grillz</div>
+      <div class="lv-hero-eyebrow">EGYGRILLZ &middot; Egypt's First Custom Grillz</div>
       <h1 class="lv-hero-title" id="hero-title">The Gold<br>Collection</h1>
       <a href="golds.html" class="lv-hero-cta" id="hero-cta">Discover Now</a>
     </div>
   </section>
 
-  <!-- ══════════════ EDITORIAL: 2-UP CATEGORY BLOCKS ══════════════ -->
+  <!-- COLLECTIONS -->
   <div class="lv-section-intro reveal">
     <div class="eyebrow">The Collections</div>
     <h2>Crafted for Your Smile</h2>
     <div class="rule"></div>
   </div>
 
-  <!-- GOLDS + SILVERS side by side -->
   <div class="lv-two-up">
-    <!-- GOLDS -->
     <div class="lv-cat-card tall reveal" id="golds-card" onclick="window.location='golds.html'">
       <div id="golds-card-slides"></div>
       <div class="lv-cat-info">
@@ -696,8 +293,7 @@
         <a href="golds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Golds</a>
       </div>
     </div>
-    <!-- SILVERS -->
-    <div class="lv-cat-card tall reveal reveal-delay-1" id="silvers-card" onclick="window.location='silvers.html'">
+    <div class="lv-cat-card tall reveal reveal-d1" id="silvers-card" onclick="window.location='silvers.html'">
       <div id="silvers-card-slides"></div>
       <div class="lv-cat-info">
         <span class="tag">Silver Collection</span>
@@ -708,7 +304,6 @@
     </div>
   </div>
 
-  <!-- DIAMONDS full-width -->
   <div class="lv-one-up">
     <div class="lv-cat-card wide reveal" id="diamonds-card" onclick="window.location='diamonds.html'">
       <div id="diamonds-card-slides"></div>
@@ -721,8 +316,8 @@
     </div>
   </div>
 
-  <!-- ══════════════ NEW ARRIVALS HORIZONTAL SCROLL ══════════════ -->
-  <div style="padding: 60px 0 0;">
+  <!-- LATEST DESIGNS STRIP -->
+  <div class="lv-strip-section">
     <div class="lv-new-strip-wrap reveal">
       <div class="lv-new-strip-header">
         <h2>Latest Designs</h2>
@@ -732,31 +327,16 @@
     </div>
   </div>
 
-  <!-- ══════════════ SERVICES RIBBON ══════════════ -->
-  <div class="lv-services reveal">
-    <div class="lv-service">
-      <i class="fas fa-certificate"></i>
-      <h4>Solid Gold Only</h4>
-      <p>Every piece is solid 18K or 21K — never plated, never hollow.</p>
+  <!-- GALLERY SECTION -->
+  <div class="lv-gallery-wrap reveal">
+    <div class="lv-gallery-header">
+      <h2>Grillz Gallery</h2>
+      <a href="grillz-gallery.html">View Full Gallery</a>
     </div>
-    <div class="lv-service">
-      <i class="fas fa-ruler-combined"></i>
-      <h4>Custom Fitted</h4>
-      <p>Mold-fitted to your exact dental impression for a perfect bite.</p>
-    </div>
-    <div class="lv-service">
-      <i class="fas fa-gem"></i>
-      <h4>VVS Diamonds</h4>
-      <p>Hand-set stones graded for brilliance, clarity, and cut.</p>
-    </div>
-    <div class="lv-service">
-      <i class="fas fa-shield-alt"></i>
-      <h4>Lifetime Polish</h4>
-      <p>Free lifetime polishing and care — because we stand by our craft.</p>
-    </div>
+    <div class="lv-gallery-grid" id="lv-gallery-grid"></div>
   </div>
 
-  <!-- ══════════════ STORY BLOCK ══════════════ -->
+  <!-- STORY / ABOUT -->
   <div class="lv-story reveal">
     <div class="lv-story-img">
       <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ Story" loading="lazy">
@@ -769,7 +349,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ CTA DARK BAND ══════════════ -->
+  <!-- CTA BAND -->
   <div class="lv-cta-band reveal">
     <div class="eyebrow">Begin Your Journey</div>
     <h2>Book Your Appointment</h2>
@@ -780,7 +360,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ FOOTER (UNTOUCHED) ══════════════ -->
+  <!-- FOOTER (UNTOUCHED) -->
   <footer>
     <div class="footer-main">
       <div class="footer-col">
@@ -810,209 +390,189 @@
         <span class="ceo-label">Founder</span>
         <span class="ceo-name">DR Mohamed Mahdy</span>
       </div>
-      <div class="legal-text">© 2026 EGYGRILLZ</div>
+      <div class="legal-text">&copy; 2026 EGYGRILLZ</div>
     </div>
   </footer>
 
   <script>
-    /* ══════════════════════════════════
-       HEADER HIDE ON SCROLL
-    ══════════════════════════════════ */
+    /* ── Header hide + floating logo ── */
     (function() {
-      const header = document.querySelector('header');
+      const header    = document.getElementById('site-header');
+      const floatLogo = document.getElementById('floating-logo');
       let lastY = window.scrollY;
       window.addEventListener('scroll', () => {
         const y = window.scrollY;
-        header.classList.toggle('hidden', y > lastY && y > 80);
+        const hiding = y > lastY && y > 80;
+        header.classList.toggle('hidden', hiding);
+        floatLogo.classList.toggle('visible', hiding);
         lastY = y;
       }, { passive: true });
     })();
 
-    /* ══════════════════════════════════
-       MOBILE NAV
-    ══════════════════════════════════ */
+    /* ── Mobile nav ── */
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
 
-    /* ══════════════════════════════════
-       SCROLL REVEAL
-    ══════════════════════════════════ */
-    const revealEls = document.querySelectorAll('.reveal');
+    /* ── Scroll reveal ── */
     const revealObs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); } });
-    }, { threshold: 0.1 });
-    revealEls.forEach(el => revealObs.observe(el));
+      entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); revealObs.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
-    /* ══════════════════════════════════
-       PARSE INFO.TXT
-    ══════════════════════════════════ */
+    /* ── Parse info.txt ── */
     function parseInfo(text) {
-      const info = { name: '', price: '', desc: '', images: [] };
+      const info = { name:'', price:'', desc:'', images:[] };
       text.split('\n').forEach(line => {
         const ci = line.indexOf(':'); if(ci === -1) return;
-        const k = line.slice(0, ci).trim().toLowerCase();
-        const v = line.slice(ci + 1).trim();
-        if(k === 'name' || k === 'title') info.name = v;
-        else if(k === 'price') info.price = v;
-        else if(k === 'description' || k === 'desc') info.desc = v;
-        else if(k === 'images') info.images = v.split(',').map(s => s.trim()).filter(Boolean);
+        const k = line.slice(0,ci).trim().toLowerCase();
+        const v = line.slice(ci+1).trim();
+        if(k==='name'||k==='title') info.name=v;
+        else if(k==='price') info.price=v;
+        else if(k==='description'||k==='desc') info.desc=v;
+        else if(k==='images') info.images=v.split(',').map(s=>s.trim()).filter(Boolean);
       });
       return info;
     }
 
-    /* ══════════════════════════════════
-       CATEGORY CARD SLIDESHOW
-    ══════════════════════════════════ */
-    function makeCardSlideshow(container, imagePaths) {
+    /* ── Category card slideshow ── */
+    function makeCardSlideshow(container, paths) {
       container.innerHTML = '';
-      imagePaths.forEach((src, i) => {
+      paths.forEach((src,i) => {
         const img = document.createElement('img');
-        img.src = src;
-        img.alt = '';
-        img.draggable = false;
-        img.loading = i === 0 ? 'eager' : 'lazy';
-        if(i === 0) img.classList.add('active');
+        img.src=src; img.alt=''; img.draggable=false; img.loading=i===0?'eager':'lazy';
+        if(i===0) img.classList.add('active');
         container.appendChild(img);
       });
-      if(imagePaths.length > 1) {
+      if(paths.length > 1) {
         let cur = 0;
         setInterval(() => {
           const imgs = container.querySelectorAll('img');
           imgs[cur].classList.remove('active');
-          cur = (cur + 1) % imgs.length;
+          cur=(cur+1)%imgs.length;
           imgs[cur].classList.add('active');
         }, 4500);
       }
     }
 
-    /* ══════════════════════════════════
-       HERO SLIDESHOW
-    ══════════════════════════════════ */
-    let heroImages = []; // { src, title, href }
-    let heroCur = 0;
+    /* ── Hero slideshow ── */
+    let heroImages=[], heroCur=0;
     const heroContainer = document.getElementById('hero-slides-container');
     const heroDots      = document.getElementById('hero-dots');
     const heroTitle     = document.getElementById('hero-title');
     const heroCTA       = document.getElementById('hero-cta');
 
     function buildHero() {
-      heroContainer.innerHTML = '';
-      heroDots.innerHTML = '';
-      heroImages.forEach((item, i) => {
-        const img = document.createElement('img');
-        img.className = 'lv-hero-slide' + (i === 0 ? ' active' : '');
-        img.src = item.src;
-        img.alt = item.title;
-        img.draggable = false;
-        img.loading = i === 0 ? 'eager' : 'lazy';
+      heroContainer.innerHTML=''; heroDots.innerHTML='';
+      heroImages.forEach((item,i) => {
+        const img=document.createElement('img');
+        img.className='lv-hero-slide'+(i===0?' active':'');
+        img.src=item.src; img.alt=item.title; img.draggable=false; img.loading=i===0?'eager':'lazy';
         heroContainer.appendChild(img);
-
-        const dot = document.createElement('button');
-        dot.className = 'lv-hero-dot' + (i === 0 ? ' active' : '');
-        dot.setAttribute('aria-label', `Slide ${i + 1}`);
-        dot.addEventListener('click', () => heroGoTo(i));
+        const dot=document.createElement('button');
+        dot.className='lv-hero-dot'+(i===0?' active':'');
+        dot.setAttribute('aria-label',`Slide ${i+1}`);
+        dot.addEventListener('click',()=>heroGoTo(i));
         heroDots.appendChild(dot);
       });
       heroUpdateText(0);
     }
-
     function heroUpdateText(idx) {
       if(!heroImages[idx]) return;
-      heroTitle.textContent = heroImages[idx].title;
-      heroCTA.href = heroImages[idx].href;
+      heroTitle.innerHTML=heroImages[idx].title;
+      heroCTA.href=heroImages[idx].href;
     }
-
     function heroGoTo(idx) {
-      const slides = heroContainer.querySelectorAll('.lv-hero-slide');
-      const dots   = heroDots.querySelectorAll('.lv-hero-dot');
-      slides[heroCur].classList.remove('active');
-      dots[heroCur].classList.remove('active');
-      heroCur = (idx + heroImages.length) % heroImages.length;
-      slides[heroCur].classList.add('active');
-      dots[heroCur].classList.add('active');
+      const slides=heroContainer.querySelectorAll('.lv-hero-slide');
+      const dots=heroDots.querySelectorAll('.lv-hero-dot');
+      slides[heroCur].classList.remove('active'); dots[heroCur].classList.remove('active');
+      heroCur=(idx+heroImages.length)%heroImages.length;
+      slides[heroCur].classList.add('active'); dots[heroCur].classList.add('active');
       heroUpdateText(heroCur);
     }
+    document.getElementById('hero-prev').addEventListener('click',()=>heroGoTo(heroCur-1));
+    document.getElementById('hero-next').addEventListener('click',()=>heroGoTo(heroCur+1));
+    setInterval(()=>{ if(heroImages.length>1) heroGoTo(heroCur+1); }, 6000);
 
-    document.getElementById('hero-prev').addEventListener('click', () => heroGoTo(heroCur - 1));
-    document.getElementById('hero-next').addEventListener('click', () => heroGoTo(heroCur + 1));
-
-    // Autoplay
-    setInterval(() => heroGoTo(heroCur + 1), 6000);
-
-    /* ══════════════════════════════════
-       DRAG TO SCROLL on new strip
-    ══════════════════════════════════ */
-    (function() {
-      const strip = document.getElementById('lv-new-strip');
-      let isDragging = false, startX, scrollLeft;
-      strip.addEventListener('mousedown', e => { isDragging = true; startX = e.pageX - strip.offsetLeft; scrollLeft = strip.scrollLeft; strip.style.userSelect = 'none'; });
-      strip.addEventListener('mouseleave', () => isDragging = false);
-      strip.addEventListener('mouseup', () => { isDragging = false; strip.style.userSelect = ''; });
-      strip.addEventListener('mousemove', e => { if(!isDragging) return; e.preventDefault(); strip.scrollLeft = scrollLeft - (e.pageX - strip.offsetLeft - startX); });
+    /* ── Drag to scroll ── */
+    (function(){
+      const strip=document.getElementById('lv-new-strip');
+      let drag=false,startX,scrollLeft;
+      strip.addEventListener('mousedown',e=>{drag=true;startX=e.pageX-strip.offsetLeft;scrollLeft=strip.scrollLeft;strip.style.userSelect='none';});
+      strip.addEventListener('mouseleave',()=>drag=false);
+      strip.addEventListener('mouseup',()=>{drag=false;strip.style.userSelect='';});
+      strip.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();strip.scrollLeft=scrollLeft-(e.pageX-strip.offsetLeft-startX);});
     })();
 
-    /* ══════════════════════════════════
-       LOAD CATEGORY DATA
-    ══════════════════════════════════ */
-    async function loadCategoryCard(cat, cardId, slidesId, nameId, descId, heroTitle, heroHref) {
+    /* ── Load category card ── */
+    async function loadCategoryCard(cat, slidesId, nameId, descId, heroTitleHtml, heroHref) {
       try {
-        const list = await fetch(`assets/images/${cat}/${cat}.json`).then(r => r.json());
+        const list = await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
         if(!list.length) return;
-        const folder = list[0];
-        const txt = await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r => r.text());
+        const txt = await fetch(`assets/images/${cat}/${list[0]}/info.txt`).then(r=>r.text());
         const d = parseInfo(txt);
-
-        // Card
-        if(d.name) document.getElementById(nameId).textContent = d.name;
-        if(d.desc) document.getElementById(descId).textContent = d.desc;
-
-        const allPaths = d.images.map(img => `assets/images/${cat}/${folder}/${img}`);
-        const container = document.getElementById(slidesId);
-        makeCardSlideshow(container, allPaths);
-
-        // Hero
-        if(allPaths.length) {
-          heroImages.push({ src: allPaths[0], title: heroTitle, href: heroHref });
-        }
-      } catch(e) { console.warn(cat, e); }
+        if(d.name) document.getElementById(nameId).textContent=d.name;
+        if(d.desc) document.getElementById(descId).textContent=d.desc;
+        const paths=d.images.map(img=>`assets/images/${cat}/${list[0]}/${img}`);
+        makeCardSlideshow(document.getElementById(slidesId), paths);
+        if(paths.length) heroImages.push({src:paths[0],title:heroTitleHtml,href:heroHref});
+      } catch(e){ console.warn(cat,e); }
     }
 
+    /* ── Load latest strip ── */
     async function loadLatestStrip() {
       try {
-        const list = await fetch('assets/images/latest-designs/designs.json').then(r => r.json());
-        const strip = document.getElementById('lv-new-strip');
-        for(const folder of list.slice(0, 8)) {
-          const txt = await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r => r.text());
-          const d = parseInfo(txt);
-          const firstImg = d.images[0] ? `assets/images/latest-designs/${folder}/${d.images[0]}` : '';
-          if(!firstImg) continue;
-          const card = document.createElement('div');
-          card.className = 'lv-new-card';
-          card.innerHTML = `
-            <div class="lv-new-card-img"><img src="${firstImg}" alt="${d.name}" loading="lazy"></div>
-            <div class="lv-new-card-label">Latest</div>
-            <div class="lv-new-card-name">${d.name}</div>
-            <div class="lv-new-card-price">${d.price}</div>`;
-          card.addEventListener('click', () => window.location = 'latest-designs.html');
+        const list=await fetch('assets/images/latest-designs/designs.json').then(r=>r.json());
+        const strip=document.getElementById('lv-new-strip');
+        for(const folder of list.slice(0,10)) {
+          const txt=await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r=>r.text());
+          const d=parseInfo(txt);
+          const src=d.images[0]?`assets/images/latest-designs/${folder}/${d.images[0]}`:'';
+          if(!src) continue;
+          const card=document.createElement('div'); card.className='lv-new-card';
+          card.innerHTML=`<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
+          card.addEventListener('click',()=>window.location='latest-designs.html');
           strip.appendChild(card);
         }
-      } catch(e) { console.warn('latest', e); }
+      } catch(e){ console.warn('latest',e); }
     }
 
+    /* ── Load gallery mosaic ── */
+    async function loadGallery() {
+      try {
+        const galleryEl=document.getElementById('lv-gallery-grid');
+        let items=[];
+        const tryLoad=async(cat,jsonFile,href)=>{
+          const list=await fetch(`assets/images/${cat}/${jsonFile}`).then(r=>r.json());
+          for(const folder of list) {
+            if(items.length>=6) break;
+            const txt=await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
+            const d=parseInfo(txt);
+            if(d.images.length) items.push({src:`assets/images/${cat}/${folder}/${d.images[0]}`,name:d.name,href});
+          }
+        };
+        await tryLoad('golds','golds.json','golds.html');
+        if(items.length<6) await tryLoad('silvers','silvers.json','silvers.html');
+        if(items.length<6) await tryLoad('diamonds','diamonds.json','diamonds.html');
+        items.slice(0,6).forEach(item=>{
+          const div=document.createElement('div'); div.className='lv-gal-item';
+          div.innerHTML=`<img src="${item.src}" alt="${item.name}" loading="lazy">`;
+          div.addEventListener('click',()=>window.location=item.href);
+          galleryEl.appendChild(div);
+        });
+      } catch(e){ console.warn('gallery',e); }
+    }
+
+    /* ── Init ── */
     async function init() {
-      // Load category cards in order — hero built from these
-      await loadCategoryCard('golds',    'golds-card',    'golds-card-slides',    'golds-card-name',    'golds-card-desc',    'The Gold Collection',    'golds.html');
-      await loadCategoryCard('silvers',  'silvers-card',  'silvers-card-slides',  'silvers-card-name',  'silvers-card-desc',  'The Silver Collection',  'silvers.html');
-      await loadCategoryCard('diamonds', 'diamonds-card', 'diamonds-card-slides', 'diamonds-card-name', 'diamonds-card-desc', 'The Diamond Collection', 'diamonds.html');
-
-      // Build hero once we have images
+      await loadCategoryCard('golds',    'golds-card-slides',    'golds-card-name',    'golds-card-desc',    'The Gold<br>Collection',    'golds.html');
+      await loadCategoryCard('silvers',  'silvers-card-slides',  'silvers-card-name',  'silvers-card-desc',  'The Silver<br>Collection',  'silvers.html');
+      await loadCategoryCard('diamonds', 'diamonds-card-slides', 'diamonds-card-name', 'diamonds-card-desc', 'The Diamond<br>Collection', 'diamonds.html');
       if(heroImages.length) buildHero();
-
       loadLatestStrip();
+      loadGallery();
     }
-
     init();
   </script>
 </body>
