@@ -1,0 +1,4 @@
+name: AFRICA BOY
+price: 1750 EGP
+description: Africa map cut out from 925 sterling silver tooth
+images: 000000.jpg,000001.jpg
