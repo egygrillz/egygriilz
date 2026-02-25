@@ -14,19 +14,16 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior:smooth; }
     body { font-family:'Arimo',sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
     body.menu-open { overflow:hidden; }
     img { display:block; max-width:100%; }
     a { text-decoration:none; color:inherit; }
 
-    /* ══ HEADER (UNTOUCHED) ══ */
-    header {
-      position:fixed; top:0; left:0; right:0; height:60px;
-      background:#fff; border-bottom:1px solid #eee; z-index:1000;
-      display:flex; align-items:center; justify-content:space-between; padding:0 5%;
-      transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
-    }
+    /* ══════════════════════════════
+       HEADER — UNTOUCHED
+    ══════════════════════════════ */
+    header { position:fixed; top:0; left:0; right:0; height:60px; background:#fff; border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
     header.hidden { transform:translateY(-100%); }
     .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; color:#000; }
     .main-nav { display:flex; gap:20px; }
@@ -42,77 +39,61 @@
       .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; width:100%; }
     }
 
-    /* ══ FLOATING LOGO (shows when header hides) ══ */
-    .floating-logo {
-      position:fixed; top:20px; left:0; right:0;
-      display:flex; align-items:center; justify-content:center;
-      z-index:999; pointer-events:none;
-      opacity:0; transform:translateY(-10px);
-      transition:opacity 0.4s ease, transform 0.4s ease;
-    }
+    /* ══════════════════════════════
+       FLOATING LOGO
+    ══════════════════════════════ */
+    .floating-logo { position:fixed; top:20px; left:0; right:0; display:flex; align-items:center; justify-content:center; z-index:999; pointer-events:none; opacity:0; transform:translateY(-10px); transition:opacity 0.4s ease,transform 0.4s ease; }
     .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
-    .floating-logo a {
-      font-family:'Playfair Display',serif; font-size:18px; font-weight:700;
-      letter-spacing:4px; color:#fff;
-      background:none; border:none; box-shadow:none; padding:0;
-      text-shadow:0 1px 8px rgba(0,0,0,0.45);
-    }
+    .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; background:none; border:none; box-shadow:none; padding:0; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
 
-    /* ══ HERO ══ */
+    /* ══════════════════════════════
+       HERO
+    ══════════════════════════════ */
     .lv-hero { position:relative; width:100%; height:100vh; min-height:500px; overflow:hidden; background:#111; }
     .lv-hero-slide { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1.6s ease; transform:scale(1.04); }
     .lv-hero-slide.active { opacity:0.82; animation:slowZoom 12s linear forwards; }
     @keyframes slowZoom { from{transform:scale(1.04);}to{transform:scale(1);} }
-    .lv-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, transparent 38%, rgba(0,0,0,0.62) 100%); z-index:2; }
-
+    .lv-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,transparent 38%,rgba(0,0,0,0.62) 100%); z-index:2; }
     .lv-hero-content { position:absolute; z-index:10; bottom:10%; left:0; right:0; text-align:center; color:#fff; padding:0 20px; }
     .lv-hero-eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:14px; opacity:0; animation:fadeUp 1s 0.4s forwards; }
     .lv-hero-title { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(32px,6vw,72px); letter-spacing:4px; text-transform:uppercase; line-height:1.08; margin-bottom:22px; opacity:0; animation:fadeUp 1s 0.7s forwards; }
     .lv-hero-cta { display:inline-block; color:#fff; font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.6); padding-bottom:3px; transition:border-color 0.3s,letter-spacing 0.3s; opacity:0; animation:fadeUp 1s 1s forwards; }
     .lv-hero-cta:hover { border-color:#fff; letter-spacing:4px; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);} }
-
     .lv-hero-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:20; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:background 0.2s; backdrop-filter:blur(4px); }
     .lv-hero-arrow:hover { background:rgba(255,255,255,0.22); }
     .lv-hero-prev { left:24px; } .lv-hero-next { right:24px; }
     @media(max-width:480px) { .lv-hero-prev{left:10px;} .lv-hero-next{right:10px;} .lv-hero-arrow{width:36px;height:36px;font-size:12px;} }
-
     .lv-hero-dots { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:8px; }
     .lv-hero-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.35); border:none; cursor:pointer; transition:background 0.3s,transform 0.3s; }
     .lv-hero-dot.active { background:#fff; transform:scale(1.2); }
 
-    /* ══ SECTION INTRO ══ */
-    .lv-section-intro { text-align:center; padding:60px 20px 36px; }
-    .lv-section-intro .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:10px; }
+    /* ══════════════════════════════
+       SECTION INTRO
+    ══════════════════════════════ */
+    .lv-section-intro { text-align:center; padding:100px 20px 48px; }
+    .lv-section-intro .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:12px; }
     .lv-section-intro h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,3vw,34px); letter-spacing:3px; text-transform:uppercase; }
-    .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:16px auto 0; }
+    .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:18px auto 0; }
 
-    /* ══ CATEGORY GRIDS ══ */
+    /* ══════════════════════════════
+       CATEGORY HERO CARDS
+    ══════════════════════════════ */
     .lv-two-up { display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-bottom:3px; }
-    .lv-one-up { display:grid; grid-template-columns:1fr; margin-bottom:3px; }
-
-    /* Mobile: stack them each full-width */
+    .lv-one-up { display:grid; grid-template-columns:1fr; margin-bottom:0; }
     @media(max-width:680px) { .lv-two-up { grid-template-columns:1fr; } }
 
-    /* ── Category card ── */
     .lv-cat-card { position:relative; overflow:hidden; cursor:pointer; background:#f5f5f5; }
     .lv-cat-card.tall { aspect-ratio:3/4; }
     .lv-cat-card.wide { aspect-ratio:16/7; }
-    @media(max-width:680px) {
-      .lv-cat-card.tall { aspect-ratio:4/5; }
-      .lv-cat-card.wide { aspect-ratio:4/5; }
-    }
-    @media(max-width:420px) {
-      .lv-cat-card.tall { aspect-ratio:3/4; }
-      .lv-cat-card.wide { aspect-ratio:3/4; }
-    }
+    @media(max-width:680px) { .lv-cat-card.tall{aspect-ratio:4/5;} .lv-cat-card.wide{aspect-ratio:4/5;} }
+    @media(max-width:420px) { .lv-cat-card.tall{aspect-ratio:3/4;} .lv-cat-card.wide{aspect-ratio:3/4;} }
 
     .lv-cat-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1s ease,transform 0.7s ease; }
     .lv-cat-card img.active { opacity:1; }
     .lv-cat-card:hover img.active { transform:scale(1.03); }
     .lv-cat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:60%; background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 100%); z-index:2; transition:height 0.4s; }
     .lv-cat-card:hover::after { height:72%; }
-
     .lv-cat-info { position:absolute; z-index:10; bottom:0; left:0; right:0; padding:28px 28px 32px; color:#fff; transition:padding-bottom 0.35s; }
     .lv-cat-card:hover .lv-cat-info { padding-bottom:42px; }
     .lv-cat-info .tag { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.65); margin-bottom:6px; display:block; }
@@ -124,10 +105,43 @@
     .lv-cat-info.center-text .sub { margin:0 auto 16px; }
     @media(max-width:480px) { .lv-cat-info{padding:18px 18px 24px;} }
 
-    /* ══ LATEST STRIP ══ */
-    .lv-strip-section { padding:60px 0 0; }
+    /* ══════════════════════════════
+       CATEGORY PRODUCT ROWS
+       (one per category, below their hero card)
+    ══════════════════════════════ */
+    .cat-row-section { padding:56px 0 80px; border-bottom:1px solid #f0f0f0; }
+    .cat-row-section:last-of-type { border-bottom:none; }
+    .cat-row-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 22px; }
+    .cat-row-header h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(16px,2vw,22px); letter-spacing:2px; text-transform:uppercase; color:#000; }
+    .cat-row-header a { font-size:9px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:2px; color:#000; transition:opacity 0.2s; }
+    .cat-row-header a:hover { opacity:0.5; }
+    .cat-row-strip { display:flex; gap:3px; overflow-x:auto; padding:0 40px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
+    .cat-row-strip:active { cursor:grabbing; }
+    .cat-row-strip::-webkit-scrollbar { display:none; }
+
+    .cat-row-card { flex:0 0 220px; cursor:pointer; position:relative; overflow:hidden; background:#f8f8f8; }
+    .cat-row-card:first-child { flex:0 0 300px; } /* slight variety */
+    .cat-row-card-img { position:relative; width:100%; aspect-ratio:3/4; overflow:hidden; background:#f2f2f2; }
+    .cat-row-card-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease, transform 0.5s ease; pointer-events:none; -webkit-user-drag:none; }
+    .cat-row-card-img img.active { opacity:1; }
+    .cat-row-card:hover .cat-row-card-img img.active { transform:scale(1.05); }
+    .cat-row-card-body { padding:12px 14px 16px; background:#fff; border-top:1px solid #f0f0f0; }
+    .cat-row-card-name { font-size:12px; letter-spacing:0.5px; color:#000; margin-bottom:3px; line-height:1.3; }
+    .cat-row-card-price { font-size:11px; color:#666; }
+
+    @media(max-width:480px) {
+      .cat-row-header { padding:0 16px 18px; }
+      .cat-row-strip { padding:0 16px; }
+      .cat-row-card { flex:0 0 160px; }
+      .cat-row-card:first-child { flex:0 0 200px; }
+    }
+
+    /* ══════════════════════════════
+       LATEST DESIGNS STRIP
+    ══════════════════════════════ */
+    .lv-strip-section { padding:100px 0 0; }
     .lv-new-strip-wrap { padding:0 0 0 40px; overflow:hidden; }
-    .lv-new-strip-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 20px 0; }
+    .lv-new-strip-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 22px 0; }
     .lv-new-strip-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; }
     .lv-new-strip-header a { font-size:9px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; }
     .lv-new-strip-header a:hover { opacity:0.6; }
@@ -148,120 +162,63 @@
       .lv-new-card { flex:0 0 150px; }
     }
 
-    /* ══ GALLERY SECTION — dark full-bleed, totally diff from Latest Strip ══ */
-    .lv-gallery-section {
-      background: #080808;
-      margin-top: 60px;
-      padding: 64px 0 72px;
-    }
-    .lv-gallery-head {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      padding: 0 40px 36px;
-    }
-    .lv-gallery-head-left .eyebrow-dark {
-      font-size: 9px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      color: #444;
-      margin-bottom: 8px;
-    }
-    .lv-gallery-head-left h2 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(20px, 2.8vw, 32px);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: #fff;
-    }
-    .lv-gallery-head a {
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #666;
-      border-bottom: 1px solid #333;
-      padding-bottom: 2px;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    .lv-gallery-head a:hover { color: #fff; border-color: #fff; }
+    /* ══════════════════════════════
+       GALLERY SECTION — dark band
+    ══════════════════════════════ */
+    .lv-gallery-section { background:#080808; margin-top:100px; padding:72px 0 80px; }
+    .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 36px; }
+    .lv-gallery-head-left .eyebrow-dark { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#444; margin-bottom:8px; }
+    .lv-gallery-head-left h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.8vw,32px); letter-spacing:3px; text-transform:uppercase; color:#fff; }
+    .lv-gallery-head a { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#666; border-bottom:1px solid #333; padding-bottom:2px; transition:color 0.2s,border-color 0.2s; }
+    .lv-gallery-head a:hover { color:#fff; border-color:#fff; }
+    .lv-gal-scroll { display:flex; gap:3px; overflow-x:auto; padding:0 40px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
+    .lv-gal-scroll:active { cursor:grabbing; }
+    .lv-gal-scroll::-webkit-scrollbar { display:none; }
+    .lv-gal-card { flex:0 0 320px; position:relative; overflow:hidden; background:#111; cursor:pointer; aspect-ratio:4/3; }
+    .lv-gal-card:first-child { flex:0 0 480px; }
+    @media(max-width:680px) { .lv-gal-card{flex:0 0 240px;} .lv-gal-card:first-child{flex:0 0 300px;} }
+    .lv-gal-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.88; transition:opacity 0.5s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
+    .lv-gal-card:hover img { opacity:1; transform:scale(1.06); }
+    .lv-gal-card-label { position:absolute; bottom:0; left:0; right:0; padding:32px 16px 14px; background:linear-gradient(to top,rgba(0,0,0,0.75) 0%,transparent 100%); z-index:2; }
+    .lv-gal-card-label .gc-name { font-family:'Playfair Display',serif; font-size:13px; font-weight:400; letter-spacing:1.5px; text-transform:uppercase; color:#fff; opacity:0; transform:translateY(5px); transition:opacity 0.3s,transform 0.3s; }
+    .lv-gal-card:hover .gc-name { opacity:1; transform:translateY(0); }
+    .lv-gallery-rule { width:32px; height:1px; background:#222; margin:40px 40px 0; }
+    @media(max-width:480px) { .lv-gallery-head{padding:0 16px 28px;} .lv-gal-scroll{padding:0 16px;} .lv-gallery-rule{margin-left:16px;} }
 
-    /* Horizontal scroll strip — landscape cards, different from portrait Latest strip */
-    .lv-gal-scroll {
-      display: flex;
-      gap: 3px;
-      overflow-x: auto;
-      padding: 0 40px 0;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      cursor: grab;
-    }
-    .lv-gal-scroll:active { cursor: grabbing; }
-    .lv-gal-scroll::-webkit-scrollbar { display: none; }
+    /* ══════════════════════════════
+       INSTAGRAM FEED STRIP
+    ══════════════════════════════ */
+    .ig-section { padding:100px 0 0; }
+    .ig-header { text-align:center; margin-bottom:40px; padding:0 5%; }
+    .ig-header .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:10px; }
+    .ig-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.4vw,28px); letter-spacing:3px; text-transform:uppercase; margin-bottom:6px; }
+    .ig-header a { display:inline-flex; align-items:center; gap:6px; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#000; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; margin-top:8px; }
+    .ig-header a:hover { opacity:0.5; }
+    .ig-header a i { font-size:13px; }
 
-    /* Cards are landscape (wider than tall) — opposite of Latest's portrait */
-    .lv-gal-card {
-      flex: 0 0 320px;
-      position: relative;
-      overflow: hidden;
-      background: #111;
-      cursor: pointer;
-      aspect-ratio: 4/3;
-    }
-    .lv-gal-card:first-child { flex: 0 0 480px; } /* hero card is wider */
+    /* 6-cell grid: 2 large + 4 small, edge-to-edge */
+    .ig-grid { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; }
+    .ig-cell { position:relative; overflow:hidden; background:#f0f0f0; cursor:pointer; }
+    .ig-cell:nth-child(1) { grid-row:span 2; aspect-ratio:auto; }
+    .ig-cell:nth-child(2),.ig-cell:nth-child(3),.ig-cell:nth-child(4),.ig-cell:nth-child(5) { aspect-ratio:1/1; }
+    /* on mobile: simple 2-col grid */
     @media(max-width:680px) {
-      .lv-gal-card { flex: 0 0 240px; }
-      .lv-gal-card:first-child { flex: 0 0 300px; }
+      .ig-grid { grid-template-columns:1fr 1fr; grid-template-rows:auto; }
+      .ig-cell:nth-child(1) { grid-row:span 1; aspect-ratio:1/1; }
     }
 
-    .lv-gal-card img {
-      position: absolute;
-      inset: 0; width: 100%; height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      transition: opacity 1s ease, transform 0.7s ease;
-      pointer-events: none;
-      -webkit-user-drag: none;
-    }
-    .lv-gal-card img.active { opacity: 0.88; }
-    .lv-gal-card:hover img.active { opacity: 1; transform: scale(1.06); }
+    .ig-cell img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.6s ease; pointer-events:none; -webkit-user-drag:none; }
+    .ig-cell:hover img { transform:scale(1.06); }
+    /* Instagram hover overlay */
+    .ig-cell-overlay { position:absolute; inset:0; background:rgba(0,0,0,0); display:flex; align-items:center; justify-content:center; transition:background 0.3s; z-index:2; }
+    .ig-cell:hover .ig-cell-overlay { background:rgba(0,0,0,0.35); }
+    .ig-cell-overlay i { color:#fff; font-size:22px; opacity:0; transition:opacity 0.3s; }
+    .ig-cell:hover .ig-cell-overlay i { opacity:1; }
 
-    /* Bottom label always visible, minimal */
-    .lv-gal-card-label {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      padding: 32px 16px 14px;
-      background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
-      z-index: 2;
-    }
-    .lv-gal-card-label .gc-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 13px;
-      font-weight: 400;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #fff;
-      opacity: 0;
-      transform: translateY(5px);
-      transition: opacity 0.3s, transform 0.3s;
-    }
-    .lv-gal-card:hover .gc-name { opacity: 1; transform: translateY(0); }
-
-    /* Gallery bottom rule */
-    .lv-gallery-rule {
-      width: 32px; height: 1px;
-      background: #222;
-      margin: 36px 40px 0;
-    }
-
-    @media(max-width:480px) {
-      .lv-gallery-head { padding: 0 16px 28px; }
-      .lv-gal-scroll { padding: 0 16px; }
-      .lv-gallery-rule { margin-left: 16px; }
-    }
-
-    /* ══ STORY BLOCK ══ */
-    .lv-story { display:grid; grid-template-columns:1fr 1fr; min-height:520px; margin-top:60px; }
+    /* ══════════════════════════════
+       STORY BLOCK
+    ══════════════════════════════ */
+    .lv-story { display:grid; grid-template-columns:1fr 1fr; min-height:520px; margin-top:100px; }
     .lv-story-img { position:relative; overflow:hidden; background:#f0f0f0; min-height:400px; }
     .lv-story-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.7s ease; }
     .lv-story:hover .lv-story-img img { transform:scale(1.03); }
@@ -271,30 +228,25 @@
     .lv-story-text p { font-size:14px; color:#555; line-height:1.85; margin-bottom:32px; max-width:420px; }
     .lv-story-text a { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #000; padding:14px 32px; color:#000; transition:background 0.25s,color 0.25s; align-self:flex-start; }
     .lv-story-text a:hover { background:#000; color:#fff; }
-    @media(max-width:768px) {
-      .lv-story { grid-template-columns:1fr; }
-      .lv-story-text { padding:40px 24px; }
-      .lv-story-text p { max-width:100%; }
-      .lv-story-img { min-height:280px; }
-    }
+    @media(max-width:768px) { .lv-story{grid-template-columns:1fr;} .lv-story-text{padding:40px 24px;} .lv-story-text p{max-width:100%;} .lv-story-img{min-height:280px;} }
 
-    /* ══ CTA BAND ══ */
-    .lv-cta-band { background:#000; color:#fff; text-align:center; padding:72px 5%; margin-top:3px; }
-    .lv-cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:12px; }
+    /* ══════════════════════════════
+       CTA BAND
+    ══════════════════════════════ */
+    .lv-cta-band { background:#000; color:#fff; text-align:center; padding:90px 5%; margin-top:100px; }
+    .lv-cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:12px; }
     .lv-cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; }
-    .lv-cta-band p { font-size:13px; color:rgba(255,255,255,0.65); max-width:480px; margin:0 auto 36px; line-height:1.75; }
+    .lv-cta-band p { font-size:13px; color:rgba(255,255,255,0.55); max-width:480px; margin:0 auto 40px; line-height:1.75; }
     .lv-cta-btns { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
-    .lv-cta-btn-white { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #fff; padding:14px 36px; color:#fff; transition:background 0.25s,color 0.25s; }
+    .lv-cta-btn-white { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #fff; padding:15px 38px; color:#fff; transition:background 0.25s,color 0.25s; }
     .lv-cta-btn-white:hover { background:#fff; color:#000; }
-    .lv-cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.35); padding:14px 36px; color:rgba(255,255,255,0.75); transition:border-color 0.25s,color 0.25s; }
+    .lv-cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.3); padding:15px 38px; color:rgba(255,255,255,0.7); transition:border-color 0.25s,color 0.25s; }
     .lv-cta-btn-outline:hover { border-color:#fff; color:#fff; }
-    @media(max-width:480px) {
-      .lv-cta-band { padding:50px 5%; }
-      .lv-cta-btns { flex-direction:column; align-items:center; }
-      .lv-cta-btn-white, .lv-cta-btn-outline { width:100%; max-width:280px; text-align:center; }
-    }
+    @media(max-width:480px) { .lv-cta-band{padding:60px 5%;} .lv-cta-btns{flex-direction:column;align-items:center;} .lv-cta-btn-white,.lv-cta-btn-outline{width:100%;max-width:280px;text-align:center;} }
 
-    /* ══ FOOTER (UNTOUCHED) ══ */
+    /* ══════════════════════════════
+       FOOTER — UNTOUCHED
+    ══════════════════════════════ */
     footer { background:#000; color:#fff; padding:50px 5% 20px; }
     .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
     .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
@@ -309,14 +261,12 @@
     .legal-text { font-size:9px; color:#444; text-transform:uppercase; }
     .footer-icons a { color:#fff; margin-right:14px; font-size:16px; transition:0.3s; }
     .footer-icons a:hover { color:#888; }
-    @media(max-width:768px) {
-      .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; }
-      .footer-col { display:flex; flex-direction:column; align-items:center; }
-      .footer-bottom { flex-direction:column; text-align:center; }
-    }
+    @media(max-width:768px) { .footer-main{grid-template-columns:1fr;text-align:center;gap:30px;} .footer-col{display:flex;flex-direction:column;align-items:center;} .footer-bottom{flex-direction:column;text-align:center;} }
 
-    /* ══ SCROLL REVEAL ══ */
-    .reveal { opacity:0; transform:translateY(24px); transition:opacity 0.8s ease,transform 0.8s ease; }
+    /* ══════════════════════════════
+       SCROLL REVEAL
+    ══════════════════════════════ */
+    .reveal { opacity:0; transform:translateY(28px); transition:opacity 0.85s ease,transform 0.85s ease; }
     .reveal.visible { opacity:1; transform:translateY(0); }
     .reveal-d1 { transition-delay:0.12s; }
     .reveal-d2 { transition-delay:0.24s; }
@@ -324,7 +274,7 @@
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- Floating logo -->
+  <!-- FLOATING LOGO -->
   <div class="floating-logo" id="floating-logo">
     <a href="index.html">EGYGRILLZ</a>
   </div>
@@ -346,7 +296,7 @@
     </nav>
   </header>
 
-  <!-- HERO -->
+  <!-- ① HERO -->
   <section class="lv-hero" id="hero">
     <div id="hero-slides-container"></div>
     <button class="lv-hero-arrow lv-hero-prev" id="hero-prev">&#8592;</button>
@@ -359,13 +309,14 @@
     </div>
   </section>
 
-  <!-- COLLECTIONS -->
+  <!-- ② COLLECTIONS INTRO -->
   <div class="lv-section-intro reveal">
     <div class="eyebrow">The Collections</div>
     <h2>Crafted for Your Smile</h2>
     <div class="rule"></div>
   </div>
 
+  <!-- ③ GOLDS + SILVERS hero cards -->
   <div class="lv-two-up">
     <div class="lv-cat-card tall reveal" id="golds-card" onclick="window.location='golds.html'">
       <div id="golds-card-slides"></div>
@@ -387,6 +338,16 @@
     </div>
   </div>
 
+  <!-- ④ GOLDS product row -->
+  <div class="cat-row-section reveal">
+    <div class="cat-row-header">
+      <h3>Gold Pieces</h3>
+      <a href="golds.html">View All Golds</a>
+    </div>
+    <div class="cat-row-strip" id="golds-row"></div>
+  </div>
+
+  <!-- ⑤ DIAMONDS hero card -->
   <div class="lv-one-up">
     <div class="lv-cat-card wide reveal" id="diamonds-card" onclick="window.location='diamonds.html'">
       <div id="diamonds-card-slides"></div>
@@ -399,7 +360,25 @@
     </div>
   </div>
 
-  <!-- LATEST DESIGNS STRIP -->
+  <!-- ⑥ SILVERS product row -->
+  <div class="cat-row-section reveal">
+    <div class="cat-row-header">
+      <h3>Silver Pieces</h3>
+      <a href="silvers.html">View All Silvers</a>
+    </div>
+    <div class="cat-row-strip" id="silvers-row"></div>
+  </div>
+
+  <!-- ⑦ DIAMONDS product row -->
+  <div class="cat-row-section reveal">
+    <div class="cat-row-header">
+      <h3>Diamond Pieces</h3>
+      <a href="diamonds.html">View All Diamonds</a>
+    </div>
+    <div class="cat-row-strip" id="diamonds-row"></div>
+  </div>
+
+  <!-- ⑧ LATEST DESIGNS STRIP -->
   <div class="lv-strip-section">
     <div class="lv-new-strip-wrap reveal">
       <div class="lv-new-strip-header">
@@ -410,7 +389,7 @@
     </div>
   </div>
 
-  <!-- GALLERY SECTION — dark cinematic band -->
+  <!-- ⑨ GALLERY SECTION — dark cinematic band (from sets folder) -->
   <div class="lv-gallery-section reveal">
     <div class="lv-gallery-head">
       <div class="lv-gallery-head-left">
@@ -423,7 +402,19 @@
     <div class="lv-gallery-rule"></div>
   </div>
 
-  <!-- STORY / ABOUT -->
+  <!-- ⑩ INSTAGRAM FEED -->
+  <div class="ig-section reveal">
+    <div class="ig-header">
+      <div class="eyebrow">Follow Us</div>
+      <h2>@egygrillz</h2>
+      <a href="https://instagram.com/egygrillz" target="_blank">
+        <i class="fab fa-instagram"></i> Follow on Instagram
+      </a>
+    </div>
+    <div class="ig-grid" id="ig-grid"></div>
+  </div>
+
+  <!-- ⑪ STORY / ABOUT -->
   <div class="lv-story reveal">
     <div class="lv-story-img">
       <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ Story" loading="lazy">
@@ -436,7 +427,7 @@
     </div>
   </div>
 
-  <!-- CTA BAND -->
+  <!-- ⑫ CTA BAND -->
   <div class="lv-cta-band reveal">
     <div class="eyebrow">Begin Your Journey</div>
     <h2>Book Your Appointment</h2>
@@ -483,38 +474,36 @@
 
   <script>
     /* ── Header hide + floating logo ── */
-    (function() {
-      const header    = document.getElementById('site-header');
-      const floatLogo = document.getElementById('floating-logo');
-      let lastY = window.scrollY;
-      window.addEventListener('scroll', () => {
-        const y = window.scrollY;
-        const hiding = y > lastY && y > 80;
-        header.classList.toggle('hidden', hiding);
-        floatLogo.classList.toggle('visible', hiding);
-        lastY = y;
-      }, { passive: true });
+    (function(){
+      const header=document.getElementById('site-header');
+      const floatLogo=document.getElementById('floating-logo');
+      let lastY=window.scrollY;
+      window.addEventListener('scroll',()=>{
+        const y=window.scrollY, hiding=y>lastY&&y>80;
+        header.classList.toggle('hidden',hiding);
+        floatLogo.classList.toggle('visible',hiding);
+        lastY=y;
+      },{passive:true});
     })();
 
     /* ── Mobile nav ── */
-    document.querySelector('.menu-toggle').addEventListener('click', () => {
+    document.querySelector('.menu-toggle').addEventListener('click',()=>{
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
 
     /* ── Scroll reveal ── */
-    const revealObs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); revealObs.unobserve(e.target); } });
-    }, { threshold: 0.08 });
-    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+    const revealObs=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');revealObs.unobserve(e.target);}});
+    },{threshold:0.07});
+    document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
 
     /* ── Parse info.txt ── */
-    function parseInfo(text) {
-      const info = { name:'', price:'', desc:'', images:[] };
-      text.split('\n').forEach(line => {
-        const ci = line.indexOf(':'); if(ci === -1) return;
-        const k = line.slice(0,ci).trim().toLowerCase();
-        const v = line.slice(ci+1).trim();
+    function parseInfo(text){
+      const info={name:'',price:'',desc:'',images:[]};
+      text.split('\n').forEach(line=>{
+        const ci=line.indexOf(':'); if(ci===-1)return;
+        const k=line.slice(0,ci).trim().toLowerCase(), v=line.slice(ci+1).trim();
         if(k==='name'||k==='title') info.name=v;
         else if(k==='price') info.price=v;
         else if(k==='description'||k==='desc') info.desc=v;
@@ -523,36 +512,43 @@
       return info;
     }
 
+    /* ── Drag scroll helper ── */
+    function makeDraggable(el){
+      let drag=false,startX,sl;
+      el.addEventListener('mousedown',e=>{drag=true;startX=e.pageX-el.offsetLeft;sl=el.scrollLeft;el.style.userSelect='none';});
+      el.addEventListener('mouseleave',()=>drag=false);
+      el.addEventListener('mouseup',()=>{drag=false;el.style.userSelect='';});
+      el.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();el.scrollLeft=sl-(e.pageX-el.offsetLeft-startX);});
+    }
+
     /* ── Category card slideshow ── */
-    function makeCardSlideshow(container, paths) {
-      container.innerHTML = '';
-      paths.forEach((src,i) => {
-        const img = document.createElement('img');
+    function makeCardSlideshow(container,paths){
+      container.innerHTML='';
+      paths.forEach((src,i)=>{
+        const img=document.createElement('img');
         img.src=src; img.alt=''; img.draggable=false; img.loading=i===0?'eager':'lazy';
         if(i===0) img.classList.add('active');
         container.appendChild(img);
       });
-      if(paths.length > 1) {
-        let cur = 0;
-        setInterval(() => {
-          const imgs = container.querySelectorAll('img');
-          imgs[cur].classList.remove('active');
-          cur=(cur+1)%imgs.length;
-          imgs[cur].classList.add('active');
-        }, 4500);
+      if(paths.length>1){
+        let cur=0;
+        setInterval(()=>{
+          const imgs=container.querySelectorAll('img');
+          imgs[cur].classList.remove('active'); cur=(cur+1)%imgs.length; imgs[cur].classList.add('active');
+        },4500);
       }
     }
 
     /* ── Hero slideshow ── */
-    let heroImages=[], heroCur=0;
-    const heroContainer = document.getElementById('hero-slides-container');
-    const heroDots      = document.getElementById('hero-dots');
-    const heroTitle     = document.getElementById('hero-title');
-    const heroCTA       = document.getElementById('hero-cta');
+    let heroImages=[],heroCur=0;
+    const heroContainer=document.getElementById('hero-slides-container');
+    const heroDots=document.getElementById('hero-dots');
+    const heroTitle=document.getElementById('hero-title');
+    const heroCTA=document.getElementById('hero-cta');
 
-    function buildHero() {
+    function buildHero(){
       heroContainer.innerHTML=''; heroDots.innerHTML='';
-      heroImages.forEach((item,i) => {
+      heroImages.forEach((item,i)=>{
         const img=document.createElement('img');
         img.className='lv-hero-slide'+(i===0?' active':'');
         img.src=item.src; img.alt=item.title; img.draggable=false; img.loading=i===0?'eager':'lazy';
@@ -565,12 +561,8 @@
       });
       heroUpdateText(0);
     }
-    function heroUpdateText(idx) {
-      if(!heroImages[idx]) return;
-      heroTitle.innerHTML=heroImages[idx].title;
-      heroCTA.href=heroImages[idx].href;
-    }
-    function heroGoTo(idx) {
+    function heroUpdateText(idx){ if(!heroImages[idx])return; heroTitle.innerHTML=heroImages[idx].title; heroCTA.href=heroImages[idx].href; }
+    function heroGoTo(idx){
       const slides=heroContainer.querySelectorAll('.lv-hero-slide');
       const dots=heroDots.querySelectorAll('.lv-hero-dot');
       slides[heroCur].classList.remove('active'); dots[heroCur].classList.remove('active');
@@ -580,98 +572,142 @@
     }
     document.getElementById('hero-prev').addEventListener('click',()=>heroGoTo(heroCur-1));
     document.getElementById('hero-next').addEventListener('click',()=>heroGoTo(heroCur+1));
-    setInterval(()=>{ if(heroImages.length>1) heroGoTo(heroCur+1); }, 6000);
+    setInterval(()=>{if(heroImages.length>1)heroGoTo(heroCur+1);},6000);
 
-    /* ── Drag to scroll ── */
-    (function(){
-      const strip=document.getElementById('lv-new-strip');
-      let drag=false,startX,scrollLeft;
-      strip.addEventListener('mousedown',e=>{drag=true;startX=e.pageX-strip.offsetLeft;scrollLeft=strip.scrollLeft;strip.style.userSelect='none';});
-      strip.addEventListener('mouseleave',()=>drag=false);
-      strip.addEventListener('mouseup',()=>{drag=false;strip.style.userSelect='';});
-      strip.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();strip.scrollLeft=scrollLeft-(e.pageX-strip.offsetLeft-startX);});
-    })();
-
-    /* ── Load category card ── */
-    async function loadCategoryCard(cat, slidesId, nameId, descId, heroTitleHtml, heroHref) {
-      try {
-        const list = await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
-        if(!list.length) return;
-        const txt = await fetch(`assets/images/${cat}/${list[0]}/info.txt`).then(r=>r.text());
-        const d = parseInfo(txt);
+    /* ── Load category hero card ── */
+    async function loadCategoryCard(cat,slidesId,nameId,descId,heroTitleHtml,heroHref){
+      try{
+        const list=await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
+        if(!list.length)return;
+        const txt=await fetch(`assets/images/${cat}/${list[0]}/info.txt`).then(r=>r.text());
+        const d=parseInfo(txt);
         if(d.name) document.getElementById(nameId).textContent=d.name;
         if(d.desc) document.getElementById(descId).textContent=d.desc;
         const paths=d.images.map(img=>`assets/images/${cat}/${list[0]}/${img}`);
-        makeCardSlideshow(document.getElementById(slidesId), paths);
+        makeCardSlideshow(document.getElementById(slidesId),paths);
         if(paths.length) heroImages.push({src:paths[0],title:heroTitleHtml,href:heroHref});
-      } catch(e){ console.warn(cat,e); }
+      }catch(e){console.warn(cat,e);}
+    }
+
+    /* ── Load category product row ── */
+    async function loadCategoryRow(cat, stripId, href){
+      try{
+        const list=await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
+        const strip=document.getElementById(stripId);
+        for(const folder of list.slice(0,12)){
+          const txt=await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
+          const d=parseInfo(txt);
+          const src=d.images[0]?`assets/images/${cat}/${folder}/${d.images[0]}`:'';
+          if(!src)continue;
+
+          const card=document.createElement('div'); card.className='cat-row-card';
+          card.innerHTML=`
+            <div class="cat-row-card-img">
+              ${d.images.map((img,i)=>`<img src="assets/images/${cat}/${folder}/${img}" class="${i===0?'active':''}" draggable="false" loading="lazy">`).join('')}
+            </div>
+            <div class="cat-row-card-body">
+              <div class="cat-row-card-name">${d.name||folder}</div>
+              <div class="cat-row-card-price">${d.price}</div>
+            </div>`;
+          card.addEventListener('click',()=>window.location=href);
+
+          /* multi-image slideshow on card */
+          let c=0; const imgs=card.querySelectorAll('.cat-row-card-img img');
+          if(imgs.length>1) setInterval(()=>{ imgs[c].classList.remove('active'); c=(c+1)%imgs.length; imgs[c].classList.add('active'); },3500+Math.random()*1000);
+
+          strip.appendChild(card);
+        }
+        makeDraggable(strip);
+      }catch(e){console.warn(cat,e);}
     }
 
     /* ── Load latest strip ── */
-    async function loadLatestStrip() {
-      try {
+    async function loadLatestStrip(){
+      try{
         const list=await fetch('assets/images/latest-designs/designs.json').then(r=>r.json());
         const strip=document.getElementById('lv-new-strip');
-        for(const folder of list.slice(0,10)) {
+        for(const folder of list.slice(0,10)){
           const txt=await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r=>r.text());
           const d=parseInfo(txt);
           const src=d.images[0]?`assets/images/latest-designs/${folder}/${d.images[0]}`:'';
-          if(!src) continue;
+          if(!src)continue;
           const card=document.createElement('div'); card.className='lv-new-card';
           card.innerHTML=`<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
           card.addEventListener('click',()=>window.location='latest-designs.html');
           strip.appendChild(card);
         }
-      } catch(e){ console.warn('latest',e); }
+        makeDraggable(strip);
+      }catch(e){console.warn('latest',e);}
     }
 
-    /* ── Load gallery scroll ── */
-    async function loadGallery() {
-      try {
-        const scrollEl = document.getElementById('lv-gallery-scroll');
-        let items = [];
-
-        const tryLoad = async (cat, jsonFile, href) => {
-          const list = await fetch(`assets/images/${cat}/${jsonFile}`).then(r=>r.json());
-          for(const folder of list) {
-            if(items.length >= 8) break;
-            const txt = await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
-            const d = parseInfo(txt);
-            if(d.images.length) items.push({ src:`assets/images/${cat}/${folder}/${d.images[0]}`, name:d.name, href });
-          }
-        };
-
-        await tryLoad('golds','golds.json','golds.html');
-        if(items.length < 8) await tryLoad('silvers','silvers.json','silvers.html');
-        if(items.length < 8) await tryLoad('diamonds','diamonds.json','diamonds.html');
-
-        items.slice(0, 8).forEach((item, i) => {
-          const card = document.createElement('div');
-          card.className = 'lv-gal-card';
-          card.innerHTML = `
-            <img src="${item.src}" alt="${item.name}" loading="${i < 3 ? 'eager' : 'lazy'}" class="active">
-            <div class="lv-gal-card-label"><div class="gc-name">${item.name}</div></div>`;
-          card.addEventListener('click', () => window.location = item.href);
+    /* ── Load gallery (from sets folder — same as gallery page) ── */
+    async function loadGallery(){
+      try{
+        const scrollEl=document.getElementById('lv-gallery-scroll');
+        const list=await fetch('assets/images/sets/sets.json').then(r=>r.json());
+        for(const folder of list.slice(0,10)){
+          const txt=await fetch(`assets/images/sets/${folder}/info.txt`).then(r=>r.text());
+          const d=parseInfo(txt);
+          const src=d.images[0]?`assets/images/sets/${folder}/${d.images[0]}`:'';
+          if(!src)continue;
+          const card=document.createElement('div'); card.className='lv-gal-card';
+          card.innerHTML=`<img src="${src}" alt="${d.name}" loading="lazy"><div class="lv-gal-card-label"><div class="gc-name">${d.name}</div></div>`;
+          card.addEventListener('click',()=>window.location='grillz-gallery.html');
           scrollEl.appendChild(card);
-        });
-
-        /* drag scroll */
-        let drag=false, startX, scrollLeft;
-        scrollEl.addEventListener('mousedown',e=>{drag=true;startX=e.pageX-scrollEl.offsetLeft;scrollLeft=scrollEl.scrollLeft;scrollEl.style.userSelect='none';});
-        scrollEl.addEventListener('mouseleave',()=>drag=false);
-        scrollEl.addEventListener('mouseup',()=>{drag=false;scrollEl.style.userSelect='';});
-        scrollEl.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();scrollEl.scrollLeft=scrollLeft-(e.pageX-scrollEl.offsetLeft-startX);});
-      } catch(e){ console.warn('gallery',e); }
+        }
+        makeDraggable(scrollEl);
+      }catch(e){console.warn('gallery',e);}
     }
 
-    /* ── Init ── */
-    async function init() {
+    /* ── Load Instagram grid (uses latest/golds/silvers as stand-in for IG images) ── */
+    async function loadInstagram(){
+      try{
+        const grid=document.getElementById('ig-grid');
+        let igImages=[];
+
+        // Pull first image from each of these categories to fill the IG grid
+        const sources=[
+          {cat:'golds',json:'golds.json'},
+          {cat:'silvers',json:'silvers.json'},
+          {cat:'diamonds',json:'diamonds.json'},
+          {cat:'latest-designs',json:'designs.json'},
+        ];
+        for(const s of sources){
+          if(igImages.length>=6)break;
+          const list=await fetch(`assets/images/${s.cat}/${s.json}`).then(r=>r.json());
+          for(const folder of list){
+            if(igImages.length>=6)break;
+            const txt=await fetch(`assets/images/${s.cat}/${folder}/info.txt`).then(r=>r.text());
+            const d=parseInfo(txt);
+            if(d.images[0]) igImages.push(`assets/images/${s.cat}/${folder}/${d.images[0]}`);
+          }
+        }
+
+        igImages.slice(0,6).forEach((src,i)=>{
+          const cell=document.createElement('a');
+          cell.className='ig-cell';
+          cell.href='https://instagram.com/egygrillz';
+          cell.target='_blank';
+          cell.rel='noopener';
+          cell.innerHTML=`<img src="${src}" alt="EGYGRILLZ Instagram" loading="${i<2?'eager':'lazy'}"><div class="ig-cell-overlay"><i class="fab fa-instagram"></i></div>`;
+          grid.appendChild(cell);
+        });
+      }catch(e){console.warn('ig',e);}
+    }
+
+    /* ── INIT ── */
+    async function init(){
       await loadCategoryCard('golds',    'golds-card-slides',    'golds-card-name',    'golds-card-desc',    'The Gold<br>Collection',    'golds.html');
       await loadCategoryCard('silvers',  'silvers-card-slides',  'silvers-card-name',  'silvers-card-desc',  'The Silver<br>Collection',  'silvers.html');
       await loadCategoryCard('diamonds', 'diamonds-card-slides', 'diamonds-card-name', 'diamonds-card-desc', 'The Diamond<br>Collection', 'diamonds.html');
       if(heroImages.length) buildHero();
+
+      loadCategoryRow('golds',    'golds-row',    'golds.html');
+      loadCategoryRow('silvers',  'silvers-row',  'silvers.html');
+      loadCategoryRow('diamonds', 'diamonds-row', 'diamonds.html');
       loadLatestStrip();
       loadGallery();
+      loadInstagram();
     }
     init();
   </script>
