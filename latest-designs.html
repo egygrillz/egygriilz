@@ -17,7 +17,45 @@
     a { text-decoration:none; color:inherit; }
 
     /* HEADER */
-    header { position:sticky; top:0; height:60px; background:var(--white); border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; }
+    header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--white); border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
+    header.hidden { transform:translateY(-100%); }
+
+    /* FLOATING LOGO */
+    .floating-logo { position:fixed; top:20px; left:0; right:0; display:flex; align-items:center; justify-content:center; z-index:999; pointer-events:none; opacity:0; transform:translateY(-10px); transition:opacity 0.4s ease,transform 0.4s ease; }
+    .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
+
+    /* SCHEDULE FIXED BUTTON */
+    .sched-btn {
+      position:fixed;
+      bottom:28px;
+      right:28px;
+      z-index:2000;
+      background:#000;
+      color:#fff;
+      font-family:'Arimo',sans-serif;
+      font-size:9px;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      padding:13px 22px;
+      border:none;
+      cursor:pointer;
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.22);
+      transition:background 0.2s, transform 0.2s, opacity 0.3s;
+      opacity:0;
+      transform:translateY(12px);
+      pointer-events:none;
+    }
+    .sched-btn.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .sched-btn:hover { background:#222; }
+    .sched-btn svg { width:11px; height:11px; flex-shrink:0; }
+    @media(max-width:480px) {
+      .sched-btn { bottom:20px; right:16px; padding:12px 18px; font-size:8px; letter-spacing:2px; }
+    }
     .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; }
     .main-nav { display:flex; gap:20px; }
     .main-nav a { color:var(--black); font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color 0.3s; }
@@ -33,7 +71,7 @@
     }
 
     /* MASTHEAD */
-    .masthead { padding:60px 6% 0; border-bottom:3px solid var(--black); }
+    .masthead { padding:calc(60px + 48px) 6% 0; border-bottom:3px solid var(--black); }
     .masthead-eyebrow { font-size:9px; letter-spacing:6px; text-transform:uppercase; color:var(--grey); margin-bottom:20px; }
     .masthead-title { font-family:'Playfair Display',serif; font-size:clamp(56px,13vw,148px); font-weight:900; line-height:0.88; letter-spacing:-2px; text-transform:uppercase; margin-bottom:24px; }
     .masthead-title em { font-style:italic; font-weight:400; }
@@ -185,7 +223,13 @@
 </head>
 <body oncontextmenu="return false;">
 
-  <header>
+  <!-- FLOATING LOGO -->
+  <div class="floating-logo" id="floating-logo">
+    <a href="index.html">EGYGRILLZ</a>
+  </div>
+
+  <!-- HEADER -->
+  <header id="site-header">
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="main-nav">
@@ -200,6 +244,14 @@
       <a href="contact.html">Contact</a>
     </nav>
   </header>
+
+  <!-- FIXED SCHEDULE BUTTON -->
+  <a href="booking.html" class="sched-btn" id="sched-btn" aria-label="Schedule a fitting">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Schedule
+  </a>
 
   <div class="masthead">
     <div class="masthead-eyebrow">EGYGRILLZ &nbsp;·&nbsp; Egypt's First Custom Grillz</div>
@@ -250,6 +302,23 @@
   </footer>
 
   <script>
+    /* ── Header hide + floating logo ── */
+    (function(){
+      const header   = document.getElementById('site-header');
+      const floatLogo = document.getElementById('floating-logo');
+      const schedBtn  = document.getElementById('sched-btn');
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        const hiding = y > lastY && y > 80;
+        header.classList.toggle('hidden', hiding);
+        floatLogo.classList.toggle('visible', hiding);
+        // Schedule button: show after 200px, hide when header reappears (scrolling up)
+        schedBtn.classList.toggle('show', y > 200);
+        lastY = y;
+      }, { passive: true });
+    })();
+
     /* ── Mobile nav ── */
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
