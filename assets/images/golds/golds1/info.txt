@@ -1,4 +1,4 @@
 name: Golden Frame
 price: 7600 EGP
 description: Limited edition 21K gold plated grillz crafted from solid 925 sterling silver and fully iced with precision-set CZ stones for maximum brilliance. Featuring a bold open face design framed by dual side bars and a seamless gap filler for a flawless finish. Engineered for high shine, sharp detail, and undeniable presence.
-images: 000000.jpg,000001.jpg,000002.jpg
+images: 000000.jpg,000002.jpg
