@@ -44,20 +44,18 @@
 
     /* ══ FLOATING LOGO (shows when header hides) ══ */
     .floating-logo {
-      position:fixed; top:0; left:0; right:0; height:48px;
+      position:fixed; top:20px; left:0; right:0;
       display:flex; align-items:center; justify-content:center;
       z-index:999; pointer-events:none;
-      opacity:0; transform:translateY(-8px);
-      transition:opacity 0.35s ease, transform 0.35s ease;
+      opacity:0; transform:translateY(-10px);
+      transition:opacity 0.4s ease, transform 0.4s ease;
     }
     .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
     .floating-logo a {
-      font-family:'Playfair Display',serif; font-size:17px; font-weight:700;
-      letter-spacing:3px; color:#000;
-      background:rgba(255,255,255,0.94); padding:10px 28px;
-      backdrop-filter:blur(10px);
-      border:1px solid #eee;
-      box-shadow:0 2px 12px rgba(0,0,0,0.08);
+      font-family:'Playfair Display',serif; font-size:18px; font-weight:700;
+      letter-spacing:4px; color:#fff;
+      background:none; border:none; box-shadow:none; padding:0;
+      text-shadow:0 1px 8px rgba(0,0,0,0.45);
     }
 
     /* ══ HERO ══ */
@@ -150,31 +148,116 @@
       .lv-new-card { flex:0 0 150px; }
     }
 
-    /* ══ GALLERY SECTION ══ */
-    .lv-gallery-wrap { padding:60px 40px 0; }
-    .lv-gallery-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:20px; }
-    .lv-gallery-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; }
-    .lv-gallery-header a { font-size:9px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; }
-    .lv-gallery-header a:hover { opacity:0.6; }
-
-    /* 2 tall left + 4 square right — LV editorial mosaic */
-    .lv-gallery-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; grid-template-rows:auto auto; gap:3px; }
-    .lv-gal-item { position:relative; overflow:hidden; background:#f5f5f5; cursor:pointer; }
-    .lv-gal-item:nth-child(1), .lv-gal-item:nth-child(2) { grid-row:span 2; aspect-ratio:3/4; }
-    .lv-gal-item:nth-child(3), .lv-gal-item:nth-child(4),
-    .lv-gal-item:nth-child(5), .lv-gal-item:nth-child(6) { aspect-ratio:1/1; }
-    .lv-gal-item img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.6s ease; }
-    .lv-gal-item:hover img { transform:scale(1.05); }
-    .lv-gal-item::after { content:''; position:absolute; inset:0; background:rgba(0,0,0,0); transition:background 0.3s; }
-    .lv-gal-item:hover::after { background:rgba(0,0,0,0.1); }
-
-    @media(max-width:768px) {
-      .lv-gallery-wrap { padding:50px 16px 0; }
-      .lv-gallery-grid { grid-template-columns:1fr 1fr; grid-template-rows:auto; }
-      .lv-gal-item:nth-child(1), .lv-gal-item:nth-child(2) { grid-row:span 1; aspect-ratio:1/1; }
+    /* ══ GALLERY SECTION — dark full-bleed, totally diff from Latest Strip ══ */
+    .lv-gallery-section {
+      background: #080808;
+      margin-top: 60px;
+      padding: 64px 0 72px;
     }
-    @media(max-width:420px) {
-      .lv-gallery-grid { gap:2px; }
+    .lv-gallery-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 40px 36px;
+    }
+    .lv-gallery-head-left .eyebrow-dark {
+      font-size: 9px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 8px;
+    }
+    .lv-gallery-head-left h2 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(20px, 2.8vw, 32px);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+    }
+    .lv-gallery-head a {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #666;
+      border-bottom: 1px solid #333;
+      padding-bottom: 2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .lv-gallery-head a:hover { color: #fff; border-color: #fff; }
+
+    /* Horizontal scroll strip — landscape cards, different from portrait Latest strip */
+    .lv-gal-scroll {
+      display: flex;
+      gap: 3px;
+      overflow-x: auto;
+      padding: 0 40px 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      cursor: grab;
+    }
+    .lv-gal-scroll:active { cursor: grabbing; }
+    .lv-gal-scroll::-webkit-scrollbar { display: none; }
+
+    /* Cards are landscape (wider than tall) — opposite of Latest's portrait */
+    .lv-gal-card {
+      flex: 0 0 320px;
+      position: relative;
+      overflow: hidden;
+      background: #111;
+      cursor: pointer;
+      aspect-ratio: 4/3;
+    }
+    .lv-gal-card:first-child { flex: 0 0 480px; } /* hero card is wider */
+    @media(max-width:680px) {
+      .lv-gal-card { flex: 0 0 240px; }
+      .lv-gal-card:first-child { flex: 0 0 300px; }
+    }
+
+    .lv-gal-card img {
+      position: absolute;
+      inset: 0; width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1s ease, transform 0.7s ease;
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+    .lv-gal-card img.active { opacity: 0.88; }
+    .lv-gal-card:hover img.active { opacity: 1; transform: scale(1.06); }
+
+    /* Bottom label always visible, minimal */
+    .lv-gal-card-label {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 32px 16px 14px;
+      background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
+      z-index: 2;
+    }
+    .lv-gal-card-label .gc-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(5px);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .lv-gal-card:hover .gc-name { opacity: 1; transform: translateY(0); }
+
+    /* Gallery bottom rule */
+    .lv-gallery-rule {
+      width: 32px; height: 1px;
+      background: #222;
+      margin: 36px 40px 0;
+    }
+
+    @media(max-width:480px) {
+      .lv-gallery-head { padding: 0 16px 28px; }
+      .lv-gal-scroll { padding: 0 16px; }
+      .lv-gallery-rule { margin-left: 16px; }
     }
 
     /* ══ STORY BLOCK ══ */
@@ -327,13 +410,17 @@
     </div>
   </div>
 
-  <!-- GALLERY SECTION -->
-  <div class="lv-gallery-wrap reveal">
-    <div class="lv-gallery-header">
-      <h2>Grillz Gallery</h2>
+  <!-- GALLERY SECTION — dark cinematic band -->
+  <div class="lv-gallery-section reveal">
+    <div class="lv-gallery-head">
+      <div class="lv-gallery-head-left">
+        <div class="eyebrow-dark">Portfolio</div>
+        <h2>Grillz Gallery</h2>
+      </div>
       <a href="grillz-gallery.html">View Full Gallery</a>
     </div>
-    <div class="lv-gallery-grid" id="lv-gallery-grid"></div>
+    <div class="lv-gal-scroll" id="lv-gallery-scroll"></div>
+    <div class="lv-gallery-rule"></div>
   </div>
 
   <!-- STORY / ABOUT -->
@@ -538,29 +625,42 @@
       } catch(e){ console.warn('latest',e); }
     }
 
-    /* ── Load gallery mosaic ── */
+    /* ── Load gallery scroll ── */
     async function loadGallery() {
       try {
-        const galleryEl=document.getElementById('lv-gallery-grid');
-        let items=[];
-        const tryLoad=async(cat,jsonFile,href)=>{
-          const list=await fetch(`assets/images/${cat}/${jsonFile}`).then(r=>r.json());
+        const scrollEl = document.getElementById('lv-gallery-scroll');
+        let items = [];
+
+        const tryLoad = async (cat, jsonFile, href) => {
+          const list = await fetch(`assets/images/${cat}/${jsonFile}`).then(r=>r.json());
           for(const folder of list) {
-            if(items.length>=6) break;
-            const txt=await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
-            const d=parseInfo(txt);
-            if(d.images.length) items.push({src:`assets/images/${cat}/${folder}/${d.images[0]}`,name:d.name,href});
+            if(items.length >= 8) break;
+            const txt = await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
+            const d = parseInfo(txt);
+            if(d.images.length) items.push({ src:`assets/images/${cat}/${folder}/${d.images[0]}`, name:d.name, href });
           }
         };
+
         await tryLoad('golds','golds.json','golds.html');
-        if(items.length<6) await tryLoad('silvers','silvers.json','silvers.html');
-        if(items.length<6) await tryLoad('diamonds','diamonds.json','diamonds.html');
-        items.slice(0,6).forEach(item=>{
-          const div=document.createElement('div'); div.className='lv-gal-item';
-          div.innerHTML=`<img src="${item.src}" alt="${item.name}" loading="lazy">`;
-          div.addEventListener('click',()=>window.location=item.href);
-          galleryEl.appendChild(div);
+        if(items.length < 8) await tryLoad('silvers','silvers.json','silvers.html');
+        if(items.length < 8) await tryLoad('diamonds','diamonds.json','diamonds.html');
+
+        items.slice(0, 8).forEach((item, i) => {
+          const card = document.createElement('div');
+          card.className = 'lv-gal-card';
+          card.innerHTML = `
+            <img src="${item.src}" alt="${item.name}" loading="${i < 3 ? 'eager' : 'lazy'}" class="active">
+            <div class="lv-gal-card-label"><div class="gc-name">${item.name}</div></div>`;
+          card.addEventListener('click', () => window.location = item.href);
+          scrollEl.appendChild(card);
         });
+
+        /* drag scroll */
+        let drag=false, startX, scrollLeft;
+        scrollEl.addEventListener('mousedown',e=>{drag=true;startX=e.pageX-scrollEl.offsetLeft;scrollLeft=scrollEl.scrollLeft;scrollEl.style.userSelect='none';});
+        scrollEl.addEventListener('mouseleave',()=>drag=false);
+        scrollEl.addEventListener('mouseup',()=>{drag=false;scrollEl.style.userSelect='';});
+        scrollEl.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();scrollEl.scrollLeft=scrollLeft-(e.pageX-scrollEl.offsetLeft-startX);});
       } catch(e){ console.warn('gallery',e); }
     }
 
