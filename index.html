@@ -19,7 +19,6 @@
     body.menu-open { overflow:hidden; }
     img { display:block; max-width:100%; }
     a { text-decoration:none; color:inherit; }
-
     /* ══════════════════════════════
        HEADER
     ══════════════════════════════ */
@@ -38,14 +37,12 @@
       .main-nav.active { right:0; }
       .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; width:100%; }
     }
-
     /* ══════════════════════════════
        FLOATING LOGO
     ══════════════════════════════ */
     .floating-logo { position:fixed; top:20px; left:0; right:0; display:flex; align-items:center; justify-content:center; z-index:999; pointer-events:none; opacity:0; transform:translateY(-10px); transition:opacity 0.4s ease,transform 0.4s ease; }
     .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
     .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; background:none; border:none; box-shadow:none; padding:0; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
-
     /* ══════════════════════════════
        HERO (SIMPLE DESIGN)
     ══════════════════════════════ */
@@ -71,8 +68,11 @@
     }
     @keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.1); } }
     .hero-content {
-      position: relative;
+      position: absolute;
       z-index: 10;
+      bottom: 60px;
+      left: 0;
+      right: 0;
       text-align: center;
       color: #fff;
     }
@@ -81,7 +81,7 @@
       font-size: clamp(30px, 7vw, 60px);
       text-transform: uppercase;
       letter-spacing: 3px;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
     .hero-schedule-btn {
       color: #fff; 
@@ -94,7 +94,6 @@
       transition: 0.3s ease;
     }
     .hero-schedule-btn:hover { opacity: 0.8; letter-spacing: 3px; }
-
     /* ══════════════════════════════
        SECTION INTRO
     ══════════════════════════════ */
@@ -102,7 +101,6 @@
     .lv-section-intro .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:12px; }
     .lv-section-intro h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,3vw,34px); letter-spacing:3px; text-transform:uppercase; }
     .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:18px auto 0; }
-
     /* ══════════════════════════════
        CATEGORY HERO CARDS
     ══════════════════════════════ */
@@ -122,7 +120,6 @@
     .lv-cat-link { display:inline-block; font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:#fff; border-bottom:1px solid rgba(255,255,255,0.5); padding-bottom:2px; transition:border-color 0.25s,letter-spacing 0.25s; }
     .lv-cat-link:hover { border-color:#fff; letter-spacing:3.5px; }
     @media(max-width:480px) { .lv-cat-info { padding:20px 20px 28px; } }
-
     /* ══════════════════════════════
        LV-STYLE CATEGORY PRODUCT ROWS
     ══════════════════════════════ */
@@ -131,8 +128,6 @@
       border-bottom: 1px solid #f0f0f0;
     }
     .cat-row-section:last-of-type { border-bottom: none; }
-
-    /* Header row */
     .cat-row-header {
       display: flex;
       align-items: flex-end;
@@ -178,8 +173,6 @@
       transition: transform 0.3s;
     }
     .cat-row-view-all:hover svg { transform: translateX(3px); }
-
-    /* Scrollable strip — matches latest designs exactly */
     .cat-row-strip {
       display: flex;
       gap: 12px;
@@ -191,8 +184,6 @@
     }
     .cat-row-strip:active { cursor: grabbing; }
     .cat-row-strip::-webkit-scrollbar { display: none; }
-
-    /* ── Product card — identical to lv-new-card ── */
     .lv-prod-card {
       flex: 0 0 220px;
       cursor: pointer;
@@ -200,8 +191,6 @@
       background: transparent;
     }
     .lv-prod-card:first-child { flex: 0 0 220px; }
-
-    /* Image wrapper */
     .lv-prod-img {
       position: relative;
       width: 100%;
@@ -222,27 +211,19 @@
     }
     .lv-prod-img img.active { opacity: 1; }
     .lv-prod-card:hover .lv-prod-img img.active { transform: scale(1.05); }
-
-    /* No overlay / no discover button — clean like latest designs */
     .lv-prod-overlay { display: none; }
     .lv-prod-discover { display: none; }
-
-    /* Image dots — hidden */
     .lv-prod-img-dots { display: none; }
-
-    /* Card body — matches lv-new-card exactly */
     .lv-prod-body { padding: 0; background: transparent; }
     .lv-prod-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:4px; }
     .lv-prod-name { font-size:13px; color:#000; margin-bottom:3px; line-height:1.35; }
     .lv-prod-price { font-size:12px; font-weight:700; color:#000; }
-
     @media(max-width:480px) {
       .cat-row-header { padding: 0 20px 20px; }
       .cat-row-strip { padding: 0 20px 20px; }
       .lv-prod-card { flex: 0 0 150px; }
       .lv-prod-card:first-child { flex: 0 0 150px; }
     }
-
     /* ══════════════════════════════
        LATEST DESIGNS STRIP
     ══════════════════════════════ */
@@ -268,9 +249,8 @@
       .lv-new-strip { padding-right:20px; }
       .lv-new-card { flex:0 0 150px; }
     }
-
     /* ══════════════════════════════
-       GALLERY SECTION
+       GALLERY SECTION — EQUAL SIZE CARDS
     ══════════════════════════════ */
     .lv-gallery-section { background:#f0f0f0; margin-top:120px; padding:80px 0 100px; }
     .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 36px; }
@@ -288,8 +268,8 @@
       background:#fff; 
       cursor:pointer; 
     }
-    .lv-gal-card:first-child { flex:0 0 400px; }
-    @media(max-width:680px) { .lv-gal-card{flex:0 0 240px;} .lv-gal-card:first-child{flex:0 0 280px;} }
+    /* ALL cards same size — removed first-child override */
+    @media(max-width:680px) { .lv-gal-card{flex:0 0 260px;} }
     
     .lv-gal-card-img {
       position: relative;
@@ -309,8 +289,6 @@
       -webkit-user-drag:none; 
     }
     .lv-gal-card:hover .lv-gal-card-img img { transform:scale(1.06); }
-
-    /* Card info below image */
     .lv-gal-card-info {
       padding: 16px;
       background: #fff;
@@ -337,40 +315,141 @@
       letter-spacing:1px;
       color:#000;
     }
-
-    /* Remove old overlay styles */
     .lv-gal-overlay { display: none; }
-
     .lv-gallery-rule { width:32px; height:1px; background:#ccc; margin:40px 80px 0; }
     @media(max-width:480px) { 
       .lv-gallery-head{padding:0 20px 28px;} 
       .lv-gal-scroll{padding:0 20px;} 
       .lv-gallery-rule{margin-left:20px;} 
     }
-
     /* ══════════════════════════════
-       INSTAGRAM SLIDESHOW
+       INSTAGRAM PROFILE CARD
     ══════════════════════════════ */
     .ig-section { padding:100px 0 0; }
     .ig-header { text-align:center; margin-bottom:40px; padding:0 5%; }
     .ig-header .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:10px; }
     .ig-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.4vw,28px); letter-spacing:3px; text-transform:uppercase; margin-bottom:6px; }
-    .ig-header a { display:inline-flex; align-items:center; gap:6px; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#000; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; margin-top:8px; }
-    .ig-header a:hover { opacity:0.5; }
-    .ig-header a i { font-size:13px; }
-    .ig-slideshow { position:relative; width:100%; aspect-ratio:16/7; overflow:hidden; background:#111; cursor:pointer; }
-    @media(max-width:680px) { .ig-slideshow { aspect-ratio:4/5; } }
-    .ig-slide { position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease; }
-    .ig-slide.active { opacity:1; }
-    .ig-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; transition:transform 8s ease; transform:scale(1.04); }
-    .ig-slide.active img { transform:scale(1); }
-    .ig-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0.08) 0%,transparent 40%,rgba(0,0,0,0.55) 100%); z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:40px; }
-    .ig-overlay i { font-size:28px; color:rgba(255,255,255,0.7); margin-bottom:10px; }
-    .ig-overlay span { font-size:9px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.6); }
-    .ig-dots { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); z-index:10; display:flex; gap:7px; }
-    .ig-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.3); border:none; cursor:pointer; transition:background 0.3s,transform 0.3s; }
-    .ig-dot.active { background:#fff; transform:scale(1.25); }
-
+    .ig-profile-card {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .ig-profile-card:hover {
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+      transform: translateY(-2px);
+    }
+    .ig-profile-banner {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(135deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d, #f56040, #f77737, #fcaf45, #ffdc80);
+      position: relative;
+    }
+    .ig-profile-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      background: #f0f0f0;
+      position: absolute;
+      bottom: -48px;
+      left: 50%;
+      transform: translateX(-50%);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    .ig-profile-avatar i {
+      font-size: 40px;
+      color: #c13584;
+    }
+    .ig-profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .ig-profile-body {
+      padding: 60px 32px 32px;
+      text-align: center;
+    }
+    .ig-profile-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #000;
+      margin-bottom: 2px;
+    }
+    .ig-profile-handle {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+    .ig-profile-bio {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      max-width: 340px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .ig-profile-stats {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-bottom: 28px;
+    }
+    .ig-profile-stat {
+      text-align: center;
+    }
+    .ig-profile-stat-num {
+      font-size: 18px;
+      font-weight: 700;
+      color: #000;
+      display: block;
+    }
+    .ig-profile-stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #999;
+    }
+    .ig-profile-follow-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #405de6, #c13584, #e1306c);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 14px 40px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-decoration: none;
+    }
+    .ig-profile-follow-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 24px rgba(193, 53, 132, 0.35);
+    }
+    .ig-profile-follow-btn i {
+      font-size: 16px;
+    }
+    @media(max-width:520px) {
+      .ig-profile-card { margin: 0 20px; }
+      .ig-profile-body { padding: 56px 20px 24px; }
+      .ig-profile-stats { gap: 20px; }
+    }
     /* ══════════════════════════════
        STORY BLOCK
     ══════════════════════════════ */
@@ -385,7 +464,6 @@
     .lv-story-text a { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #000; padding:14px 32px; color:#000; transition:background 0.25s,color 0.25s; align-self:flex-start; }
     .lv-story-text a:hover { background:#000; color:#fff; }
     @media(max-width:768px) { .lv-story{grid-template-columns:1fr;} .lv-story-text{padding:40px 24px;} .lv-story-text p{max-width:100%;} .lv-story-img{min-height:280px;} }
-
     /* ══════════════════════════════
        CTA BAND
     ══════════════════════════════ */
@@ -399,7 +477,6 @@
     .lv-cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.3); padding:15px 38px; color:rgba(255,255,255,0.7); transition:border-color 0.25s,color 0.25s; }
     .lv-cta-btn-outline:hover { border-color:#fff; color:#fff; }
     @media(max-width:480px) { .lv-cta-band{padding:60px 5%;} .lv-cta-btns{flex-direction:column;align-items:center;} .lv-cta-btn-white,.lv-cta-btn-outline{width:100%;max-width:280px;text-align:center;} }
-
     /* ══════════════════════════════
        FOOTER
     ══════════════════════════════ */
@@ -418,7 +495,6 @@
     .footer-icons a { color:#fff; margin-right:14px; font-size:16px; transition:0.3s; }
     .footer-icons a:hover { color:#888; }
     @media(max-width:768px) { .footer-main{grid-template-columns:1fr;text-align:center;gap:30px;} .footer-col{display:flex;flex-direction:column;align-items:center;} .footer-bottom{flex-direction:column;text-align:center;} }
-
     /* ══════════════════════════════
        SCROLL REVEAL
     ══════════════════════════════ */
@@ -429,12 +505,10 @@
   </style>
 </head>
 <body oncontextmenu="return false;">
-
   <!-- FLOATING LOGO -->
   <div class="floating-logo" id="floating-logo">
     <a href="index.html">EGYGRILLZ</a>
   </div>
-
   <!-- HEADER -->
   <header id="site-header">
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
@@ -451,17 +525,15 @@
       <a href="contact.html">Contact</a>
     </nav>
   </header>
-
-  <!-- ① HERO -->
+  <!-- ① HERO — "BEYOND JEWELRY" + schedule button at bottom -->
   <section class="hero">
     <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ">
     <div class="hero-content">
-      <h1>EGYGRILLZ</h1>
+      <h1>BEYOND JEWELRY</h1>
       <a href="booking.html" class="hero-schedule-btn">SCHEDULE NOW</a>
     </div>
   </section>
-
-    <!-- LATEST DESIGNS STRIP -->
+  <!-- LATEST DESIGNS STRIP -->
   <div class="lv-strip-section">
     <div class="lv-new-strip-wrap reveal">
       <div class="lv-new-strip-header">
@@ -471,14 +543,12 @@
       <div class="lv-new-strip" id="lv-new-strip"></div>
     </div>
   </div>
-
-    <!-- ② COLLECTIONS INTRO -->
+  <!-- ② COLLECTIONS INTRO -->
   <div class="lv-section-intro reveal">
     <div class="eyebrow">The Collections</div>
     <h2>Crafted for Your Smile</h2>
     <div class="rule"></div>
   </div>
-
   <!-- ③ GOLDS hero card -->
   <div class="lv-cat-card reveal" id="golds-card" onclick="window.location='golds.html'">
     <div id="golds-card-slides"></div>
@@ -489,8 +559,7 @@
       <a href="golds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Golds</a>
     </div>
   </div>
-
-  <!-- ④ GOLDS product row — LV Style -->
+  <!-- ④ GOLDS product row -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
       <div class="cat-row-header-left">
@@ -506,7 +575,6 @@
     </div>
     <div class="cat-row-strip" id="golds-row"></div>
   </div>
-
   <!-- ⑤ SILVERS hero card -->
   <div class="lv-cat-card reveal" id="silvers-card" onclick="window.location='silvers.html'">
     <div id="silvers-card-slides"></div>
@@ -517,8 +585,7 @@
       <a href="silvers.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Silvers</a>
     </div>
   </div>
-
-  <!-- ⑥ SILVERS product row — LV Style -->
+  <!-- ⑥ SILVERS product row -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
       <div class="cat-row-header-left">
@@ -534,7 +601,6 @@
     </div>
     <div class="cat-row-strip" id="silvers-row"></div>
   </div>
-
   <!-- ⑦ DIAMONDS hero card -->
   <div class="lv-cat-card reveal" id="diamonds-card" onclick="window.location='diamonds.html'">
     <div id="diamonds-card-slides"></div>
@@ -545,8 +611,7 @@
       <a href="diamonds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Diamonds</a>
     </div>
   </div>
-
-  <!-- ⑧ DIAMONDS product row — LV Style -->
+  <!-- ⑧ DIAMONDS product row -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
       <div class="cat-row-header-left">
@@ -562,8 +627,7 @@
     </div>
     <div class="cat-row-strip" id="diamonds-row"></div>
   </div>
-
-  <!-- GALLERY SECTION -->
+  <!-- GALLERY SECTION — ALL EQUAL SIZE -->
   <div class="lv-gallery-section reveal">
     <div class="lv-gallery-head">
       <div class="lv-gallery-head-left">
@@ -575,27 +639,42 @@
     <div class="lv-gal-scroll" id="lv-gallery-scroll"></div>
     <div class="lv-gallery-rule"></div>
   </div>
-
-  <!-- INSTAGRAM SLIDESHOW -->
+  <!-- INSTAGRAM PROFILE CARD -->
   <div class="ig-section reveal">
     <div class="ig-header">
       <div class="eyebrow">Follow Us</div>
       <h2>@egygrillz</h2>
-      <a href="https://instagram.com/egygrillz" target="_blank">
-        <i class="fab fa-instagram"></i> Follow on Instagram
-      </a>
     </div>
-    <a href="https://instagram.com/egygrillz" target="_blank" style="display:block;">
-      <div class="ig-slideshow" id="ig-slideshow">
-        <div class="ig-overlay">
+    <div class="ig-profile-card">
+      <div class="ig-profile-banner">
+        <div class="ig-profile-avatar">
           <i class="fab fa-instagram"></i>
-          <span>@egygrillz</span>
         </div>
-        <div class="ig-dots" id="ig-dots"></div>
       </div>
-    </a>
+      <div class="ig-profile-body">
+        <div class="ig-profile-name">EGYGRILLZ</div>
+        <div class="ig-profile-handle">@egygrillz</div>
+        <div class="ig-profile-bio">Egypt's First & Only Custom Dental Jewelry Studio 🇪🇬✨ Gold · Silver · Diamond Grillz — Handcrafted for Your Smile</div>
+        <div class="ig-profile-stats">
+          <div class="ig-profile-stat">
+            <span class="ig-profile-stat-num" id="ig-posts">—</span>
+            <span class="ig-profile-stat-label">Posts</span>
+          </div>
+          <div class="ig-profile-stat">
+            <span class="ig-profile-stat-num" id="ig-followers">—</span>
+            <span class="ig-profile-stat-label">Followers</span>
+          </div>
+          <div class="ig-profile-stat">
+            <span class="ig-profile-stat-num" id="ig-following">—</span>
+            <span class="ig-profile-stat-label">Following</span>
+          </div>
+        </div>
+        <a href="https://instagram.com/egygrillz" target="_blank" class="ig-profile-follow-btn">
+          <i class="fab fa-instagram"></i> Follow on Instagram
+        </a>
+      </div>
+    </div>
   </div>
-
   <!-- STORY / ABOUT -->
   <div class="lv-story reveal">
     <div class="lv-story-img">
@@ -608,7 +687,6 @@
       <a href="about.html">Discover Our Story</a>
     </div>
   </div>
-
   <!-- CTA BAND -->
   <div class="lv-cta-band reveal">
     <div class="eyebrow">Begin Your Journey</div>
@@ -619,7 +697,6 @@
       <a href="contact.html" class="lv-cta-btn-outline">Contact Us</a>
     </div>
   </div>
-
   <!-- FOOTER -->
   <footer>
     <div class="footer-main">
@@ -650,10 +727,9 @@
         <span class="ceo-label">Founder</span>
         <span class="ceo-name">DR Mohamed Mahdy</span>
       </div>
-      <div class="legal-text">&copy; 2026 EGYGRILLZ</div>
+      <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
   </footer>
-
   <script>
     /* ── Header hide + floating logo ── */
     (function(){
@@ -667,19 +743,16 @@
         lastY=y;
       },{passive:true});
     })();
-
     /* ── Mobile nav ── */
     document.querySelector('.menu-toggle').addEventListener('click',()=>{
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
-
     /* ── Scroll reveal ── */
     const revealObs=new IntersectionObserver(entries=>{
       entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');revealObs.unobserve(e.target);}});
     },{threshold:0.07});
     document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
-
     /* ── Parse info.txt ── */
     function parseInfo(text){
       const info={name:'',price:'',desc:'',images:[]};
@@ -693,7 +766,6 @@
       });
       return info;
     }
-
     /* ── Drag scroll helper ── */
     function makeDraggable(el){
       let drag=false,startX,sl;
@@ -702,7 +774,6 @@
       el.addEventListener('mouseup',()=>{drag=false;el.style.userSelect='';});
       el.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();el.scrollLeft=sl-(e.pageX-el.offsetLeft-startX);});
     }
-
     /* ── Category card slideshow ── */
     function makeCardSlideshow(container,paths){
       container.innerHTML='';
@@ -720,7 +791,6 @@
         },4500);
       }
     }
-
     /* ── Load category hero card ── */
     async function loadCategoryCard(cat,slidesId,nameId,descId,heroTitleHtml,heroHref){
       try{
@@ -734,28 +804,20 @@
         makeCardSlideshow(document.getElementById(slidesId),paths);
       }catch(e){console.warn(cat,e);}
     }
-
-    /* ── Load category product row — LV style cards ── */
+    /* ── Load category product row ── */
     async function loadCategoryRow(cat, stripId, href, catLabel){
       try{
         const list=await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
         const strip=document.getElementById(stripId);
-
         for(const folder of list.slice(0,12)){
           const txt=await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
           const d=parseInfo(txt);
           if(!d.images[0]) continue;
-
-          // Build card
           const card=document.createElement('div');
           card.className='lv-prod-card';
           card.setAttribute('role','article');
-
-          // Image wrapper with all images for slideshow
           const imgWrap=document.createElement('div');
           imgWrap.className='lv-prod-img';
-
-          // Render all images (for slideshow)
           d.images.forEach((img,i)=>{
             const el=document.createElement('img');
             el.src=`assets/images/${cat}/${folder}/${img}`;
@@ -765,8 +827,6 @@
             if(i===0) el.classList.add('active');
             imgWrap.appendChild(el);
           });
-
-          // Image dots
           const dotsEl=document.createElement('div');
           dotsEl.className='lv-prod-img-dots';
           if(d.images.length>1){
@@ -777,8 +837,6 @@
             });
           }
           imgWrap.appendChild(dotsEl);
-
-          // Hover overlay — Discover button (LV style)
           const overlay=document.createElement('div');
           overlay.className='lv-prod-overlay';
           overlay.innerHTML=`
@@ -787,12 +845,7 @@
               <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
             </a>`;
           imgWrap.appendChild(overlay);
-
-
-
           card.appendChild(imgWrap);
-
-          // Card body
           const body=document.createElement('div');
           body.className='lv-prod-body';
           body.innerHTML=`
@@ -800,8 +853,6 @@
             <div class="lv-prod-name">${d.name||folder}</div>
             <div class="lv-prod-price">${d.price||''}</div>`;
           card.appendChild(body);
-
-          // Multi-image slideshow on card
           let c=0;
           const imgs=imgWrap.querySelectorAll('img');
           const dots=dotsEl.querySelectorAll('.lv-prod-img-dot');
@@ -812,14 +863,12 @@
               imgs[c].classList.add('active'); if(dots[c]) dots[c].classList.add('active');
             }, 3500+Math.random()*1000);
           }
-
           card.addEventListener('click',()=>window.location=href);
           strip.appendChild(card);
         }
         makeDraggable(strip);
       }catch(e){console.warn(cat,e);}
     }
-
     /* ── Load latest strip ── */
     async function loadLatestStrip(){
       try{
@@ -838,7 +887,6 @@
         makeDraggable(strip);
       }catch(e){console.warn('latest',e);}
     }
-
     /* ── Load gallery ── */
     async function loadGallery(){
       try{
@@ -865,64 +913,47 @@
         makeDraggable(scrollEl);
       }catch(e){console.warn('gallery',e);}
     }
-
-    /* ── Instagram slideshow ── */
-    async function loadInstagram(){
-      try{
-        const slideshow=document.getElementById('ig-slideshow');
-        const dotsEl=document.getElementById('ig-dots');
-        let igImages=[];
-        const sources=[
-          {cat:'golds',json:'golds.json'},
-          {cat:'silvers',json:'silvers.json'},
-          {cat:'diamonds',json:'diamonds.json'},
-          {cat:'latest-designs',json:'designs.json'},
-        ];
-        for(const s of sources){
-          if(igImages.length>=10)break;
-          const list=await fetch(`assets/images/${s.cat}/${s.json}`).then(r=>r.json());
-          for(const folder of list){
-            if(igImages.length>=10)break;
-            const txt=await fetch(`assets/images/${s.cat}/${folder}/info.txt`).then(r=>r.text());
-            const d=parseInfo(txt);
-            if(d.images[0]) igImages.push(`assets/images/${s.cat}/${folder}/${d.images[0]}`);
-          }
+    /* ── Animate Instagram stats counter ── */
+    function animateCounter(el, target, duration) {
+      let start = 0;
+      const step = timestamp => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        const value = Math.floor(progress * target);
+        if (target >= 1000) {
+          el.textContent = (value / 1000).toFixed(1) + 'K';
+        } else {
+          el.textContent = value;
         }
-        if(!igImages.length) return;
-        igImages.forEach((src,i)=>{
-          const slide=document.createElement('div');
-          slide.className='ig-slide'+(i===0?' active':'');
-          slide.innerHTML=`<img src="${src}" alt="EGYGRILLZ Instagram" loading="${i<2?'eager':'lazy'}">`;
-          slideshow.insertBefore(slide, slideshow.querySelector('.ig-overlay'));
-          const dot=document.createElement('button');
-          dot.className='ig-dot'+(i===0?' active':'');
-          dotsEl.appendChild(dot);
-          dot.addEventListener('click',e=>{e.preventDefault();igGoTo(i);});
-        });
-        let igCur=0;
-        function igGoTo(idx){
-          const slides=slideshow.querySelectorAll('.ig-slide');
-          const dots=dotsEl.querySelectorAll('.ig-dot');
-          slides[igCur].classList.remove('active'); dots[igCur].classList.remove('active');
-          igCur=(idx+igImages.length)%igImages.length;
-          slides[igCur].classList.add('active'); dots[igCur].classList.add('active');
-        }
-        setInterval(()=>igGoTo(igCur+1), 3500);
-      }catch(e){console.warn('ig',e);}
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
     }
-
+    // Animate IG stats when they come into view
+    const igCard = document.querySelector('.ig-profile-card');
+    if (igCard) {
+      const igObs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            animateCounter(document.getElementById('ig-posts'), 87, 1200);
+            animateCounter(document.getElementById('ig-followers'), 2400, 1600);
+            animateCounter(document.getElementById('ig-following'), 156, 1000);
+            igObs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      igObs.observe(igCard);
+    }
     /* ── INIT ── */
     async function init(){
       await loadCategoryCard('golds',    'golds-card-slides',    'golds-card-name',    'golds-card-desc',    'The Gold<br>Collection',    'golds.html');
       await loadCategoryCard('silvers',  'silvers-card-slides',  'silvers-card-name',  'silvers-card-desc',  'The Silver<br>Collection',  'silvers.html');
       await loadCategoryCard('diamonds', 'diamonds-card-slides', 'diamonds-card-name', 'diamonds-card-desc', 'The Diamond<br>Collection', 'diamonds.html');
-
       loadCategoryRow('golds',    'golds-row',    'golds.html',    'Gold');
       loadCategoryRow('silvers',  'silvers-row',  'silvers.html',  'Silver');
       loadCategoryRow('diamonds', 'diamonds-row', 'diamonds.html', 'Diamond');
       loadLatestStrip();
       loadGallery();
-      loadInstagram();
     }
     init();
   </script>
