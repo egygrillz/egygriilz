@@ -77,33 +77,25 @@
     .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:18px auto 0; }
 
     /* ══════════════════════════════
-       CATEGORY HERO CARDS
+       CATEGORY HERO CARDS — all full width
     ══════════════════════════════ */
-    .lv-two-up { display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-bottom:3px; }
-    .lv-one-up { display:grid; grid-template-columns:1fr; margin-bottom:0; }
-    @media(max-width:680px) { .lv-two-up { grid-template-columns:1fr; } }
-
-    .lv-cat-card { position:relative; overflow:hidden; cursor:pointer; background:#f5f5f5; }
-    .lv-cat-card.tall { aspect-ratio:3/4; }
-    .lv-cat-card.wide { aspect-ratio:16/7; }
-    @media(max-width:680px) { .lv-cat-card.tall{aspect-ratio:4/5;} .lv-cat-card.wide{aspect-ratio:4/5;} }
-    @media(max-width:420px) { .lv-cat-card.tall{aspect-ratio:3/4;} .lv-cat-card.wide{aspect-ratio:3/4;} }
+    .lv-cat-card { position:relative; overflow:hidden; cursor:pointer; background:#f5f5f5; width:100%; aspect-ratio:16/7; display:block; }
+    @media(max-width:680px) { .lv-cat-card { aspect-ratio:4/5; } }
+    @media(max-width:420px) { .lv-cat-card { aspect-ratio:3/4; } }
 
     .lv-cat-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1s ease,transform 0.7s ease; }
     .lv-cat-card img.active { opacity:1; }
     .lv-cat-card:hover img.active { transform:scale(1.03); }
     .lv-cat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:60%; background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 100%); z-index:2; transition:height 0.4s; }
     .lv-cat-card:hover::after { height:72%; }
-    .lv-cat-info { position:absolute; z-index:10; bottom:0; left:0; right:0; padding:28px 28px 32px; color:#fff; transition:padding-bottom 0.35s; }
-    .lv-cat-card:hover .lv-cat-info { padding-bottom:42px; }
+    .lv-cat-info { position:absolute; z-index:10; bottom:0; left:0; right:0; padding:36px 48px 40px; color:#fff; transition:padding-bottom 0.35s; }
+    .lv-cat-card:hover .lv-cat-info { padding-bottom:52px; }
     .lv-cat-info .tag { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.65); margin-bottom:6px; display:block; }
-    .lv-cat-info h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.8vw,30px); letter-spacing:2px; text-transform:uppercase; line-height:1.15; margin-bottom:6px; }
-    .lv-cat-info .sub { font-size:12px; color:rgba(255,255,255,0.75); margin-bottom:16px; max-width:320px; line-height:1.55; }
+    .lv-cat-info h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,48px); letter-spacing:3px; text-transform:uppercase; line-height:1.1; margin-bottom:8px; }
+    .lv-cat-info .sub { font-size:13px; color:rgba(255,255,255,0.75); margin-bottom:20px; max-width:420px; line-height:1.6; }
     .lv-cat-link { display:inline-block; font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:#fff; border-bottom:1px solid rgba(255,255,255,0.5); padding-bottom:2px; transition:border-color 0.25s,letter-spacing 0.25s; }
     .lv-cat-link:hover { border-color:#fff; letter-spacing:3.5px; }
-    .lv-cat-info.center-text { text-align:center; padding:32px 5%; }
-    .lv-cat-info.center-text .sub { margin:0 auto 16px; }
-    @media(max-width:480px) { .lv-cat-info{padding:18px 18px 24px;} }
+    @media(max-width:480px) { .lv-cat-info { padding:20px 20px 28px; } }
 
     /* ══════════════════════════════
        CATEGORY PRODUCT ROWS
@@ -186,7 +178,7 @@
     @media(max-width:480px) { .lv-gallery-head{padding:0 16px 28px;} .lv-gal-scroll{padding:0 16px;} .lv-gallery-rule{margin-left:16px;} }
 
     /* ══════════════════════════════
-       INSTAGRAM FEED STRIP
+       INSTAGRAM SLIDESHOW — full width, one image at a time
     ══════════════════════════════ */
     .ig-section { padding:100px 0 0; }
     .ig-header { text-align:center; margin-bottom:40px; padding:0 5%; }
@@ -196,24 +188,73 @@
     .ig-header a:hover { opacity:0.5; }
     .ig-header a i { font-size:13px; }
 
-    /* 6-cell grid: 2 large + 4 small, edge-to-edge */
-    .ig-grid { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; }
-    .ig-cell { position:relative; overflow:hidden; background:#f0f0f0; cursor:pointer; }
-    .ig-cell:nth-child(1) { grid-row:span 2; aspect-ratio:auto; }
-    .ig-cell:nth-child(2),.ig-cell:nth-child(3),.ig-cell:nth-child(4),.ig-cell:nth-child(5) { aspect-ratio:1/1; }
-    /* on mobile: simple 2-col grid */
-    @media(max-width:680px) {
-      .ig-grid { grid-template-columns:1fr 1fr; grid-template-rows:auto; }
-      .ig-cell:nth-child(1) { grid-row:span 1; aspect-ratio:1/1; }
+    /* Full-width slideshow */
+    .ig-slideshow {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/7;
+      overflow: hidden;
+      background: #111;
+      cursor: pointer;
+    }
+    @media(max-width:680px) { .ig-slideshow { aspect-ratio: 4/5; } }
+
+    .ig-slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+    .ig-slide.active { opacity: 1; }
+    .ig-slide img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      -webkit-user-drag: none;
+      transition: transform 8s ease;
+      transform: scale(1.04);
+    }
+    .ig-slide.active img { transform: scale(1); }
+
+    /* Overlay with IG icon + CTA */
+    .ig-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 40%, rgba(0,0,0,0.55) 100%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 40px;
+    }
+    .ig-overlay i { font-size: 28px; color: rgba(255,255,255,0.7); margin-bottom: 10px; }
+    .ig-overlay span {
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
     }
 
-    .ig-cell img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.6s ease; pointer-events:none; -webkit-user-drag:none; }
-    .ig-cell:hover img { transform:scale(1.06); }
-    /* Instagram hover overlay */
-    .ig-cell-overlay { position:absolute; inset:0; background:rgba(0,0,0,0); display:flex; align-items:center; justify-content:center; transition:background 0.3s; z-index:2; }
-    .ig-cell:hover .ig-cell-overlay { background:rgba(0,0,0,0.35); }
-    .ig-cell-overlay i { color:#fff; font-size:22px; opacity:0; transition:opacity 0.3s; }
-    .ig-cell:hover .ig-cell-overlay i { opacity:1; }
+    /* Dot indicators */
+    .ig-dots {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 7px;
+    }
+    .ig-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .ig-dot.active { background: #fff; transform: scale(1.25); }
 
     /* ══════════════════════════════
        STORY BLOCK
@@ -316,25 +357,14 @@
     <div class="rule"></div>
   </div>
 
-  <!-- ③ GOLDS + SILVERS hero cards -->
-  <div class="lv-two-up">
-    <div class="lv-cat-card tall reveal" id="golds-card" onclick="window.location='golds.html'">
-      <div id="golds-card-slides"></div>
-      <div class="lv-cat-info">
-        <span class="tag">Gold Collection</span>
-        <h3 id="golds-card-name">Golds</h3>
-        <p class="sub" id="golds-card-desc">Premium 18K and 21K solid gold, handcrafted to perfection.</p>
-        <a href="golds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Golds</a>
-      </div>
-    </div>
-    <div class="lv-cat-card tall reveal reveal-d1" id="silvers-card" onclick="window.location='silvers.html'">
-      <div id="silvers-card-slides"></div>
-      <div class="lv-cat-info">
-        <span class="tag">Silver Collection</span>
-        <h3 id="silvers-card-name">Silvers</h3>
-        <p class="sub" id="silvers-card-desc">Solid sterling silver grillz, bold and brilliantly finished.</p>
-        <a href="silvers.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Silvers</a>
-      </div>
+  <!-- ③ GOLDS hero card — full width -->
+  <div class="lv-cat-card reveal" id="golds-card" onclick="window.location='golds.html'">
+    <div id="golds-card-slides"></div>
+    <div class="lv-cat-info">
+      <span class="tag">Gold Collection</span>
+      <h3 id="golds-card-name">Golds</h3>
+      <p class="sub" id="golds-card-desc">Premium 18K and 21K solid gold, handcrafted to perfection.</p>
+      <a href="golds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Golds</a>
     </div>
   </div>
 
@@ -347,16 +377,14 @@
     <div class="cat-row-strip" id="golds-row"></div>
   </div>
 
-  <!-- ⑤ DIAMONDS hero card -->
-  <div class="lv-one-up">
-    <div class="lv-cat-card wide reveal" id="diamonds-card" onclick="window.location='diamonds.html'">
-      <div id="diamonds-card-slides"></div>
-      <div class="lv-cat-info center-text">
-        <span class="tag">Diamond Collection</span>
-        <h3 id="diamonds-card-name">Diamonds</h3>
-        <p class="sub" id="diamonds-card-desc">VVS-grade iced-out grillz for those who demand only the finest.</p>
-        <a href="diamonds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Diamonds</a>
-      </div>
+  <!-- ⑤ SILVERS hero card — full width -->
+  <div class="lv-cat-card reveal" id="silvers-card" onclick="window.location='silvers.html'">
+    <div id="silvers-card-slides"></div>
+    <div class="lv-cat-info">
+      <span class="tag">Silver Collection</span>
+      <h3 id="silvers-card-name">Silvers</h3>
+      <p class="sub" id="silvers-card-desc">Solid sterling silver grillz, bold and brilliantly finished.</p>
+      <a href="silvers.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Silvers</a>
     </div>
   </div>
 
@@ -369,7 +397,18 @@
     <div class="cat-row-strip" id="silvers-row"></div>
   </div>
 
-  <!-- ⑦ DIAMONDS product row -->
+  <!-- ⑦ DIAMONDS hero card — full width -->
+  <div class="lv-cat-card reveal" id="diamonds-card" onclick="window.location='diamonds.html'">
+    <div id="diamonds-card-slides"></div>
+    <div class="lv-cat-info">
+      <span class="tag">Diamond Collection</span>
+      <h3 id="diamonds-card-name">Diamonds</h3>
+      <p class="sub" id="diamonds-card-desc">VVS-grade iced-out grillz for those who demand only the finest.</p>
+      <a href="diamonds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Diamonds</a>
+    </div>
+  </div>
+
+  <!-- ⑧ DIAMONDS product row -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
       <h3>Diamond Pieces</h3>
@@ -402,7 +441,7 @@
     <div class="lv-gallery-rule"></div>
   </div>
 
-  <!-- ⑩ INSTAGRAM FEED -->
+  <!-- ⑩ INSTAGRAM SLIDESHOW -->
   <div class="ig-section reveal">
     <div class="ig-header">
       <div class="eyebrow">Follow Us</div>
@@ -411,7 +450,15 @@
         <i class="fab fa-instagram"></i> Follow on Instagram
       </a>
     </div>
-    <div class="ig-grid" id="ig-grid"></div>
+    <a href="https://instagram.com/egygrillz" target="_blank" style="display:block;">
+      <div class="ig-slideshow" id="ig-slideshow">
+        <div class="ig-overlay">
+          <i class="fab fa-instagram"></i>
+          <span>@egygrillz</span>
+        </div>
+        <div class="ig-dots" id="ig-dots"></div>
+      </div>
+    </a>
   </div>
 
   <!-- ⑪ STORY / ABOUT -->
@@ -659,13 +706,13 @@
       }catch(e){console.warn('gallery',e);}
     }
 
-    /* ── Load Instagram grid (uses latest/golds/silvers as stand-in for IG images) ── */
+    /* ── Instagram full-width slideshow ── */
     async function loadInstagram(){
       try{
-        const grid=document.getElementById('ig-grid');
+        const slideshow=document.getElementById('ig-slideshow');
+        const dotsEl=document.getElementById('ig-dots');
         let igImages=[];
 
-        // Pull first image from each of these categories to fill the IG grid
         const sources=[
           {cat:'golds',json:'golds.json'},
           {cat:'silvers',json:'silvers.json'},
@@ -673,25 +720,41 @@
           {cat:'latest-designs',json:'designs.json'},
         ];
         for(const s of sources){
-          if(igImages.length>=6)break;
+          if(igImages.length>=10)break;
           const list=await fetch(`assets/images/${s.cat}/${s.json}`).then(r=>r.json());
           for(const folder of list){
-            if(igImages.length>=6)break;
+            if(igImages.length>=10)break;
             const txt=await fetch(`assets/images/${s.cat}/${folder}/info.txt`).then(r=>r.text());
             const d=parseInfo(txt);
             if(d.images[0]) igImages.push(`assets/images/${s.cat}/${folder}/${d.images[0]}`);
           }
         }
 
-        igImages.slice(0,6).forEach((src,i)=>{
-          const cell=document.createElement('a');
-          cell.className='ig-cell';
-          cell.href='https://instagram.com/egygrillz';
-          cell.target='_blank';
-          cell.rel='noopener';
-          cell.innerHTML=`<img src="${src}" alt="EGYGRILLZ Instagram" loading="${i<2?'eager':'lazy'}"><div class="ig-cell-overlay"><i class="fab fa-instagram"></i></div>`;
-          grid.appendChild(cell);
+        if(!igImages.length) return;
+
+        // Build slides
+        igImages.forEach((src,i)=>{
+          const slide=document.createElement('div');
+          slide.className='ig-slide'+(i===0?' active':'');
+          slide.innerHTML=`<img src="${src}" alt="EGYGRILLZ Instagram" loading="${i<2?'eager':'lazy'}">`;
+          // insert before overlay
+          slideshow.insertBefore(slide, slideshow.querySelector('.ig-overlay'));
+
+          const dot=document.createElement('button');
+          dot.className='ig-dot'+(i===0?' active':'');
+          dotsEl.appendChild(dot);
+          dot.addEventListener('click',e=>{e.preventDefault();igGoTo(i);});
         });
+
+        let igCur=0;
+        function igGoTo(idx){
+          const slides=slideshow.querySelectorAll('.ig-slide');
+          const dots=dotsEl.querySelectorAll('.ig-dot');
+          slides[igCur].classList.remove('active'); dots[igCur].classList.remove('active');
+          igCur=(idx+igImages.length)%igImages.length;
+          slides[igCur].classList.add('active'); dots[igCur].classList.add('active');
+        }
+        setInterval(()=>igGoTo(igCur+1), 3500);
       }catch(e){console.warn('ig',e);}
     }
 
