@@ -4,593 +4,187 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latest Designs – EGYGRILLZ</title>
-  <meta name="description" content="Discover the latest custom grillz designs from EGYGRILLZ Egypt – handcrafted luxury dental jewelry in gold, diamonds, and unique styles.">
-  <meta property="og:title" content="Latest Designs – EGYGRILLZ">
-  <meta property="og:description" content="Explore our newest exclusive grillz creations. Handcrafted in Egypt with premium materials.">
-  <meta property="og:type" content="website">
-
+  <meta name="description" content="Discover the latest custom grillz designs from EGYGRILLZ Egypt.">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
   <style>
-    :root {
-      --black: #0a0a0a;
-      --white: #fafafa;
-      --grey: #888;
-      --rule: #d8d8d8;
-      --accent: #c8a96e;
-    }
-
+    :root { --black:#0a0a0a; --white:#fafafa; --grey:#888; --rule:#d8d8d8; }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Arimo',sans-serif; background:var(--white); color:var(--black); -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+    body.menu-open { overflow:hidden; }
+    img { display:block; max-width:100%; }
+    a { text-decoration:none; color:inherit; }
 
-    body {
-      font-family: 'Arimo', sans-serif;
-      background: var(--white);
-      color: var(--black);
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
-    body.menu-open { overflow: hidden; }
-    img, video { display: block; max-width: 100%; }
-    a { text-decoration: none; color: inherit; }
-
-    /* ══════════════════════════════
-       HEADER
-    ══════════════════════════════ */
-    header {
-      position: sticky; top: 0;
-      height: 60px;
-      background: var(--white);
-      border-bottom: 1px solid #eee;
-      z-index: 1000;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 5%;
-    }
-    .logo-text {
-      font-family: 'Playfair Display', serif;
-      font-size: 22px; font-weight: 700;
-      letter-spacing: 2px; color: var(--black);
-    }
-    .main-nav { display: flex; gap: 20px; }
-    .main-nav a {
-      color: var(--black); font-size: 11px;
-      text-transform: uppercase; letter-spacing: 1px;
-      transition: color 0.3s;
-    }
-    .main-nav a:hover { color: #666; }
-    .nav-active { font-weight: 900; border-bottom: 1px solid #000; }
-    .menu-toggle {
-      display: none; flex-direction: column; gap: 6px;
-      background: none; border: none; cursor: pointer;
-    }
-    .menu-toggle span { width: 25px; height: 1.5px; background: #000; display: block; }
+    /* HEADER */
+    header { position:sticky; top:0; height:60px; background:var(--white); border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; }
+    .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; }
+    .main-nav { display:flex; gap:20px; }
+    .main-nav a { color:var(--black); font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color 0.3s; }
+    .main-nav a:hover { color:#666; }
+    .nav-active { font-weight:900; border-bottom:1px solid #000; }
+    .menu-toggle { display:none; flex-direction:column; gap:6px; background:none; border:none; cursor:pointer; }
+    .menu-toggle span { width:25px; height:1.5px; background:#000; display:block; }
     @media(max-width:980px) {
-      .menu-toggle { display: flex; }
-      .main-nav {
-        position: fixed; top: 60px; right: -100%;
-        width: 100%; background: var(--white);
-        flex-direction: column; padding: 10px 5%;
-        transition: right 0.4s cubic-bezier(0.4,0,0.2,1);
-        box-shadow: 0 5px 10px rgba(0,0,0,0.05); z-index: 1100;
-      }
-      .main-nav.active { right: 0; }
-      .main-nav a { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+      .menu-toggle { display:flex; }
+      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:var(--white); flex-direction:column; padding:10px 5%; transition:right 0.4s cubic-bezier(0.4,0,0.2,1); box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
+      .main-nav.active { right:0; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; }
+    }
+
+    /* MASTHEAD */
+    .masthead { padding:60px 6% 0; border-bottom:3px solid var(--black); }
+    .masthead-eyebrow { font-size:9px; letter-spacing:6px; text-transform:uppercase; color:var(--grey); margin-bottom:20px; }
+    .masthead-title { font-family:'Playfair Display',serif; font-size:clamp(56px,13vw,148px); font-weight:900; line-height:0.88; letter-spacing:-2px; text-transform:uppercase; margin-bottom:24px; }
+    .masthead-title em { font-style:italic; font-weight:400; }
+    .masthead-sub { display:flex; align-items:center; padding:16px 0 20px; border-top:1px solid var(--rule); gap:16px; flex-wrap:wrap; }
+    .masthead-sub-text { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--grey); white-space:nowrap; }
+    .masthead-sub-rule { flex:1; height:1px; background:var(--rule); min-width:20px; }
+
+    /* STATES */
+    .loading-state, .error-state { text-align:center; padding:100px 20px; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--grey); }
+    .error-state { color:#c0392b; }
+
+    /* SPREAD WRAPPER */
+    #designs-container { padding:0 0 120px; }
+    .spread { opacity:0; transform:translateY(48px); transition:opacity 0.9s cubic-bezier(0.2,0,0.2,1),transform 0.9s cubic-bezier(0.2,0,0.2,1); will-change:opacity,transform; }
+    .spread.visible { opacity:1; transform:translateY(0); }
+    .spread-rule { height:1px; background:var(--rule); }
+
+    /* ══════════════════════════════
+       CORE MEDIA BOX
+       — all images/videos live inside .media-box
+       — children fill it via absolute positioning
+    ══════════════════════════════ */
+    .media-box { position:relative; overflow:hidden; background:#e0e0e0; display:block; }
+    .media-box img {
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      transition:transform 0.7s ease;
+    }
+    .media-box:hover img { transform:scale(1.05); }
+    /* vid-wrap fills the box */
+    .vid-wrap { position:absolute; inset:0; }
+    .vid-wrap video {
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      transition:transform 0.7s ease;
+    }
+    .media-box:hover .vid-wrap video { transform:scale(1.05); }
+    .mute-btn { position:absolute; bottom:10px; right:10px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.52); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; z-index:10; transition:background 0.2s; }
+    .mute-btn:hover { background:rgba(0,0,0,0.88); }
+
+    /* SHARED TEXT */
+    .spread-kicker { font-size:8px; letter-spacing:5px; text-transform:uppercase; color:var(--grey); margin-bottom:16px; }
+    .spread-title { font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(26px,3.5vw,52px); line-height:1.05; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+    .spread-price { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--grey); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:8px 0; margin:16px 0; }
+    .spread-desc { font-size:13px; line-height:1.9; color:#444; max-width:420px; }
+
+    /* ══════════════════════════════
+       LAYOUT A — hero left / text+grid right
+    ══════════════════════════════ */
+    .la { display:grid; grid-template-columns:1fr 1fr; min-height:clamp(480px,70vh,780px); }
+    .la-hero { /* .media-box fills this grid cell */ }
+    .la-right { display:flex; flex-direction:column; justify-content:space-between; padding:48px 6%; border-left:1px solid var(--rule); gap:28px; }
+    .la-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; }
+    .la-grid .media-box { aspect-ratio:1; cursor:pointer; }
+    @media(max-width:860px) {
+      .la { grid-template-columns:1fr; min-height:unset; }
+      .la-hero { height:70vw; }
+      .la-right { border-left:none; border-top:1px solid var(--rule); padding:32px 5%; }
+    }
+    @media(max-width:480px) {
+      .la-hero { height:88vw; }
+      .la-grid { grid-template-columns:repeat(2,1fr); }
     }
 
     /* ══════════════════════════════
-       MAGAZINE MASTHEAD
+       LAYOUT B — full-bleed dark cover
     ══════════════════════════════ */
-    .masthead {
-      padding: 60px 6% 0;
-      border-bottom: 3px solid var(--black);
-    }
-    .masthead-top {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      gap: 20px;
-    }
-    .masthead-label {
-      font-size: 9px;
-      letter-spacing: 6px;
-      text-transform: uppercase;
-      color: var(--grey);
-    }
-    .masthead-issue {
-      font-size: 9px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--grey);
-      text-align: right;
-    }
-    .masthead-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(64px, 14vw, 160px);
-      font-weight: 900;
-      line-height: 0.88;
-      letter-spacing: -2px;
-      text-transform: uppercase;
-      color: var(--black);
-      margin-bottom: 24px;
-    }
-    .masthead-title em {
-      font-style: italic;
-      color: var(--black);
-    }
-    .masthead-sub {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 0 20px;
-      border-top: 1px solid var(--rule);
-      gap: 20px;
-    }
-    .masthead-sub-text {
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--grey);
-    }
-    .masthead-sub-rule {
-      flex: 1;
-      height: 1px;
-      background: var(--rule);
-      margin: 0 20px;
+    .lb-outer { position:relative; background:#111; overflow:hidden; min-height:90vh; }
+    .lb-bg { position:absolute; inset:0; }
+    .lb-bg img, .lb-bg .vid-wrap { position:absolute; inset:0; width:100%; height:100%; }
+    .lb-bg img { object-fit:cover; opacity:0.62; transition:transform 0.8s ease,opacity 0.4s; }
+    .lb-bg .vid-wrap video { opacity:0.62; }
+    .lb-outer:hover .lb-bg img, .lb-outer:hover .lb-bg .vid-wrap video { transform:scale(1.04); opacity:0.74; }
+    .lb-content { position:relative; z-index:2; min-height:90vh; display:flex; flex-direction:column; justify-content:flex-end; padding:6%; }
+    .lb-kicker { font-size:8px; letter-spacing:6px; text-transform:uppercase; color:rgba(255,255,255,0.45); margin-bottom:16px; }
+    .lb-title { font-family:'Playfair Display',serif; font-weight:900; font-size:clamp(44px,10vw,128px); line-height:0.9; letter-spacing:-1px; text-transform:uppercase; color:#fff; margin-bottom:24px; }
+    .lb-title em { font-style:italic; font-weight:400; }
+    .lb-row { display:flex; align-items:flex-end; justify-content:space-between; gap:28px; margin-bottom:28px; flex-wrap:wrap; }
+    .lb-desc { font-size:13px; line-height:1.85; color:rgba(255,255,255,0.65); max-width:480px; }
+    .lb-price { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.22); padding:10px 20px; white-space:nowrap; }
+    .lb-strip { display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+    .lb-strip::-webkit-scrollbar { display:none; }
+    .lb-strip .media-box { flex:0 0 200px; aspect-ratio:3/4; cursor:pointer; }
+    @media(max-width:680px) {
+      .lb-outer { min-height:unset; }
+      .lb-content { min-height:80vw; padding:5%; }
+      .lb-title { font-size:clamp(36px,12vw,80px); }
+      .lb-strip .media-box { flex:0 0 44vw; }
     }
 
     /* ══════════════════════════════
-       LOADING / ERROR
+       LAYOUT C — text left / staggered strip right
     ══════════════════════════════ */
-    .loading-state, .error-state {
-      text-align: center;
-      padding: 100px 20px;
-      font-size: 13px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--grey);
+    .lc { display:grid; grid-template-columns:2fr 3fr; border-top:1px solid var(--rule); }
+    .lc-left { display:flex; flex-direction:column; justify-content:center; padding:64px 6%; border-right:1px solid var(--rule); }
+    .lc-right { display:flex; gap:4px; overflow:hidden; min-height:500px; }
+    .lc-right .media-box { flex:1; min-width:0; cursor:pointer; }
+    .lc-right .media-box:nth-child(even) { margin-top:48px; }
+    @media(max-width:860px) {
+      .lc { grid-template-columns:1fr; }
+      .lc-left { border-right:none; border-bottom:1px solid var(--rule); padding:40px 5%; }
+      .lc-right { min-height:60vw; }
+      .lc-right .media-box:nth-child(even) { margin-top:0; }
     }
-    .error-state { color: #c0392b; }
+    @media(max-width:480px) { .lc-right { min-height:80vw; } }
 
     /* ══════════════════════════════
-       EDITORIAL SPREADS
+       LAYOUT D — editorial 2-col header + grid
     ══════════════════════════════ */
-    #designs-container {
-      padding: 0 0 100px;
+    .ld { border-top:1px solid var(--rule); padding:64px 6%; }
+    .ld-header { display:grid; grid-template-columns:1fr 1px 1fr; gap:48px; margin-bottom:40px; padding-bottom:40px; border-bottom:1px solid var(--rule); align-items:end; }
+    .ld-rule { background:var(--rule); align-self:stretch; }
+    .ld-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
+    .ld-grid .media-box { aspect-ratio:3/4; cursor:pointer; }
+    .ld-grid .media-box:first-child { grid-column:span 2; grid-row:span 2; aspect-ratio:unset; }
+    @media(max-width:860px) {
+      .ld { padding:40px 5%; }
+      .ld-header { grid-template-columns:1fr; gap:20px; }
+      .ld-rule { display:none; }
+      .ld-grid { grid-template-columns:1fr 1fr; }
+      .ld-grid .media-box:first-child { grid-column:span 2; aspect-ratio:16/9; }
     }
+    @media(max-width:480px) { .ld-grid .media-box { aspect-ratio:1; } }
 
-    /* Each design is a full editorial "spread" */
-    .spread {
-      opacity: 0;
-      transform: translateY(50px);
-      transition: opacity 0.9s cubic-bezier(0.2,0,0.2,1), transform 0.9s cubic-bezier(0.2,0,0.2,1);
-      will-change: opacity, transform;
-    }
-    .spread.visible { opacity: 1; transform: translateY(0); }
+    /* LIGHTBOX */
+    .lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.93); z-index:9000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
+    .lightbox.open { opacity:1; pointer-events:all; }
+    .lightbox img, .lightbox video { max-width:92vw; max-height:90vh; object-fit:contain; }
+    .lb-close { position:absolute; top:20px; right:28px; color:#fff; font-size:32px; cursor:pointer; background:none; border:none; line-height:1; opacity:0.65; transition:opacity 0.2s; }
+    .lb-close:hover { opacity:1; }
 
-    /* ── ISSUE DIVIDER between spreads ── */
-    .issue-divider {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      padding: 0 6%;
-      margin: 0;
-      height: 48px;
-      border-top: 1px solid var(--rule);
-      border-bottom: 1px solid var(--rule);
-      background: var(--white);
-    }
-    .issue-no {
-      font-family: 'Playfair Display', serif;
-      font-size: 11px;
-      font-style: italic;
-      color: var(--grey);
-      letter-spacing: 1px;
-      white-space: nowrap;
-      margin-right: 24px;
-    }
-    .issue-bar {
-      flex: 1;
-      height: 1px;
-      background: var(--rule);
-    }
-    .issue-tag {
-      font-size: 8px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: var(--grey);
-      margin-left: 24px;
-      white-space: nowrap;
-    }
-
-    /* ── LAYOUT A: hero image left, text + grid right ── */
-    .spread-a {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      min-height: 80vh;
-    }
-    .spread-a-left {
-      position: relative;
-      overflow: hidden;
-      background: #e8e8e8;
-    }
-    .spread-a-left img, .spread-a-left video {
-      position: absolute;
-      inset: 0; width: 100%; height: 100%;
-      object-fit: cover;
-      transition: transform 0.8s ease;
-    }
-    .spread-a:hover .spread-a-left img,
-    .spread-a:hover .spread-a-left video { transform: scale(1.03); }
-
-    .spread-a-right {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 48px 6%;
-      border-left: 1px solid var(--rule);
-    }
-    .spread-a-right-top {}
-    .spread-kicker {
-      font-size: 8px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      color: var(--grey);
-      margin-bottom: 18px;
-    }
-    .spread-title {
-      font-family: 'Playfair Display', serif;
-      font-weight: 700;
-      font-size: clamp(28px, 3.5vw, 52px);
-      line-height: 1.05;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-    .spread-title-italic {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-weight: 400;
-      font-size: clamp(22px, 2.8vw, 40px);
-      line-height: 1.1;
-      letter-spacing: 1px;
-    }
-    .spread-price {
-      display: inline-block;
-      font-size: 11px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--grey);
-      border-top: 1px solid var(--rule);
-      border-bottom: 1px solid var(--rule);
-      padding: 8px 0;
-      margin: 20px 0;
-    }
-    .spread-desc {
-      font-size: 13px;
-      line-height: 1.9;
-      color: #444;
-      max-width: 400px;
-    }
-    .spread-img-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 4px;
-      margin-top: 24px;
-    }
-    .spread-img-grid-item {
-      aspect-ratio: 1;
-      overflow: hidden;
-      background: #e8e8e8;
-      cursor: pointer;
-      position: relative;
-    }
-    .spread-img-grid-item img,
-    .spread-img-grid-item video {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      transition: transform 0.5s ease;
-    }
-    .spread-img-grid-item:hover img,
-    .spread-img-grid-item:hover video { transform: scale(1.08); }
-
-    /* ── LAYOUT B: full-bleed title over image ── */
-    .spread-b {
-      position: relative;
-      min-height: 90vh;
-      background: #111;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .spread-b-hero {
-      position: absolute;
-      inset: 0;
-      background: #111;
-    }
-    .spread-b-hero img,
-    .spread-b-hero video {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      opacity: 0.65;
-      transition: transform 0.8s ease, opacity 0.4s;
-    }
-    .spread-b:hover .spread-b-hero img,
-    .spread-b:hover .spread-b-hero video { transform: scale(1.03); opacity: 0.75; }
-    .spread-b-content {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      min-height: 90vh;
-      padding: 6%;
-    }
-    .spread-b-kicker {
-      font-size: 8px;
-      letter-spacing: 6px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.5);
-      margin-bottom: 16px;
-    }
-    .spread-b-title {
-      font-family: 'Playfair Display', serif;
-      font-weight: 900;
-      font-size: clamp(48px, 10vw, 130px);
-      line-height: 0.9;
-      letter-spacing: -1px;
-      text-transform: uppercase;
-      color: #fff;
-      margin-bottom: 20px;
-    }
-    .spread-b-title em {
-      font-style: italic;
-      font-weight: 400;
-    }
-    .spread-b-bottom {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 40px;
-    }
-    .spread-b-desc {
-      font-size: 13px;
-      line-height: 1.85;
-      color: rgba(255,255,255,0.7);
-      max-width: 480px;
-    }
-    .spread-b-price {
-      font-size: 11px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.5);
-      white-space: nowrap;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 10px 20px;
-      flex-shrink: 0;
-    }
-    .spread-b-grid {
-      display: flex;
-      gap: 4px;
-      margin-top: 32px;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .spread-b-grid::-webkit-scrollbar { display: none; }
-    .spread-b-grid-item {
-      flex: 0 0 200px;
-      aspect-ratio: 3/4;
-      overflow: hidden;
-      background: #222;
-      cursor: pointer;
-      position: relative;
-    }
-    .spread-b-grid-item img,
-    .spread-b-grid-item video {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      opacity: 0.8;
-      transition: transform 0.5s ease, opacity 0.3s;
-    }
-    .spread-b-grid-item:hover img,
-    .spread-b-grid-item:hover video { transform: scale(1.06); opacity: 1; }
-
-    /* ── LAYOUT C: text left big, asymmetric image strip right ── */
-    .spread-c {
-      display: grid;
-      grid-template-columns: 2fr 3fr;
-      min-height: 70vh;
-      border-top: 1px solid var(--rule);
-    }
-    .spread-c-left {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 64px 6%;
-      border-right: 1px solid var(--rule);
-    }
-    .spread-c-right {
-      display: flex;
-      gap: 4px;
-      overflow: hidden;
-    }
-    .spread-c-img {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-      background: #e8e8e8;
-    }
-    .spread-c-img img,
-    .spread-c-img video {
-      position: absolute;
-      inset: 0; width: 100%; height: 100%;
-      object-fit: cover;
-      transition: transform 0.7s ease;
-    }
-    .spread-c:hover .spread-c-img img,
-    .spread-c:hover .spread-c-img video { transform: scale(1.04); }
-    /* Offset every other column vertically */
-    .spread-c-img:nth-child(even) {
-      margin-top: 40px;
-      margin-bottom: -40px;
-    }
-
-    /* ── LAYOUT D: editorial columns — 3-col magazine layout ── */
-    .spread-d {
-      border-top: 1px solid var(--rule);
-      padding: 64px 6%;
-    }
-    .spread-d-header {
-      display: grid;
-      grid-template-columns: 1fr 2px 1fr;
-      gap: 40px;
-      margin-bottom: 40px;
-      padding-bottom: 40px;
-      border-bottom: 1px solid var(--rule);
-    }
-    .spread-d-header-rule { background: var(--rule); }
-    .spread-d-title-col {}
-    .spread-d-desc-col {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-    }
-    .spread-d-images {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-    }
-    .spread-d-img {
-      position: relative;
-      overflow: hidden;
-      background: #e8e8e8;
-      cursor: pointer;
-    }
-    .spread-d-img:first-child {
-      grid-column: span 2;
-      grid-row: span 2;
-    }
-    .spread-d-img { aspect-ratio: 3/4; }
-    .spread-d-img:first-child { aspect-ratio: auto; }
-    .spread-d-img img,
-    .spread-d-img video {
-      position: absolute;
-      inset: 0; width: 100%; height: 100%;
-      object-fit: cover;
-      transition: transform 0.6s ease;
-    }
-    .spread-d-img:hover img,
-    .spread-d-img:hover video { transform: scale(1.05); }
-
-    /* ── Pull quote element ── */
-    .pull-quote {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: clamp(18px, 2.5vw, 28px);
-      line-height: 1.4;
-      color: var(--black);
-      padding: 32px 0;
-      border-top: 2px solid var(--black);
-      border-bottom: 1px solid var(--rule);
-      margin: 32px 0 0;
-    }
-
-    /* Video mute button */
-    .mute-btn {
-      position: absolute;
-      bottom: 12px; right: 12px;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.55);
-      border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-size: 13px;
-      z-index: 10;
-      transition: background 0.2s;
-    }
-    .mute-btn:hover { background: rgba(0,0,0,0.85); }
-
-    /* ══════════════════════════════
-       LIGHTBOX
-    ══════════════════════════════ */
-    .lightbox {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.92);
-      z-index: 9000;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    .lightbox.open { opacity: 1; pointer-events: all; }
-    .lightbox img, .lightbox video {
-      max-width: 90vw; max-height: 88vh;
-      object-fit: contain;
-      display: block;
-    }
-    .lightbox-close {
-      position: absolute;
-      top: 24px; right: 32px;
-      color: #fff; font-size: 28px;
-      cursor: pointer; background: none; border: none;
-      line-height: 1; opacity: 0.7; transition: opacity 0.2s;
-    }
-    .lightbox-close:hover { opacity: 1; }
-
-    /* ══════════════════════════════
-       RESPONSIVE
-    ══════════════════════════════ */
-    @media(max-width: 900px) {
-      .spread-a { grid-template-columns: 1fr; }
-      .spread-a-left { min-height: 60vw; position: relative; }
-      .spread-a-left img, .spread-a-left video { position: absolute; }
-      .spread-a-right { border-left: none; border-top: 1px solid var(--rule); }
-      .spread-c { grid-template-columns: 1fr; }
-      .spread-c-left { border-right: none; border-bottom: 1px solid var(--rule); padding: 40px 5%; }
-      .spread-c-right { min-height: 60vw; }
-      .spread-d-header { grid-template-columns: 1fr; }
-      .spread-d-header-rule { display: none; }
-      .spread-d-images { grid-template-columns: repeat(2, 1fr); }
-      .spread-d-img:first-child { grid-column: span 2; aspect-ratio: 16/9; }
-      .spread-b-title { font-size: clamp(40px, 10vw, 80px); }
-      .spread-b-bottom { flex-direction: column; align-items: flex-start; }
-      .masthead-title { font-size: clamp(48px, 12vw, 100px); }
-    }
-    @media(max-width: 600px) {
-      .spread-b-grid-item { flex: 0 0 150px; }
-      .spread-d-images { grid-template-columns: 1fr 1fr; }
-      .masthead-title { font-size: clamp(40px, 14vw, 80px); }
-    }
-
-    /* ══════════════════════════════
-       FOOTER
-    ══════════════════════════════ */
-    footer {
-      background: var(--black); color: #fff;
-      padding: 50px 5% 20px;
-      border-top: 3px solid var(--black);
-    }
-    .footer-main {
-      display: grid; grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 40px; padding-bottom: 40px;
-      border-bottom: 1px solid #222;
-    }
-    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
-    .footer-col p { font-size: 13px; color: #888; max-width: 300px; line-height: 1.6; }
-    .footer-col a { display: block; color: #fff; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
-    .footer-col a:hover { color: #888; }
-    .footer-bottom { padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
-    .footer-logo-img { height: 10px; filter: brightness(0) invert(1); }
-    .ceo-wrap { display: flex; align-items: center; gap: 8px; }
-    .ceo-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .ceo-name { font-family: 'Alex Brush'; font-size: 12px; color: #888; }
-    .legal-text { font-size: 9px; color: #444; text-transform: uppercase; }
+    /* FOOTER */
+    footer { background:var(--black); color:#fff; padding:50px 5% 20px; border-top:3px solid var(--black); }
+    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
+    .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
+    .footer-col p { font-size:13px; color:#888; max-width:300px; line-height:1.6; }
+    .footer-col a { display:block; color:#fff; font-size:12px; margin-bottom:8px; transition:0.3s; }
+    .footer-col a:hover { color:#888; }
+    .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+    .footer-logo-img { height:10px; filter:brightness(0) invert(1); }
+    .ceo-wrap { display:flex; align-items:center; gap:8px; }
+    .ceo-label { font-size:7px; color:#666; text-transform:uppercase; letter-spacing:1px; }
+    .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#888; }
+    .legal-text { font-size:9px; color:#444; text-transform:uppercase; }
     @media(max-width:768px) { .footer-main{grid-template-columns:1fr;text-align:center;gap:30px;} .footer-col{display:flex;flex-direction:column;align-items:center;} .footer-bottom{flex-direction:column;text-align:center;} }
   </style>
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- HEADER -->
   <header>
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -607,12 +201,8 @@
     </nav>
   </header>
 
-  <!-- MAGAZINE MASTHEAD -->
   <div class="masthead">
-    <div class="masthead-top">
-      <span class="masthead-label">EGYGRILLZ &nbsp;·&nbsp; Egypt's First Custom Grillz</span>
-      <span class="masthead-issue" id="masthead-issue-no">Issue No. — &nbsp;·&nbsp; 2026</span>
-    </div>
+    <div class="masthead-eyebrow">EGYGRILLZ &nbsp;·&nbsp; Egypt's First Custom Grillz</div>
     <h1 class="masthead-title">Latest<br><em>Designs</em></h1>
     <div class="masthead-sub">
       <span class="masthead-sub-text">New Arrivals</span>
@@ -623,26 +213,15 @@
     </div>
   </div>
 
-  <!-- LOADING -->
-  <div id="loading-state" class="loading-state">
-    Loading&hellip;
-  </div>
-
-  <!-- DESIGNS -->
+  <div id="loading-state" class="loading-state">Loading&hellip;</div>
   <div id="designs-container" style="display:none;"></div>
+  <div id="error-state" class="error-state" style="display:none;">Could not load designs. Please try again.</div>
 
-  <!-- ERROR -->
-  <div id="error-state" class="error-state" style="display:none;">
-    Could not load designs. Please try again later.
-  </div>
-
-  <!-- LIGHTBOX -->
   <div class="lightbox" id="lightbox">
-    <button class="lightbox-close" id="lightbox-close">&times;</button>
-    <div id="lightbox-content"></div>
+    <button class="lb-close" id="lb-close">&times;</button>
+    <div id="lb-content"></div>
   </div>
 
-  <!-- FOOTER -->
   <footer>
     <div class="footer-main">
       <div class="footer-col">
@@ -663,14 +242,9 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <div>
-        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff;font-size:1.4rem;"><i class="fab fa-instagram"></i></a>
-      </div>
+      <div><a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff;font-size:1.4rem;"><i class="fab fa-instagram"></i></a></div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
-      <div class="ceo-wrap">
-        <span class="ceo-label">Founder</span>
-        <span class="ceo-name">DR Mohamed Mahdy</span>
-      </div>
+      <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
       <div class="legal-text">&copy; 2026 EGYGRILLZ</div>
     </div>
   </footer>
@@ -683,300 +257,298 @@
     });
 
     /* ── Lightbox ── */
-    const lightbox = document.getElementById('lightbox');
-    const lightboxContent = document.getElementById('lightbox-content');
-    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
-
-    function openLightbox(src, isVideo) {
-      lightboxContent.innerHTML = isVideo
-        ? `<video src="${src}" autoplay loop muted playsinline style="max-width:90vw;max-height:88vh;"></video>`
+    const lightbox  = document.getElementById('lightbox');
+    const lbContent = document.getElementById('lb-content');
+    document.getElementById('lb-close').addEventListener('click', closeLB);
+    lightbox.addEventListener('click', e => { if(e.target===lightbox) closeLB(); });
+    document.addEventListener('keydown', e => { if(e.key==='Escape') closeLB(); });
+    function openLB(src, vid) {
+      lbContent.innerHTML = vid
+        ? `<video src="${src}" autoplay loop muted playsinline></video>`
         : `<img src="${src}" alt="">`;
       lightbox.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
-    function closeLightbox() {
+    function closeLB() {
       lightbox.classList.remove('open');
-      lightboxContent.innerHTML = '';
+      lbContent.innerHTML = '';
       document.body.style.overflow = '';
     }
 
-    /* ── Scroll reveal ── */
+    /* ── Observers ── */
+    // Reveal + video autoplay
     const revealObs = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if (e.target.classList.contains('spread') && e.isIntersecting) {
+        if(e.target.classList.contains('spread') && e.isIntersecting) {
           e.target.classList.add('visible');
           revealObs.unobserve(e.target);
         }
-        if (e.target.tagName === 'VIDEO') {
+        if(e.target.tagName==='VIDEO') {
           e.isIntersecting ? e.target.play().catch(()=>{}) : e.target.pause();
         }
       });
-    }, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold:0.06, rootMargin:'0px 0px -40px 0px' });
 
-    /* ── Parse info.txt ── */
+    // Lazy load video src
+    const lazyObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if(e.isIntersecting && e.target.dataset.src && !e.target.src) {
+          e.target.src = e.target.dataset.src;
+          e.target.load();
+          lazyObs.unobserve(e.target);
+        }
+      });
+    }, { rootMargin:'400px' });
+
     function parseInfo(text) {
       const info = { name:'', price:'', desc:'', images:[] };
       text.split('\n').forEach(line => {
-        const ci = line.indexOf(':'); if (ci === -1) return;
+        const ci = line.indexOf(':'); if(ci===-1) return;
         const k = line.slice(0,ci).trim().toLowerCase();
         const v = line.slice(ci+1).trim();
-        if (k==='name'||k==='title') info.name = v;
-        else if (k==='price') info.price = v;
-        else if (k==='description'||k==='desc') info.desc = v;
-        else if (k==='images') info.images = v.split(',').map(s=>s.trim()).filter(Boolean);
+        if(k==='name'||k==='title') info.name=v;
+        else if(k==='price') info.price=v;
+        else if(k==='description'||k==='desc') info.desc=v;
+        else if(k==='images') info.images=v.split(',').map(s=>s.trim()).filter(Boolean);
       });
       return info;
     }
 
-    function isVideo(f) { return /\.(mp4|mov|webm|avi|m4v)$/i.test(f); }
+    function isVid(f) { return /\.(mp4|mov|webm|avi|m4v)$/i.test(f); }
 
-    /* ── Build media element ── */
-    function makeMedia(src, alt, cls='') {
-      if (isVideo(src)) {
+    /*
+      makeMedia(src, alt, click)
+      Returns a .media-box div.
+      img or .vid-wrap fills it via position:absolute inset:0.
+      The box itself needs a defined height from its CSS context.
+    */
+    function makeMedia(src, alt, click) {
+      const box = document.createElement('div');
+      box.className = 'media-box';
+
+      if(isVid(src)) {
         const wrap = document.createElement('div');
-        wrap.style.position = 'relative';
+        wrap.className = 'vid-wrap';
+
         const v = document.createElement('video');
-        v.dataset.src = src; v.loop = true; v.muted = true; v.playsInline = true; v.preload = 'none';
-        v.setAttribute('playsinline',''); v.className = cls;
+        v.dataset.src = src;
+        v.loop = true; v.muted = true; v.playsInline = true; v.preload = 'none';
+        v.setAttribute('playsinline','');
+        wrap.appendChild(v);
+
         const btn = document.createElement('button');
-        btn.className = 'mute-btn'; btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+        btn.className = 'mute-btn';
+        btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
         btn.addEventListener('click', ev => {
           ev.stopPropagation();
           v.muted = !v.muted;
           btn.innerHTML = v.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
         });
-        wrap.appendChild(v); wrap.appendChild(btn);
+        wrap.appendChild(btn);
+        box.appendChild(wrap);
+
+        lazyObs.observe(v);
         revealObs.observe(v);
-        // lazy load
-        const lo = new IntersectionObserver(([entry]) => {
-          if (entry.isIntersecting && !v.src) { v.src = v.dataset.src; v.load(); lo.disconnect(); }
-        }, { rootMargin: '200px' });
-        lo.observe(v);
-        return wrap;
       } else {
         const img = document.createElement('img');
-        img.src = src; img.alt = alt; img.loading = 'lazy'; img.className = cls;
-        return img;
+        img.src = src; img.alt = alt||''; img.loading = 'lazy';
+        box.appendChild(img);
       }
+
+      if(click) {
+        box.style.cursor = 'pointer';
+        box.addEventListener('click', () => openLB(src, isVid(src)));
+      }
+      return box;
     }
 
-    /* ── Clickable media wrapper ── */
-    function clickable(el, src, vid) {
-      el.style.cursor = 'pointer';
-      el.addEventListener('click', () => openLightbox(src, vid));
-      return el;
-    }
+    /* ────────────────────────────────
+       LAYOUT A — hero left / text+grid right
+    ──────────────────────────────── */
+    function buildA(d, folder) {
+      const row = document.createElement('div');
+      row.className = 'la';
 
-    /* ── Layout builders ── */
+      // Hero — left cell, fills the grid row height
+      const hero = makeMedia(`assets/images/latest-designs/${folder}/${d.images[0]}`, d.name, true);
+      hero.classList.add('la-hero');
+      row.appendChild(hero);
 
-    // Layout A — hero left, text + grid right
-    function buildA(d, folder, idx) {
-      const wrap = document.createElement('div');
-      wrap.className = 'spread-a';
-
-      const left = document.createElement('div');
-      left.className = 'spread-a-left';
-      left.style.minHeight = '560px';
-      const heroSrc = `assets/images/latest-designs/${folder}/${d.images[0]}`;
-      const heroEl = makeMedia(heroSrc, d.name);
-      heroEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-      left.appendChild(heroEl);
-
+      // Right
       const right = document.createElement('div');
-      right.className = 'spread-a-right';
+      right.className = 'la-right';
 
-      const top = document.createElement('div');
-      top.innerHTML = `
-        <div class="spread-kicker">EGYGRILLZ &nbsp;·&nbsp; New Arrival</div>
+      const txt = document.createElement('div');
+      txt.innerHTML = `
+        <div class="spread-kicker">New Arrival</div>
         <div class="spread-title">${d.name}</div>
-        ${d.price ? `<div class="spread-price">${d.price}</div>` : ''}
-        ${d.desc ? `<div class="spread-desc">${d.desc}</div>` : ''}`;
-      right.appendChild(top);
+        ${d.price?`<div class="spread-price">${d.price}</div>`:''}
+        ${d.desc?`<div class="spread-desc">${d.desc}</div>`:''}`;
+      right.appendChild(txt);
 
-      if (d.images.length > 1) {
-        const grid = document.createElement('div');
-        grid.className = 'spread-img-grid';
-        d.images.slice(1, 7).forEach(img => {
-          const src = `assets/images/latest-designs/${folder}/${img}`;
-          const item = document.createElement('div');
-          item.className = 'spread-img-grid-item';
-          const media = makeMedia(src, d.name);
-          item.appendChild(media);
-          clickable(item, src, isVideo(img));
-          grid.appendChild(item);
+      if(d.images.length > 1) {
+        const g = document.createElement('div');
+        g.className = 'la-grid';
+        d.images.slice(1,7).forEach(f => {
+          g.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
         });
-        right.appendChild(grid);
+        right.appendChild(g);
       }
-
-      wrap.appendChild(left); wrap.appendChild(right);
-      return wrap;
+      row.appendChild(right);
+      return row;
     }
 
-    // Layout B — full-bleed dark with massive title
-    function buildB(d, folder, idx) {
-      const wrap = document.createElement('div');
-      wrap.className = 'spread-b';
+    /* ────────────────────────────────
+       LAYOUT B — full-bleed dark cover
+    ──────────────────────────────── */
+    function buildB(d, folder) {
+      const outer = document.createElement('div');
+      outer.className = 'lb-outer';
 
-      const hero = document.createElement('div');
-      hero.className = 'spread-b-hero';
+      // Background layer
+      const bg = document.createElement('div');
+      bg.className = 'lb-bg';
       const heroSrc = `assets/images/latest-designs/${folder}/${d.images[0]}`;
-      const heroEl = makeMedia(heroSrc, d.name);
-      heroEl.style.cssText = 'width:100%;height:100%;object-fit:cover;opacity:0.65;';
-      hero.appendChild(heroEl);
-      wrap.appendChild(hero);
 
+      if(isVid(heroSrc)) {
+        const wrap = document.createElement('div');
+        wrap.className = 'vid-wrap';
+        const v = document.createElement('video');
+        v.dataset.src = heroSrc; v.loop=true; v.muted=true; v.playsInline=true; v.preload='none';
+        v.setAttribute('playsinline','');
+        v.style.opacity = '0.62';
+        wrap.appendChild(v);
+        bg.appendChild(wrap);
+        lazyObs.observe(v); revealObs.observe(v);
+      } else {
+        const img = document.createElement('img');
+        img.src = heroSrc; img.alt = d.name; img.loading = 'eager';
+        bg.appendChild(img);
+      }
+      outer.appendChild(bg);
+
+      // Content
       const content = document.createElement('div');
-      content.className = 'spread-b-content';
+      content.className = 'lb-content';
 
-      // Split name for italic effect
       const words = d.name.split(' ');
-      const half = Math.ceil(words.length / 2);
-      const line1 = words.slice(0,half).join(' ');
-      const line2 = words.slice(half).join(' ');
+      const h = Math.ceil(words.length/2);
+      const l1 = words.slice(0,h).join(' ');
+      const l2 = words.slice(h).join(' ');
 
       content.innerHTML = `
-        <div class="spread-b-kicker">EGYGRILLZ &nbsp;·&nbsp; Exclusive Drop</div>
-        <div class="spread-b-title">${line1}${line2 ? `<br><em>${line2}</em>` : ''}</div>
-        <div class="spread-b-bottom">
-          ${d.desc ? `<div class="spread-b-desc">${d.desc}</div>` : '<div></div>'}
-          ${d.price ? `<div class="spread-b-price">${d.price}</div>` : ''}
+        <div class="lb-kicker">EGYGRILLZ &nbsp;·&nbsp; Exclusive Drop</div>
+        <div class="lb-title">${l1}${l2?`<br><em>${l2}</em>`:''}</div>
+        <div class="lb-row">
+          ${d.desc?`<div class="lb-desc">${d.desc}</div>`:'<div></div>'}
+          ${d.price?`<div class="lb-price">${d.price}</div>`:''}
         </div>`;
 
-      if (d.images.length > 1) {
-        const grid = document.createElement('div');
-        grid.className = 'spread-b-grid';
-        d.images.slice(1, 6).forEach(img => {
-          const src = `assets/images/latest-designs/${folder}/${img}`;
-          const item = document.createElement('div');
-          item.className = 'spread-b-grid-item';
-          const media = makeMedia(src, d.name);
-          item.appendChild(media);
-          clickable(item, src, isVideo(img));
-          grid.appendChild(item);
+      if(d.images.length > 1) {
+        const strip = document.createElement('div');
+        strip.className = 'lb-strip';
+        d.images.slice(1,6).forEach(f => {
+          strip.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
         });
-        content.appendChild(grid);
+        content.appendChild(strip);
       }
-
-      wrap.appendChild(content);
-      return wrap;
+      outer.appendChild(content);
+      return outer;
     }
 
-    // Layout C — editorial text col + vertical image strip
-    function buildC(d, folder, idx) {
-      const wrap = document.createElement('div');
-      wrap.className = 'spread-c';
+    /* ────────────────────────────────
+       LAYOUT C — text left / staggered strip right
+    ──────────────────────────────── */
+    function buildC(d, folder) {
+      const row = document.createElement('div');
+      row.className = 'lc';
 
       const left = document.createElement('div');
-      left.className = 'spread-c-left';
+      left.className = 'lc-left';
       left.innerHTML = `
-        <div class="spread-kicker">EGYGRILLZ &nbsp;·&nbsp; Latest</div>
-        <div class="spread-title" style="font-size:clamp(36px,4vw,64px);margin-bottom:16px;">${d.name}</div>
-        ${d.price ? `<div class="spread-price">${d.price}</div>` : ''}
-        ${d.desc ? `<div class="spread-desc">${d.desc}</div>` : ''}`;
+        <div class="spread-kicker">Latest Design</div>
+        <div class="spread-title" style="font-size:clamp(32px,4vw,62px);">${d.name}</div>
+        ${d.price?`<div class="spread-price">${d.price}</div>`:''}
+        ${d.desc?`<div class="spread-desc">${d.desc}</div>`:''}`;
+      row.appendChild(left);
 
       const right = document.createElement('div');
-      right.className = 'spread-c-right';
-      right.style.minHeight = '500px';
-      const imgs = d.images.slice(0, 3);
-      imgs.forEach((img, i) => {
-        const src = `assets/images/latest-designs/${folder}/${img}`;
-        const col = document.createElement('div');
-        col.className = 'spread-c-img';
-        const media = makeMedia(src, d.name);
-        col.appendChild(media);
-        clickable(col, src, isVideo(img));
-        right.appendChild(col);
+      right.className = 'lc-right';
+      d.images.slice(0,3).forEach(f => {
+        right.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
       });
-
-      wrap.appendChild(left); wrap.appendChild(right);
-      return wrap;
+      row.appendChild(right);
+      return row;
     }
 
-    // Layout D — magazine editorial grid
-    function buildD(d, folder, idx) {
+    /* ────────────────────────────────
+       LAYOUT D — editorial header + masonry grid
+    ──────────────────────────────── */
+    function buildD(d, folder) {
       const wrap = document.createElement('div');
-      wrap.className = 'spread-d';
+      wrap.className = 'ld';
 
-      const header = document.createElement('div');
-      header.className = 'spread-d-header';
-      const titleCol = document.createElement('div');
-      titleCol.className = 'spread-d-title-col';
-      titleCol.innerHTML = `
-        <div class="spread-kicker">EGYGRILLZ &nbsp;·&nbsp; Curated Pick</div>
-        <div class="spread-title" style="font-size:clamp(32px,4vw,60px);">${d.name}</div>
-        ${d.price ? `<div class="spread-price">${d.price}</div>` : ''}`;
+      const hdr = document.createElement('div');
+      hdr.className = 'ld-header';
+
+      const tc = document.createElement('div');
+      tc.innerHTML = `
+        <div class="spread-kicker">Curated Piece</div>
+        <div class="spread-title" style="font-size:clamp(30px,4vw,58px);">${d.name}</div>
+        ${d.price?`<div class="spread-price">${d.price}</div>`:''}`;
+      hdr.appendChild(tc);
+
       const rule = document.createElement('div');
-      rule.className = 'spread-d-header-rule';
-      const descCol = document.createElement('div');
-      descCol.className = 'spread-d-desc-col';
-      if (d.desc) descCol.innerHTML = `<div class="spread-desc">${d.desc}</div>`;
+      rule.className = 'ld-rule';
+      hdr.appendChild(rule);
 
-      header.appendChild(titleCol); header.appendChild(rule); header.appendChild(descCol);
-      wrap.appendChild(header);
+      const dc = document.createElement('div');
+      dc.style.display = 'flex'; dc.style.flexDirection = 'column'; dc.style.justifyContent = 'flex-end';
+      if(d.desc) dc.innerHTML = `<div class="spread-desc">${d.desc}</div>`;
+      hdr.appendChild(dc);
+      wrap.appendChild(hdr);
 
-      if (d.images.length > 0) {
-        const grid = document.createElement('div');
-        grid.className = 'spread-d-images';
-        d.images.slice(0, 6).forEach((img, i) => {
-          const src = `assets/images/latest-designs/${folder}/${img}`;
-          const item = document.createElement('div');
-          item.className = 'spread-d-img';
-          const media = makeMedia(src, d.name);
-          item.appendChild(media);
-          clickable(item, src, isVideo(img));
-          grid.appendChild(item);
-        });
-        wrap.appendChild(grid);
-      }
+      const grid = document.createElement('div');
+      grid.className = 'ld-grid';
+      d.images.slice(0,6).forEach(f => {
+        grid.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
+      });
+      wrap.appendChild(grid);
       return wrap;
     }
 
-    /* ── Issue divider ── */
-    function makeDivider(n) {
-      const el = document.createElement('div');
-      el.className = 'issue-divider';
-      el.innerHTML = `
-        <span class="issue-no">No. ${String(n).padStart(2,'0')}</span>
-        <div class="issue-bar"></div>
-        <span class="issue-tag">EGYGRILLZ &nbsp;·&nbsp; 2026</span>`;
-      return el;
-    }
-
-    /* ── MAIN LOAD ── */
+    /* ── MAIN ── */
     const container = document.getElementById('designs-container');
-    const loadingState = document.getElementById('loading-state');
-    const errorState = document.getElementById('error-state');
-    const layouts = [buildA, buildB, buildC, buildD];
+    const loadEl    = document.getElementById('loading-state');
+    const errEl     = document.getElementById('error-state');
+    const layouts   = [buildA, buildB, buildC, buildD];
 
     fetch('assets/images/latest-designs/designs.json')
       .then(r => r.json())
       .then(async names => {
-        if (!Array.isArray(names) || !names.length) throw new Error('empty');
+        if(!Array.isArray(names)||!names.length) throw new Error('empty');
 
-        // Update masthead issue number
-        document.getElementById('masthead-issue-no').textContent =
-          `Issue No. ${names.length} &nbsp;·&nbsp; 2026`;
-
-        loadingState.style.display = 'none';
+        loadEl.style.display = 'none';
         container.style.display = 'block';
 
-        for (let i = 0; i < names.length; i++) {
+        for(let i=0; i<names.length; i++) {
           const folder = names[i];
           try {
             const txt = await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r=>r.text());
             const d = parseInfo(txt);
-            if (!d.images.length) continue;
+            if(!d.images.length) continue;
 
-            // Issue divider before each spread
-            container.appendChild(makeDivider(i + 1));
+            // Thin rule between spreads — no numbers, no text
+            if(i > 0) {
+              const rule = document.createElement('div');
+              rule.className = 'spread-rule';
+              container.appendChild(rule);
+            }
 
-            // Pick layout — cycle through all 4
-            const layoutFn = layouts[i % layouts.length];
             const spread = document.createElement('div');
             spread.className = 'spread';
-            spread.appendChild(layoutFn(d, folder, i));
+            // Auto-cycle through 4 layouts — new uploads just flow in naturally
+            spread.appendChild(layouts[i % layouts.length](d, folder));
             container.appendChild(spread);
             revealObs.observe(spread);
 
@@ -984,8 +556,8 @@
         }
       })
       .catch(() => {
-        loadingState.style.display = 'none';
-        errorState.style.display = 'block';
+        loadEl.style.display = 'none';
+        errEl.style.display = 'block';
       });
   </script>
 </body>
