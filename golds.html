@@ -11,7 +11,7 @@
     body { font-family:'Arimo',sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; }
     body.menu-open, body.modal-open { overflow:hidden; }
 
-    /* ── HEADER ── */
+    /* ── HEADER (UNTOUCHED) ── */
     header { position:sticky; top:0; height:60px; background:#fff; border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; }
     .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; text-decoration:none; color:#000; }
     .main-nav { display:flex; gap:20px; }
@@ -27,113 +27,520 @@
       .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; width:100%; }
     }
 
-    /* ── PAGE HEADER ── */
-    .container { max-width:1800px; margin:0 auto; padding:60px 3% 120px; }
-    .page-header { text-align:center; margin-bottom:64px; }
-    .page-header .eyebrow { display:block; font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:16px; }
-    .page-header h1 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(28px,5vw,64px); letter-spacing:10px; text-transform:uppercase; line-height:1; }
-    .page-header .sub { font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(13px,1.4vw,16px); color:#888; margin-top:14px; letter-spacing:0.5px; }
-    .header-rule { width:36px; height:1px; background:#000; margin:22px auto 0; }
+    /* ══════════════════════════════════════════
+       LV-STYLE PRODUCT SECTION (REDESIGNED)
+    ══════════════════════════════════════════ */
 
-    /* ── GRID: 4 → 3 → 2 → 1 ── */
-    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#eee; }
-    @media(max-width:1100px) { .grid { grid-template-columns:repeat(3,1fr); } }
-    @media(max-width:680px)  { .grid { grid-template-columns:repeat(2,1fr); } }
-    @media(max-width:420px)  { .grid { grid-template-columns:1fr; } }
+    /* ── Breadcrumb ── */
+    .lv-breadcrumb {
+      padding: 14px 40px;
+      font-size: 11px;
+      color: #666;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .lv-breadcrumb a { color: #666; text-decoration: none; }
+    .lv-breadcrumb a:hover { text-decoration: underline; }
+    .lv-breadcrumb span { margin: 0 8px; }
 
-    /* ── CARD ── */
-    .set-card { cursor:pointer; background:#fff; overflow:hidden; display:flex; flex-direction:column; }
-    .set-card:hover .card-img img.active { transform:scale(1.05); }
-    .set-card:hover .card-overlay { opacity:1; }
+    /* ── Category Banner ── */
+    .lv-banner {
+      padding: 40px 40px 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .lv-banner-left h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(22px, 3vw, 36px);
+      letter-spacing: 1px;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .lv-banner-left p {
+      font-size: 13px;
+      color: #555;
+      letter-spacing: 0.3px;
+    }
+    .lv-banner-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .lv-result-count {
+      font-size: 12px;
+      color: #666;
+      letter-spacing: 0.3px;
+    }
 
-    .card-img { position:relative; width:100%; aspect-ratio:3/4; overflow:hidden; background:#f8f8f8; flex-shrink:0; }
-    .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease, transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
-    .card-img img.active { opacity:1; }
+    /* ── Filter / Sort Bar ── */
+    .lv-toolbar {
+      margin: 20px 40px 0;
+      padding: 16px 0;
+      border-top: 1px solid #e8e8e8;
+      border-bottom: 1px solid #e8e8e8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lv-filters {
+      display: flex;
+      gap: 0;
+    }
+    .lv-filter-btn {
+      background: none;
+      border: 1px solid #ccc;
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 9px 20px;
+      cursor: pointer;
+      color: #000;
+      transition: background 0.2s, color 0.2s;
+      border-right: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .lv-filter-btn:last-child { border-right: 1px solid #ccc; }
+    .lv-filter-btn:hover { background: #f5f5f5; }
+    .lv-filter-btn i { font-size: 10px; }
+    .lv-sort {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .lv-sort select {
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      letter-spacing: 1px;
+      border: 1px solid #ccc;
+      padding: 8px 14px;
+      cursor: pointer;
+      background: #fff;
+      color: #000;
+      text-transform: uppercase;
+      -webkit-appearance: none;
+      appearance: none;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23000'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 8px;
+    }
 
-    .card-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.22); opacity:0; transition:opacity 0.3s; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-    .card-overlay span { color:#fff; font-size:8px; letter-spacing:3px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.8); padding:9px 16px; }
+    /* ── Grid ── */
+    .lv-main {
+      padding: 0 40px 80px;
+    }
+    .lv-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 24px;
+    }
+    @media(max-width:1200px) { .lv-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media(max-width:768px)  { .lv-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width:420px)  { .lv-grid { grid-template-columns: 1fr; } }
 
-    .card-body { padding:14px 16px 18px; border-top:1px solid #eee; flex:1; }
-    .card-body .name { font-family:'Playfair Display',serif; font-weight:400; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:4px; line-height:1.3; }
-    .card-body .price { font-size:11px; font-weight:700; letter-spacing:0.5px; }
+    /* ── Product Card ── */
+    .lv-card {
+      cursor: pointer;
+      background: #fff;
+      position: relative;
+      border: 1px solid transparent;
+      transition: border-color 0.25s;
+      padding-bottom: 4px;
+    }
+    .lv-card:hover { border-color: #e0e0e0; }
 
+    /* Wishlist heart */
+    .lv-card-wish {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 5;
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .lv-card:hover .lv-card-wish { opacity: 1; }
+    .lv-card-wish i { font-size: 14px; color: #000; }
+
+    /* New badge */
+    .lv-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 5;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      background: #000;
+      color: #fff;
+      padding: 3px 8px;
+    }
+
+    /* Image area */
+    .lv-card-img {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: #f5f5f5;
+    }
+    .lv-card-img img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.9s ease, transform 0.6s ease;
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+    .lv-card-img img.active { opacity: 1; }
+    .lv-card:hover .lv-card-img img.active { transform: scale(1.04); }
+
+    /* Hover overlay CTA */
+    .lv-card-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.72);
+      color: #fff;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 12px;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+    }
+    .lv-card:hover .lv-card-overlay { opacity: 1; transform: translateY(0); }
+
+    /* Image dots (hover) */
+    .lv-img-dots {
+      position: absolute;
+      bottom: 42px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .lv-card:hover .lv-img-dots { opacity: 1; }
+    .lv-img-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+    }
+    .lv-img-dot.active { background: #fff; }
+
+    /* Card body */
+    .lv-card-body {
+      padding: 14px 14px 16px;
+    }
+    .lv-card-tag {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 5px;
+    }
+    .lv-card-name {
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      color: #000;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    .lv-card-colors {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .lv-card-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+    }
+    .lv-card-color.active-swatch { border-color: #000; }
+    .lv-card-price {
+      font-size: 13px;
+      font-weight: 400;
+      color: #000;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── MODAL (LV-style) ── */
+    .lv-modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      padding: 20px;
+    }
+    .lv-modal-bg.open { opacity: 1; pointer-events: all; }
+
+    .lv-modal {
+      background: #fff;
+      width: 100%;
+      max-width: 1000px;
+      max-height: 92vh;
+      display: flex;
+      transform: translateY(24px);
+      transition: transform 0.38s cubic-bezier(0.22,1,0.36,1);
+      overflow: hidden;
+    }
+    .lv-modal-bg.open .lv-modal { transform: translateY(0); }
+
+    /* Left: image gallery */
+    .lv-modal-gallery {
+      flex: 0 0 58%;
+      background: #f5f5f5;
+      position: relative;
+      overflow: hidden;
+    }
+    .lv-modal-main-img {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      position: relative;
+    }
+    .lv-modal-slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.45s;
+    }
+    .lv-modal-slide.active { opacity: 1; }
+    .lv-modal-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+
+    /* Thumbnail strip */
+    .lv-modal-thumbs {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+    .lv-modal-thumb {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      cursor: pointer;
+      opacity: 0.55;
+      border: 1.5px solid transparent;
+      transition: opacity 0.2s, border-color 0.2s;
+      -webkit-user-drag: none;
+    }
+    .lv-modal-thumb.active { opacity: 1; border-color: #000; }
+
+    .lv-modal-arrow {
+      position: absolute;
+      bottom: 20px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #ddd;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      color: #000;
+      transition: background 0.2s;
+      z-index: 10;
+    }
+    .lv-modal-arrow:hover { background: #fff; }
+    .lv-modal-prev-btn { right: 56px; }
+    .lv-modal-next-btn { right: 16px; }
+
+    /* Right: product info */
+    .lv-modal-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 36px 28px;
+      overflow-y: auto;
+    }
+    .lv-modal-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .lv-modal-cat {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #888;
+    }
+    .lv-modal-close-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: #000;
+      line-height: 1;
+      padding: 0 0 0 12px;
+      transition: color 0.2s;
+    }
+    .lv-modal-close-btn:hover { color: #666; }
+
+    .lv-modal-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(18px, 2.2vw, 26px);
+      letter-spacing: 0.5px;
+      line-height: 1.25;
+      margin-bottom: 18px;
+    }
+
+    .lv-modal-price-row {
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    .lv-modal-desc {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.85;
+      margin-bottom: 24px;
+      flex: 1;
+    }
+
+    .lv-modal-features {
+      margin-bottom: 24px;
+    }
+    .lv-modal-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 12px;
+      color: #444;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      letter-spacing: 0.2px;
+    }
+    .lv-modal-feature i {
+      font-size: 11px;
+      margin-top: 3px;
+      color: #999;
+      flex-shrink: 0;
+    }
+
+    .lv-modal-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lv-btn-primary {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: #000;
+      color: #fff;
+      text-decoration: none;
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 16px 20px;
+      border: 1px solid #000;
+      transition: background 0.25s, color 0.25s;
+      cursor: pointer;
+    }
+    .lv-btn-primary:hover { background: #fff; color: #000; }
+    .lv-btn-secondary {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: #fff;
+      color: #000;
+      text-decoration: none;
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 15px 20px;
+      border: 1px solid #000;
+      transition: background 0.25s, color 0.25s;
+      cursor: pointer;
+    }
+    .lv-btn-secondary:hover { background: #000; color: #fff; }
+
+    .lv-modal-counter {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #aaa;
+      text-transform: uppercase;
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    /* Mobile */
     @media(max-width:680px) {
-      .card-body { padding:10px 12px 14px; }
-      .card-body .name { font-size:12px; letter-spacing:1px; }
-      .card-body .price { font-size:10px; }
+      .lv-breadcrumb, .lv-banner, .lv-toolbar, .lv-main { padding-left: 16px; padding-right: 16px; }
+      .lv-banner { padding-top: 24px; }
+      .lv-toolbar { margin-left: 16px; margin-right: 16px; }
+      .lv-modal-bg { padding: 0; align-items: flex-end; }
+      .lv-modal { flex-direction: column; max-height: 94dvh; max-width: 100%; transform: translateY(50px); }
+      .lv-modal-gallery { flex: 0 0 auto; }
+      .lv-modal-main-img { min-height: 60vw; }
+      .lv-modal-thumbs { display: none; }
+      .lv-modal-info { padding: 20px 18px 28px; }
+      .lv-modal-btns { flex-direction: row; }
+      .lv-btn-primary, .lv-btn-secondary { flex: 1; font-size: 10px; padding: 13px 8px; }
     }
 
-    /* ── MODAL ── */
-    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; padding:20px; }
-    .modal-bg.open { opacity:1; pointer-events:all; }
-
-    .modal { background:#fff; width:100%; max-width:960px; max-height:90vh; display:flex; flex-direction:row; transform:translateY(28px); transition:transform 0.38s cubic-bezier(0.22,1,0.36,1); overflow:hidden; }
-    .modal-bg.open .modal { transform:translateY(0); }
-
-    /* Image side */
-    .modal-left { position:relative; flex:0 0 55%; overflow:hidden; background:#f8f8f8; }
-    .modal-slides { position:relative; width:100%; height:100%; min-height:440px; }
-    .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s; }
-    .modal-slide.active { opacity:1; }
-    .modal-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
-
-    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.88); border:none; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:#000; transition:background 0.2s; }
-    .modal-arrow:hover { background:#fff; }
-    .modal-prev { left:14px; }
-    .modal-next { right:14px; }
-
-    .modal-dots { position:absolute; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:7px; }
-    .modal-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.4); border:none; cursor:pointer; transition:background 0.2s; padding:0; }
-    .modal-dot.active { background:#fff; }
-
-    /* Info side */
-    .modal-right { flex:1; display:flex; flex-direction:column; padding:36px 32px 32px; overflow-y:auto; }
-    .modal-close { align-self:flex-end; background:none; border:none; font-size:18px; cursor:pointer; color:#000; margin-bottom:20px; padding:4px; line-height:1; transition:color 0.2s; }
-    .modal-close:hover { color:#666; }
-
-    .modal-eyebrow { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:12px; }
-    .modal-name { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.4vw,28px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:16px; }
-    .modal-rule { width:32px; height:1px; background:#eee; margin-bottom:16px; }
-    .modal-desc { font-size:13px; color:#666; line-height:1.8; margin-bottom:20px; flex:1; }
-    .modal-price { font-size:16px; font-weight:700; letter-spacing:1px; padding-top:18px; border-top:1px solid #eee; margin-bottom:18px; }
-
-    /* ── TWO CTA BUTTONS ── */
-    .modal-actions { display:flex; flex-direction:column; gap:10px; }
-
-    .modal-cta-primary {
-      display:block; width:100%; text-align:center;
-      background:#000; color:#fff;
-      text-decoration:none; font-family:'Arimo',sans-serif;
-      font-size:10px; letter-spacing:3px; text-transform:uppercase;
-      padding:15px 20px; border:1px solid #000;
-      transition:background 0.25s, color 0.25s;
-    }
-    .modal-cta-primary:hover { background:#fff; color:#000; }
-
-    .modal-cta-secondary {
-      display:block; width:100%; text-align:center;
-      background:#fff; color:#000;
-      text-decoration:none; font-family:'Arimo',sans-serif;
-      font-size:10px; letter-spacing:3px; text-transform:uppercase;
-      padding:14px 20px; border:1px solid #000;
-      transition:background 0.25s, color 0.25s;
-    }
-    .modal-cta-secondary:hover { background:#000; color:#fff; }
-
-    .modal-counter { font-size:9px; letter-spacing:2px; color:#999; margin-top:14px; text-transform:uppercase; }
-
-    /* Mobile: bottom sheet */
-    @media(max-width:680px) {
-      .modal-bg { padding:0; align-items:flex-end; }
-      .modal { flex-direction:column; max-height:94dvh; max-width:100%; transform:translateY(60px); }
-      .modal-bg.open .modal { transform:translateY(0); }
-      .modal-slides { min-height:60vw; }
-      .modal-right { padding:20px 18px 30px; }
-      .modal-actions { flex-direction:row; }
-      .modal-cta-primary, .modal-cta-secondary { flex:1; font-size:9px; padding:13px 8px; letter-spacing:2px; }
-    }
-
-    /* ── FOOTER ── */
+    /* ── FOOTER (UNTOUCHED) ── */
     footer { background:#000; color:#fff; padding:50px 5% 20px; margin-top:80px; }
     .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
     .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
@@ -155,6 +562,7 @@
 </head>
 <body oncontextmenu="return false;">
 
+  <!-- ══ HEADER (UNTOUCHED) ══ -->
   <header>
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -171,41 +579,90 @@
     </nav>
   </header>
 
-  <div class="container">
-    <div class="page-header">
-      <span class="eyebrow">EGYGRILLZ Collection</span>
-      <h1>Gold</h1>
-      <p class="sub">Premium 18K and 21K solid gold, handcrafted to perfection.</p>
-      <div class="header-rule"></div>
-    </div>
-    <div class="grid" id="golds-container"></div>
+  <!-- ══ LV-STYLE PRODUCT SECTION ══ -->
+
+  <!-- Breadcrumb -->
+  <div class="lv-breadcrumb">
+    <a href="index.html">Home</a>
+    <span>›</span>
+    <a href="#">Collections</a>
+    <span>›</span>
+    Gold
   </div>
 
-  <!-- MODAL -->
-  <div class="modal-bg" id="modal-bg">
-    <div class="modal">
-      <div class="modal-left">
-        <div class="modal-slides" id="modal-slides"></div>
-        <button class="modal-arrow modal-prev" id="modal-prev">&#8592;</button>
-        <button class="modal-arrow modal-next" id="modal-next">&#8594;</button>
-        <div class="modal-dots" id="modal-dots"></div>
+  <!-- Banner -->
+  <div class="lv-banner">
+    <div class="lv-banner-left">
+      <h1>Gold Collection</h1>
+      <p>Premium 18K and 21K solid gold, handcrafted to perfection.</p>
+    </div>
+    <div class="lv-banner-right">
+      <span class="lv-result-count" id="lv-count">Loading…</span>
+    </div>
+  </div>
+
+  <!-- Filter / Sort toolbar -->
+  <div class="lv-toolbar">
+    <div class="lv-filters">
+      <button class="lv-filter-btn"><i class="fas fa-sliders-h"></i> Filter</button>
+      <button class="lv-filter-btn">Karat <i class="fas fa-chevron-down"></i></button>
+      <button class="lv-filter-btn">Style <i class="fas fa-chevron-down"></i></button>
+    </div>
+    <div class="lv-sort">
+      <span>Sort by</span>
+      <select id="lv-sort-select">
+        <option>Featured</option>
+        <option>Price: Low to High</option>
+        <option>Price: High to Low</option>
+        <option>Newest</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="lv-main">
+    <div class="lv-grid" id="golds-container"></div>
+  </div>
+
+  <!-- ══ MODAL ══ -->
+  <div class="lv-modal-bg" id="lv-modal-bg">
+    <div class="lv-modal">
+
+      <!-- Left: image gallery -->
+      <div class="lv-modal-gallery">
+        <div class="lv-modal-main-img" id="lv-modal-slides"></div>
+        <div class="lv-modal-thumbs" id="lv-modal-thumbs"></div>
+        <button class="lv-modal-arrow lv-modal-prev-btn" id="lv-modal-prev">&#8592;</button>
+        <button class="lv-modal-arrow lv-modal-next-btn" id="lv-modal-next">&#8594;</button>
       </div>
-      <div class="modal-right">
-        <button class="modal-close" id="modal-close">&#x2715;</button>
-        <div class="modal-eyebrow">Gold Collection</div>
-        <div class="modal-name" id="modal-name"></div>
-        <div class="modal-rule"></div>
-        <div class="modal-desc" id="modal-desc"></div>
-        <div class="modal-price" id="modal-price"></div>
-        <div class="modal-actions">
-          <a href="booking.html" class="modal-cta-primary">Schedule an Appointment</a>
-          <a href="contact.html" class="modal-cta-secondary">Contact Us</a>
+
+      <!-- Right: product info -->
+      <div class="lv-modal-info">
+        <div class="lv-modal-top">
+          <div class="lv-modal-cat">Gold Collection</div>
+          <button class="lv-modal-close-btn" id="lv-modal-close">&#x2715;</button>
         </div>
-        <div class="modal-counter" id="modal-counter"></div>
+        <div class="lv-modal-title" id="lv-modal-name"></div>
+        <div class="lv-modal-price-row" id="lv-modal-price"></div>
+        <div class="lv-modal-desc" id="lv-modal-desc"></div>
+
+        <div class="lv-modal-features">
+          <div class="lv-modal-feature"><i class="fas fa-certificate"></i> Solid 18K / 21K gold — not plated</div>
+          <div class="lv-modal-feature"><i class="fas fa-ruler"></i> Custom fitted to your exact dental mold</div>
+          <div class="lv-modal-feature"><i class="fas fa-shield-alt"></i> Lifetime polish &amp; care guarantee</div>
+        </div>
+
+        <div class="lv-modal-btns">
+          <a href="booking.html" class="lv-btn-primary">Schedule an Appointment</a>
+          <a href="contact.html" class="lv-btn-secondary">Contact Us</a>
+        </div>
+        <div class="lv-modal-counter" id="lv-modal-counter"></div>
       </div>
+
     </div>
   </div>
 
+  <!-- ══ FOOTER (UNTOUCHED) ══ -->
   <footer>
     <div class="footer-main">
       <div class="footer-col">
@@ -222,7 +679,7 @@
         <h4>Legal</h4>
         <a href="privacy.html">Privacy Policy</a>
         <a href="terms.html">Terms of Service</a>
-        <a href="shipping.html">Care & Shipping</a>
+        <a href="shipping.html">Care &amp; Shipping</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -237,18 +694,20 @@
   </footer>
 
   <script>
+    /* ── Mobile nav ── */
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
 
+    /* ── Parse info.txt ── */
     function parseInfo(text) {
-      let name='',desc='',price='',images=[];
+      let name='', desc='', price='', images=[];
       text.split('\n').forEach(line => {
-        line=line.replace(/\r/g,'').trim();
-        const ci=line.indexOf(':'); if(ci===-1)return;
-        const key=line.slice(0,ci).trim().toLowerCase();
-        const val=line.slice(ci+1).trim();
+        line = line.replace(/\r/g,'').trim();
+        const ci = line.indexOf(':'); if(ci === -1) return;
+        const key = line.slice(0,ci).trim().toLowerCase();
+        const val = line.slice(ci+1).trim();
         if(key==='name'||key==='title') name=val;
         else if(key==='description'||key==='desc') desc=val;
         else if(key==='price') price=val;
@@ -257,86 +716,147 @@
       return {name,desc,price,images};
     }
 
-    const modalBg    = document.getElementById('modal-bg');
-    const modalSlides= document.getElementById('modal-slides');
-    const modalDots  = document.getElementById('modal-dots');
-    const modalName  = document.getElementById('modal-name');
-    const modalDesc  = document.getElementById('modal-desc');
-    const modalPrice = document.getElementById('modal-price');
-    const modalCtr   = document.getElementById('modal-counter');
+    /* ── Modal state ── */
+    const modalBg     = document.getElementById('lv-modal-bg');
+    const modalSlides = document.getElementById('lv-modal-slides');
+    const modalThumbs = document.getElementById('lv-modal-thumbs');
+    const modalName   = document.getElementById('lv-modal-name');
+    const modalDesc   = document.getElementById('lv-modal-desc');
+    const modalPrice  = document.getElementById('lv-modal-price');
+    const modalCtr    = document.getElementById('lv-modal-counter');
     let mCur=0, mTot=0;
 
-    function openModal({name,desc,price,images}){
+    function openModal({name,desc,price,images}) {
       modalName.textContent  = name;
       modalDesc.textContent  = desc;
       modalPrice.textContent = price;
       modalSlides.innerHTML  = '';
-      modalDots.innerHTML    = '';
+      modalThumbs.innerHTML  = '';
       mCur=0; mTot=images.length;
-      images.forEach((src,i)=>{
-        const s=document.createElement('div');
-        s.className='modal-slide'+(i===0?' active':'');
-        s.innerHTML=`<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'}">`;
+
+      images.forEach((src,i) => {
+        // Slide
+        const s = document.createElement('div');
+        s.className = 'lv-modal-slide' + (i===0?' active':'');
+        s.innerHTML = `<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'}">`;
         modalSlides.appendChild(s);
-        const d=document.createElement('button');
-        d.className='modal-dot'+(i===0?' active':'');
-        d.addEventListener('click',()=>goTo(i));
-        modalDots.appendChild(d);
+
+        // Thumbnail
+        const t = document.createElement('img');
+        t.className = 'lv-modal-thumb' + (i===0?' active':'');
+        t.src = src;
+        t.draggable = false;
+        t.loading = 'lazy';
+        t.addEventListener('click', () => goTo(i));
+        modalThumbs.appendChild(t);
       });
+
       updateCtr();
       modalBg.classList.add('open');
       document.body.classList.add('modal-open');
     }
 
-    function goTo(idx){
-      modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active');
-      modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active');
-      mCur=(idx+mTot)%mTot;
-      modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active');
-      modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active');
+    function goTo(idx) {
+      modalSlides.querySelectorAll('.lv-modal-slide')[mCur].classList.remove('active');
+      modalThumbs.querySelectorAll('.lv-modal-thumb')[mCur].classList.remove('active');
+      mCur = (idx + mTot) % mTot;
+      modalSlides.querySelectorAll('.lv-modal-slide')[mCur].classList.add('active');
+      modalThumbs.querySelectorAll('.lv-modal-thumb')[mCur].classList.add('active');
       updateCtr();
     }
-    function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
-    function closeModal(){ modalBg.classList.remove('open'); document.body.classList.remove('modal-open'); }
+    function updateCtr() { modalCtr.textContent = mTot > 1 ? `${mCur+1} / ${mTot}` : ''; }
+    function closeModal() { modalBg.classList.remove('open'); document.body.classList.remove('modal-open'); }
 
-    document.getElementById('modal-prev').addEventListener('click',()=>goTo(mCur-1));
-    document.getElementById('modal-next').addEventListener('click',()=>goTo(mCur+1));
-    document.getElementById('modal-close').addEventListener('click',closeModal);
-    modalBg.addEventListener('click',e=>{ if(e.target===modalBg)closeModal(); });
-    document.addEventListener('keydown',e=>{
-      if(!modalBg.classList.contains('open'))return;
-      if(e.key==='Escape')closeModal();
-      if(e.key==='ArrowLeft')goTo(mCur-1);
-      if(e.key==='ArrowRight')goTo(mCur+1);
+    document.getElementById('lv-modal-prev').addEventListener('click', () => goTo(mCur-1));
+    document.getElementById('lv-modal-next').addEventListener('click', () => goTo(mCur+1));
+    document.getElementById('lv-modal-close').addEventListener('click', closeModal);
+    modalBg.addEventListener('click', e => { if(e.target===modalBg) closeModal(); });
+    document.addEventListener('keydown', e => {
+      if(!modalBg.classList.contains('open')) return;
+      if(e.key==='Escape') closeModal();
+      if(e.key==='ArrowLeft') goTo(mCur-1);
+      if(e.key==='ArrowRight') goTo(mCur+1);
     });
 
-    const base='assets/images/golds';
-    fetch(`${base}/golds.json`).then(r=>r.json()).then(folders=>{
-      const ct=document.getElementById('golds-container');
-      folders.forEach(folder=>{
-        fetch(`${base}/${folder}/info.txt`)
-          .then(r=>{ if(!r.ok)throw 0; return r.text(); })
-          .then(text=>{
-            const {name,desc,price,images}=parseInfo(text);
-            const full=images.map(img=>`${base}/${folder}/${img}`);
-            const card=document.createElement('div');
-            card.className='set-card';
-            card.innerHTML=`
-              <div class="card-img">
-                ${full.map((s,i)=>`<img src="${s}" class="${i===0?'active':''}" draggable="false" loading="${i===0?'eager':'lazy'}">`).join('')}
-                <div class="card-overlay"><span>View Details</span></div>
-              </div>
-              <div class="card-body">
-                <div class="name">${name||folder}</div>
-                <div class="price">${price}</div>
-              </div>`;
-            ct.appendChild(card);
-            let c=0; const imgs=card.querySelectorAll('.card-img img');
-            if(imgs.length>1) setInterval(()=>{ imgs[c].classList.remove('active'); c=(c+1)%imgs.length; imgs[c].classList.add('active'); },3500);
-            card.addEventListener('click',()=>openModal({name,desc,price,images:full}));
-          }).catch(e=>console.warn('Could not load',folder,e));
-      });
-    }).catch(e=>console.error(e));
+    /* ── Load products ── */
+    const base = 'assets/images/golds';
+    let allCards = [];
+
+    fetch(`${base}/golds.json`)
+      .then(r => r.json())
+      .then(folders => {
+        const ct = document.getElementById('golds-container');
+        const countEl = document.getElementById('lv-count');
+        let loaded = 0;
+
+        folders.forEach((folder, fi) => {
+          fetch(`${base}/${folder}/info.txt`)
+            .then(r => { if(!r.ok) throw 0; return r.text(); })
+            .then(text => {
+              const {name,desc,price,images} = parseInfo(text);
+              const full = images.map(img => `${base}/${folder}/${img}`);
+
+              /* Build card */
+              const card = document.createElement('div');
+              card.className = 'lv-card';
+              card.dataset.name = name;
+              card.dataset.price = price;
+
+              // Dot indicators (for multi-image cards)
+              const dotsHtml = full.length > 1
+                ? `<div class="lv-img-dots">${full.map((_,i)=>`<div class="lv-img-dot${i===0?' active':''}"></div>`).join('')}</div>`
+                : '';
+
+              card.innerHTML = `
+                ${fi < 3 ? '<span class="lv-badge">New</span>' : ''}
+                <button class="lv-card-wish" aria-label="Wishlist"><i class="far fa-heart"></i></button>
+                <div class="lv-card-img">
+                  ${full.map((s,i)=>`<img src="${s}" class="${i===0?'active':''}" draggable="false" loading="${i===0?'eager':'lazy'}">`).join('')}
+                  <div class="lv-card-overlay">View Details</div>
+                  ${dotsHtml}
+                </div>
+                <div class="lv-card-body">
+                  <div class="lv-card-tag">EGYGRILLZ</div>
+                  <div class="lv-card-name">${name||folder}</div>
+                  <div class="lv-card-price">${price}</div>
+                </div>`;
+
+              ct.appendChild(card);
+              allCards.push(card);
+
+              /* Slideshow on card */
+              let c = 0;
+              const imgs = card.querySelectorAll('.lv-card-img img');
+              const dots = card.querySelectorAll('.lv-img-dot');
+              if(imgs.length > 1) {
+                setInterval(() => {
+                  imgs[c].classList.remove('active');
+                  if(dots[c]) dots[c].classList.remove('active');
+                  c = (c+1) % imgs.length;
+                  imgs[c].classList.add('active');
+                  if(dots[c]) dots[c].classList.add('active');
+                }, 3500);
+              }
+
+              /* Wishlist toggle */
+              card.querySelector('.lv-card-wish').addEventListener('click', e => {
+                e.stopPropagation();
+                const icon = e.currentTarget.querySelector('i');
+                icon.classList.toggle('far');
+                icon.classList.toggle('fas');
+              });
+
+              /* Open modal */
+              card.addEventListener('click', () => openModal({name,desc,price,images:full}));
+
+              loaded++;
+              countEl.textContent = `${loaded} item${loaded!==1?'s':''}`;
+            })
+            .catch(e => console.warn('Could not load', folder, e));
+        });
+      })
+      .catch(e => console.error(e));
   </script>
+
 </body>
 </html>
