@@ -47,85 +47,58 @@
     .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; background:none; border:none; box-shadow:none; padding:0; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
 
     /* ══════════════════════════════
-       HERO
+       HERO (SIMPLE DESIGN)
     ══════════════════════════════ */
-    .lv-hero { position:relative; width:100%; height:100vh; min-height:500px; overflow:hidden; background:#111; }
-    .lv-hero-slide { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1.6s ease; transform:scale(1.04); }
-    .lv-hero-slide.active { opacity:0.82; animation:slowZoom 12s linear forwards; }
-    @keyframes slowZoom { from{transform:scale(1.04);}to{transform:scale(1);} }
-    .lv-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,transparent 38%,rgba(0,0,0,0.62) 100%); z-index:2; }
-    .lv-hero-content { position:absolute; z-index:10; bottom:10%; left:0; right:0; text-align:center; color:#fff; padding:0 20px; }
-    .lv-hero-eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:14px; opacity:0; animation:fadeUp 1s 0.4s forwards; }
-    .lv-hero-title { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(32px,6vw,72px); letter-spacing:4px; text-transform:uppercase; line-height:1.08; margin-bottom:22px; opacity:0; animation:fadeUp 1s 0.7s forwards; }
-    .lv-hero-cta { display:inline-block; color:#fff; font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.6); padding-bottom:3px; transition:border-color 0.3s,letter-spacing 0.3s; opacity:0; animation:fadeUp 1s 1s forwards; }
-    .lv-hero-cta:hover { border-color:#fff; letter-spacing:4px; }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);} }
-    .lv-hero-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:20; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:background 0.2s; backdrop-filter:blur(4px); }
-    .lv-hero-arrow:hover { background:rgba(255,255,255,0.22); }
-    .lv-hero-prev { left:24px; } .lv-hero-next { right:24px; }
-    @media(max-width:480px) { .lv-hero-prev{left:10px;} .lv-hero-next{right:10px;} .lv-hero-arrow{width:36px;height:36px;font-size:12px;} }
-    .lv-hero-dots { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:8px; }
-    .lv-hero-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.35); border:none; cursor:pointer; transition:background 0.3s,transform 0.3s; }
-    .lv-hero-dot.active { background:#fff; transform:scale(1.2); }
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.7;
+      transform: scale(1.05);
+      animation: heroZoom 10s infinite alternate linear;
+    }
+    @keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.1); } }
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      color: #fff;
+    }
+    .hero-content h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(30px, 7vw, 60px);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 15px;
+    }
+    .hero-schedule-btn {
+      color: #fff; 
+      text-decoration: underline; 
+      text-underline-offset: 5px; 
+      text-transform: uppercase;
+      font-weight: 700; 
+      font-size: 11px; 
+      letter-spacing: 2px; 
+      transition: 0.3s ease;
+    }
+    .hero-schedule-btn:hover { opacity: 0.8; letter-spacing: 3px; }
 
     /* ══════════════════════════════
        SECTION INTRO
     ══════════════════════════════ */
-
-    /* ══════════════════════════════
-       SCHEDULE BAND
-    ══════════════════════════════ */
-    .schedule-band {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 52px 8%;
-      border-top: 1px solid #ebebeb;
-      border-bottom: 1px solid #ebebeb;
-      gap: 40px;
-    }
-    .schedule-band-text .eyebrow {
-      font-size: 8px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      color: #999;
-      margin-bottom: 10px;
-    }
-    .schedule-band-text h2 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(20px, 2.8vw, 32px);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      line-height: 1.2;
-      color: #000;
-    }
-    .schedule-band-text p {
-      font-size: 13px;
-      color: #888;
-      margin-top: 10px;
-      max-width: 380px;
-      line-height: 1.7;
-    }
-    .schedule-band-btn {
-      display: inline-block;
-      flex-shrink: 0;
-      font-size: 10px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      border: 1px solid #000;
-      padding: 16px 44px;
-      color: #000;
-      transition: background 0.28s, color 0.28s;
-      white-space: nowrap;
-    }
-    .schedule-band-btn:hover { background: #000; color: #fff; }
-    @media(max-width: 680px) {
-      .schedule-band { flex-direction: column; align-items: flex-start; padding: 44px 6%; gap: 28px; }
-      .schedule-band-btn { align-self: flex-start; }
-    }
-
-    .lv-section-intro { text-align:center; padding:100px 20px 48px; }
+    .lv-section-intro { text-align:center; padding:120px 20px 60px; }
     .lv-section-intro .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:12px; }
     .lv-section-intro h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,3vw,34px); letter-spacing:3px; text-transform:uppercase; }
     .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:18px auto 0; }
@@ -154,7 +127,7 @@
        LV-STYLE CATEGORY PRODUCT ROWS
     ══════════════════════════════ */
     .cat-row-section {
-      padding: 64px 0 80px;
+      padding: 100px 0;
       border-bottom: 1px solid #f0f0f0;
     }
     .cat-row-section:last-of-type { border-bottom: none; }
@@ -164,7 +137,7 @@
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
-      padding: 0 40px 28px;
+      padding: 0 80px 28px;
     }
     .cat-row-header-left {}
     .cat-row-header-eyebrow {
@@ -211,7 +184,7 @@
       display: flex;
       gap: 12px;
       overflow-x: auto;
-      padding: 0 40px 20px;
+      padding: 0 80px 20px;
       scrollbar-width: none;
       -ms-overflow-style: none;
       cursor: grab;
@@ -264,8 +237,8 @@
     .lv-prod-price { font-size:12px; font-weight:700; color:#000; }
 
     @media(max-width:480px) {
-      .cat-row-header { padding: 0 16px 20px; }
-      .cat-row-strip { padding: 0 16px 20px; }
+      .cat-row-header { padding: 0 20px 20px; }
+      .cat-row-strip { padding: 0 20px 20px; }
       .lv-prod-card { flex: 0 0 150px; }
       .lv-prod-card:first-child { flex: 0 0 150px; }
     }
@@ -273,13 +246,13 @@
     /* ══════════════════════════════
        LATEST DESIGNS STRIP
     ══════════════════════════════ */
-    .lv-strip-section { padding:100px 0 0; }
-    .lv-new-strip-wrap { padding:0 0 0 40px; overflow:hidden; }
-    .lv-new-strip-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 22px 0; }
+    .lv-strip-section { padding:120px 0 0; }
+    .lv-new-strip-wrap { padding:0 0 0 80px; overflow:hidden; }
+    .lv-new-strip-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 22px 0; }
     .lv-new-strip-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; }
     .lv-new-strip-header a { font-size:9px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; }
     .lv-new-strip-header a:hover { opacity:0.6; }
-    .lv-new-strip { display:flex; gap:12px; overflow-x:auto; padding-right:40px; padding-bottom:20px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
+    .lv-new-strip { display:flex; gap:12px; overflow-x:auto; padding-right:80px; padding-bottom:20px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
     .lv-new-strip:active { cursor:grabbing; }
     .lv-new-strip::-webkit-scrollbar { display:none; }
     .lv-new-card { flex:0 0 220px; cursor:pointer; }
@@ -290,94 +263,90 @@
     .lv-new-card-name { font-size:13px; margin-bottom:3px; line-height:1.35; }
     .lv-new-card-price { font-size:12px; font-weight:700; }
     @media(max-width:480px) {
-      .lv-new-strip-wrap { padding-left:16px; }
-      .lv-new-strip-header { padding-right:16px; }
-      .lv-new-strip { padding-right:16px; }
+      .lv-new-strip-wrap { padding-left:20px; }
+      .lv-new-strip-header { padding-right:20px; }
+      .lv-new-strip { padding-right:20px; }
       .lv-new-card { flex:0 0 150px; }
     }
 
     /* ══════════════════════════════
        GALLERY SECTION
     ══════════════════════════════ */
-    .lv-gallery-section { background:#f0f0f0; margin-top:100px; padding:72px 0 80px; }
-    .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 36px; }
+    .lv-gallery-section { background:#f0f0f0; margin-top:120px; padding:80px 0 100px; }
+    .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 36px; }
     .lv-gallery-head-left .eyebrow-dark { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:8px; }
     .lv-gallery-head-left h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.8vw,32px); letter-spacing:3px; text-transform:uppercase; color:#000; }
     .lv-gallery-head a { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#555; border-bottom:1px solid #aaa; padding-bottom:2px; transition:color 0.2s,border-color 0.2s; }
     .lv-gallery-head a:hover { color:#000; border-color:#000; }
-    .lv-gal-scroll { display:flex; gap:3px; overflow-x:auto; padding:0 40px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
+    .lv-gal-scroll { display:flex; gap:12px; overflow-x:auto; padding:0 80px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
     .lv-gal-scroll:active { cursor:grabbing; }
     .lv-gal-scroll::-webkit-scrollbar { display:none; }
-    .lv-gal-card { flex:0 0 320px; position:relative; overflow:hidden; background:#ccc; cursor:pointer; aspect-ratio:4/3; }
-    .lv-gal-card:first-child { flex:0 0 480px; }
-    @media(max-width:680px) { .lv-gal-card{flex:0 0 240px;} .lv-gal-card:first-child{flex:0 0 300px;} }
-    .lv-gal-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:1; transition:opacity 0.5s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
-    .lv-gal-card:hover img { transform:scale(1.06); }
-
-    /* Overlay — always visible, darkens slightly on hover */
-    .lv-gal-overlay {
-      position:absolute; inset:0; z-index:2;
-      background:linear-gradient(
-        to bottom,
-        rgba(0,0,0,0.45) 0%,
-        transparent 38%,
-        transparent 52%,
-        rgba(0,0,0,0.55) 100%
-      );
-      transition:background 0.4s ease;
+    .lv-gal-card { 
+      flex:0 0 320px; 
+      position:relative; 
+      overflow:hidden; 
+      background:#fff; 
+      cursor:pointer; 
     }
-    .lv-gal-card:hover .lv-gal-overlay {
-      background:linear-gradient(
-        to bottom,
-        rgba(0,0,0,0.55) 0%,
-        transparent 38%,
-        transparent 50%,
-        rgba(0,0,0,0.65) 100%
-      );
+    .lv-gal-card:first-child { flex:0 0 400px; }
+    @media(max-width:680px) { .lv-gal-card{flex:0 0 240px;} .lv-gal-card:first-child{flex:0 0 280px;} }
+    
+    .lv-gal-card-img {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: #ccc;
+      overflow: hidden;
     }
+    .lv-gal-card-img img { 
+      position:absolute; 
+      inset:0; 
+      width:100%; 
+      height:100%; 
+      object-fit:cover; 
+      transition:transform 0.7s ease; 
+      pointer-events:none; 
+      -webkit-user-drag:none; 
+    }
+    .lv-gal-card:hover .lv-gal-card-img img { transform:scale(1.06); }
 
-    /* Name — top center */
+    /* Card info below image */
+    .lv-gal-card-info {
+      padding: 16px;
+      background: #fff;
+    }
     .gc-name {
-      position:absolute; top:0; left:0; right:0;
-      z-index:3;
-      padding:16px 16px 0;
-      text-align:center;
       font-family:'Playfair Display',serif;
-      font-size:clamp(11px,1.1vw,15px);
+      font-size: 16px;
       font-weight:400;
-      letter-spacing:2px;
+      letter-spacing:1px;
       text-transform:uppercase;
-      color:#fff;
-      text-shadow:0 1px 6px rgba(0,0,0,0.4);
+      color:#000;
+      margin-bottom: 8px;
     }
-
-    /* Desc — bottom left */
     .gc-desc {
-      position:absolute; bottom:0; left:0;
-      z-index:3;
-      padding:0 0 14px 16px;
-      font-size:10px;
-      letter-spacing:0.5px;
-      color:rgba(255,255,255,0.82);
-      max-width:60%;
-      line-height:1.4;
-      text-shadow:0 1px 4px rgba(0,0,0,0.5);
+      font-size:12px;
+      letter-spacing:0.3px;
+      color:#666;
+      line-height:1.5;
+      margin-bottom: 8px;
     }
-
-    /* Price — bottom right */
     .gc-price {
-      position:absolute; bottom:0; right:0;
-      z-index:3;
-      padding:0 16px 14px 0;
-      font-size:11px;
+      font-size:13px;
       font-weight:700;
       letter-spacing:1px;
-      color:#fff;
-      text-shadow:0 1px 4px rgba(0,0,0,0.5);
+      color:#000;
     }
 
-    .lv-gallery-rule { width:32px; height:1px; background:#ccc; margin:40px 40px 0; }
-    @media(max-width:480px) { .lv-gallery-head{padding:0 16px 28px;} .lv-gal-scroll{padding:0 16px;} .lv-gallery-rule{margin-left:16px;} }
+    /* Remove old overlay styles */
+    .lv-gal-overlay { display: none; }
+
+    .lv-gallery-rule { width:32px; height:1px; background:#ccc; margin:40px 80px 0; }
+    @media(max-width:480px) { 
+      .lv-gallery-head{padding:0 20px 28px;} 
+      .lv-gal-scroll{padding:0 20px;} 
+      .lv-gallery-rule{margin-left:20px;} 
+    }
 
     /* ══════════════════════════════
        INSTAGRAM SLIDESHOW
@@ -484,26 +453,23 @@
   </header>
 
   <!-- ① HERO -->
-  <section class="lv-hero" id="hero">
-    <div id="hero-slides-container"></div>
-    <button class="lv-hero-arrow lv-hero-prev" id="hero-prev">&#8592;</button>
-    <button class="lv-hero-arrow lv-hero-next" id="hero-next">&#8594;</button>
-    <div class="lv-hero-dots" id="hero-dots"></div>
-    <div class="lv-hero-content">
-      <div class="lv-hero-eyebrow">EGYGRILLZ &middot; Egypt's First Custom Grillz</div>
-      <h1 class="lv-hero-title" id="hero-title">The Gold<br>Collection</h1>
-      <a href="golds.html" class="lv-hero-cta" id="hero-cta">Discover Now</a>
+  <section class="hero">
+    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ">
+    <div class="hero-content">
+      <h1>EGYGRILLZ</h1>
+      <a href="booking.html" class="hero-schedule-btn">SCHEDULE NOW</a>
     </div>
   </section>
 
-  <!-- SCHEDULE BAND -->
-  <div class="schedule-band reveal">
-    <div class="schedule-band-text">
-      <div class="eyebrow">Book Your Fitting</div>
-      <h2>Ready for a Set<br>Made for You?</h2>
-      <p>Every piece starts with a personal consultation. Schedule your appointment and we'll craft grillz tailored to your exact smile.</p>
+    <!-- LATEST DESIGNS STRIP -->
+  <div class="lv-strip-section">
+    <div class="lv-new-strip-wrap reveal">
+      <div class="lv-new-strip-header">
+        <h2>Latest Designs</h2>
+        <a href="latest-designs.html">View All</a>
+      </div>
+      <div class="lv-new-strip" id="lv-new-strip"></div>
     </div>
-    <a href="booking.html" class="schedule-band-btn">Schedule Now</a>
   </div>
 
     <!-- ② COLLECTIONS INTRO -->
@@ -595,17 +561,6 @@
       </div>
     </div>
     <div class="cat-row-strip" id="diamonds-row"></div>
-  </div>
-
-  <!-- LATEST DESIGNS STRIP -->
-  <div class="lv-strip-section">
-    <div class="lv-new-strip-wrap reveal">
-      <div class="lv-new-strip-header">
-        <h2>Latest Designs</h2>
-        <a href="latest-designs.html">View All</a>
-      </div>
-      <div class="lv-new-strip" id="lv-new-strip"></div>
-    </div>
   </div>
 
   <!-- GALLERY SECTION -->
@@ -766,41 +721,6 @@
       }
     }
 
-    /* ── Hero slideshow ── */
-    let heroImages=[],heroCur=0;
-    const heroContainer=document.getElementById('hero-slides-container');
-    const heroDots=document.getElementById('hero-dots');
-    const heroTitle=document.getElementById('hero-title');
-    const heroCTA=document.getElementById('hero-cta');
-
-    function buildHero(){
-      heroContainer.innerHTML=''; heroDots.innerHTML='';
-      heroImages.forEach((item,i)=>{
-        const img=document.createElement('img');
-        img.className='lv-hero-slide'+(i===0?' active':'');
-        img.src=item.src; img.alt=item.title; img.draggable=false; img.loading=i===0?'eager':'lazy';
-        heroContainer.appendChild(img);
-        const dot=document.createElement('button');
-        dot.className='lv-hero-dot'+(i===0?' active':'');
-        dot.setAttribute('aria-label',`Slide ${i+1}`);
-        dot.addEventListener('click',()=>heroGoTo(i));
-        heroDots.appendChild(dot);
-      });
-      heroUpdateText(0);
-    }
-    function heroUpdateText(idx){ if(!heroImages[idx])return; heroTitle.innerHTML=heroImages[idx].title; heroCTA.href=heroImages[idx].href; }
-    function heroGoTo(idx){
-      const slides=heroContainer.querySelectorAll('.lv-hero-slide');
-      const dots=heroDots.querySelectorAll('.lv-hero-dot');
-      slides[heroCur].classList.remove('active'); dots[heroCur].classList.remove('active');
-      heroCur=(idx+heroImages.length)%heroImages.length;
-      slides[heroCur].classList.add('active'); dots[heroCur].classList.add('active');
-      heroUpdateText(heroCur);
-    }
-    document.getElementById('hero-prev').addEventListener('click',()=>heroGoTo(heroCur-1));
-    document.getElementById('hero-next').addEventListener('click',()=>heroGoTo(heroCur+1));
-    setInterval(()=>{if(heroImages.length>1)heroGoTo(heroCur+1);},6000);
-
     /* ── Load category hero card ── */
     async function loadCategoryCard(cat,slidesId,nameId,descId,heroTitleHtml,heroHref){
       try{
@@ -812,7 +732,6 @@
         if(d.desc) document.getElementById(descId).textContent=d.desc;
         const paths=d.images.map(img=>`assets/images/${cat}/${list[0]}/${img}`);
         makeCardSlideshow(document.getElementById(slidesId),paths);
-        if(paths.length) heroImages.push({src:paths[0],title:heroTitleHtml,href:heroHref});
       }catch(e){console.warn(cat,e);}
     }
 
@@ -932,11 +851,14 @@
           if(!src)continue;
           const card=document.createElement('div'); card.className='lv-gal-card';
           card.innerHTML=`
-            <img src="${src}" alt="${d.name}" loading="lazy">
-            <div class="lv-gal-overlay"></div>
-            <div class="gc-name">${d.name||''}</div>
-            <div class="gc-desc">${d.desc||''}</div>
-            <div class="gc-price">${d.price||''}</div>`;
+            <div class="lv-gal-card-img">
+              <img src="${src}" alt="${d.name}" loading="lazy">
+            </div>
+            <div class="lv-gal-card-info">
+              <div class="gc-name">${d.name||''}</div>
+              <div class="gc-desc">${d.desc||''}</div>
+              <div class="gc-price">${d.price||''}</div>
+            </div>`;
           card.addEventListener('click',()=>window.location='grillz-gallery.html');
           scrollEl.appendChild(card);
         }
@@ -994,7 +916,6 @@
       await loadCategoryCard('golds',    'golds-card-slides',    'golds-card-name',    'golds-card-desc',    'The Gold<br>Collection',    'golds.html');
       await loadCategoryCard('silvers',  'silvers-card-slides',  'silvers-card-name',  'silvers-card-desc',  'The Silver<br>Collection',  'silvers.html');
       await loadCategoryCard('diamonds', 'diamonds-card-slides', 'diamonds-card-name', 'diamonds-card-desc', 'The Diamond<br>Collection', 'diamonds.html');
-      if(heroImages.length) buildHero();
 
       loadCategoryRow('golds',    'golds-row',    'golds.html',    'Gold');
       loadCategoryRow('silvers',  'silvers-row',  'silvers.html',  'Silver');
