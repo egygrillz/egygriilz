@@ -254,74 +254,104 @@
     .lv-prod-overlay { display: none; }
     .lv-prod-discover { display: none; }
 
-    /* ── LV-style rotating logo wishlist button ── */
+    /* ── Heart wishlist button ── */
     .lv-prod-wish {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 10px;
+      right: 10px;
       z-index: 6;
-      width: 38px; height: 38px;
+      width: 36px; height: 36px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.88);
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       opacity: 0;
-      transform: scale(0.6) translateY(-6px);
-      transition: opacity 0.38s cubic-bezier(0.22,1,0.36,1),
-                  transform 0.38s cubic-bezier(0.22,1,0.36,1),
+      transform: scale(0.65) translateY(-4px);
+      transition: opacity 0.35s cubic-bezier(0.22,1,0.36,1),
+                  transform 0.35s cubic-bezier(0.22,1,0.36,1),
                   background 0.25s;
       backdrop-filter: blur(6px);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+      overflow: hidden;
     }
     .lv-prod-card:hover .lv-prod-wish {
       opacity: 1;
       transform: scale(1) translateY(0);
     }
-    .lv-prod-wish:hover {
-      background: #fff;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    .lv-prod-wish:hover { background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+
+    /* Heart icon */
+    .wish-heart {
+      position: absolute;
+      width: 16px; height: 16px;
+      transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .wish-heart .heart-path {
+      fill: none;
+      stroke: #222;
+      stroke-width: 1.6;
+      transition: fill 0.25s ease, stroke 0.25s ease;
     }
 
-    /* The rotating monogram logo inside */
-    .lv-prod-wish .eg-logo-mark {
-      width: 20px; height: 20px;
-      transition: transform 0.7s cubic-bezier(0.34,1.56,0.64,1);
-      transform-origin: center center;
-    }
-    /* On hover of the button: rotate the logo */
-    .lv-prod-wish:hover .eg-logo-mark {
-      transform: rotate(90deg);
-    }
-    /* When wished (saved): logo fills gold + stays rotated */
-    .lv-prod-wish.wished .eg-logo-mark {
-      transform: rotate(180deg);
-    }
-    .lv-prod-wish.wished .eg-logo-fill {
-      fill: #b8960c;
-    }
-    .lv-prod-wish.wished .eg-logo-stroke {
-      stroke: #b8960c;
-    }
-
-    /* Click pulse ring */
-    .lv-prod-wish::after {
-      content: '';
+    /* Logo overlay — hidden until wished */
+    .wish-logo-wrap {
       position: absolute;
       inset: 0;
-      border-radius: 50%;
-      border: 2px solid rgba(184,150,12,0);
-      transition: border-color 0s, inset 0s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
     }
-    .lv-prod-wish.pulse::after {
-      animation: wishPulse 0.5s ease-out forwards;
+    .wish-logo-wrap img {
+      width: 18px; height: auto;
+      filter: brightness(0); /* black logo */
+      transition: transform 0.7s cubic-bezier(0.34,1.56,0.64,1);
     }
-    @keyframes wishPulse {
-      0%   { inset: 0;    border-color: rgba(184,150,12,0.8); }
-      100% { inset: -8px; border-color: rgba(184,150,12,0); }
+
+    /* WISHED state */
+    .lv-prod-wish.wished { background: #fff; }
+    .lv-prod-wish.wished .wish-heart { opacity: 0; transform: scale(0.5); }
+    .lv-prod-wish.wished .wish-heart .heart-path { fill: #fff; stroke: #fff; }
+    .lv-prod-wish.wished .wish-logo-wrap { opacity: 1; }
+    .lv-prod-wish.wished .wish-logo-wrap img { transform: rotate(360deg); filter: brightness(0); }
+
+    /* Re-hover after wished — keep logo visible but spin again */
+    .lv-prod-wish.wished:hover .wish-logo-wrap img { transform: rotate(720deg); }
+
+    /* Toast notification */
+    .fav-toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: #000;
+      color: #fff;
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 13px 28px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
+    .fav-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .fav-toast-heart {
+      display: inline-block;
+      width: 12px; height: 12px;
+    }
+    .fav-toast-heart svg { width: 12px; height: 12px; }
 
     /* Image dots indicator — hidden for clean latest-designs style */
     .lv-prod-img-dots { display: none; }
@@ -957,40 +987,30 @@
             </a>`;
           imgWrap.appendChild(overlay);
 
-          // Wishlist — rotating EGYGRILLZ monogram button (LV-style)
+          // Heart wishlist button — logo spins on click, toast appears
           const wishBtn=document.createElement('button');
           wishBtn.className='lv-prod-wish';
-          wishBtn.setAttribute('aria-label','Save to wishlist');
-          // EG diamond / 4-point star monogram — mimics the LV flower rotation concept
+          wishBtn.setAttribute('aria-label','Add to favourites');
           wishBtn.innerHTML=`
-            <svg class="eg-logo-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- 4-petal monogram rosette (like LV's flower) built from rotated petals -->
-              <g transform="translate(20,20)">
-                <!-- Top petal -->
-                <ellipse class="eg-logo-fill" cx="0" cy="-7" rx="3.2" ry="6.2" fill="#000" transform="rotate(0)"/>
-                <!-- Right petal -->
-                <ellipse class="eg-logo-fill" cx="7" cy="0" rx="3.2" ry="6.2" fill="#000" transform="rotate(90)"/>
-                <!-- Bottom petal -->
-                <ellipse class="eg-logo-fill" cx="0" cy="7" rx="3.2" ry="6.2" fill="#000" transform="rotate(180)"/>
-                <!-- Left petal -->
-                <ellipse class="eg-logo-fill" cx="-7" cy="0" rx="3.2" ry="6.2" fill="#000" transform="rotate(270)"/>
-                <!-- Center dot -->
-                <circle class="eg-logo-fill" cx="0" cy="0" r="2.4" fill="#000"/>
-                <!-- 4 diagonal diamond corners -->
-                <polygon class="eg-logo-fill" points="0,-13 2.2,-10.5 0,-9.5 -2.2,-10.5" fill="#000"/>
-                <polygon class="eg-logo-fill" points="13,0 10.5,2.2 9.5,0 10.5,-2.2" fill="#000"/>
-                <polygon class="eg-logo-fill" points="0,13 -2.2,10.5 0,9.5 2.2,10.5" fill="#000"/>
-                <polygon class="eg-logo-fill" points="-13,0 -10.5,-2.2 -9.5,0 -10.5,2.2" fill="#000"/>
-              </g>
-            </svg>`;
+            <svg class="wish-heart" viewBox="0 0 24 24">
+              <path class="heart-path" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <div class="wish-logo-wrap">
+              <img src="logo/logo_white.png" alt="EGYGRILLZ" draggable="false">
+            </div>`;
           wishBtn.addEventListener('click',(e)=>{
             e.stopPropagation();
+            const adding = !wishBtn.classList.contains('wished');
             wishBtn.classList.toggle('wished');
-            // Pulse ring
-            wishBtn.classList.remove('pulse');
-            void wishBtn.offsetWidth; // reflow
-            wishBtn.classList.add('pulse');
-            setTimeout(()=>wishBtn.classList.remove('pulse'), 600);
+            // Force re-trigger logo spin on each click
+            const logoImg = wishBtn.querySelector('.wish-logo-wrap img');
+            logoImg.style.transition = 'none';
+            logoImg.style.transform = 'rotate(0deg)';
+            void logoImg.offsetWidth;
+            logoImg.style.transition = 'transform 0.7s cubic-bezier(0.34,1.56,0.64,1)';
+            logoImg.style.transform = 'rotate(360deg)';
+            // Show toast only when adding
+            if(adding) showFavToast(d.name||folder);
           });
           imgWrap.appendChild(wishBtn);
 
@@ -1111,6 +1131,21 @@
         setInterval(()=>igGoTo(igCur+1), 3500);
       }catch(e){console.warn('ig',e);}
     }
+
+    /* ── Fav toast ── */
+    (function(){
+      const toast = document.createElement('div');
+      toast.className = 'fav-toast';
+      toast.innerHTML = `<span class="fav-toast-heart"><svg viewBox="0 0 24 24" fill="#fff"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="fav-toast-text">Added to Favourites</span>`;
+      document.body.appendChild(toast);
+      let toastTimer;
+      window.showFavToast = function(name) {
+        toast.querySelector('.fav-toast-text').textContent = (name ? name + ' — ' : '') + 'Added to Favourites';
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(()=> toast.classList.remove('show'), 2600);
+      };
+    })();
 
     /* ── INIT ── */
     async function init(){
