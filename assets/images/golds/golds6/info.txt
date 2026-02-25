@@ -1,4 +1,4 @@
 name: .
 price: .
-description: .
-images: 000000.jpg
+description: 
+images: 000000.jpg,000001.jpg,000002.jpg,000003.jpg
