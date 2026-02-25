@@ -387,24 +387,84 @@
     /* ══════════════════════════════
        GALLERY SECTION
     ══════════════════════════════ */
-    .lv-gallery-section { background:#080808; margin-top:100px; padding:72px 0 80px; }
+    .lv-gallery-section { background:#f0f0f0; margin-top:100px; padding:72px 0 80px; }
     .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 36px; }
-    .lv-gallery-head-left .eyebrow-dark { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#444; margin-bottom:8px; }
-    .lv-gallery-head-left h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.8vw,32px); letter-spacing:3px; text-transform:uppercase; color:#fff; }
-    .lv-gallery-head a { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#666; border-bottom:1px solid #333; padding-bottom:2px; transition:color 0.2s,border-color 0.2s; }
-    .lv-gallery-head a:hover { color:#fff; border-color:#fff; }
+    .lv-gallery-head-left .eyebrow-dark { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:8px; }
+    .lv-gallery-head-left h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.8vw,32px); letter-spacing:3px; text-transform:uppercase; color:#000; }
+    .lv-gallery-head a { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#555; border-bottom:1px solid #aaa; padding-bottom:2px; transition:color 0.2s,border-color 0.2s; }
+    .lv-gallery-head a:hover { color:#000; border-color:#000; }
     .lv-gal-scroll { display:flex; gap:3px; overflow-x:auto; padding:0 40px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
     .lv-gal-scroll:active { cursor:grabbing; }
     .lv-gal-scroll::-webkit-scrollbar { display:none; }
-    .lv-gal-card { flex:0 0 320px; position:relative; overflow:hidden; background:#111; cursor:pointer; aspect-ratio:4/3; }
+    .lv-gal-card { flex:0 0 320px; position:relative; overflow:hidden; background:#ccc; cursor:pointer; aspect-ratio:4/3; }
     .lv-gal-card:first-child { flex:0 0 480px; }
     @media(max-width:680px) { .lv-gal-card{flex:0 0 240px;} .lv-gal-card:first-child{flex:0 0 300px;} }
-    .lv-gal-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.88; transition:opacity 0.5s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
-    .lv-gal-card:hover img { opacity:1; transform:scale(1.06); }
-    .lv-gal-card-label { position:absolute; bottom:0; left:0; right:0; padding:48px 16px 14px; background:linear-gradient(to top,rgba(0,0,0,0.80) 0%,transparent 100%); z-index:2; }
-    .lv-gal-card-label .gc-name { font-family:'Playfair Display',serif; font-size:13px; font-weight:400; letter-spacing:1.5px; text-transform:uppercase; color:#fff; opacity:1; transform:translateY(0); transition:opacity 0.3s,transform 0.3s; }
-    .lv-gal-card:hover .gc-name { opacity:1; transform:translateY(0); }
-    .lv-gallery-rule { width:32px; height:1px; background:#222; margin:40px 40px 0; }
+    .lv-gal-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:1; transition:opacity 0.5s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
+    .lv-gal-card:hover img { transform:scale(1.06); }
+
+    /* Overlay — always visible, darkens slightly on hover */
+    .lv-gal-overlay {
+      position:absolute; inset:0; z-index:2;
+      background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.45) 0%,
+        transparent 38%,
+        transparent 52%,
+        rgba(0,0,0,0.55) 100%
+      );
+      transition:background 0.4s ease;
+    }
+    .lv-gal-card:hover .lv-gal-overlay {
+      background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.55) 0%,
+        transparent 38%,
+        transparent 50%,
+        rgba(0,0,0,0.65) 100%
+      );
+    }
+
+    /* Name — top center */
+    .gc-name {
+      position:absolute; top:0; left:0; right:0;
+      z-index:3;
+      padding:16px 16px 0;
+      text-align:center;
+      font-family:'Playfair Display',serif;
+      font-size:clamp(11px,1.1vw,15px);
+      font-weight:400;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:#fff;
+      text-shadow:0 1px 6px rgba(0,0,0,0.4);
+    }
+
+    /* Desc — bottom left */
+    .gc-desc {
+      position:absolute; bottom:0; left:0;
+      z-index:3;
+      padding:0 0 14px 16px;
+      font-size:10px;
+      letter-spacing:0.5px;
+      color:rgba(255,255,255,0.82);
+      max-width:60%;
+      line-height:1.4;
+      text-shadow:0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Price — bottom right */
+    .gc-price {
+      position:absolute; bottom:0; right:0;
+      z-index:3;
+      padding:0 16px 14px 0;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:1px;
+      color:#fff;
+      text-shadow:0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    .lv-gallery-rule { width:32px; height:1px; background:#ccc; margin:40px 40px 0; }
     @media(max-width:480px) { .lv-gallery-head{padding:0 16px 28px;} .lv-gal-scroll{padding:0 16px;} .lv-gallery-rule{margin-left:16px;} }
 
     /* ══════════════════════════════
@@ -994,7 +1054,12 @@
           const src=d.images[0]?`assets/images/sets/${folder}/${d.images[0]}`:'';
           if(!src)continue;
           const card=document.createElement('div'); card.className='lv-gal-card';
-          card.innerHTML=`<img src="${src}" alt="${d.name}" loading="lazy"><div class="lv-gal-card-label"><div class="gc-name">${d.name}</div></div>`;
+          card.innerHTML=`
+            <img src="${src}" alt="${d.name}" loading="lazy">
+            <div class="lv-gal-overlay"></div>
+            <div class="gc-name">${d.name||''}</div>
+            <div class="gc-desc">${d.desc||''}</div>
+            <div class="gc-price">${d.price||''}</div>`;
           card.addEventListener('click',()=>window.location='grillz-gallery.html');
           scrollEl.appendChild(card);
         }
