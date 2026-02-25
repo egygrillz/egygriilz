@@ -1,4 +1,4 @@
 name: f
 price: 
 description: 
-images: 000000.jpg,000001.jpg
+images: 000000.jpg
