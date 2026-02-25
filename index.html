@@ -21,7 +21,7 @@
     a { text-decoration:none; color:inherit; }
 
     /* ══════════════════════════════
-       HEADER — UNTOUCHED
+       HEADER
     ══════════════════════════════ */
     header { position:fixed; top:0; left:0; right:0; height:60px; background:#fff; border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
     header.hidden { transform:translateY(-100%); }
@@ -77,12 +77,11 @@
     .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:18px auto 0; }
 
     /* ══════════════════════════════
-       CATEGORY HERO CARDS — all full width
+       CATEGORY HERO CARDS
     ══════════════════════════════ */
     .lv-cat-card { position:relative; overflow:hidden; cursor:pointer; background:#f5f5f5; width:100%; aspect-ratio:16/7; display:block; }
     @media(max-width:680px) { .lv-cat-card { aspect-ratio:4/5; } }
     @media(max-width:420px) { .lv-cat-card { aspect-ratio:3/4; } }
-
     .lv-cat-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1s ease,transform 0.7s ease; }
     .lv-cat-card img.active { opacity:1; }
     .lv-cat-card:hover img.active { transform:scale(1.03); }
@@ -98,34 +97,255 @@
     @media(max-width:480px) { .lv-cat-info { padding:20px 20px 28px; } }
 
     /* ══════════════════════════════
-       CATEGORY PRODUCT ROWS
-       (one per category, below their hero card)
+       LV-STYLE CATEGORY PRODUCT ROWS
     ══════════════════════════════ */
-    .cat-row-section { padding:56px 0 80px; border-bottom:1px solid #f0f0f0; }
-    .cat-row-section:last-of-type { border-bottom:none; }
-    .cat-row-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 22px; }
-    .cat-row-header h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(16px,2vw,22px); letter-spacing:2px; text-transform:uppercase; color:#000; }
-    .cat-row-header a { font-size:9px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:2px; color:#000; transition:opacity 0.2s; }
-    .cat-row-header a:hover { opacity:0.5; }
-    .cat-row-strip { display:flex; gap:3px; overflow-x:auto; padding:0 40px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
-    .cat-row-strip:active { cursor:grabbing; }
-    .cat-row-strip::-webkit-scrollbar { display:none; }
+    .cat-row-section {
+      padding: 64px 0 80px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cat-row-section:last-of-type { border-bottom: none; }
 
-    .cat-row-card { flex:0 0 220px; cursor:pointer; position:relative; overflow:hidden; background:#f8f8f8; }
-    .cat-row-card:first-child { flex:0 0 300px; } /* slight variety */
-    .cat-row-card-img { position:relative; width:100%; aspect-ratio:3/4; overflow:hidden; background:#f2f2f2; }
-    .cat-row-card-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease, transform 0.5s ease; pointer-events:none; -webkit-user-drag:none; }
-    .cat-row-card-img img.active { opacity:1; }
-    .cat-row-card:hover .cat-row-card-img img.active { transform:scale(1.05); }
-    .cat-row-card-body { padding:12px 14px 16px; background:#fff; border-top:1px solid #f0f0f0; }
-    .cat-row-card-name { font-size:12px; letter-spacing:0.5px; color:#000; margin-bottom:3px; line-height:1.3; }
-    .cat-row-card-price { font-size:11px; color:#666; }
+    /* Header row */
+    .cat-row-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 40px 28px;
+    }
+    .cat-row-header-left {}
+    .cat-row-header-eyebrow {
+      font-size: 8px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    .cat-row-header h3 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(18px, 2.2vw, 26px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #000;
+    }
+    .cat-row-header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cat-row-view-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #000;
+      border-bottom: 1px solid #000;
+      padding-bottom: 2px;
+      transition: opacity 0.2s, letter-spacing 0.3s;
+    }
+    .cat-row-view-all:hover { opacity: 0.5; letter-spacing: 3.5px; }
+    .cat-row-view-all svg {
+      width: 12px; height: 12px;
+      transition: transform 0.3s;
+    }
+    .cat-row-view-all:hover svg { transform: translateX(3px); }
+
+    /* Scrollable strip */
+    .cat-row-strip {
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      padding: 0 40px 4px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      cursor: grab;
+    }
+    .cat-row-strip:active { cursor: grabbing; }
+    .cat-row-strip::-webkit-scrollbar { display: none; }
+
+    /* ── LV product card ── */
+    .lv-prod-card {
+      flex: 0 0 280px;
+      position: relative;
+      background: #fafafa;
+      cursor: pointer;
+      overflow: hidden;
+      transition: box-shadow 0.4s ease;
+    }
+    .lv-prod-card:first-child { flex: 0 0 340px; }
+    .lv-prod-card:hover { box-shadow: 0 8px 40px rgba(0,0,0,0.10); }
+
+    /* Image wrapper */
+    .lv-prod-img {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      background: #f2f2f2;
+    }
+    .lv-prod-img img {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.9s ease, transform 0.7s ease;
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+    .lv-prod-img img.active { opacity: 1; }
+    .lv-prod-card:hover .lv-prod-img img.active { transform: scale(1.06); }
+
+    /* Hover overlay with "Discover" CTA */
+    .lv-prod-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 22px;
+      background: linear-gradient(to top, rgba(0,0,0,0.42) 0%, transparent 55%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .lv-prod-card:hover .lv-prod-overlay { opacity: 1; }
+
+    /* Discover button — LV pill style */
+    .lv-prod-discover {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.75);
+      padding: 10px 22px;
+      background: rgba(0,0,0,0.30);
+      backdrop-filter: blur(6px);
+      transform: translateY(8px);
+      opacity: 0;
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.35s ease, background 0.25s, border-color 0.25s;
+    }
+    .lv-prod-card:hover .lv-prod-discover {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .lv-prod-discover:hover {
+      background: rgba(255,255,255,0.18);
+      border-color: #fff;
+    }
+    .lv-prod-discover svg {
+      width: 11px; height: 11px;
+      transition: transform 0.3s;
+    }
+    .lv-prod-discover:hover svg { transform: translateX(3px); }
+
+    /* Wishlist / heart button */
+    .lv-prod-wish {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 6;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.88);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.7) translateY(-4px);
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1), background 0.2s;
+      backdrop-filter: blur(4px);
+    }
+    .lv-prod-card:hover .lv-prod-wish {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    .lv-prod-wish:hover { background: #fff; }
+    .lv-prod-wish svg {
+      width: 14px; height: 14px;
+      transition: fill 0.2s, transform 0.2s;
+    }
+    .lv-prod-wish.wished svg { fill: #c0392b; stroke: #c0392b; }
+    .lv-prod-wish:active svg { transform: scale(1.3); }
+
+    /* Image dots indicator */
+    .lv-prod-img-dots {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .lv-prod-card:hover .lv-prod-img-dots { opacity: 1; }
+    .lv-prod-img-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.45);
+      transition: background 0.25s, transform 0.25s;
+    }
+    .lv-prod-img-dot.active { background: #fff; transform: scale(1.3); }
+
+    /* Card body */
+    .lv-prod-body {
+      padding: 14px 16px 18px;
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+    }
+    .lv-prod-label {
+      font-size: 7.5px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+    .lv-prod-name {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      color: #000;
+      margin-bottom: 5px;
+      line-height: 1.35;
+    }
+    .lv-prod-price {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    /* Animated underline on name hover */
+    .lv-prod-name-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .lv-prod-name-wrap::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: -2px;
+      width: 0; height: 1px;
+      background: #000;
+      transition: width 0.4s ease;
+    }
+    .lv-prod-card:hover .lv-prod-name-wrap::after { width: 100%; }
 
     @media(max-width:480px) {
-      .cat-row-header { padding:0 16px 18px; }
-      .cat-row-strip { padding:0 16px; }
-      .cat-row-card { flex:0 0 160px; }
-      .cat-row-card:first-child { flex:0 0 200px; }
+      .cat-row-header { padding: 0 16px 20px; }
+      .cat-row-strip { padding: 0 16px; }
+      .lv-prod-card { flex: 0 0 200px; }
+      .lv-prod-card:first-child { flex: 0 0 240px; }
     }
 
     /* ══════════════════════════════
@@ -155,7 +375,7 @@
     }
 
     /* ══════════════════════════════
-       GALLERY SECTION — dark band
+       GALLERY SECTION
     ══════════════════════════════ */
     .lv-gallery-section { background:#080808; margin-top:100px; padding:72px 0 80px; }
     .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 40px 36px; }
@@ -178,7 +398,7 @@
     @media(max-width:480px) { .lv-gallery-head{padding:0 16px 28px;} .lv-gal-scroll{padding:0 16px;} .lv-gallery-rule{margin-left:16px;} }
 
     /* ══════════════════════════════
-       INSTAGRAM SLIDESHOW — full width, one image at a time
+       INSTAGRAM SLIDESHOW
     ══════════════════════════════ */
     .ig-section { padding:100px 0 0; }
     .ig-header { text-align:center; margin-bottom:40px; padding:0 5%; }
@@ -187,74 +407,18 @@
     .ig-header a { display:inline-flex; align-items:center; gap:6px; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#000; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s; margin-top:8px; }
     .ig-header a:hover { opacity:0.5; }
     .ig-header a i { font-size:13px; }
-
-    /* Full-width slideshow */
-    .ig-slideshow {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16/7;
-      overflow: hidden;
-      background: #111;
-      cursor: pointer;
-    }
-    @media(max-width:680px) { .ig-slideshow { aspect-ratio: 4/5; } }
-
-    .ig-slide {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      transition: opacity 1.2s ease;
-    }
-    .ig-slide.active { opacity: 1; }
-    .ig-slide img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      pointer-events: none;
-      -webkit-user-drag: none;
-      transition: transform 8s ease;
-      transform: scale(1.04);
-    }
-    .ig-slide.active img { transform: scale(1); }
-
-    /* Overlay with IG icon + CTA */
-    .ig-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 40%, rgba(0,0,0,0.55) 100%);
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      padding-bottom: 40px;
-    }
-    .ig-overlay i { font-size: 28px; color: rgba(255,255,255,0.7); margin-bottom: 10px; }
-    .ig-overlay span {
-      font-size: 9px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.6);
-    }
-
-    /* Dot indicators */
-    .ig-dots {
-      position: absolute;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      display: flex;
-      gap: 7px;
-    }
-    .ig-dot {
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.3);
-      border: none;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.3s;
-    }
-    .ig-dot.active { background: #fff; transform: scale(1.25); }
+    .ig-slideshow { position:relative; width:100%; aspect-ratio:16/7; overflow:hidden; background:#111; cursor:pointer; }
+    @media(max-width:680px) { .ig-slideshow { aspect-ratio:4/5; } }
+    .ig-slide { position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease; }
+    .ig-slide.active { opacity:1; }
+    .ig-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; transition:transform 8s ease; transform:scale(1.04); }
+    .ig-slide.active img { transform:scale(1); }
+    .ig-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0.08) 0%,transparent 40%,rgba(0,0,0,0.55) 100%); z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:40px; }
+    .ig-overlay i { font-size:28px; color:rgba(255,255,255,0.7); margin-bottom:10px; }
+    .ig-overlay span { font-size:9px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.6); }
+    .ig-dots { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); z-index:10; display:flex; gap:7px; }
+    .ig-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.3); border:none; cursor:pointer; transition:background 0.3s,transform 0.3s; }
+    .ig-dot.active { background:#fff; transform:scale(1.25); }
 
     /* ══════════════════════════════
        STORY BLOCK
@@ -286,7 +450,7 @@
     @media(max-width:480px) { .lv-cta-band{padding:60px 5%;} .lv-cta-btns{flex-direction:column;align-items:center;} .lv-cta-btn-white,.lv-cta-btn-outline{width:100%;max-width:280px;text-align:center;} }
 
     /* ══════════════════════════════
-       FOOTER — UNTOUCHED
+       FOOTER
     ══════════════════════════════ */
     footer { background:#000; color:#fff; padding:50px 5% 20px; }
     .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
@@ -320,7 +484,7 @@
     <a href="index.html">EGYGRILLZ</a>
   </div>
 
-  <!-- HEADER (UNTOUCHED) -->
+  <!-- HEADER -->
   <header id="site-header">
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -357,7 +521,7 @@
     <div class="rule"></div>
   </div>
 
-  <!-- ③ GOLDS hero card — full width -->
+  <!-- ③ GOLDS hero card -->
   <div class="lv-cat-card reveal" id="golds-card" onclick="window.location='golds.html'">
     <div id="golds-card-slides"></div>
     <div class="lv-cat-info">
@@ -368,16 +532,24 @@
     </div>
   </div>
 
-  <!-- ④ GOLDS product row -->
+  <!-- ④ GOLDS product row — LV Style -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
-      <h3>Gold Pieces</h3>
-      <a href="golds.html">View All Golds</a>
+      <div class="cat-row-header-left">
+        <div class="cat-row-header-eyebrow">Gold Collection</div>
+        <h3>Gold Pieces</h3>
+      </div>
+      <div class="cat-row-header-right">
+        <a href="golds.html" class="cat-row-view-all">
+          View All Golds
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
+        </a>
+      </div>
     </div>
     <div class="cat-row-strip" id="golds-row"></div>
   </div>
 
-  <!-- ⑤ SILVERS hero card — full width -->
+  <!-- ⑤ SILVERS hero card -->
   <div class="lv-cat-card reveal" id="silvers-card" onclick="window.location='silvers.html'">
     <div id="silvers-card-slides"></div>
     <div class="lv-cat-info">
@@ -388,16 +560,24 @@
     </div>
   </div>
 
-  <!-- ⑥ SILVERS product row -->
+  <!-- ⑥ SILVERS product row — LV Style -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
-      <h3>Silver Pieces</h3>
-      <a href="silvers.html">View All Silvers</a>
+      <div class="cat-row-header-left">
+        <div class="cat-row-header-eyebrow">Silver Collection</div>
+        <h3>Silver Pieces</h3>
+      </div>
+      <div class="cat-row-header-right">
+        <a href="silvers.html" class="cat-row-view-all">
+          View All Silvers
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
+        </a>
+      </div>
     </div>
     <div class="cat-row-strip" id="silvers-row"></div>
   </div>
 
-  <!-- ⑦ DIAMONDS hero card — full width -->
+  <!-- ⑦ DIAMONDS hero card -->
   <div class="lv-cat-card reveal" id="diamonds-card" onclick="window.location='diamonds.html'">
     <div id="diamonds-card-slides"></div>
     <div class="lv-cat-info">
@@ -408,16 +588,24 @@
     </div>
   </div>
 
-  <!-- ⑧ DIAMONDS product row -->
+  <!-- ⑧ DIAMONDS product row — LV Style -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
-      <h3>Diamond Pieces</h3>
-      <a href="diamonds.html">View All Diamonds</a>
+      <div class="cat-row-header-left">
+        <div class="cat-row-header-eyebrow">Diamond Collection</div>
+        <h3>Diamond Pieces</h3>
+      </div>
+      <div class="cat-row-header-right">
+        <a href="diamonds.html" class="cat-row-view-all">
+          View All Diamonds
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
+        </a>
+      </div>
     </div>
     <div class="cat-row-strip" id="diamonds-row"></div>
   </div>
 
-  <!-- ⑧ LATEST DESIGNS STRIP -->
+  <!-- LATEST DESIGNS STRIP -->
   <div class="lv-strip-section">
     <div class="lv-new-strip-wrap reveal">
       <div class="lv-new-strip-header">
@@ -428,7 +616,7 @@
     </div>
   </div>
 
-  <!-- ⑨ GALLERY SECTION — dark cinematic band (from sets folder) -->
+  <!-- GALLERY SECTION -->
   <div class="lv-gallery-section reveal">
     <div class="lv-gallery-head">
       <div class="lv-gallery-head-left">
@@ -441,7 +629,7 @@
     <div class="lv-gallery-rule"></div>
   </div>
 
-  <!-- ⑩ INSTAGRAM SLIDESHOW -->
+  <!-- INSTAGRAM SLIDESHOW -->
   <div class="ig-section reveal">
     <div class="ig-header">
       <div class="eyebrow">Follow Us</div>
@@ -461,7 +649,7 @@
     </a>
   </div>
 
-  <!-- ⑪ STORY / ABOUT -->
+  <!-- STORY / ABOUT -->
   <div class="lv-story reveal">
     <div class="lv-story-img">
       <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ Story" loading="lazy">
@@ -474,7 +662,7 @@
     </div>
   </div>
 
-  <!-- ⑫ CTA BAND -->
+  <!-- CTA BAND -->
   <div class="lv-cta-band reveal">
     <div class="eyebrow">Begin Your Journey</div>
     <h2>Book Your Appointment</h2>
@@ -485,7 +673,7 @@
     </div>
   </div>
 
-  <!-- FOOTER (UNTOUCHED) -->
+  <!-- FOOTER -->
   <footer>
     <div class="footer-main">
       <div class="footer-col">
@@ -636,32 +824,97 @@
       }catch(e){console.warn(cat,e);}
     }
 
-    /* ── Load category product row ── */
-    async function loadCategoryRow(cat, stripId, href){
+    /* ── Load category product row — LV style cards ── */
+    async function loadCategoryRow(cat, stripId, href, catLabel){
       try{
         const list=await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
         const strip=document.getElementById(stripId);
+
         for(const folder of list.slice(0,12)){
           const txt=await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
           const d=parseInfo(txt);
-          const src=d.images[0]?`assets/images/${cat}/${folder}/${d.images[0]}`:'';
-          if(!src)continue;
+          if(!d.images[0]) continue;
 
-          const card=document.createElement('div'); card.className='cat-row-card';
-          card.innerHTML=`
-            <div class="cat-row-card-img">
-              ${d.images.map((img,i)=>`<img src="assets/images/${cat}/${folder}/${img}" class="${i===0?'active':''}" draggable="false" loading="lazy">`).join('')}
-            </div>
-            <div class="cat-row-card-body">
-              <div class="cat-row-card-name">${d.name||folder}</div>
-              <div class="cat-row-card-price">${d.price}</div>
-            </div>`;
+          // Build card
+          const card=document.createElement('div');
+          card.className='lv-prod-card';
+          card.setAttribute('role','article');
+
+          // Image wrapper with all images for slideshow
+          const imgWrap=document.createElement('div');
+          imgWrap.className='lv-prod-img';
+
+          // Render all images (for slideshow)
+          d.images.forEach((img,i)=>{
+            const el=document.createElement('img');
+            el.src=`assets/images/${cat}/${folder}/${img}`;
+            el.alt=d.name||folder;
+            el.draggable=false;
+            el.loading=i===0?'eager':'lazy';
+            if(i===0) el.classList.add('active');
+            imgWrap.appendChild(el);
+          });
+
+          // Image dots
+          const dotsEl=document.createElement('div');
+          dotsEl.className='lv-prod-img-dots';
+          if(d.images.length>1){
+            d.images.forEach((_,i)=>{
+              const dot=document.createElement('div');
+              dot.className='lv-prod-img-dot'+(i===0?' active':'');
+              dotsEl.appendChild(dot);
+            });
+          }
+          imgWrap.appendChild(dotsEl);
+
+          // Hover overlay — Discover button (LV style)
+          const overlay=document.createElement('div');
+          overlay.className='lv-prod-overlay';
+          overlay.innerHTML=`
+            <a href="${href}" class="lv-prod-discover" onclick="event.stopPropagation()">
+              Discover
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
+            </a>`;
+          imgWrap.appendChild(overlay);
+
+          // Wishlist heart button
+          const wishBtn=document.createElement('button');
+          wishBtn.className='lv-prod-wish';
+          wishBtn.setAttribute('aria-label','Add to wishlist');
+          wishBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+          wishBtn.addEventListener('click',(e)=>{
+            e.stopPropagation();
+            wishBtn.classList.toggle('wished');
+            // pulse animation
+            wishBtn.style.transform='scale(1.2)';
+            setTimeout(()=>wishBtn.style.transform='',200);
+          });
+          imgWrap.appendChild(wishBtn);
+
+          card.appendChild(imgWrap);
+
+          // Card body
+          const body=document.createElement('div');
+          body.className='lv-prod-body';
+          body.innerHTML=`
+            <div class="lv-prod-label">${catLabel}</div>
+            <div class="lv-prod-name"><span class="lv-prod-name-wrap">${d.name||folder}</span></div>
+            <div class="lv-prod-price">${d.price||''}</div>`;
+          card.appendChild(body);
+
+          // Multi-image slideshow on card
+          let c=0;
+          const imgs=imgWrap.querySelectorAll('img');
+          const dots=dotsEl.querySelectorAll('.lv-prod-img-dot');
+          if(imgs.length>1){
+            setInterval(()=>{
+              imgs[c].classList.remove('active'); if(dots[c]) dots[c].classList.remove('active');
+              c=(c+1)%imgs.length;
+              imgs[c].classList.add('active'); if(dots[c]) dots[c].classList.add('active');
+            }, 3500+Math.random()*1000);
+          }
+
           card.addEventListener('click',()=>window.location=href);
-
-          /* multi-image slideshow on card */
-          let c=0; const imgs=card.querySelectorAll('.cat-row-card-img img');
-          if(imgs.length>1) setInterval(()=>{ imgs[c].classList.remove('active'); c=(c+1)%imgs.length; imgs[c].classList.add('active'); },3500+Math.random()*1000);
-
           strip.appendChild(card);
         }
         makeDraggable(strip);
@@ -687,7 +940,7 @@
       }catch(e){console.warn('latest',e);}
     }
 
-    /* ── Load gallery (from sets folder — same as gallery page) ── */
+    /* ── Load gallery ── */
     async function loadGallery(){
       try{
         const scrollEl=document.getElementById('lv-gallery-scroll');
@@ -706,13 +959,12 @@
       }catch(e){console.warn('gallery',e);}
     }
 
-    /* ── Instagram full-width slideshow ── */
+    /* ── Instagram slideshow ── */
     async function loadInstagram(){
       try{
         const slideshow=document.getElementById('ig-slideshow');
         const dotsEl=document.getElementById('ig-dots');
         let igImages=[];
-
         const sources=[
           {cat:'golds',json:'golds.json'},
           {cat:'silvers',json:'silvers.json'},
@@ -729,23 +981,17 @@
             if(d.images[0]) igImages.push(`assets/images/${s.cat}/${folder}/${d.images[0]}`);
           }
         }
-
         if(!igImages.length) return;
-
-        // Build slides
         igImages.forEach((src,i)=>{
           const slide=document.createElement('div');
           slide.className='ig-slide'+(i===0?' active':'');
           slide.innerHTML=`<img src="${src}" alt="EGYGRILLZ Instagram" loading="${i<2?'eager':'lazy'}">`;
-          // insert before overlay
           slideshow.insertBefore(slide, slideshow.querySelector('.ig-overlay'));
-
           const dot=document.createElement('button');
           dot.className='ig-dot'+(i===0?' active':'');
           dotsEl.appendChild(dot);
           dot.addEventListener('click',e=>{e.preventDefault();igGoTo(i);});
         });
-
         let igCur=0;
         function igGoTo(idx){
           const slides=slideshow.querySelectorAll('.ig-slide');
@@ -765,9 +1011,9 @@
       await loadCategoryCard('diamonds', 'diamonds-card-slides', 'diamonds-card-name', 'diamonds-card-desc', 'The Diamond<br>Collection', 'diamonds.html');
       if(heroImages.length) buildHero();
 
-      loadCategoryRow('golds',    'golds-row',    'golds.html');
-      loadCategoryRow('silvers',  'silvers-row',  'silvers.html');
-      loadCategoryRow('diamonds', 'diamonds-row', 'diamonds.html');
+      loadCategoryRow('golds',    'golds-row',    'golds.html',    'Gold');
+      loadCategoryRow('silvers',  'silvers-row',  'silvers.html',  'Silver');
+      loadCategoryRow('diamonds', 'diamonds-row', 'diamonds.html', 'Diamond');
       loadLatestStrip();
       loadGallery();
       loadInstagram();
