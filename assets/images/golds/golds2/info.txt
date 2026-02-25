@@ -1,4 +1,4 @@
-name: 3WF
-price: WFEWEFR
-description: WFEEEF
-images: 000000.png
+name: .
+price: .
+description: .
+images: 000000.jpg,000001.jpg
