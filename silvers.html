@@ -145,23 +145,21 @@
 
     /* ── MOBILE: 2x2 squares then 1 full-width, repeating ── */
     @media(max-width:680px) {
-      /* Flatten all rows into a single 2-col grid */
       #silvers-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 2px;
       }
       .row-3, .row-2 {
-        display: contents; /* dissolve row wrappers — cards flow into parent grid */
+        display: contents;
       }
-      /* Every 5th card spans full width */
-      .set-card:nth-child(5n) {
+      .set-card { break-inside: avoid; }
+      .set-card.mob-full {
         grid-column: 1 / -1;
       }
-      .set-card:nth-child(5n) .card-img { aspect-ratio: 4/3; }
-      /* All other cards stay square */
-      .card-img { aspect-ratio: 1/1; }
-      .row-2 .card-img { aspect-ratio: 1/1; }
+      .set-card.mob-full .card-img { aspect-ratio: 4/3; }
+      .card-img { aspect-ratio: 1/1 !important; }
+      .set-card.mob-full .card-img { aspect-ratio: 4/3 !important; }
       .card-body { padding: 10px 4px 8px; }
       .card-body .name { font-size: 12px; }
       .card-body .price { font-size: 12px; }
@@ -454,8 +452,8 @@
           return;
         }
 
-        // Build rows: pattern repeats [3, 2, 3, 2, ...]
-        let i=0, rowToggle=true; // true=3-col, false=2-col
+        // Build desktop rows: pattern [3, 2, 3, 2, ...]
+        let i=0, rowToggle=true;
         while(i < valid.length){
           const count = rowToggle ? 3 : 2;
           const chunk = valid.slice(i, i+count);
@@ -463,10 +461,10 @@
           row.className = rowToggle ? 'row-3' : 'row-2';
 
           chunk.forEach((item, idx) => {
-            const card = buildCard(item);
-            // On mobile: every 5th card (0-indexed: 4,9,14...) is full-width
             const globalIdx = i + idx;
-            if((globalIdx + 1) % 5 === 0) card.classList.add('full-width');
+            const card = buildCard(item);
+            // Every 5th card (0-indexed: 4,9,14...) gets mob-full for mobile layout
+            if((globalIdx + 1) % 5 === 0) card.classList.add('mob-full');
             row.appendChild(card);
           });
 
