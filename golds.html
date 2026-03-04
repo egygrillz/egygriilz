@@ -28,65 +28,71 @@
     }
 
     /* ══════════════════════════════════════════
-       LV-STYLE PRODUCT SECTION (REDESIGNED)
+       HERMÈS-STYLE LUXURY PRODUCT SECTION
     ══════════════════════════════════════════ */
 
     /* ── Breadcrumb ── */
     .lv-breadcrumb {
-      padding: 14px 40px;
-      font-size: 11px;
-      color: #666;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid #e8e8e8;
+      padding: 18px 60px;
+      font-size: 10px;
+      color: #777;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid #f0f0f0;
+      background: #fafafa;
     }
-    .lv-breadcrumb a { color: #666; text-decoration: none; }
-    .lv-breadcrumb a:hover { text-decoration: underline; }
-    .lv-breadcrumb span { margin: 0 8px; }
+    .lv-breadcrumb a { color: #777; text-decoration: none; transition: color 0.2s; }
+    .lv-breadcrumb a:hover { color: #000; }
+    .lv-breadcrumb span { margin: 0 10px; color: #aaa; }
 
     /* ── Category Banner ── */
     .lv-banner {
-      padding: 40px 40px 0;
+      padding: 80px 60px 40px;
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 40px;
+      background: #fff;
     }
     .lv-banner-left h1 {
       font-family: 'Playfair Display', serif;
       font-weight: 400;
-      font-size: clamp(22px, 3vw, 36px);
-      letter-spacing: 1px;
-      line-height: 1.1;
-      margin-bottom: 6px;
+      font-size: clamp(32px, 4vw, 48px);
+      letter-spacing: 1.2px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      color: #000;
     }
     .lv-banner-left p {
-      font-size: 13px;
-      color: #555;
-      letter-spacing: 0.3px;
+      font-size: 14px;
+      color: #888;
+      letter-spacing: 0.4px;
+      font-weight: 300;
+      max-width: 450px;
     }
     .lv-banner-right {
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 40px;
     }
     .lv-result-count {
-      font-size: 12px;
-      color: #666;
-      letter-spacing: 0.3px;
+      font-size: 13px;
+      color: #777;
+      letter-spacing: 0.4px;
     }
 
     /* ── Filter / Sort Bar ── */
     .lv-toolbar {
-      margin: 20px 40px 0;
-      padding: 16px 0;
-      border-top: 1px solid #e8e8e8;
-      border-bottom: 1px solid #e8e8e8;
+      margin: 0;
+      padding: 20px 60px;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: none;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 20px;
       flex-wrap: wrap;
+      background: #fff;
     }
     .lv-filters {
       display: flex;
@@ -94,116 +100,125 @@
     }
     .lv-filter-btn {
       background: none;
-      border: 1px solid #ccc;
+      border: none;
       font-family: 'Arimo', sans-serif;
-      font-size: 11px;
-      letter-spacing: 1px;
+      font-size: 12px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
-      padding: 9px 20px;
+      padding: 8px 16px;
       cursor: pointer;
-      color: #000;
-      transition: background 0.2s, color 0.2s;
-      border-right: none;
+      color: #666;
+      transition: color 0.2s;
+      border-right: 1px solid #e8e8e8;
       display: flex;
       align-items: center;
       gap: 8px;
+      font-weight: 400;
     }
-    .lv-filter-btn:last-child { border-right: 1px solid #ccc; }
-    .lv-filter-btn:hover { background: #f5f5f5; }
-    .lv-filter-btn i { font-size: 10px; }
+    .lv-filter-btn:last-child { border-right: none; }
+    .lv-filter-btn:hover { color: #000; }
+    .lv-filter-btn i { font-size: 11px; }
     .lv-sort {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 11px;
-      letter-spacing: 1px;
+      gap: 12px;
+      font-size: 12px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
+      color: #666;
     }
     .lv-sort select {
       font-family: 'Arimo', sans-serif;
-      font-size: 11px;
-      letter-spacing: 1px;
-      border: 1px solid #ccc;
-      padding: 8px 14px;
+      font-size: 12px;
+      letter-spacing: 0.8px;
+      border: none;
+      padding: 6px 0;
       cursor: pointer;
-      background: #fff;
+      background: transparent;
       color: #000;
       text-transform: uppercase;
       -webkit-appearance: none;
       appearance: none;
-      padding-right: 28px;
+      padding-right: 20px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23000'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 10px center;
+      background-position: right 0 center;
       background-size: 8px;
     }
 
     /* ── Grid ── */
     .lv-main {
-      padding: 0 40px 80px;
+      padding: 0 60px 120px;
+      background: #fff;
     }
     .lv-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0;
-      margin-top: 24px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 48px 32px;
+      margin-top: 40px;
     }
-    @media(max-width:1200px) { .lv-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media(max-width:768px)  { .lv-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media(max-width:420px)  { .lv-grid { grid-template-columns: 1fr; } }
+    @media(max-width:1400px) { .lv-grid { grid-template-columns: repeat(3, 1fr); gap: 40px 24px; } }
+    @media(max-width:1000px) { .lv-grid { grid-template-columns: repeat(2, 1fr); gap: 36px 20px; padding: 0 40px 100px; } .lv-main { padding: 0; } }
+    @media(max-width:680px)  { .lv-grid { grid-template-columns: 1fr; gap: 32px; padding: 0 18px 80px; } .lv-main { padding: 0; } }
 
     /* ── Product Card ── */
     .lv-card {
       cursor: pointer;
-      background: #fff;
+      background: transparent;
       position: relative;
-      border: 1px solid transparent;
-      transition: border-color 0.25s;
-      padding-bottom: 4px;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
     }
-    .lv-card:hover { border-color: #e0e0e0; }
 
     /* Wishlist heart */
     .lv-card-wish {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 16px;
+      right: 16px;
       z-index: 5;
-      background: none;
+      background: rgba(255,255,255,0.92);
       border: none;
       cursor: pointer;
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: opacity 0.25s, background 0.2s;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .lv-card:hover .lv-card-wish { opacity: 1; }
-    .lv-card-wish i { font-size: 14px; color: #000; }
+    .lv-card-wish:hover { background: #fff; }
+    .lv-card-wish i { font-size: 15px; color: #000; }
 
     /* New badge */
     .lv-badge {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 16px;
+      left: 16px;
       z-index: 5;
-      font-size: 9px;
-      letter-spacing: 1.5px;
+      font-size: 8px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
-      background: #000;
+      background: rgba(0,0,0,0.88);
       color: #fff;
-      padding: 3px 8px;
+      padding: 4px 10px;
+      border-radius: 2px;
+      font-weight: 600;
     }
 
     /* Image area */
     .lv-card-img {
       position: relative;
       width: 100%;
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 3 / 4;
       overflow: hidden;
-      background: #f5f5f5;
+      background: #f8f8f8;
+      margin-bottom: 18px;
+      border-radius: 2px;
     }
     .lv-card-img img {
       position: absolute;
@@ -212,12 +227,12 @@
       height: 100%;
       object-fit: cover;
       opacity: 0;
-      transition: opacity 0.9s ease, transform 0.6s ease;
+      transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       pointer-events: none;
       -webkit-user-drag: none;
     }
     .lv-card-img img.active { opacity: 1; }
-    .lv-card:hover .lv-card-img img.active { transform: scale(1.04); }
+    .lv-card:hover .lv-card-img img.active { transform: scale(1.02); }
 
     /* Hover overlay CTA */
     .lv-card-overlay {
@@ -225,85 +240,88 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(0,0,0,0.72);
+      background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0));
       color: #fff;
-      font-size: 10px;
-      letter-spacing: 2px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
       text-align: center;
-      padding: 12px;
+      padding: 20px 12px 12px;
       opacity: 0;
-      transform: translateY(4px);
-      transition: opacity 0.25s, transform 0.25s;
+      transform: translateY(6px);
+      transition: opacity 0.3s, transform 0.3s;
       pointer-events: none;
+      font-weight: 400;
     }
     .lv-card:hover .lv-card-overlay { opacity: 1; transform: translateY(0); }
 
     /* Image dots (hover) */
     .lv-img-dots {
       position: absolute;
-      bottom: 42px;
+      bottom: 48px;
       left: 0;
       right: 0;
       display: flex;
       justify-content: center;
-      gap: 5px;
+      gap: 6px;
       opacity: 0;
       transition: opacity 0.2s;
       pointer-events: none;
     }
     .lv-card:hover .lv-img-dots { opacity: 1; }
     .lv-img-dot {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.6);
     }
     .lv-img-dot.active { background: #fff; }
 
     /* Card body */
     .lv-card-body {
-      padding: 14px 14px 16px;
+      padding: 0;
     }
     .lv-card-tag {
-      font-size: 9px;
-      letter-spacing: 2px;
+      font-size: 10px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
-      color: #888;
-      margin-bottom: 5px;
+      color: #aaa;
+      margin-bottom: 6px;
+      font-weight: 400;
     }
     .lv-card-name {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 400;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.4px;
       color: #000;
-      line-height: 1.4;
-      margin-bottom: 6px;
+      line-height: 1.45;
+      margin-bottom: 8px;
     }
     .lv-card-colors {
       display: flex;
-      gap: 5px;
-      margin-bottom: 8px;
+      gap: 6px;
+      margin-bottom: 10px;
     }
     .lv-card-color {
-      width: 12px;
-      height: 12px;
+      width: 13px;
+      height: 13px;
       border-radius: 50%;
-      border: 1px solid #ddd;
+      border: 1.5px solid #ddd;
+      transition: border-color 0.2s;
     }
     .lv-card-color.active-swatch { border-color: #000; }
     .lv-card-price {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 400;
       color: #000;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.3px;
     }
 
-    /* ── MODAL (LV-style) ── */
+    /* ── MODAL (Luxury-style) ── */
     .lv-modal-bg {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.55);
       z-index: 9000;
       display: flex;
       align-items: center;
@@ -312,25 +330,28 @@
       pointer-events: none;
       transition: opacity 0.3s;
       padding: 20px;
+      backdrop-filter: blur(2px);
     }
     .lv-modal-bg.open { opacity: 1; pointer-events: all; }
 
     .lv-modal {
       background: #fff;
       width: 100%;
-      max-width: 1000px;
-      max-height: 92vh;
+      max-width: 1200px;
+      max-height: 90vh;
       display: flex;
-      transform: translateY(24px);
-      transition: transform 0.38s cubic-bezier(0.22,1,0.36,1);
+      transform: translateY(32px);
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s;
       overflow: hidden;
+      border-radius: 2px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
     }
     .lv-modal-bg.open .lv-modal { transform: translateY(0); }
 
     /* Left: image gallery */
     .lv-modal-gallery {
-      flex: 0 0 58%;
-      background: #f5f5f5;
+      flex: 0 0 55%;
+      background: #f8f8f8;
       position: relative;
       overflow: hidden;
     }
@@ -344,7 +365,7 @@
       position: absolute;
       inset: 0;
       opacity: 0;
-      transition: opacity 0.45s;
+      transition: opacity 0.4s ease;
     }
     .lv-modal-slide.active { opacity: 1; }
     .lv-modal-slide img {
@@ -358,44 +379,47 @@
     /* Thumbnail strip */
     .lv-modal-thumbs {
       position: absolute;
-      left: 14px;
+      left: 16px;
       top: 50%;
       transform: translateY(-50%);
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       z-index: 10;
     }
     .lv-modal-thumb {
-      width: 50px;
-      height: 50px;
+      width: 56px;
+      height: 56px;
       object-fit: cover;
       cursor: pointer;
-      opacity: 0.55;
+      opacity: 0.5;
       border: 1.5px solid transparent;
       transition: opacity 0.2s, border-color 0.2s;
       -webkit-user-drag: none;
+      border-radius: 1px;
     }
+    .lv-modal-thumb:hover { opacity: 0.75; }
     .lv-modal-thumb.active { opacity: 1; border-color: #000; }
 
     .lv-modal-arrow {
       position: absolute;
-      bottom: 20px;
-      background: rgba(255,255,255,0.9);
+      bottom: 24px;
+      background: rgba(255,255,255,0.95);
       border: 1px solid #ddd;
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       color: #000;
-      transition: background 0.2s;
+      transition: all 0.2s;
       z-index: 10;
+      border-radius: 2px;
     }
-    .lv-modal-arrow:hover { background: #fff; }
-    .lv-modal-prev-btn { right: 56px; }
+    .lv-modal-arrow:hover { background: #fff; border-color: #000; }
+    .lv-modal-prev-btn { right: 62px; }
     .lv-modal-next-btn { right: 16px; }
 
     /* Right: product info */
@@ -403,83 +427,88 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 32px 36px 28px;
+      padding: 48px 44px 40px;
       overflow-y: auto;
     }
     .lv-modal-top {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 6px;
+      margin-bottom: 12px;
     }
     .lv-modal-cat {
-      font-size: 9px;
-      letter-spacing: 3px;
+      font-size: 10px;
+      letter-spacing: 1.4px;
       text-transform: uppercase;
-      color: #888;
+      color: #aaa;
+      font-weight: 500;
     }
     .lv-modal-close-btn {
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 18px;
-      color: #000;
+      font-size: 20px;
+      color: #999;
       line-height: 1;
-      padding: 0 0 0 12px;
+      padding: 0;
       transition: color 0.2s;
     }
-    .lv-modal-close-btn:hover { color: #666; }
+    .lv-modal-close-btn:hover { color: #000; }
 
     .lv-modal-title {
       font-family: 'Playfair Display', serif;
       font-weight: 400;
-      font-size: clamp(18px, 2.2vw, 26px);
-      letter-spacing: 0.5px;
-      line-height: 1.25;
-      margin-bottom: 18px;
+      font-size: clamp(22px, 2.5vw, 32px);
+      letter-spacing: 0.6px;
+      line-height: 1.3;
+      margin-bottom: 20px;
+      color: #000;
     }
 
     .lv-modal-price-row {
       font-size: 16px;
       font-weight: 400;
       letter-spacing: 0.3px;
-      margin-bottom: 24px;
-      padding-bottom: 20px;
+      margin-bottom: 28px;
+      padding-bottom: 24px;
       border-bottom: 1px solid #e8e8e8;
+      color: #000;
     }
 
     .lv-modal-desc {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.85;
-      margin-bottom: 24px;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.8;
+      margin-bottom: 28px;
       flex: 1;
+      font-weight: 300;
     }
 
     .lv-modal-features {
-      margin-bottom: 24px;
+      margin-bottom: 28px;
     }
     .lv-modal-feature {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      font-size: 12px;
-      color: #444;
-      padding: 10px 0;
-      border-bottom: 1px solid #f0f0f0;
+      gap: 14px;
+      font-size: 13px;
+      color: #666;
+      padding: 12px 0;
+      border-bottom: 1px solid #f2f2f2;
       letter-spacing: 0.2px;
+      font-weight: 300;
     }
     .lv-modal-feature i {
-      font-size: 11px;
-      margin-top: 3px;
-      color: #999;
+      font-size: 12px;
+      margin-top: 2px;
+      color: #bbb;
       flex-shrink: 0;
     }
 
     .lv-modal-btns {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
     .lv-btn-primary {
       display: block;
@@ -489,13 +518,15 @@
       color: #fff;
       text-decoration: none;
       font-family: 'Arimo', sans-serif;
-      font-size: 11px;
-      letter-spacing: 2.5px;
+      font-size: 12px;
+      letter-spacing: 1.6px;
       text-transform: uppercase;
-      padding: 16px 20px;
+      padding: 14px 20px;
       border: 1px solid #000;
-      transition: background 0.25s, color 0.25s;
+      transition: all 0.25s;
       cursor: pointer;
+      font-weight: 500;
+      border-radius: 2px;
     }
     .lv-btn-primary:hover { background: #fff; color: #000; }
     .lv-btn-secondary {
@@ -506,38 +537,43 @@
       color: #000;
       text-decoration: none;
       font-family: 'Arimo', sans-serif;
-      font-size: 11px;
-      letter-spacing: 2.5px;
+      font-size: 12px;
+      letter-spacing: 1.6px;
       text-transform: uppercase;
-      padding: 15px 20px;
+      padding: 13px 20px;
       border: 1px solid #000;
-      transition: background 0.25s, color 0.25s;
+      transition: all 0.25s;
       cursor: pointer;
+      font-weight: 500;
+      border-radius: 2px;
     }
     .lv-btn-secondary:hover { background: #000; color: #fff; }
 
     .lv-modal-counter {
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: #aaa;
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      color: #bbb;
       text-transform: uppercase;
       text-align: center;
-      margin-top: 14px;
+      margin-top: 16px;
+      font-weight: 400;
     }
 
     /* Mobile */
     @media(max-width:680px) {
-      .lv-breadcrumb, .lv-banner, .lv-toolbar, .lv-main { padding-left: 16px; padding-right: 16px; }
-      .lv-banner { padding-top: 24px; }
-      .lv-toolbar { margin-left: 16px; margin-right: 16px; }
-      .lv-modal-bg { padding: 0; align-items: flex-end; }
-      .lv-modal { flex-direction: column; max-height: 94dvh; max-width: 100%; transform: translateY(50px); }
+      .lv-breadcrumb { padding: 14px 18px; font-size: 9px; }
+      .lv-banner { padding: 40px 18px 24px; gap: 20px; }
+      .lv-banner-left h1 { font-size: clamp(24px, 6vw, 32px); }
+      .lv-banner-left p { font-size: 13px; }
+      .lv-toolbar { padding: 16px 18px; }
+      .lv-modal-bg { padding: 0; align-items: flex-end; backdrop-filter: none; }
+      .lv-modal { flex-direction: column; max-height: 95dvh; max-width: 100%; transform: translateY(50px); border-radius: 0; }
       .lv-modal-gallery { flex: 0 0 auto; }
-      .lv-modal-main-img { min-height: 60vw; }
+      .lv-modal-main-img { min-height: 65vw; }
       .lv-modal-thumbs { display: none; }
-      .lv-modal-info { padding: 20px 18px 28px; }
+      .lv-modal-info { padding: 24px 20px 32px; }
       .lv-modal-btns { flex-direction: row; }
-      .lv-btn-primary, .lv-btn-secondary { flex: 1; font-size: 10px; padding: 13px 8px; }
+      .lv-btn-primary, .lv-btn-secondary { flex: 1; font-size: 11px; padding: 12px 8px; }
     }
 
     /* ── FOOTER (UNTOUCHED) ── */
@@ -579,7 +615,7 @@
     </nav>
   </header>
 
-  <!-- ══ LV-STYLE PRODUCT SECTION ══ -->
+  <!-- ══ HERMÈS-STYLE PRODUCT SECTION ══ -->
 
   <!-- Breadcrumb -->
   <div class="lv-breadcrumb">
