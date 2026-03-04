@@ -143,15 +143,25 @@
     }
     .card-body .price { font-size: 13px; color: var(--muted); font-weight: 400; }
 
-    /* ── MOBILE: 2 cols of squares, every 5th card full-width ── */
+    /* ── MOBILE: 2x2 squares then 1 full-width, repeating ── */
     @media(max-width:680px) {
-      .row-3, .row-2 {
+      /* Flatten all rows into a single 2-col grid */
+      #silvers-grid {
+        display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 2px;
-        margin-bottom: 2px;
       }
-      .set-card.full-width { grid-column: 1 / -1; }
-      .set-card.full-width .card-img { aspect-ratio: 3/2; }
+      .row-3, .row-2 {
+        display: contents; /* dissolve row wrappers — cards flow into parent grid */
+      }
+      /* Every 5th card spans full width */
+      .set-card:nth-child(5n) {
+        grid-column: 1 / -1;
+      }
+      .set-card:nth-child(5n) .card-img { aspect-ratio: 4/3; }
+      /* All other cards stay square */
+      .card-img { aspect-ratio: 1/1; }
+      .row-2 .card-img { aspect-ratio: 1/1; }
       .card-body { padding: 10px 4px 8px; }
       .card-body .name { font-size: 12px; }
       .card-body .price { font-size: 12px; }
@@ -454,7 +464,7 @@
 
           chunk.forEach((item, idx) => {
             const card = buildCard(item);
-            // On mobile: mark every 5th overall card as full-width
+            // On mobile: every 5th card (0-indexed: 4,9,14...) is full-width
             const globalIdx = i + idx;
             if((globalIdx + 1) % 5 === 0) card.classList.add('full-width');
             row.appendChild(card);
