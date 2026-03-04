@@ -10,8 +10,8 @@
     * { margin:0; padding:0; box-sizing:border-box; }
 
     :root {
-      --bg: #f0ede8;
-      --card-bg: #f0ede8;
+      --bg: #F8F7F5;
+      --card-bg: #F8F7F5;
       --text: #1a1a1a;
       --muted: #888;
       --border: rgba(0,0,0,0.08);
@@ -60,13 +60,14 @@
 
     /* ── PAGE HEADER ── */
     .container { max-width: 1600px; margin: 0 auto; padding: 60px 4% 120px; }
-    .page-header { text-align: left; margin-bottom: 48px; }
+    .page-header { text-align: center; margin-bottom: 48px; }
     .page-header h1 {
       font-family: 'Playfair Display', serif; font-weight: 400;
       font-size: clamp(22px, 3vw, 36px); letter-spacing: 1px; color: var(--text);
     }
     .page-header .sub {
-      font-size: 13px; color: var(--muted); margin-top: 6px; letter-spacing: 0.3px;
+      font-size: 13px; color: var(--muted); margin-top: 8px; letter-spacing: 0.3px;
+      max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7;
     }
 
     /* ── SECTIONS: alternating 3-col then 2-col rows ── */
@@ -92,7 +93,7 @@
     .card-img {
       position: relative; width: 100%;
       aspect-ratio: 1/1;
-      overflow: hidden; background: #e4e1dc;
+      overflow: hidden; background: #e8e5e1;
       border-radius: 2px;
     }
     /* Row-of-2 cards get taller aspect ratio */
@@ -146,12 +147,12 @@
     @media(max-width:680px) {
       .row-3, .row-2 {
         grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-        margin-bottom: 8px;
+        gap: 2px;
+        margin-bottom: 2px;
       }
       .set-card.full-width { grid-column: 1 / -1; }
       .set-card.full-width .card-img { aspect-ratio: 3/2; }
-      .card-body { padding: 10px 2px 0; }
+      .card-body { padding: 10px 4px 8px; }
       .card-body .name { font-size: 12px; }
       .card-body .price { font-size: 12px; }
     }
@@ -291,7 +292,7 @@
   <div class="container">
     <div class="page-header">
       <h1>Silver Grillz</h1>
-      <p class="sub">Pure silver craftsmanship for a timeless, cold-toned shine.</p>
+      <p class="sub">Handcrafted in sterling silver, platinum, and chrome — each piece shaped to your smile with precision tooling, mirror-polished by hand for a finish that lasts.</p>
     </div>
     <div id="silvers-grid"></div>
   </div>
