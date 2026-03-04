@@ -28,10 +28,28 @@
 
     /* ── HEADER ── */
     header {
-      position: sticky; top: 0; height: 60px;
+      position: fixed; top: 0; left: 0; right: 0; height: 60px;
       background: var(--bg); border-bottom: 1px solid var(--border);
       z-index: 1000; display: flex; align-items: center;
       justify-content: space-between; padding: 0 5%;
+      transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+    header.hidden { transform: translateY(-100%); }
+
+    /* ── FLOATING LOGO ── */
+    .floating-logo {
+      position: fixed; top: 20px; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999; pointer-events: none;
+      opacity: 0; transform: translateY(-10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .floating-logo.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .floating-logo a {
+      font-family: 'Playfair Display', serif; font-size: 18px;
+      font-weight: 700; letter-spacing: 4px; color: #fff;
+      text-decoration: none;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.5);
     }
     .logo-text {
       font-family: 'Playfair Display', serif; font-size: 22px;
@@ -59,7 +77,7 @@
     }
 
     /* ── PAGE HEADER ── */
-    .container { max-width: 1600px; margin: 0 auto; padding: 60px 4% 120px; }
+    .container { max-width: 1600px; margin: 0 auto; padding: 80px 4% 120px; }
     .page-header { text-align: center; margin-bottom: 48px; }
     .page-header h1 {
       font-family: 'Playfair Display', serif; font-weight: 400;
@@ -68,6 +86,43 @@
     .page-header .sub {
       font-size: 13px; color: var(--muted); margin-top: 8px; letter-spacing: 0.3px;
       max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7;
+    }
+
+    /* ── SEARCH BAR ── */
+    .search-wrap {
+      margin: 20px auto 0;
+      max-width: 400px;
+      position: relative;
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 11px 40px 11px 16px;
+      font-family: 'Arimo', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.14);
+      border-radius: 2px;
+      outline: none;
+      letter-spacing: 0.3px;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input::placeholder { color: #bbb; }
+    .search-wrap input:focus { border-color: rgba(0,0,0,0.35); }
+    .search-wrap svg {
+      position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px; color: #aaa; pointer-events: none;
+    }
+    .no-results {
+      text-align: center; padding: 60px 0;
+      font-size: 13px; color: var(--muted);
+      display: none;
+    }
+
+    @media(max-width:680px) {
+      .container { padding-top: 80px; }
+      .page-header { margin-bottom: 20px; }
+      .search-wrap { max-width: 100%; }
     }
 
     /* ── SECTIONS: alternating 3-col then 2-col rows ── */
@@ -256,12 +311,54 @@
       .modal-cta-primary, .modal-cta-secondary { flex: 1; font-size: 9px; padding: 13px 8px; letter-spacing: 2px; }
     }
 
+    /* ── SEE MORE ── */
+    .see-more-wrap { text-align: center; padding: 48px 0 20px; }
+    .see-more-btn {
+      display: inline-block; font-family: 'Arimo', sans-serif;
+      font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+      border: 1px solid var(--text); padding: 14px 48px; color: var(--text);
+      background: transparent; cursor: pointer;
+      transition: background 0.25s, color 0.25s;
+    }
+    .see-more-btn:hover { background: var(--text); color: #fff; }
+
+    /* ── CTA BAND ── */
+    .cta-band {
+      background: #fff; color: var(--text);
+      text-align: center; padding: 90px 5%;
+    }
+    .cta-band .eyebrow { font-size: 9px; letter-spacing: 5px; text-transform: uppercase; color: #aaa; margin-bottom: 12px; }
+    .cta-band h2 {
+      font-family: 'Playfair Display', serif; font-weight: 400;
+      font-size: clamp(22px, 3.5vw, 42px); letter-spacing: 3px;
+      text-transform: uppercase; line-height: 1.2; margin-bottom: 14px; color: var(--text);
+    }
+    .cta-band p { font-size: 13px; color: #999; max-width: 480px; margin: 0 auto 40px; line-height: 1.75; }
+    .cta-btns { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .cta-btn-dark {
+      display: inline-block; font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+      border: 1px solid var(--text); padding: 15px 38px; color: var(--text);
+      transition: background 0.25s, color 0.25s;
+    }
+    .cta-btn-dark:hover { background: var(--text); color: #fff; }
+    .cta-btn-outline {
+      display: inline-block; font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+      border: 1px solid #ccc; padding: 15px 38px; color: #888;
+      transition: border-color 0.25s, color 0.25s;
+    }
+    .cta-btn-outline:hover { border-color: var(--text); color: var(--text); }
+    @media(max-width:480px) {
+      .cta-band { padding: 60px 5%; }
+      .cta-btns { flex-direction: column; align-items: center; }
+      .cta-btn-dark, .cta-btn-outline { width: 100%; max-width: 280px; text-align: center; }
+    }
+
     /* ── FOOTER ── */
-    footer { background: #fff; color: #1a1a1a; padding: 50px 5% 20px; margin-top: 80px; border-top: 1px solid #eee; }
+    footer { background: #fff; color: #000; padding: 50px 5% 20px; }
     .footer-main { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid #eee; }
     .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: #999; }
-    .footer-col p { font-size: 13px; color: #888; line-height: 1.6; max-width: 300px; }
-    .footer-col a { display: block; color: #333; text-decoration: none; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
+    .footer-col p { font-size: 13px; color: #888; max-width: 300px; line-height: 1.6; }
+    .footer-col a { display: block; color: #333; font-size: 12px; margin-bottom: 8px; transition: 0.3s; }
     .footer-col a:hover { color: #000; }
     .footer-bottom { padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
     .footer-logo-img { height: 10px; filter: brightness(0); }
@@ -269,17 +366,20 @@
     .ceo-label { font-size: 7px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
     .ceo-name { font-family: 'Alex Brush'; font-size: 14px; color: #666; }
     .legal-text { font-size: 9px; color: #aaa; text-transform: uppercase; }
-    @media(max-width:768px) {
-      .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; }
-      .footer-col { display: flex; flex-direction: column; align-items: center; }
-      .footer-bottom { flex-direction: column; text-align: center; }
-    }
+    .footer-icons a { color: #333; margin-right: 14px; font-size: 16px; transition: 0.3s; }
+    .footer-icons a:hover { color: #000; }
+    @media(max-width:768px) { .footer-main { grid-template-columns: 1fr; text-align: center; gap: 30px; } .footer-col { display: flex; flex-direction: column; align-items: center; } .footer-bottom { flex-direction: column; text-align: center; } }
 
     /* empty state */
     .empty { text-align: center; padding: 80px 0; font-size: 14px; color: var(--muted); }
   </style>
 </head>
 <body oncontextmenu="return false;">
+
+  <!-- FLOATING LOGO -->
+  <div class="floating-logo" id="floating-logo">
+    <a href="index.html">EGYGRILLZ</a>
+  </div>
 
   <header>
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
@@ -301,8 +401,18 @@
     <div class="page-header">
       <h1>Silver Grillz</h1>
       <p class="sub">Handcrafted in sterling silver, platinum, and chrome — each piece shaped to your smile with precision tooling, mirror-polished by hand for a finish that lasts.</p>
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Search by name…" autocomplete="off">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+        </svg>
+      </div>
     </div>
     <div id="silvers-grid"></div>
+    <div class="no-results" id="no-results">No results found for your search.</div>
+    <div class="see-more-wrap" id="see-more-wrap" style="display:none;">
+      <button class="see-more-btn" id="see-more-btn">See More</button>
+    </div>
   </div>
 
   <!-- MODAL -->
@@ -330,6 +440,17 @@
     </div>
   </div>
 
+  <!-- CTA BAND -->
+  <div class="cta-band">
+    <div class="eyebrow">Begin Your Journey</div>
+    <h2>Book Your Appointment</h2>
+    <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
+    <div class="cta-btns">
+      <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
+      <a href="contact.html" class="cta-btn-outline">Contact Us</a>
+    </div>
+  </div>
+
   <footer>
     <div class="footer-main">
       <div class="footer-col">
@@ -346,24 +467,56 @@
         <h4>Legal</h4>
         <a href="privacy.html">Privacy Policy</a>
         <a href="terms.html">Terms of Service</a>
-        <a href="shipping.html">Care & Shipping</a>
+        <a href="shipping.html">Care &amp; Shipping</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <div>
-        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#333;margin-right:15px;"><i class="fab fa-instagram"></i></a>
-        <a href="#" style="color:#333;"><i class="fas fa-location-dot"></i></a>
+      <div class="footer-icons">
+        <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://share.google/wwOlkoKltj4xaVuAM" target="_blank"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
-      <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
+      <div class="ceo-wrap">
+        <span class="ceo-label">Founder</span>
+        <span class="ceo-name">DR Mohamed Mahdy</span>
+      </div>
       <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
   </footer>
 
   <script>
+    // ── Header hide + floating logo ──
+    (function(){
+      const header = document.querySelector('header');
+      const floatLogo = document.getElementById('floating-logo');
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        const hiding = y > lastY && y > 80;
+        header.classList.toggle('hidden', hiding);
+        floatLogo.classList.toggle('visible', hiding);
+        lastY = y;
+      }, { passive: true });
+    })();
+
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
+    });
+
+    // ── Search ──
+    document.getElementById('search-input').addEventListener('input', function() {
+      const q = this.value.trim().toLowerCase();
+      const cards = document.querySelectorAll('.set-card');
+      let visible = 0;
+      cards.forEach(card => {
+        const name = (card.querySelector('.name')?.textContent || '').toLowerCase();
+        const match = !q || name.includes(q);
+        card.style.display = match ? '' : 'none';
+        if(match) visible++;
+      });
+      const noRes = document.getElementById('no-results');
+      noRes.style.display = (q && visible === 0) ? 'block' : 'none';
     });
 
     function parseInfo(text) {
@@ -452,26 +605,61 @@
           return;
         }
 
-        // Build desktop rows: pattern [3, 2, 3, 2, ...]
-        let i=0, rowToggle=true;
-        while(i < valid.length){
-          const count = rowToggle ? 3 : 2;
-          const chunk = valid.slice(i, i+count);
-          const row = document.createElement('div');
-          row.className = rowToggle ? 'row-3' : 'row-2';
+        const PAGE = 10;
+        let shown = 0;
 
-          chunk.forEach((item, idx) => {
-            const globalIdx = i + idx;
-            const card = buildCard(item);
-            // Every 5th card (0-indexed: 4,9,14...) gets mob-full for mobile layout
-            if((globalIdx + 1) % 5 === 0) card.classList.add('mob-full');
-            row.appendChild(card);
-          });
+        function renderNext() {
+          const batch = valid.slice(shown, shown + PAGE);
+          let i = shown, rowToggle = (shown === 0) ? true : (Math.floor(shown / 3) % 2 === 0);
 
-          container.appendChild(row);
-          i += count;
-          rowToggle = !rowToggle;
+          // Rebuild row toggle state based on how many items shown so far
+          // Simpler: just track globally
+          let batchIdx = 0;
+          while(batchIdx < batch.length) {
+            const globalI = shown + batchIdx;
+            // Determine row type: rows go [3,2,3,2...] based on overall position
+            // Count which "row" we're in
+            const rowType = getRowType(globalI);
+            const count = rowType === 3 ? 3 : 2;
+            const chunk = batch.slice(batchIdx, batchIdx + count);
+            if(!chunk.length) break;
+
+            const row = document.createElement('div');
+            row.className = rowType === 3 ? 'row-3' : 'row-2';
+
+            chunk.forEach((item, idx) => {
+              const globalIdx = globalI + idx;
+              const card = buildCard(item);
+              if((globalIdx + 1) % 5 === 0) card.classList.add('mob-full');
+              row.appendChild(card);
+            });
+
+            container.appendChild(row);
+            batchIdx += chunk.length;
+          }
+
+          shown += batch.length;
+
+          // Show/hide see more button
+          const seeMoreWrap = document.getElementById('see-more-wrap');
+          seeMoreWrap.style.display = shown < valid.length ? 'block' : 'none';
         }
+
+        // Helper: given a global item index, what row size does it belong to?
+        function getRowType(globalIdx) {
+          // rows: 0-2 → row3, 3-4 → row2, 5-7 → row3, 8-9 → row2, etc.
+          let pos = 0, toggle = true;
+          while(true) {
+            const size = toggle ? 3 : 2;
+            if(globalIdx < pos + size) return size;
+            pos += size;
+            toggle = !toggle;
+          }
+        }
+
+        renderNext();
+
+        document.getElementById('see-more-btn').addEventListener('click', renderNext);
       });
     }).catch(e=>console.error(e));
 
