@@ -8,21 +8,16 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Arimo',sans-serif; background:#f5f5f3; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; }
+    html { scroll-behavior: smooth; }
+    body { font-family:'Arimo',sans-serif; background:#f5f5f3; color:#1a1a1a; line-height:1.6; -webkit-font-smoothing:antialiased; }
     body.menu-open, body.modal-open { overflow:hidden; }
 
     /* ── HEADER ── */
     header {
-      position: sticky;
-      top: 0;
-      height: 60px;
-      background: #f5f5f3;
-      border-bottom: 1px solid #e0e0dd;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 5%;
+      position: sticky; top: 0; height: 60px;
+      background: #f5f5f3; border-bottom: 1px solid #e0e0dd;
+      z-index: 1000; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 5%;
     }
     .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; text-decoration:none; color:#000; }
     .main-nav { display:flex; gap:20px; }
@@ -35,208 +30,281 @@
       .menu-toggle { display:flex; }
       .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:#f5f5f3; flex-direction:column; padding:10px 5%; transition:0.4s cubic-bezier(0.4,0,0.2,1); box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
       .main-nav.active { right:0; }
-      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; width:100%; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #eee; width:100%; }
     }
 
-    /* ══════════════════════════════════════
-       HERMÈS-STYLE PAGE
-    ══════════════════════════════════════ */
-
-    /* ── Breadcrumb ── */
+    /* ── BREADCRUMB ── */
     .h-breadcrumb {
-      padding: 14px 40px;
-      font-size: 11px;
-      color: #888;
-      letter-spacing: 0.3px;
-      display: flex;
-      align-items: center;
-      gap: 0;
-      background: #f5f5f3;
+      padding: 14px 40px; font-size: 11px; color: #888;
+      letter-spacing: 0.3px; display: flex; align-items: center;
+      background: #f5f5f3; border-bottom: 1px solid #e8e8e6;
     }
     .h-breadcrumb a { color: #888; text-decoration: none; transition: color 0.2s; }
     .h-breadcrumb a:hover { color: #000; }
     .h-breadcrumb .sep { margin: 0 8px; color: #ccc; font-size: 10px; }
+    @media(max-width:600px) { .h-breadcrumb { padding: 12px 18px; } }
 
-    /* ── Page Layout ── */
-    .h-page {
-      display: flex;
-      min-height: calc(100vh - 60px);
-    }
-
-    /* ── LEFT SIDEBAR ── */
-    .h-sidebar {
-      width: 240px;
-      flex-shrink: 0;
-      border-right: 1px solid #e0e0dd;
-      padding: 32px 0;
+    /* ── SEARCH BAR (Hermès-style sticky top filter bar) ── */
+    .h-filterbar {
       position: sticky;
       top: 60px;
-      height: calc(100vh - 60px);
-      overflow-y: auto;
+      z-index: 900;
       background: #f5f5f3;
-    }
-    .h-sidebar-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 22px;
-      font-weight: 400;
-      letter-spacing: 0.5px;
-      padding: 0 28px 28px;
-      border-bottom: 1px solid #e8e8e8;
-      color: #000;
-    }
-    .h-sidebar-section {
-      padding: 0;
-      border-bottom: 1px solid #e8e8e8;
-    }
-    .h-sidebar-section-title {
-      font-size: 11px;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      font-weight: 500;
-      color: #000;
-      padding: 18px 28px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      user-select: none;
-    }
-    .h-sidebar-section-title i {
-      font-size: 9px;
-      color: #aaa;
-      transition: transform 0.3s;
-    }
-    .h-sidebar-section.open .h-sidebar-section-title i { transform: rotate(180deg); }
-    .h-sidebar-items {
-      display: none;
-      padding: 0 28px 16px;
-      flex-direction: column;
-      gap: 0;
-    }
-    .h-sidebar-section.open .h-sidebar-items { display: flex; }
-    .h-sidebar-item {
-      font-size: 12px;
-      color: #555;
-      padding: 7px 0;
-      cursor: pointer;
-      letter-spacing: 0.2px;
-      transition: color 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: none;
-    }
-    .h-sidebar-item:hover { color: #000; }
-    .h-sidebar-item.active { color: #000; font-weight: 500; }
-    .h-sidebar-item-count { font-size: 10px; color: #bbb; }
-
-    /* Color swatches */
-    .h-sidebar-colors {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 0 28px 16px;
-    }
-    .h-swatch {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 1.5px solid transparent;
-      cursor: pointer;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-    .h-swatch:hover { transform: scale(1.15); }
-    .h-swatch.active { border-color: #000; }
-
-    /* ── MAIN CONTENT ── */
-    .h-content {
-      flex: 1;
-      min-width: 0;
-      padding: 0 40px 100px;
-    }
-
-    /* Top bar */
-    .h-topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 24px 0 20px;
       border-bottom: 1px solid #e0e0dd;
-      margin-bottom: 32px;
-    }
-    .h-count {
-      font-size: 12px;
-      color: #888;
-      letter-spacing: 0.3px;
-    }
-    .h-topbar-right {
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 0;
+      padding: 0 40px;
+      height: 52px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .h-view-toggles {
+    .h-filterbar::-webkit-scrollbar { display: none; }
+
+    /* Search input Hermès style */
+    .h-search-wrap {
       display: flex;
+      align-items: center;
       gap: 8px;
+      border-right: 1px solid #e0e0dd;
+      padding-right: 20px;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+    .h-search-wrap i { font-size: 12px; color: #999; }
+    .h-search-input {
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      border: none;
+      background: transparent;
+      color: #000;
+      outline: none;
+      width: 160px;
+    }
+    .h-search-input::placeholder { color: #aaa; }
+
+    /* Filter pills */
+    .h-filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex: 1;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .h-filter-pills::-webkit-scrollbar { display: none; }
+    .h-pill {
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      border: none;
+      background: transparent;
+      color: #555;
+      padding: 0 18px;
+      height: 52px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      border-right: 1px solid #e8e8e6;
+      transition: color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .h-pill:first-child { border-left: 1px solid #e8e8e6; }
+    .h-pill:hover { color: #000; background: rgba(0,0,0,0.02); }
+    .h-pill.active { color: #000; font-weight: 500; }
+    .h-pill.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: #000;
+    }
+    .h-pill i { font-size: 9px; color: #bbb; }
+
+    /* Right side of filterbar */
+    .h-filterbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-left: auto;
+      flex-shrink: 0;
+      border-left: 1px solid #e0e0dd;
+      padding-left: 0;
+    }
+    .h-sort-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 18px;
+      height: 52px;
+      border-left: none;
+      font-size: 11px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #555;
+    }
+    .h-sort-pill select {
+      font-family: 'Arimo', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.6px;
+      border: none;
+      background: transparent;
+      color: #000;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      text-transform: uppercase;
+      padding-right: 16px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23666'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0 center;
+      outline: none;
+    }
+    .h-view-btns {
+      display: flex;
+      align-items: center;
+      border-left: 1px solid #e0e0dd;
     }
     .h-view-btn {
       background: none;
-      border: 1px solid #e0e0e0;
-      width: 32px;
-      height: 32px;
+      border: none;
+      width: 44px;
+      height: 52px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      color: #aaa;
-      transition: color 0.2s, border-color 0.2s;
-      border-radius: 2px;
-      font-size: 12px;
+      color: #bbb;
+      transition: color 0.2s;
+      font-size: 13px;
     }
-    .h-view-btn.active { color: #000; border-color: #000; }
-    .h-sort-wrap {
+    .h-view-btn.active { color: #000; }
+    .h-view-btn:hover { color: #555; }
+
+    @media(max-width:700px) {
+      .h-filterbar { padding: 0 14px; }
+      .h-sort-pill span { display: none; }
+      .h-search-wrap { display: none; }
+    }
+
+    /* ── CATEGORY HEADER ── */
+    .h-cat-header {
+      padding: 48px 40px 36px;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      color: #666;
-      letter-spacing: 0.4px;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: #f5f5f3;
     }
-    .h-sort-wrap select {
-      font-family: 'Arimo', sans-serif;
-      font-size: 12px;
-      border: 1px solid #e0e0e0;
-      padding: 6px 28px 6px 10px;
-      cursor: pointer;
-      background: transparent;
+    .h-cat-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: 0.5px;
       color: #000;
-      -webkit-appearance: none;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23000'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      background-size: 7px;
-      border-radius: 2px;
-      letter-spacing: 0.3px;
+      line-height: 1.15;
     }
+    .h-cat-header p {
+      font-size: 12px;
+      color: #999;
+      letter-spacing: 0.3px;
+      margin-top: 8px;
+      font-weight: 300;
+    }
+    .h-item-count {
+      font-size: 12px;
+      color: #aaa;
+      letter-spacing: 0.3px;
+      align-self: flex-end;
+      padding-bottom: 6px;
+    }
+    @media(max-width:600px) { .h-cat-header { padding: 32px 18px 24px; } }
 
     /* ── GRID ── */
+    .h-grid-wrap {
+      padding: 0 40px 100px;
+      background: #f5f5f3;
+    }
     .h-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 0;
+      border-top: 1px solid #e8e8e6;
+      border-left: 1px solid #e8e8e6;
     }
-    .h-grid.view-4 { grid-template-columns: repeat(4, 1fr); }
+    .h-grid.view-3 { grid-template-columns: repeat(3, 1fr); }
     .h-grid.view-2 { grid-template-columns: repeat(2, 1fr); }
 
-    @media(max-width:1200px) { .h-grid { grid-template-columns: repeat(3, 1fr); } .h-grid.view-4 { grid-template-columns: repeat(3, 1fr); } }
-    @media(max-width:900px) {
-      .h-sidebar { display: none; }
-      .h-content { padding: 0 24px 80px; }
-      .h-grid, .h-grid.view-4 { grid-template-columns: repeat(2, 1fr); }
+    @media(max-width:1200px) { .h-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media(max-width:800px)  { .h-grid, .h-grid.view-3, .h-grid.view-2 { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width:480px)  { .h-grid, .h-grid.view-3, .h-grid.view-2, .h-grid.view-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width:800px) { .h-grid-wrap { padding: 0 0 80px; } }
+
+    /* ── EDITORIAL BANNER (between product rows) ── */
+    .h-editorial {
+      grid-column: 1 / -1;
+      position: relative;
+      overflow: hidden;
+      height: 380px;
+      border-right: 1px solid #e8e8e6;
+      border-bottom: 1px solid #e8e8e6;
+      background: #ede9e1;
     }
-    @media(max-width:560px) {
-      .h-grid, .h-grid.view-4, .h-grid.view-2 { grid-template-columns: repeat(2, 1fr); }
-      .h-content { padding: 0 12px 60px; }
+    .h-editorial img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+      display: block;
+      transition: transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    .h-editorial:hover img { transform: scale(1.03); }
+    .h-editorial-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.1) 60%, transparent 100%);
+      display: flex;
+      align-items: center;
+      padding: 0 60px;
+    }
+    .h-editorial-text {}
+    .h-editorial-tag {
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .h-editorial-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(22px, 3.5vw, 38px);
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.25;
+      letter-spacing: 0.3px;
+      margin-bottom: 20px;
+    }
+    .h-editorial-cta {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,0.6);
+      padding-bottom: 3px;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .h-editorial-cta:hover { border-color: #fff; }
+    @media(max-width:600px) {
+      .h-editorial { height: 240px; }
+      .h-editorial-overlay { padding: 0 24px; }
     }
 
     /* ── PRODUCT CARD ── */
@@ -245,11 +313,12 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      border: 1px solid transparent;
-      transition: border-color 0.25s;
-      padding: 0;
+      border-right: 1px solid #e8e8e6;
+      border-bottom: 1px solid #e8e8e6;
+      background: #f5f5f3;
+      transition: background 0.2s;
     }
-    .h-card:hover { border-color: #e8e8e8; }
+    .h-card:hover { background: #f0f0ee; }
 
     /* Image */
     .h-card-img {
@@ -257,387 +326,239 @@
       width: 100%;
       aspect-ratio: 3 / 4;
       overflow: hidden;
-      background: #f5f5f3;
+      background: #ede9e4;
     }
     .h-card-img img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
       object-fit: cover;
       opacity: 0;
-      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
-      -webkit-user-drag: none;
-      pointer-events: none;
+      transition: opacity 0.55s ease, transform 0.65s cubic-bezier(0.25,0.46,0.45,0.94);
+      -webkit-user-drag: none; pointer-events: none;
     }
     .h-card-img img.active { opacity: 1; }
     .h-card:hover .h-card-img img.active { transform: scale(1.04); }
 
-    /* Quick add bar */
+    /* Quick view bar */
     .h-card-quick {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(245,245,243,0.97);
-      padding: 12px 16px;
-      font-size: 10px;
-      letter-spacing: 1.6px;
-      text-transform: uppercase;
-      font-weight: 500;
-      text-align: center;
-      color: #000;
-      opacity: 0;
-      transform: translateY(4px);
-      transition: opacity 0.25s, transform 0.25s;
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(245,245,243,0.96);
+      padding: 11px 14px;
+      font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
+      font-weight: 500; text-align: center; color: #000;
+      opacity: 0; transform: translateY(3px);
+      transition: opacity 0.22s, transform 0.22s;
       pointer-events: none;
-      border-top: 1px solid #e8e8e8;
+      border-top: 1px solid #e8e8e6;
     }
     .h-card:hover .h-card-quick { opacity: 1; transform: translateY(0); pointer-events: all; }
 
     /* Wishlist */
     .h-card-wish {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 5;
-      background: none;
-      border: none;
-      cursor: pointer;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s;
+      position: absolute; top: 10px; right: 10px; z-index: 5;
+      background: none; border: none; cursor: pointer;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s;
     }
     .h-card:hover .h-card-wish { opacity: 1; }
-    .h-card-wish i { font-size: 14px; color: #000; }
+    .h-card-wish i { font-size: 14px; color: #222; }
 
-    /* Badges */
+    /* Badge */
     .h-badge {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 5;
-      font-size: 9px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      background: #000;
-      color: #fff;
-      padding: 3px 8px;
-      font-weight: 600;
+      position: absolute; top: 10px; left: 10px; z-index: 5;
+      font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+      background: #1a1a1a; color: #f5f5f3;
+      padding: 3px 8px; font-weight: 600;
     }
 
-    /* Image dots */
+    /* Image indicator dots */
     .h-img-dots {
-      position: absolute;
-      bottom: 52px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      gap: 5px;
-      opacity: 0;
-      transition: opacity 0.2s;
-      pointer-events: none;
+      position: absolute; bottom: 46px; left: 0; right: 0;
+      display: flex; justify-content: center; gap: 5px;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
     }
     .h-card:hover .h-img-dots { opacity: 1; }
     .h-img-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.2);
-      transition: background 0.2s;
+      width: 4px; height: 4px; border-radius: 50%;
+      background: rgba(0,0,0,0.18); transition: background 0.2s;
     }
     .h-img-dot.active { background: #000; }
 
-    /* Card body */
+    /* Card body — Hermès style: minimal, left-aligned */
     .h-card-body {
-      padding: 14px 16px 20px;
+      padding: 14px 16px 18px;
       background: #f5f5f3;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
     .h-card-cat {
-      font-size: 9px;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: #bbb;
-      margin-bottom: 5px;
-      font-weight: 500;
+      font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase;
+      color: #aaa; font-weight: 500;
     }
     .h-card-name {
-      font-size: 13px;
-      font-weight: 400;
-      color: #000;
-      line-height: 1.5;
-      margin-bottom: 10px;
-      letter-spacing: 0.1px;
+      font-size: 13px; font-weight: 400; color: #1a1a1a;
+      line-height: 1.45; letter-spacing: 0.1px;
     }
     .h-card-price {
-      font-size: 13px;
-      font-weight: 400;
-      color: #000;
-      letter-spacing: 0.2px;
+      font-size: 13px; font-weight: 400; color: #1a1a1a;
+      letter-spacing: 0.15px; margin-top: 4px;
     }
-
-    /* ── ACTIVE FILTERS ── */
-    .h-active-filters {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    .h-active-filter-tag {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      letter-spacing: 0.4px;
-      border: 1px solid #000;
-      padding: 5px 12px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .h-active-filter-tag:hover { background: #f5f5f5; }
-    .h-active-filter-tag i { font-size: 9px; }
-    .h-clear-all {
-      font-size: 11px;
-      color: #888;
-      letter-spacing: 0.4px;
-      cursor: pointer;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-      background: none;
-      border: none;
-    }
-    .h-clear-all:hover { color: #000; }
 
     /* ── MODAL ── */
     .h-modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
+      position: fixed; inset: 0;
+      background: rgba(30,28,26,0.5);
       z-index: 9000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
       transition: opacity 0.3s;
       padding: 0;
+      backdrop-filter: blur(3px);
     }
     .h-modal-bg.open { opacity: 1; pointer-events: all; }
 
     .h-modal {
       background: #f5f5f3;
-      width: 100%;
-      max-width: 1100px;
-      max-height: 100vh;
+      width: 100%; max-width: 1080px; max-height: 100vh;
       display: flex;
-      transform: translateY(28px);
-      transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+      transform: translateY(24px);
+      transition: transform 0.38s cubic-bezier(0.25,0.46,0.45,0.94);
       overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.14);
+      box-shadow: 0 28px 80px rgba(0,0,0,0.18);
     }
     .h-modal-bg.open .h-modal { transform: translateY(0); }
 
-    /* Modal gallery */
+    /* Gallery side */
     .h-modal-gallery {
-      flex: 0 0 55%;
-      background: #f5f5f3;
+      flex: 0 0 54%;
+      background: #ede9e4;
       position: relative;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
     }
     .h-modal-main-img {
-      flex: 1;
-      position: relative;
-      min-height: 440px;
+      flex: 1; position: relative; min-height: 440px;
     }
     .h-modal-slide {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      transition: opacity 0.4s ease;
+      position: absolute; inset: 0;
+      opacity: 0; transition: opacity 0.38s ease;
     }
     .h-modal-slide.active { opacity: 1; }
     .h-modal-slide img {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       object-fit: cover;
-      pointer-events: none;
-      -webkit-user-drag: none;
+      pointer-events: none; -webkit-user-drag: none;
     }
-
-    /* Thumbnail row at bottom */
     .h-modal-thumbs {
-      display: flex;
-      gap: 6px;
-      padding: 12px 16px;
+      display: flex; gap: 4px;
+      padding: 10px 14px;
       background: #f5f5f3;
       border-top: 1px solid #e0e0dd;
       overflow-x: auto;
+      scrollbar-width: none;
     }
+    .h-modal-thumbs::-webkit-scrollbar { display: none; }
     .h-modal-thumb {
-      width: 60px;
-      height: 60px;
-      flex-shrink: 0;
-      object-fit: cover;
-      cursor: pointer;
-      opacity: 0.45;
-      border: 1.5px solid transparent;
+      width: 56px; height: 56px; flex-shrink: 0;
+      object-fit: cover; cursor: pointer;
+      opacity: 0.4; border: 1.5px solid transparent;
       transition: opacity 0.2s, border-color 0.2s;
       -webkit-user-drag: none;
     }
-    .h-modal-thumb:hover { opacity: 0.75; }
-    .h-modal-thumb.active { opacity: 1; border-color: #000; }
+    .h-modal-thumb:hover { opacity: 0.7; }
+    .h-modal-thumb.active { opacity: 1; border-color: #1a1a1a; }
 
-    /* Nav arrows */
+    /* Arrows */
     .h-modal-arrow {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255,255,255,0.92);
-      border: none;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 18px;
-      color: #000;
-      transition: background 0.2s;
-      z-index: 10;
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(245,245,243,0.9); border: none;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 17px; color: #000;
+      transition: background 0.2s; z-index: 10;
     }
     .h-modal-arrow:hover { background: #fff; }
-    .h-modal-prev { left: 12px; }
-    .h-modal-next { right: 12px; }
+    .h-modal-prev { left: 10px; }
+    .h-modal-next { right: 10px; }
 
-    /* Modal info */
+    /* Info side */
     .h-modal-info {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 52px 48px 44px;
+      display: flex; flex-direction: column;
+      padding: 52px 44px 40px;
       overflow-y: auto;
       background: #f5f5f3;
+      position: relative;
     }
+    .h-modal-info::-webkit-scrollbar { width: 3px; }
+    .h-modal-info::-webkit-scrollbar-thumb { background: #ddd; }
     .h-modal-close-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      color: #999;
-      line-height: 1;
-      transition: color 0.2s;
-      z-index: 10;
+      position: absolute; top: 18px; right: 20px;
+      background: none; border: none; cursor: pointer;
+      font-size: 17px; color: #aaa; transition: color 0.2s; z-index: 5;
     }
     .h-modal-close-btn:hover { color: #000; }
     .h-modal-cat {
-      font-size: 10px;
-      letter-spacing: 1.6px;
-      text-transform: uppercase;
-      color: #bbb;
-      margin-bottom: 14px;
-      font-weight: 500;
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      color: #bbb; margin-bottom: 16px; font-weight: 500;
     }
     .h-modal-title {
       font-family: 'Playfair Display', serif;
       font-weight: 400;
-      font-size: clamp(20px, 2.2vw, 30px);
-      letter-spacing: 0.4px;
-      line-height: 1.3;
-      margin-bottom: 18px;
-      color: #000;
+      font-size: clamp(20px, 2.2vw, 28px);
+      letter-spacing: 0.3px; line-height: 1.3;
+      margin-bottom: 16px; color: #000;
     }
     .h-modal-price {
-      font-size: 15px;
-      font-weight: 400;
-      color: #000;
-      letter-spacing: 0.3px;
-      margin-bottom: 28px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid #e8e8e8;
+      font-size: 14px; font-weight: 400;
+      color: #000; letter-spacing: 0.2px;
+      margin-bottom: 26px; padding-bottom: 22px;
+      border-bottom: 1px solid #e0e0dd;
     }
     .h-modal-desc {
-      font-size: 13px;
-      color: #666;
-      line-height: 1.9;
-      margin-bottom: 28px;
-      font-weight: 300;
-      flex: 1;
+      font-size: 13px; color: #666; line-height: 1.9;
+      margin-bottom: 26px; font-weight: 300; flex: 1;
     }
-    .h-modal-meta {
-      margin-bottom: 28px;
-    }
+    .h-modal-meta { margin-bottom: 26px; }
     .h-modal-meta-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      font-size: 12px;
-      color: #555;
-      padding: 11px 0;
-      border-bottom: 1px solid #f0f0f0;
-      letter-spacing: 0.2px;
-      font-weight: 300;
+      display: flex; align-items: flex-start; gap: 14px;
+      font-size: 12px; color: #555;
+      padding: 10px 0; border-bottom: 1px solid #eeecea;
+      letter-spacing: 0.1px; font-weight: 300;
     }
-    .h-modal-meta-row:first-child { border-top: 1px solid #f0f0f0; }
+    .h-modal-meta-row:first-child { border-top: 1px solid #eeecea; }
     .h-modal-meta-row i { font-size: 11px; color: #ccc; flex-shrink: 0; margin-top: 1px; }
-    .h-modal-btns {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    .h-modal-btns { display: flex; flex-direction: column; gap: 10px; }
     .h-btn-primary {
-      display: block;
-      width: 100%;
-      text-align: center;
-      background: #000;
-      color: #fff;
+      display: block; width: 100%; text-align: center;
+      background: #1a1a1a; color: #f5f5f3;
       text-decoration: none;
       font-family: 'Arimo', sans-serif;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 14px 20px;
-      border: 1px solid #000;
-      transition: all 0.25s;
-      cursor: pointer;
-      font-weight: 500;
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      padding: 14px 20px; border: 1px solid #1a1a1a;
+      transition: all 0.25s; cursor: pointer; font-weight: 500;
     }
-    .h-btn-primary:hover { background: #333; }
+    .h-btn-primary:hover { background: #333; border-color: #333; }
     .h-btn-secondary {
-      display: block;
-      width: 100%;
-      text-align: center;
-      background: #fff;
-      color: #000;
+      display: block; width: 100%; text-align: center;
+      background: transparent; color: #1a1a1a;
       text-decoration: none;
       font-family: 'Arimo', sans-serif;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 13px 20px;
-      border: 1px solid #000;
-      transition: all 0.25s;
-      cursor: pointer;
-      font-weight: 500;
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      padding: 13px 20px; border: 1px solid #1a1a1a;
+      transition: all 0.25s; cursor: pointer; font-weight: 500;
     }
-    .h-btn-secondary:hover { background: #f5f5f5; }
+    .h-btn-secondary:hover { background: #f0f0ee; }
 
     /* Mobile modal */
     @media(max-width:700px) {
-      .h-modal-bg { align-items: flex-end; }
-      .h-modal { flex-direction: column; max-height: 92dvh; transform: translateY(50px); }
+      .h-modal-bg { align-items: flex-end; backdrop-filter: none; }
+      .h-modal { flex-direction: column; max-height: 93dvh; transform: translateY(50px); }
       .h-modal-gallery { flex: 0 0 auto; }
-      .h-modal-main-img { min-height: 56vw; }
+      .h-modal-main-img { min-height: 55vw; }
       .h-modal-thumbs { display: none; }
       .h-modal-info { padding: 24px 20px 32px; }
       .h-modal-btns { flex-direction: row; }
@@ -645,27 +566,23 @@
     }
 
     /* ── FOOTER ── */
-    footer { background:#000; color:#fff; padding:50px 5% 20px; margin-top:80px; }
-    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
-    .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
-    .footer-col p { font-size:13px; color:#888; line-height:1.6; max-width:300px; }
-    .footer-col a { display:block; color:#fff; text-decoration:none; font-size:12px; margin-bottom:8px; transition:0.3s; }
-    .footer-col a:hover { color:#888; }
-    .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+    footer { background:#1a1a1a; color:#fff; padding:50px 5% 20px; margin-top:0; }
+    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #2a2a2a; }
+    .footer-col h4 { font-size:10px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#777; }
+    .footer-col p { font-size:12px; color:#666; line-height:1.7; max-width:300px; }
+    .footer-col a { display:block; color:#aaa; text-decoration:none; font-size:11px; margin-bottom:9px; transition:0.3s; letter-spacing:0.2px; }
+    .footer-col a:hover { color:#fff; }
+    .footer-bottom { padding-top:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
     .footer-logo-img { height:10px; filter:brightness(0) invert(1); }
     .ceo-wrap { display:flex; align-items:center; gap:8px; }
-    .ceo-label { font-size:7px; color:#666; text-transform:uppercase; letter-spacing:1px; }
-    .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#888; }
+    .ceo-label { font-size:7px; color:#555; text-transform:uppercase; letter-spacing:1px; }
+    .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#777; }
     .legal-text { font-size:9px; color:#444; text-transform:uppercase; }
     @media(max-width:768px) {
-      .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; }
+      .footer-main { grid-template-columns:1fr; text-align:center; gap:28px; }
       .footer-col { display:flex; flex-direction:column; align-items:center; }
       .footer-bottom { flex-direction:column; text-align:center; }
     }
-
-    /* Scrollbar */
-    .h-sidebar::-webkit-scrollbar, .h-modal-info::-webkit-scrollbar { width: 4px; }
-    .h-sidebar::-webkit-scrollbar-thumb, .h-modal-info::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -687,7 +604,7 @@
     </nav>
   </header>
 
-  <!-- Breadcrumb -->
+  <!-- BREADCRUMB -->
   <div class="h-breadcrumb">
     <a href="index.html">Home</a>
     <span class="sep">›</span>
@@ -696,106 +613,59 @@
     <span>Gold</span>
   </div>
 
-  <!-- Page Layout -->
-  <div class="h-page">
+  <!-- HERMÈS-STYLE STICKY FILTER BAR -->
+  <div class="h-filterbar" id="h-filterbar">
+    <!-- Search -->
+    <div class="h-search-wrap">
+      <i class="fas fa-search"></i>
+      <input class="h-search-input" type="text" placeholder="Search gold collection…" id="h-search" autocomplete="off">
+    </div>
 
-    <!-- LEFT SIDEBAR -->
-    <aside class="h-sidebar">
-      <div class="h-sidebar-title">Gold</div>
+    <!-- Filter pills -->
+    <div class="h-filter-pills">
+      <button class="h-pill active" data-filter="all" onclick="setFilter(this)">All <i class="fas fa-chevron-down"></i></button>
+      <button class="h-pill" data-filter="18k" onclick="setFilter(this)">18K Gold <i class="fas fa-chevron-down"></i></button>
+      <button class="h-pill" data-filter="21k" onclick="setFilter(this)">21K Gold <i class="fas fa-chevron-down"></i></button>
+      <button class="h-pill" data-filter="open-face" onclick="setFilter(this)">Open Face <i class="fas fa-chevron-down"></i></button>
+      <button class="h-pill" data-filter="solid" onclick="setFilter(this)">Solid Cap <i class="fas fa-chevron-down"></i></button>
+      <button class="h-pill" data-filter="custom" onclick="setFilter(this)">Custom <i class="fas fa-chevron-down"></i></button>
+    </div>
 
-      <div class="h-sidebar-section open">
-        <div class="h-sidebar-section-title" onclick="toggleSection(this)">
-          Karat <i class="fas fa-chevron-down"></i>
-        </div>
-        <div class="h-sidebar-items">
-          <div class="h-sidebar-item active" onclick="filterBy('karat','all',this)">All <span class="h-sidebar-item-count"></span></div>
-          <div class="h-sidebar-item" onclick="filterBy('karat','18k',this)">18K Gold <span class="h-sidebar-item-count"></span></div>
-          <div class="h-sidebar-item" onclick="filterBy('karat','21k',this)">21K Gold <span class="h-sidebar-item-count"></span></div>
-          <div class="h-sidebar-item" onclick="filterBy('karat','24k',this)">24K Gold <span class="h-sidebar-item-count"></span></div>
-        </div>
+    <!-- Sort + view -->
+    <div class="h-filterbar-right">
+      <div class="h-sort-pill">
+        <span>Sort</span>
+        <select id="h-sort" onchange="sortCards()">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price ↑</option>
+          <option value="price-desc">Price ↓</option>
+          <option value="newest">Newest</option>
+        </select>
       </div>
-
-      <div class="h-sidebar-section open">
-        <div class="h-sidebar-section-title" onclick="toggleSection(this)">
-          Style <i class="fas fa-chevron-down"></i>
-        </div>
-        <div class="h-sidebar-items">
-          <div class="h-sidebar-item active" onclick="filterBy('style','all',this)">All Styles</div>
-          <div class="h-sidebar-item" onclick="filterBy('style','open-face',this)">Open Face</div>
-          <div class="h-sidebar-item" onclick="filterBy('style','solid',this)">Solid Cap</div>
-          <div class="h-sidebar-item" onclick="filterBy('style','diamond-cut',this)">Diamond Cut</div>
-          <div class="h-sidebar-item" onclick="filterBy('style','custom',this)">Custom Design</div>
-        </div>
+      <div class="h-view-btns">
+        <button class="h-view-btn" title="2 columns" onclick="setView(2,this)"><i class="fas fa-columns"></i></button>
+        <button class="h-view-btn active" title="4 columns" onclick="setView(4,this)"><i class="fas fa-th"></i></button>
       </div>
-
-      <div class="h-sidebar-section open">
-        <div class="h-sidebar-section-title" onclick="toggleSection(this)">
-          Price <i class="fas fa-chevron-down"></i>
-        </div>
-        <div class="h-sidebar-items">
-          <div class="h-sidebar-item active">All Prices</div>
-          <div class="h-sidebar-item">Under $500</div>
-          <div class="h-sidebar-item">$500 – $1,000</div>
-          <div class="h-sidebar-item">$1,000 – $2,500</div>
-          <div class="h-sidebar-item">$2,500+</div>
-        </div>
-      </div>
-
-      <div class="h-sidebar-section">
-        <div class="h-sidebar-section-title" onclick="toggleSection(this)">
-          Teeth Count <i class="fas fa-chevron-down"></i>
-        </div>
-        <div class="h-sidebar-items">
-          <div class="h-sidebar-item">Single Tooth</div>
-          <div class="h-sidebar-item">2 Teeth</div>
-          <div class="h-sidebar-item">4 Teeth</div>
-          <div class="h-sidebar-item">6 Teeth</div>
-          <div class="h-sidebar-item">Full Set</div>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <main class="h-content">
-
-      <!-- Top bar -->
-      <div class="h-topbar">
-        <span class="h-count" id="h-count">Loading…</span>
-        <div class="h-topbar-right">
-          <div class="h-view-toggles">
-            <button class="h-view-btn active" id="btn-view-3" onclick="setView(3,this)" title="3 columns">
-              <i class="fas fa-border-all"></i>
-            </button>
-            <button class="h-view-btn" id="btn-view-4" onclick="setView(4,this)" title="4 columns">
-              <i class="fas fa-th"></i>
-            </button>
-            <button class="h-view-btn" id="btn-view-2" onclick="setView(2,this)" title="2 columns">
-              <i class="fas fa-columns"></i>
-            </button>
-          </div>
-          <div class="h-sort-wrap">
-            <span>Sort by</span>
-            <select id="h-sort-select" onchange="sortCards()">
-              <option value="featured">Featured</option>
-              <option value="price-asc">Price: Low – High</option>
-              <option value="price-desc">Price: High – Low</option>
-              <option value="newest">Newest</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grid -->
-      <div class="h-grid" id="golds-container"></div>
-
-    </main>
+    </div>
   </div>
 
-  <!-- ══ MODAL ══ -->
+  <!-- CATEGORY HEADER -->
+  <div class="h-cat-header">
+    <div>
+      <h1>Gold Collection</h1>
+      <p>Premium 18K and 21K solid gold, handcrafted to perfection.</p>
+    </div>
+    <span class="h-item-count" id="h-count">Loading…</span>
+  </div>
+
+  <!-- PRODUCT GRID -->
+  <div class="h-grid-wrap">
+    <div class="h-grid" id="golds-container"></div>
+  </div>
+
+  <!-- MODAL -->
   <div class="h-modal-bg" id="h-modal-bg">
     <div class="h-modal">
-      <button class="h-modal-close-btn" id="h-modal-close">&#x2715;</button>
 
       <!-- Gallery -->
       <div class="h-modal-gallery">
@@ -807,7 +677,8 @@
 
       <!-- Info -->
       <div class="h-modal-info">
-        <div class="h-modal-cat">Gold Collection · EGYGRILLZ</div>
+        <button class="h-modal-close-btn" id="h-modal-close">&#x2715;</button>
+        <div class="h-modal-cat">Gold Collection &middot; EGYGRILLZ</div>
         <div class="h-modal-title" id="h-modal-name"></div>
         <div class="h-modal-price" id="h-modal-price"></div>
         <div class="h-modal-desc" id="h-modal-desc"></div>
@@ -824,6 +695,7 @@
           <a href="contact.html" class="h-btn-secondary">Contact Us</a>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -849,12 +721,12 @@
     </div>
     <div class="footer-bottom">
       <div>
-        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#fff;margin-right:15px;"><i class="fab fa-instagram"></i></a>
-        <a href="#" style="color:#fff;"><i class="fas fa-location-dot"></i></a>
+        <a href="https://instagram.com/egygrillz" target="_blank" style="color:#aaa;margin-right:15px;"><i class="fab fa-instagram"></i></a>
+        <a href="#" style="color:#aaa;"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
       <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
-      <div class="legal-text">© 2026 EGYGRILLZ</div>
+      <div class="legal-text">&copy; 2026 EGYGRILLZ</div>
     </div>
   </footer>
 
@@ -865,25 +737,21 @@
       document.body.classList.toggle('menu-open');
     });
 
-    /* ── Sidebar accordion ── */
-    function toggleSection(titleEl) {
-      titleEl.closest('.h-sidebar-section').classList.toggle('open');
-    }
-
     /* ── View columns ── */
     function setView(cols, btn) {
       const grid = document.getElementById('golds-container');
       grid.className = 'h-grid';
-      if (cols === 4) grid.classList.add('view-4');
       if (cols === 2) grid.classList.add('view-2');
+      if (cols === 3) grid.classList.add('view-3');
       document.querySelectorAll('.h-view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      repositionEditorials();
     }
 
-    /* ── Filter ── */
-    function filterBy(type, val, el) {
-      el.closest('.h-sidebar-items').querySelectorAll('.h-sidebar-item').forEach(i => i.classList.remove('active'));
-      el.classList.add('active');
+    /* ── Filter pills ── */
+    function setFilter(btn) {
+      document.querySelectorAll('.h-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     }
 
     /* ── Parse info.txt ── */
@@ -924,7 +792,6 @@
         s.className = 'h-modal-slide' + (i===0?' active':'');
         s.innerHTML = `<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'}">`;
         modalSlides.appendChild(s);
-
         const t = document.createElement('img');
         t.className = 'h-modal-thumb' + (i===0?' active':'');
         t.src = src; t.draggable = false; t.loading = 'lazy';
@@ -945,7 +812,6 @@
       slides[mCur].classList.add('active');
       thumbs[mCur]?.classList.add('active');
     }
-
     function closeModal() {
       modalBg.classList.remove('open');
       document.body.classList.remove('modal-open');
@@ -962,30 +828,115 @@
       if(e.key==='ArrowRight') goTo(mCur+1);
     });
 
+    /* ── Sort ── */
+    function sortCards() {
+      const val = document.getElementById('h-sort').value;
+      const ct  = document.getElementById('golds-container');
+      const editorials = [...ct.querySelectorAll('.h-editorial')];
+      const cards = [...ct.querySelectorAll('.h-card')];
+      cards.sort((a,b) => {
+        if(val==='price-asc')  return (parseFloat(a.dataset.priceNum)||0) - (parseFloat(b.dataset.priceNum)||0);
+        if(val==='price-desc') return (parseFloat(b.dataset.priceNum)||0) - (parseFloat(a.dataset.priceNum)||0);
+        if(val==='newest')     return (parseInt(b.dataset.idx)||0)        - (parseInt(a.dataset.idx)||0);
+        return (parseInt(a.dataset.idx)||0) - (parseInt(b.dataset.idx)||0);
+      });
+      // Remove all, reinsert editorials at fixed positions
+      editorials.forEach(e => e.remove());
+      cards.forEach(c => { c.remove(); ct.appendChild(c); });
+      repositionEditorials(editorials);
+    }
+
+    /* Editorials: inserted after every 8 product cards */
+    const EDITORIAL_INTERVAL = 8;
+    let editorialBank = [];
+
+    function repositionEditorials(editorialsArr) {
+      const ct = document.getElementById('golds-container');
+      const existing = editorialsArr || [...ct.querySelectorAll('.h-editorial')];
+      existing.forEach(e => e.remove());
+      const cards = [...ct.querySelectorAll('.h-card')];
+      existing.forEach((ed, ei) => {
+        const insertAfter = (ei + 1) * EDITORIAL_INTERVAL;
+        if (cards[insertAfter]) {
+          ct.insertBefore(ed, cards[insertAfter]);
+        } else {
+          ct.appendChild(ed);
+        }
+      });
+    }
+
+    /* ── Search ── */
+    document.getElementById('h-search').addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      document.querySelectorAll('.h-card').forEach(card => {
+        const n = (card.dataset.name||'').toLowerCase();
+        card.style.display = (!q || n.includes(q)) ? '' : 'none';
+      });
+      updateCount();
+    });
+
+    function updateCount() {
+      const visible = document.querySelectorAll('.h-card:not([style*="display: none"])').length;
+      document.getElementById('h-count').textContent = `${visible} item${visible!==1?'s':''}`;
+    }
+
+    /* ── Editorial banners data ── */
+    const editorialData = [
+      {
+        img: 'assets/images/golds/editorial1.jpg',
+        fallback: 'https://images.unsplash.com/photo-1610447847416-40bac442fbe6?w=1400&q=80',
+        tag: 'The Gold Edit',
+        title: 'Crafted in\nSolid Gold',
+        cta: 'Explore the Collection'
+      },
+      {
+        img: 'assets/images/golds/editorial2.jpg',
+        fallback: 'https://images.unsplash.com/photo-1573408301185-9519f94816b5?w=1400&q=80',
+        tag: 'Bespoke Craftsmanship',
+        title: 'Made to Fit\nYour Smile',
+        cta: 'Schedule a Fitting'
+      }
+    ];
+
+    function makeEditorial(data) {
+      const div = document.createElement('div');
+      div.className = 'h-editorial';
+      div.innerHTML = `
+        <img src="${data.img}" onerror="this.src='${data.fallback}'" draggable="false" loading="lazy" alt="${data.tag}">
+        <div class="h-editorial-overlay">
+          <div class="h-editorial-text">
+            <div class="h-editorial-tag">${data.tag}</div>
+            <div class="h-editorial-title">${data.title.replace('\n','<br>')}</div>
+            <a href="booking.html" class="h-editorial-cta">${data.cta}</a>
+          </div>
+        </div>`;
+      return div;
+    }
+
     /* ── Load products ── */
     const base = 'assets/images/golds';
-    let allCards = [];
-
-    function sortCards() {
-      const val = document.getElementById('h-sort-select').value;
-      const ct = document.getElementById('golds-container');
-      const cards = [...ct.querySelectorAll('.h-card')];
-
-      cards.sort((a,b) => {
-        if(val==='price-asc') return parseFloat(a.dataset.priceNum||0) - parseFloat(b.dataset.priceNum||0);
-        if(val==='price-desc') return parseFloat(b.dataset.priceNum||0) - parseFloat(a.dataset.priceNum||0);
-        if(val==='newest') return parseInt(b.dataset.idx||0) - parseInt(a.dataset.idx||0);
-        return parseInt(a.dataset.idx||0) - parseInt(b.dataset.idx||0);
-      });
-      cards.forEach(c => ct.appendChild(c));
-    }
 
     fetch(`${base}/golds.json`)
       .then(r => r.json())
       .then(folders => {
         const ct = document.getElementById('golds-container');
-        const countEl = document.getElementById('h-count');
         let loaded = 0;
+        const total = folders.length;
+
+        const insertEditorials = (count) => {
+          editorialData.forEach((data, ei) => {
+            const threshold = (ei + 1) * EDITORIAL_INTERVAL;
+            if (count >= threshold) {
+              const ed = makeEditorial(data);
+              const cards = ct.querySelectorAll('.h-card');
+              if (cards[threshold]) {
+                ct.insertBefore(ed, cards[threshold]);
+              } else {
+                ct.appendChild(ed);
+              }
+            }
+          });
+        };
 
         folders.forEach((folder, fi) => {
           fetch(`${base}/${folder}/info.txt`)
@@ -996,7 +947,8 @@
 
               const card = document.createElement('div');
               card.className = 'h-card';
-              card.dataset.idx = fi;
+              card.dataset.idx      = fi;
+              card.dataset.name     = name;
               card.dataset.priceNum = parseFloat((price||'0').replace(/[^0-9.]/g,''))||0;
 
               const dotsHtml = full.length > 1
@@ -1012,15 +964,20 @@
                   ${dotsHtml}
                 </div>
                 <div class="h-card-body">
-                  <div class="h-card-cat">EGYGRILLZ · Gold</div>
+                  <div class="h-card-cat">EGYGRILLZ &middot; Gold</div>
                   <div class="h-card-name">${name||folder}</div>
                   <div class="h-card-price">${price}</div>
                 </div>`;
 
               ct.appendChild(card);
-              allCards.push(card);
+              loaded++;
 
-              /* Image slideshow on card hover */
+              // Insert editorials at right positions
+              insertEditorials(loaded);
+
+              document.getElementById('h-count').textContent = `${loaded} item${loaded!==1?'s':''}`;
+
+              /* Hover slideshow */
               let c = 0;
               const imgs = card.querySelectorAll('.h-card-img img');
               const dots = card.querySelectorAll('.h-img-dot');
@@ -1033,35 +990,33 @@
                     c = (c+1) % imgs.length;
                     imgs[c].classList.add('active');
                     if(dots[c]) dots[c].classList.add('active');
-                  }, 2800);
+                  }, 2600);
                 });
                 card.addEventListener('mouseleave', () => {
                   clearInterval(iv);
-                  imgs.forEach((img,i) => { img.classList.toggle('active', i===0); });
-                  dots.forEach((d,i) => { d.classList.toggle('active', i===0); });
+                  imgs.forEach((img,i) => img.classList.toggle('active', i===0));
+                  dots.forEach((d,i)   => d.classList.toggle('active', i===0));
                   c = 0;
                 });
               }
 
-              /* Wishlist toggle */
+              /* Wishlist */
               card.querySelector('.h-card-wish').addEventListener('click', e => {
                 e.stopPropagation();
                 const icon = e.currentTarget.querySelector('i');
                 icon.classList.toggle('far');
                 icon.classList.toggle('fas');
-                icon.style.color = icon.classList.contains('fas') ? '#c00' : '#000';
+                icon.style.color = icon.classList.contains('fas') ? '#b00' : '#222';
               });
 
               /* Open modal */
               card.addEventListener('click', () => openModal({name,desc,price,images:full}));
-
-              loaded++;
-              countEl.textContent = `${loaded} item${loaded!==1?'s':''}`;
             })
             .catch(e => console.warn('Could not load', folder, e));
         });
       })
       .catch(e => console.error(e));
   </script>
+
 </body>
 </html>
