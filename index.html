@@ -15,15 +15,25 @@
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior:smooth; }
-    body { font-family:'Arimo',sans-serif; background:#fff; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+
+    /* ── CHANGED: body bg from #fff to #FAFAF9 ── */
+    body { font-family:'Arimo',sans-serif; background:#FAFAF9; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
     body.menu-open { overflow:hidden; }
     img { display:block; max-width:100%; }
     a { text-decoration:none; color:inherit; }
 
     /* ══════════════════════════════
-       HEADER
+       HEADER — matched to golds.html
     ══════════════════════════════ */
-    header { position:fixed; top:0; left:0; right:0; height:60px; background:#fff; border-bottom:1px solid #eee; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
+    header {
+      position:fixed; top:0; left:0; right:0; height:60px;
+      /* CHANGED: background from #fff to #FAFAF9, border matches golds */
+      background:#FAFAF9;
+      border-bottom:1px solid rgba(0,0,0,0.08);
+      z-index:1000; display:flex; align-items:center;
+      justify-content:space-between; padding:0 5%;
+      transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
     header.hidden { transform:translateY(-100%); }
     .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; color:#000; }
     .main-nav { display:flex; gap:20px; }
@@ -34,9 +44,16 @@
     .menu-toggle span { width:25px; height:1.5px; background:#000; display:block; }
     @media(max-width:980px) {
       .menu-toggle { display:flex; }
-      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:#fff; flex-direction:column; padding:10px 5%; transition:0.4s cubic-bezier(0.4,0,0.2,1); box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
+      /* CHANGED: mobile nav bg from #fff to #FAFAF9 */
+      .main-nav {
+        position:fixed; top:60px; right:-100%; width:100%;
+        background:#FAFAF9;
+        flex-direction:column; padding:10px 5%;
+        transition:0.4s cubic-bezier(0.4,0,0.2,1);
+        box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100;
+      }
       .main-nav.active { right:0; }
-      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; width:100%; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,0.06); width:100%; }
     }
 
     /* ══════════════════════════════
@@ -47,56 +64,15 @@
     .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; background:none; border:none; box-shadow:none; padding:0; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
 
     /* ══════════════════════════════
-       HERO (SIMPLE DESIGN)
+       HERO
     ══════════════════════════════ */
-    .hero {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      overflow: hidden;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .hero img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.7;
-      transform: scale(1.05);
-      animation: heroZoom 10s infinite alternate linear;
-    }
-    @keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.1); } }
-    .hero-content {
-      position: absolute;
-      z-index: 10;
-      bottom: 60px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      color: #fff;
-    }
-    .hero-content h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(30px, 7vw, 60px);
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      margin-bottom: 20px;
-    }
-    .hero-schedule-btn {
-      color: #fff; 
-      text-decoration: underline; 
-      text-underline-offset: 5px; 
-      text-transform: uppercase;
-      font-weight: 700; 
-      font-size: 11px; 
-      letter-spacing: 2px; 
-      transition: 0.3s ease;
-    }
-    .hero-schedule-btn:hover { opacity: 0.8; letter-spacing: 3px; }
+    .hero { position:relative; width:100%; height:100vh; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center; }
+    .hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.7; transform:scale(1.05); animation:heroZoom 10s infinite alternate linear; }
+    @keyframes heroZoom { from { transform:scale(1); } to { transform:scale(1.1); } }
+    .hero-content { position:absolute; z-index:10; bottom:60px; left:0; right:0; text-align:center; color:#fff; }
+    .hero-content h1 { font-family:'Playfair Display',serif; font-size:clamp(30px,7vw,60px); text-transform:uppercase; letter-spacing:3px; margin-bottom:20px; }
+    .hero-schedule-btn { color:#fff; text-decoration:underline; text-underline-offset:5px; text-transform:uppercase; font-weight:700; font-size:11px; letter-spacing:2px; transition:0.3s ease; }
+    .hero-schedule-btn:hover { opacity:0.8; letter-spacing:3px; }
 
     /* ══════════════════════════════
        SECTION INTRO
@@ -127,115 +103,40 @@
     @media(max-width:480px) { .lv-cat-info { padding:20px 20px 28px; } }
 
     /* ══════════════════════════════
-       LV-STYLE CATEGORY PRODUCT ROWS
+       CATEGORY PRODUCT ROWS
     ══════════════════════════════ */
-    .cat-row-section {
-      padding: 100px 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .cat-row-section:last-of-type { border-bottom: none; }
-
-    .cat-row-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      padding: 0 80px 28px;
-    }
+    .cat-row-section { padding:100px 0; border-bottom:1px solid #f0f0f0; }
+    .cat-row-section:last-of-type { border-bottom:none; }
+    .cat-row-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 28px; }
     .cat-row-header-left {}
-    .cat-row-header-eyebrow {
-      font-size: 8px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: #999;
-      margin-bottom: 4px;
-    }
-    .cat-row-header h3 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-size: clamp(18px, 2.2vw, 26px);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #000;
-    }
-    .cat-row-header-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .cat-row-view-all {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 9px;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      color: #000;
-      border-bottom: 1px solid #000;
-      padding-bottom: 2px;
-      transition: opacity 0.2s, letter-spacing 0.3s;
-    }
-    .cat-row-view-all:hover { opacity: 0.5; letter-spacing: 3.5px; }
-    .cat-row-view-all svg {
-      width: 12px; height: 12px;
-      transition: transform 0.3s;
-    }
-    .cat-row-view-all:hover svg { transform: translateX(3px); }
-
-    .cat-row-strip {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding: 0 80px 20px;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      cursor: grab;
-    }
-    .cat-row-strip:active { cursor: grabbing; }
-    .cat-row-strip::-webkit-scrollbar { display: none; }
-
-    .lv-prod-card {
-      flex: 0 0 220px;
-      cursor: pointer;
-      position: relative;
-      background: transparent;
-    }
-    .lv-prod-card:first-child { flex: 0 0 220px; }
-
-    .lv-prod-img {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 3 / 4;
-      background: #f5f5f5;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .lv-prod-img img {
-      position: absolute;
-      inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      transition: opacity 0.9s ease, transform 0.5s ease;
-      pointer-events: none;
-      -webkit-user-drag: none;
-    }
-    .lv-prod-img img.active { opacity: 1; }
-    .lv-prod-card:hover .lv-prod-img img.active { transform: scale(1.05); }
-
-    .lv-prod-overlay { display: none; }
-    .lv-prod-discover { display: none; }
-    .lv-prod-img-dots { display: none; }
-
-    .lv-prod-body { padding: 0; background: transparent; }
+    .cat-row-header-eyebrow { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:4px; }
+    .cat-row-header h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; color:#000; }
+    .cat-row-header-right { display:flex; align-items:center; gap:6px; }
+    .cat-row-view-all { display:inline-flex; align-items:center; gap:8px; font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:#000; border-bottom:1px solid #000; padding-bottom:2px; transition:opacity 0.2s,letter-spacing 0.3s; }
+    .cat-row-view-all:hover { opacity:0.5; letter-spacing:3.5px; }
+    .cat-row-view-all svg { width:12px; height:12px; transition:transform 0.3s; }
+    .cat-row-view-all:hover svg { transform:translateX(3px); }
+    .cat-row-strip { display:flex; gap:12px; overflow-x:auto; padding:0 80px 20px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
+    .cat-row-strip:active { cursor:grabbing; }
+    .cat-row-strip::-webkit-scrollbar { display:none; }
+    .lv-prod-card { flex:0 0 220px; cursor:pointer; position:relative; background:transparent; }
+    .lv-prod-card:first-child { flex:0 0 220px; }
+    .lv-prod-img { position:relative; width:100%; aspect-ratio:3/4; background:#f5f5f5; overflow:hidden; margin-bottom:12px; }
+    .lv-prod-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease,transform 0.5s ease; pointer-events:none; -webkit-user-drag:none; }
+    .lv-prod-img img.active { opacity:1; }
+    .lv-prod-card:hover .lv-prod-img img.active { transform:scale(1.05); }
+    .lv-prod-overlay { display:none; }
+    .lv-prod-discover { display:none; }
+    .lv-prod-img-dots { display:none; }
+    .lv-prod-body { padding:0; background:transparent; }
     .lv-prod-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:4px; }
     .lv-prod-name { font-size:13px; color:#000; margin-bottom:3px; line-height:1.35; }
     .lv-prod-price { font-size:12px; font-weight:700; color:#000; }
-
     @media(max-width:480px) {
-      .cat-row-header { padding: 0 20px 20px; }
-      .cat-row-strip { padding: 0 20px 20px; }
-      .lv-prod-card { flex: 0 0 150px; }
-      .lv-prod-card:first-child { flex: 0 0 150px; }
+      .cat-row-header { padding:0 20px 20px; }
+      .cat-row-strip { padding:0 20px 20px; }
+      .lv-prod-card { flex:0 0 150px; }
+      .lv-prod-card:first-child { flex:0 0 150px; }
     }
 
     /* ══════════════════════════════
@@ -265,7 +166,7 @@
     }
 
     /* ══════════════════════════════
-       GALLERY SECTION — EQUAL SIZE CARDS
+       GALLERY SECTION
     ══════════════════════════════ */
     .lv-gallery-section { background:#f0f0f0; margin-top:120px; padding:80px 0 100px; }
     .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 36px; }
@@ -276,69 +177,18 @@
     .lv-gal-scroll { display:flex; gap:12px; overflow-x:auto; padding:0 80px; scrollbar-width:none; -ms-overflow-style:none; cursor:grab; }
     .lv-gal-scroll:active { cursor:grabbing; }
     .lv-gal-scroll::-webkit-scrollbar { display:none; }
-    .lv-gal-card { 
-      flex:0 0 320px; 
-      position:relative; 
-      overflow:hidden; 
-      background:#fff; 
-      cursor:pointer; 
-    }
-    @media(max-width:680px) { .lv-gal-card{flex:0 0 260px;} }
-    
-    .lv-gal-card-img {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 4/3;
-      background: #ccc;
-      overflow: hidden;
-    }
-    .lv-gal-card-img img { 
-      position:absolute; 
-      inset:0; 
-      width:100%; 
-      height:100%; 
-      object-fit:cover; 
-      transition:transform 0.7s ease; 
-      pointer-events:none; 
-      -webkit-user-drag:none; 
-    }
+    .lv-gal-card { flex:0 0 320px; position:relative; overflow:hidden; background:#fff; cursor:pointer; }
+    @media(max-width:680px) { .lv-gal-card { flex:0 0 260px; } }
+    .lv-gal-card-img { position:relative; width:100%; aspect-ratio:4/3; background:#ccc; overflow:hidden; }
+    .lv-gal-card-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
     .lv-gal-card:hover .lv-gal-card-img img { transform:scale(1.06); }
-
-    .lv-gal-card-info {
-      padding: 16px;
-      background: #fff;
-    }
-    .gc-name {
-      font-family:'Playfair Display',serif;
-      font-size: 16px;
-      font-weight:400;
-      letter-spacing:1px;
-      text-transform:uppercase;
-      color:#000;
-      margin-bottom: 8px;
-    }
-    .gc-desc {
-      font-size:12px;
-      letter-spacing:0.3px;
-      color:#666;
-      line-height:1.5;
-      margin-bottom: 8px;
-    }
-    .gc-price {
-      font-size:13px;
-      font-weight:700;
-      letter-spacing:1px;
-      color:#000;
-    }
-
-    .lv-gal-overlay { display: none; }
-
+    .lv-gal-card-info { padding:16px; background:#fff; }
+    .gc-name { font-family:'Playfair Display',serif; font-size:16px; font-weight:400; letter-spacing:1px; text-transform:uppercase; color:#000; margin-bottom:8px; }
+    .gc-desc { font-size:12px; letter-spacing:0.3px; color:#666; line-height:1.5; margin-bottom:8px; }
+    .gc-price { font-size:13px; font-weight:700; letter-spacing:1px; color:#000; }
+    .lv-gal-overlay { display:none; }
     .lv-gallery-rule { width:32px; height:1px; background:#ccc; margin:40px 80px 0; }
-    @media(max-width:480px) { 
-      .lv-gallery-head{padding:0 20px 28px;} 
-      .lv-gal-scroll{padding:0 20px;} 
-      .lv-gallery-rule{margin-left:20px;} 
-    }
+    @media(max-width:480px) { .lv-gallery-head { padding:0 20px 28px; } .lv-gal-scroll { padding:0 20px; } .lv-gallery-rule { margin-left:20px; } }
 
     /* ══════════════════════════════
        INSTAGRAM POST SECTION
@@ -347,185 +197,39 @@
     .ig-header { text-align:center; margin-bottom:40px; padding:0 5%; }
     .ig-header .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:10px; }
     .ig-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.4vw,28px); letter-spacing:3px; text-transform:uppercase; margin-bottom:6px; }
-
-    .ig-post {
-      max-width: 540px;
-      margin: 0 auto;
-      background: #fff;
-      border: 1px solid #dbdbdb;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    .ig-post-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 14px;
-      border-bottom: 1px solid #efefef;
-    }
-    .ig-post-user {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* ── UPDATED: black circle avatar with logo ── */
-    .ig-post-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #000;
-      padding: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .ig-post-avatar-inner {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      padding: 4px;
-    }
-    .ig-post-avatar-inner img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      filter: invert(1); /* logo_black.png → shows white on black bg */
-      display: block;
-      max-width: none;
-    }
-
-    .ig-post-username {
-      font-size: 14px;
-      font-weight: 700;
-      color: #262626;
-    }
-    .ig-post-verified {
-      color: #3897f0;
-      font-size: 13px;
-      margin-left: 2px;
-    }
-    .ig-post-more {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      color: #262626;
-      padding: 4px;
-    }
-    .ig-post-img-wrap {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1/1;
-      overflow: hidden;
-      background: #000;
-      cursor: pointer;
-    }
-    .ig-post-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.5s ease;
-    }
-    .ig-post-img-wrap:hover img { transform: scale(1.02); }
-    .ig-post-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.15);
-      z-index: 2;
-      pointer-events: none;
-    }
-    .ig-heart-anim {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      z-index: 10;
-      font-size: 80px;
-      color: #fff;
-      opacity: 0;
-      pointer-events: none;
-      filter: drop-shadow(0 2px 12px rgba(0,0,0,0.3));
-      transition: none;
-    }
-    .ig-heart-anim.pop { animation: igHeartPop 0.9s ease forwards; }
-    @keyframes igHeartPop {
-      0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-      15%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
-      30%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-      70%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-    }
-    .ig-post-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px 6px;
-    }
-    .ig-post-actions-left { display: flex; align-items: center; gap: 16px; }
-    .ig-post-action-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 24px;
-      color: #262626;
-      padding: 0;
-      line-height: 1;
-      transition: transform 0.15s ease, color 0.2s ease;
-      display: flex;
-      align-items: center;
-    }
-    .ig-post-action-btn:hover { transform: scale(1.12); }
-    .ig-post-action-btn:active { transform: scale(0.9); }
-    .ig-post-action-btn.liked { color: #ed4956; }
-    .ig-post-action-btn.liked i::before { content: "\f004"; font-weight: 900; }
-    .ig-post-action-btn.saved { color: #262626; }
-    .ig-post-action-btn.saved i::before { content: "\f02e"; font-weight: 900; }
-    .ig-post-likes { padding: 0 14px 4px; font-size: 14px; font-weight: 700; color: #262626; }
-    .ig-post-caption { padding: 0 14px 12px; font-size: 14px; color: #262626; line-height: 1.5; }
-    .ig-post-caption strong { font-weight: 700; margin-right: 5px; }
-    .ig-post-follow {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px;
-      border-top: 1px solid #efefef;
-    }
-
-    /* ── UPDATED: grey follow button, no colors ── */
-    .ig-post-follow-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #888;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      padding: 10px 28px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.2s ease, background 0.2s ease;
-      text-decoration: none;
-    }
-    .ig-post-follow-btn:hover {
-      transform: scale(1.04);
-      background: #666;
-    }
-    .ig-post-follow-btn i { font-size: 16px; }
-
-    @media(max-width:580px) {
-      .ig-post { margin: 0 16px; border-radius: 6px; }
-    }
+    .ig-post { max-width:540px; margin:0 auto; background:#fff; border:1px solid #dbdbdb; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .ig-post-header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #efefef; }
+    .ig-post-user { display:flex; align-items:center; gap:10px; }
+    .ig-post-avatar { width:36px; height:36px; border-radius:50%; background:#000; padding:2px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .ig-post-avatar-inner { width:100%; height:100%; border-radius:50%; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:4px; }
+    .ig-post-avatar-inner img { width:100%; height:100%; object-fit:contain; filter:invert(1); display:block; max-width:none; }
+    .ig-post-username { font-size:14px; font-weight:700; color:#262626; }
+    .ig-post-verified { color:#3897f0; font-size:13px; margin-left:2px; }
+    .ig-post-more { background:none; border:none; cursor:pointer; font-size:18px; color:#262626; padding:4px; }
+    .ig-post-img-wrap { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#000; cursor:pointer; }
+    .ig-post-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s ease; }
+    .ig-post-img-wrap:hover img { transform:scale(1.02); }
+    .ig-post-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.15); z-index:2; pointer-events:none; }
+    .ig-heart-anim { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); z-index:10; font-size:80px; color:#fff; opacity:0; pointer-events:none; filter:drop-shadow(0 2px 12px rgba(0,0,0,0.3)); transition:none; }
+    .ig-heart-anim.pop { animation:igHeartPop 0.9s ease forwards; }
+    @keyframes igHeartPop { 0%{transform:translate(-50%,-50%) scale(0);opacity:0;} 15%{transform:translate(-50%,-50%) scale(1.3);opacity:1;} 30%{transform:translate(-50%,-50%) scale(1);opacity:1;} 70%{transform:translate(-50%,-50%) scale(1);opacity:1;} 100%{transform:translate(-50%,-50%) scale(1);opacity:0;} }
+    .ig-post-actions { display:flex; align-items:center; justify-content:space-between; padding:10px 14px 6px; }
+    .ig-post-actions-left { display:flex; align-items:center; gap:16px; }
+    .ig-post-action-btn { background:none; border:none; cursor:pointer; font-size:24px; color:#262626; padding:0; line-height:1; transition:transform 0.15s ease,color 0.2s ease; display:flex; align-items:center; }
+    .ig-post-action-btn:hover { transform:scale(1.12); }
+    .ig-post-action-btn:active { transform:scale(0.9); }
+    .ig-post-action-btn.liked { color:#ed4956; }
+    .ig-post-action-btn.liked i::before { content:"\f004"; font-weight:900; }
+    .ig-post-action-btn.saved { color:#262626; }
+    .ig-post-action-btn.saved i::before { content:"\f02e"; font-weight:900; }
+    .ig-post-likes { padding:0 14px 4px; font-size:14px; font-weight:700; color:#262626; }
+    .ig-post-caption { padding:0 14px 12px; font-size:14px; color:#262626; line-height:1.5; }
+    .ig-post-caption strong { font-weight:700; margin-right:5px; }
+    .ig-post-follow { display:flex; align-items:center; justify-content:center; padding:14px; border-top:1px solid #efefef; }
+    .ig-post-follow-btn { display:inline-flex; align-items:center; gap:8px; background:#888; color:#fff; font-size:14px; font-weight:700; letter-spacing:0.5px; padding:10px 28px; border-radius:8px; border:none; cursor:pointer; transition:transform 0.2s ease,background 0.2s ease; text-decoration:none; }
+    .ig-post-follow-btn:hover { transform:scale(1.04); background:#666; }
+    .ig-post-follow-btn i { font-size:16px; }
+    @media(max-width:580px) { .ig-post { margin:0 16px; border-radius:6px; } }
 
     /* ══════════════════════════════
        STORY BLOCK
@@ -534,13 +238,14 @@
     .lv-story-img { position:relative; overflow:hidden; background:#f0f0f0; min-height:400px; }
     .lv-story-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.7s ease; }
     .lv-story:hover .lv-story-img img { transform:scale(1.03); }
+    /* CHANGED: story text bg from #fff — stays #fff, fine as is */
     .lv-story-text { display:flex; flex-direction:column; justify-content:center; padding:64px 72px; background:#fff; }
     .lv-story-text .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:16px; }
     .lv-story-text h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3vw,38px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:20px; }
     .lv-story-text p { font-size:14px; color:#555; line-height:1.85; margin-bottom:32px; max-width:420px; }
     .lv-story-text a { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #000; padding:14px 32px; color:#000; transition:background 0.25s,color 0.25s; align-self:flex-start; }
     .lv-story-text a:hover { background:#000; color:#fff; }
-    @media(max-width:768px) { .lv-story{grid-template-columns:1fr;} .lv-story-text{padding:40px 24px;} .lv-story-text p{max-width:100%;} .lv-story-img{min-height:280px;} }
+    @media(max-width:768px) { .lv-story { grid-template-columns:1fr; } .lv-story-text { padding:40px 24px; } .lv-story-text p { max-width:100%; } .lv-story-img { min-height:280px; } }
 
     /* ══════════════════════════════
        CTA BAND
@@ -554,26 +259,39 @@
     .lv-cta-btn-white:hover { background:#fff; color:#000; }
     .lv-cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid rgba(255,255,255,0.3); padding:15px 38px; color:rgba(255,255,255,0.7); transition:border-color 0.25s,color 0.25s; }
     .lv-cta-btn-outline:hover { border-color:#fff; color:#fff; }
-    @media(max-width:480px) { .lv-cta-band{padding:60px 5%;} .lv-cta-btns{flex-direction:column;align-items:center;} .lv-cta-btn-white,.lv-cta-btn-outline{width:100%;max-width:280px;text-align:center;} }
+    @media(max-width:480px) { .lv-cta-band { padding:60px 5%; } .lv-cta-btns { flex-direction:column; align-items:center; } .lv-cta-btn-white,.lv-cta-btn-outline { width:100%; max-width:280px; text-align:center; } }
 
     /* ══════════════════════════════
-       FOOTER
+       FOOTER — matched to golds.html
     ══════════════════════════════ */
-    footer { background:#000; color:#fff; padding:50px 5% 20px; }
-    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #222; }
+    footer {
+      /* CHANGED: background from #000 to #fff, color from #fff to #000 */
+      background:#fff;
+      color:#000;
+      padding:50px 5% 20px;
+    }
+    .footer-main {
+      display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px;
+      padding-bottom:40px;
+      /* CHANGED: border from #222 to #eee */
+      border-bottom:1px solid #eee;
+    }
     .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
     .footer-col p { font-size:13px; color:#888; max-width:300px; line-height:1.6; }
-    .footer-col a { display:block; color:#fff; font-size:12px; margin-bottom:8px; transition:0.3s; }
-    .footer-col a:hover { color:#888; }
+    /* CHANGED: footer links from #fff to #333, hover from #888 to #000 */
+    .footer-col a { display:block; color:#333; font-size:12px; margin-bottom:8px; transition:0.3s; }
+    .footer-col a:hover { color:#000; }
     .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
-    .footer-logo-img { height:10px; filter:brightness(0) invert(1); }
+    /* CHANGED: logo filter from invert(1) white to brightness(0) black */
+    .footer-logo-img { height:10px; filter:brightness(0); }
     .ceo-wrap { display:flex; align-items:center; gap:8px; }
-    .ceo-label { font-size:7px; color:#666; text-transform:uppercase; letter-spacing:1px; }
-    .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#888; }
-    .legal-text { font-size:9px; color:#444; text-transform:uppercase; }
-    .footer-icons a { color:#fff; margin-right:14px; font-size:16px; transition:0.3s; }
-    .footer-icons a:hover { color:#888; }
-    @media(max-width:768px) { .footer-main{grid-template-columns:1fr;text-align:center;gap:30px;} .footer-col{display:flex;flex-direction:column;align-items:center;} .footer-bottom{flex-direction:column;text-align:center;} }
+    .ceo-label { font-size:7px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+    .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#666; }
+    .legal-text { font-size:9px; color:#aaa; text-transform:uppercase; }
+    /* CHANGED: footer icons from #fff to #333, hover from #888 to #000 */
+    .footer-icons a { color:#333; margin-right:14px; font-size:16px; transition:0.3s; }
+    .footer-icons a:hover { color:#000; }
+    @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
 
     /* ══════════════════════════════
        SCROLL REVEAL
@@ -739,10 +457,8 @@
       <h2>@egygrillz</h2>
     </div>
     <div class="ig-post">
-      <!-- Post Header -->
       <div class="ig-post-header">
         <div class="ig-post-user">
-          <!-- BLACK circle with your logo -->
           <div class="ig-post-avatar">
             <div class="ig-post-avatar-inner">
               <img src="logo/logo_black.png" alt="EGYGRILLZ">
@@ -754,13 +470,11 @@
         </div>
         <button class="ig-post-more"><i class="fas fa-ellipsis"></i></button>
       </div>
-      <!-- Post Image -->
       <div class="ig-post-img-wrap" id="ig-post-img-wrap">
         <img src="assets/images/IMG_3749.jpg" alt="EGYGRILLZ Custom Grillz">
         <div class="ig-post-overlay"></div>
         <i class="fas fa-heart ig-heart-anim" id="ig-heart-anim"></i>
       </div>
-      <!-- Action Bar -->
       <div class="ig-post-actions">
         <div class="ig-post-actions-left">
           <button class="ig-post-action-btn" id="ig-like-btn" title="Like"><i class="far fa-heart"></i></button>
@@ -769,13 +483,10 @@
         </div>
         <button class="ig-post-action-btn" id="ig-save-btn" title="Save"><i class="far fa-bookmark"></i></button>
       </div>
-      <!-- Likes -->
       <div class="ig-post-likes" id="ig-likes-count">2,847 likes</div>
-      <!-- Caption -->
       <div class="ig-post-caption">
-        <strong>egygrillz</strong> Egypt's First &amp; Only Custom Dental Jewelry Studio 🇪🇬 Gold · Silver · Diamond Grillz — All About The Bling. 
+        <strong>egygrillz</strong> Egypt's First &amp; Only Custom Dental Jewelry Studio 🇪🇬 Gold · Silver · Diamond Grillz — All About The Bling.
       </div>
-      <!-- Follow Button — grey, no colors -->
       <div class="ig-post-follow">
         <a href="https://instagram.com/egygrillz" target="_blank" class="ig-post-follow-btn">
           <i class="fab fa-instagram"></i> @egygrillz — Follow
@@ -808,7 +519,7 @@
     </div>
   </div>
 
-  <!-- FOOTER -->
+  <!-- FOOTER — matched to golds.html -->
   <footer>
     <div class="footer-main">
       <div class="footer-col">
@@ -833,6 +544,7 @@
         <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
         <a href="#"><i class="fas fa-location-dot"></i></a>
       </div>
+      <!-- CHANGED: using logo_white.png with brightness(0) filter = shows black logo on white footer -->
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
       <div class="ceo-wrap">
         <span class="ceo-label">Founder</span>
@@ -924,23 +636,19 @@
     }
 
     /* ── Load category product row ── */
-    async function loadCategoryRow(cat, stripId, href, catLabel){
+    async function loadCategoryRow(cat,stripId,href,catLabel){
       try{
         const list=await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
         const strip=document.getElementById(stripId);
-
         for(const folder of list.slice(0,12)){
           const txt=await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
           const d=parseInfo(txt);
           if(!d.images[0]) continue;
-
           const card=document.createElement('div');
           card.className='lv-prod-card';
           card.setAttribute('role','article');
-
           const imgWrap=document.createElement('div');
           imgWrap.className='lv-prod-img';
-
           d.images.forEach((img,i)=>{
             const el=document.createElement('img');
             el.src=`assets/images/${cat}/${folder}/${img}`;
@@ -950,7 +658,6 @@
             if(i===0) el.classList.add('active');
             imgWrap.appendChild(el);
           });
-
           const dotsEl=document.createElement('div');
           dotsEl.className='lv-prod-img-dots';
           if(d.images.length>1){
@@ -961,26 +668,15 @@
             });
           }
           imgWrap.appendChild(dotsEl);
-
           const overlay=document.createElement('div');
           overlay.className='lv-prod-overlay';
-          overlay.innerHTML=`
-            <a href="${href}" class="lv-prod-discover" onclick="event.stopPropagation()">
-              Discover
-              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
-            </a>`;
+          overlay.innerHTML=`<a href="${href}" class="lv-prod-discover" onclick="event.stopPropagation()">Discover<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg></a>`;
           imgWrap.appendChild(overlay);
-
           card.appendChild(imgWrap);
-
           const body=document.createElement('div');
           body.className='lv-prod-body';
-          body.innerHTML=`
-            <div class="lv-prod-label">${catLabel}</div>
-            <div class="lv-prod-name">${d.name||folder}</div>
-            <div class="lv-prod-price">${d.price||''}</div>`;
+          body.innerHTML=`<div class="lv-prod-label">${catLabel}</div><div class="lv-prod-name">${d.name||folder}</div><div class="lv-prod-price">${d.price||''}</div>`;
           card.appendChild(body);
-
           let c=0;
           const imgs=imgWrap.querySelectorAll('img');
           const dots=dotsEl.querySelectorAll('.lv-prod-img-dot');
@@ -989,9 +685,8 @@
               imgs[c].classList.remove('active'); if(dots[c]) dots[c].classList.remove('active');
               c=(c+1)%imgs.length;
               imgs[c].classList.add('active'); if(dots[c]) dots[c].classList.add('active');
-            }, 3500+Math.random()*1000);
+            },3500+Math.random()*1000);
           }
-
           card.addEventListener('click',()=>window.location=href);
           strip.appendChild(card);
         }
@@ -1029,15 +724,7 @@
           const src=d.images[0]?`assets/images/sets/${folder}/${d.images[0]}`:'';
           if(!src)continue;
           const card=document.createElement('div'); card.className='lv-gal-card';
-          card.innerHTML=`
-            <div class="lv-gal-card-img">
-              <img src="${src}" alt="${d.name}" loading="lazy">
-            </div>
-            <div class="lv-gal-card-info">
-              <div class="gc-name">${d.name||''}</div>
-              <div class="gc-desc">${d.desc||''}</div>
-              <div class="gc-price">${d.price||''}</div>
-            </div>`;
+          card.innerHTML=`<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
           card.addEventListener('click',()=>window.location='grillz-gallery.html');
           scrollEl.appendChild(card);
         }
@@ -1047,72 +734,39 @@
 
     /* ── Instagram Post Interactions ── */
     (function(){
-      let liked = false, saved = false, likes = 2847;
-      const likeBtn = document.getElementById('ig-like-btn');
-      const saveBtn = document.getElementById('ig-save-btn');
-      const commentBtn = document.getElementById('ig-comment-btn');
-      const shareBtn = document.getElementById('ig-share-btn');
-      const likesCount = document.getElementById('ig-likes-count');
-      const heartAnim = document.getElementById('ig-heart-anim');
-      const imgWrap = document.getElementById('ig-post-img-wrap');
-
-      function updateLikes(){
-        likesCount.textContent = likes.toLocaleString() + ' likes';
-      }
-
-      if(likeBtn) likeBtn.addEventListener('click', function(){
-        liked = !liked;
-        this.classList.toggle('liked', liked);
-        likes += liked ? 1 : -1;
-        updateLikes();
-        if(liked) triggerHeart();
+      let liked=false, saved=false, likes=2847;
+      const likeBtn=document.getElementById('ig-like-btn');
+      const saveBtn=document.getElementById('ig-save-btn');
+      const commentBtn=document.getElementById('ig-comment-btn');
+      const shareBtn=document.getElementById('ig-share-btn');
+      const likesCount=document.getElementById('ig-likes-count');
+      const heartAnim=document.getElementById('ig-heart-anim');
+      const imgWrap=document.getElementById('ig-post-img-wrap');
+      function updateLikes(){ likesCount.textContent=likes.toLocaleString()+' likes'; }
+      if(likeBtn) likeBtn.addEventListener('click',function(){
+        liked=!liked; this.classList.toggle('liked',liked);
+        likes+=liked?1:-1; updateLikes(); if(liked) triggerHeart();
       });
-
-      let lastTap = 0;
-      if(imgWrap) imgWrap.addEventListener('click', function(){
-        const now = Date.now();
-        if(now - lastTap < 350){
-          if(!liked){
-            liked = true;
-            likeBtn.classList.add('liked');
-            likes += 1;
-            updateLikes();
-          }
-          triggerHeart();
-        }
-        lastTap = now;
+      let lastTap=0;
+      if(imgWrap) imgWrap.addEventListener('click',function(){
+        const now=Date.now();
+        if(now-lastTap<350){ if(!liked){ liked=true; likeBtn.classList.add('liked'); likes+=1; updateLikes(); } triggerHeart(); }
+        lastTap=now;
       });
-
-      function triggerHeart(){
-        if(!heartAnim) return;
-        heartAnim.classList.remove('pop');
-        void heartAnim.offsetWidth;
-        heartAnim.classList.add('pop');
-      }
-
-      if(saveBtn) saveBtn.addEventListener('click', function(){
-        saved = !saved;
-        this.classList.toggle('saved', saved);
-      });
-
-      if(commentBtn) commentBtn.addEventListener('click', function(){
-        window.open('https://instagram.com/egygrillz', '_blank');
-      });
-
-      if(shareBtn) shareBtn.addEventListener('click', function(){
-        window.open('https://instagram.com/egygrillz', '_blank');
-      });
+      function triggerHeart(){ if(!heartAnim)return; heartAnim.classList.remove('pop'); void heartAnim.offsetWidth; heartAnim.classList.add('pop'); }
+      if(saveBtn) saveBtn.addEventListener('click',function(){ saved=!saved; this.classList.toggle('saved',saved); });
+      if(commentBtn) commentBtn.addEventListener('click',()=>window.open('https://instagram.com/egygrillz','_blank'));
+      if(shareBtn) shareBtn.addEventListener('click',()=>window.open('https://instagram.com/egygrillz','_blank'));
     })();
 
     /* ── INIT ── */
     async function init(){
-      await loadCategoryCard('golds',    'golds-card-slides',    'golds-card-name',    'golds-card-desc',    'The Gold<br>Collection',    'golds.html');
-      await loadCategoryCard('silvers',  'silvers-card-slides',  'silvers-card-name',  'silvers-card-desc',  'The Silver<br>Collection',  'silvers.html');
-      await loadCategoryCard('diamonds', 'diamonds-card-slides', 'diamonds-card-name', 'diamonds-card-desc', 'The Diamond<br>Collection', 'diamonds.html');
-
-      loadCategoryRow('golds',    'golds-row',    'golds.html',    'Gold');
-      loadCategoryRow('silvers',  'silvers-row',  'silvers.html',  'Silver');
-      loadCategoryRow('diamonds', 'diamonds-row', 'diamonds.html', 'Diamond');
+      await loadCategoryCard('golds','golds-card-slides','golds-card-name','golds-card-desc','The Gold<br>Collection','golds.html');
+      await loadCategoryCard('silvers','silvers-card-slides','silvers-card-name','silvers-card-desc','The Silver<br>Collection','silvers.html');
+      await loadCategoryCard('diamonds','diamonds-card-slides','diamonds-card-name','diamonds-card-desc','The Diamond<br>Collection','diamonds.html');
+      loadCategoryRow('golds','golds-row','golds.html','Gold');
+      loadCategoryRow('silvers','silvers-row','silvers.html','Silver');
+      loadCategoryRow('diamonds','diamonds-row','diamonds.html','Diamond');
       loadLatestStrip();
       loadGallery();
     }
