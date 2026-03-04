@@ -294,7 +294,8 @@
     /* ── Modal ── */
     const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
     let mCur=0,mTot=0;
-    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML=`<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'">`; modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
+    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img src="'+src+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+        modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
     function closeModal(){ modalBg.classList.remove('open'); document.body.classList.remove('modal-open'); }
@@ -308,32 +309,65 @@
     function buildPanel(item){
       const panel=document.createElement('div');
       panel.className='ed-panel loading';
-      const dotsHtml=item.images.length>1?`<div class="ed-dots">${item.images.map((_,i)=>`<span class="ed-dot${i===0?' active':''}"></span>`).join('')}</div>`:'';
-      panel.innerHTML=`${item.images.map((s,i)=>`<img src="${s}" class="${i===0?'active':''}" draggable="false" loading="${i===0?'eager':'lazy'}">`).join('')}<div class="ed-panel-info"><div class="name">${item.name}</div><div class="desc">${item.desc}</div><div class="price">${item.price}</div></div>${dotsHtml}`;
+
+      const dotsHtml=item.images.length>1
+        ? '<div class="ed-dots">'+item.images.map(function(_,i){ return '<span class="ed-dot'+(i===0?' active':'')+'"></span>'; }).join('')+'</div>'
+        : '';
+
+      let imgsHtml='';
+      item.images.forEach(function(s,i){
+        imgsHtml+='<img src="'+s+'" class="'+(i===0?'active':'')+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+      });
+
+      panel.innerHTML=imgsHtml
+        +'<div class="ed-panel-info">'
+        +'<div class="name">'+item.name+'</div>'
+        +'<div class="desc">'+item.desc+'</div>'
+        +'<div class="price">'+item.price+'</div>'
+        +'</div>'
+        +dotsHtml;
+
       const firstImg=panel.querySelector('img');
-      if(firstImg){ if(firstImg.complete&&firstImg.naturalWidth)panel.classList.remove('loading'); else firstImg.addEventListener('load',()=>panel.classList.remove('loading'),{once:true}); }
-      let c=0; const imgs=panel.querySelectorAll('img'); const dots=panel.querySelectorAll('.ed-dot');
-      if(imgs.length>1){ setInterval(()=>{ imgs[c].classList.remove('active'); if(dots[c])dots[c].classList.remove('active'); c=(c+1)%imgs.length; imgs[c].classList.add('active'); if(dots[c])dots[c].classList.add('active'); },3500+Math.random()*1000); }
-      panel.addEventListener('click',()=>openModal(item));
+      if(firstImg){
+        if(firstImg.complete&&firstImg.naturalWidth) panel.classList.remove('loading');
+        else firstImg.addEventListener('load',function(){ panel.classList.remove('loading'); },{once:true});
+      }
+
+      let c=0;
+      const imgs=panel.querySelectorAll('img');
+      const dots=panel.querySelectorAll('.ed-dot');
+      if(imgs.length>1){
+        setInterval(function(){
+          imgs[c].classList.remove('active');
+          if(dots[c]) dots[c].classList.remove('active');
+          c=(c+1)%imgs.length;
+          imgs[c].classList.add('active');
+          if(dots[c]) dots[c].classList.add('active');
+        }, 3500+Math.random()*1000);
+      }
+
+      panel.addEventListener('click',function(){ openModal(item); });
       return panel;
     }
 
-    /* ── Smart layout engine ──
-       Pattern: A(2 panels) → B(2 panels) → C(3 panels) → repeat
-       After placing all items, the LAST row gets is-last-row class (100vh).
-       A lone leftover item gets layout-single (1 col, 100vh).
+    /* ── Layout engine: A(2) → B(2) → C(3) → repeat
+       Last row always 100vh. Lone leftover = full-width 100vh.
     ── */
     const PATTERNS=['a','b','c'];
     const SIZES={a:2,b:2,c:3};
     const galleryWrap=document.getElementById('gallery-wrap');
-    const PAGE=12; // divisible by 2+2+3=7 isn't perfect, but 12 works well visually
+    const PAGE=10;
     let shown=0, allItems=[], patternIdx=0;
 
     function renderBatch(items){
       const batch=items.slice(shown,shown+PAGE);
       if(!batch.length) return;
 
-      const rows=[]; // collect rows so we can tag the last one
+      /* remove is-last-row from previously last row */
+      const prevLast=galleryWrap.querySelector('.is-last-row');
+      if(prevLast) prevLast.classList.remove('is-last-row');
+
+      const newRows=[];
       let bi=0;
 
       while(bi<batch.length){
@@ -345,32 +379,23 @@
         const row=document.createElement('div');
 
         if(chunk.length===1){
-          /* lone item — full width, 100vh */
           row.className='ed-row layout-single';
           row.appendChild(buildPanel(chunk[0]));
         } else {
-          row.className=`ed-row layout-${pat}`;
-          /* if we got fewer than expected (end of batch), adapt columns */
+          row.className='ed-row layout-'+pat;
           if(chunk.length<size){
-            row.style.gridTemplateColumns=chunk.map(()=>'1fr').join(' ');
+            row.style.gridTemplateColumns=chunk.map(function(){ return '1fr'; }).join(' ');
           }
-          chunk.forEach(item=>row.appendChild(buildPanel(item)));
+          chunk.forEach(function(it){ row.appendChild(buildPanel(it)); });
           patternIdx++;
         }
 
-        rows.push(row);
+        newRows.push(row);
         bi+=chunk.length;
       }
 
-      /* tag the last row as is-last-row so it gets 100vh */
-      if(rows.length){ rows[rows.length-1].classList.add('is-last-row'); }
-
-      /* remove is-last-row from previous last row if we're adding more */
-      const prevLastRows=galleryWrap.querySelectorAll('.is-last-row');
-      prevLastRows.forEach(r=>r.classList.remove('is-last-row'));
-      rows.forEach(r=>galleryWrap.appendChild(r));
-      /* re-tag */
-      if(rows.length) rows[rows.length-1].classList.add('is-last-row');
+      newRows.forEach(function(r){ galleryWrap.appendChild(r); });
+      if(newRows.length) newRows[newRows.length-1].classList.add('is-last-row');
 
       shown+=batch.length;
       document.getElementById('see-more-wrap').style.display=shown<items.length?'block':'none';
