@@ -250,7 +250,8 @@
     function parseInfo(text){ let name='',desc='',price='',images=[]; text.split('\n').forEach(line=>{ line=line.replace(/\r/g,'').trim(); const ci=line.indexOf(':'); if(ci===-1)return; const key=line.slice(0,ci).trim().toLowerCase(); const val=line.slice(ci+1).trim(); if(key==='name'||key==='title')name=val; else if(key==='description'||key==='desc')desc=val; else if(key==='price')price=val; else if(key==='images')images=val.split(',').map(i=>i.trim()).filter(Boolean); }); return{name,desc,price,images}; }
     const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
     let mCur=0,mTot=0;
-    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML=`<img src="${src}" draggable="false" loading="${i===0?'eager':'lazy'">`; modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
+    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img src="'+src+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+        modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
     function closeModal(){ modalBg.classList.remove('open'); document.body.classList.remove('modal-open'); }
@@ -274,7 +275,55 @@
         document.getElementById('see-more-btn').addEventListener('click',renderNext);
       });
     }).catch(e=>console.error(e));
-    function buildCard({name,desc,price,images,folder}){ const card=document.createElement('div'); card.className='set-card'; const dotsHtml=images.length>1?`<div class="card-dots">${images.map((_,i)=>`<span class="card-dot-pip${i===0?' active':''}"></span>`).join('')}</div>`:''; card.innerHTML=`<div class="card-img">${images.map((s,i)=>`<img src="${s}" class="${i===0?'active':''}" draggable="false" loading="${i===0?'eager':'lazy'}">`).join('')}<div class="card-name-overlay"><div class="name-on-img">${name||folder}</div></div>${dotsHtml}<button class="card-btn" aria-label="View ${name}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button></div><div class="card-body">${desc?`<div class="card-desc">${desc}</div>`:''}<div class="price">${price}</div></div>`; let c=0; const imgs=card.querySelectorAll('.card-img img'); const pips=card.querySelectorAll('.card-dot-pip'); if(imgs.length>1){ setInterval(()=>{ imgs[c].classList.remove('active'); if(pips[c])pips[c].classList.remove('active'); c=(c+1)%imgs.length; imgs[c].classList.add('active'); if(pips[c])pips[c].classList.add('active'); },3500); } card.addEventListener('click',()=>openModal({name,desc,price,images})); return card; }
+    function buildCard({name,desc,price,images,folder}){
+      const card=document.createElement('div');
+      card.className='set-card';
+
+      // dots html
+      let dotsHtml='';
+      if(images.length>1){
+        dotsHtml='<div class="card-dots">';
+        images.forEach(function(_,i){ dotsHtml+='<span class="card-dot-pip'+(i===0?' active':'')+'"></span>'; });
+        dotsHtml+='</div>';
+      }
+
+      // images html
+      let imgsHtml='';
+      images.forEach(function(s,i){
+        imgsHtml+='<img src="'+s+'" class="'+(i===0?'active':'')+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+      });
+
+      const cardImg=document.createElement('div');
+      cardImg.className='card-img';
+      cardImg.innerHTML=imgsHtml
+        +'<div class="card-name-overlay"><div class="name-on-img">'+(name||folder)+'</div></div>'
+        +dotsHtml
+        +'<button class="card-btn" aria-label="View '+name+'">'
+        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+        +'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'
+        +'</svg></button>';
+      card.appendChild(cardImg);
+
+      const cardBody=document.createElement('div');
+      cardBody.className='card-body';
+      cardBody.innerHTML=(desc?'<div class="card-desc">'+desc+'</div>':'')+'<div class="price">'+price+'</div>';
+      card.appendChild(cardBody);
+
+      let c=0;
+      const imgs=card.querySelectorAll('.card-img img');
+      const pips=card.querySelectorAll('.card-dot-pip');
+      if(imgs.length>1){
+        setInterval(function(){
+          imgs[c].classList.remove('active');
+          if(pips[c]) pips[c].classList.remove('active');
+          c=(c+1)%imgs.length;
+          imgs[c].classList.add('active');
+          if(pips[c]) pips[c].classList.add('active');
+        },3500);
+      }
+      card.addEventListener('click',function(){ openModal({name,desc,price,images}); });
+      return card;
+    }
   </script>
 </body>
 </html>
