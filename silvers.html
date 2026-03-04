@@ -262,7 +262,7 @@
     document.addEventListener('keydown',e=>{ if(!modalBg.classList.contains('open'))return; if(e.key==='Escape')closeModal(); if(e.key==='ArrowLeft')goTo(mCur-1); if(e.key==='ArrowRight')goTo(mCur+1); });
     const base='assets/images/silvers';
     fetch(`${base}/silvers.json`).then(r=>r.json()).then(folders=>{
-      const container=document.getElementById('golds-grid');
+      const container=document.getElementById('silvers-grid');
       if(!folders.length){ container.innerHTML='<p class="empty">No silvers yet — check back soon.</p>'; return; }
       const promises=folders.map(folder=>fetch(`${base}/${folder}/info.txt`).then(r=>{ if(!r.ok)throw 0; return r.text(); }).then(text=>{ const{name,desc,price,images}=parseInfo(text); return{name,desc,price,images:images.map(img=>`${base}/${folder}/${img}`),folder}; }).catch(()=>null));
       Promise.all(promises).then(items=>{
