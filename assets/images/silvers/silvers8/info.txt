@@ -1,0 +1,4 @@
+name: "تحرير العالم العربي" Silver Set
+price: 23999 EGP
+description: Crafted in solid 925 sterling silver with a high-polish finish, this full 12-tooth grillz features the powerful Arabic phrase "تحرير العالم العربي" elegantly suspended and integrated across the teeth in bold, floating lettering. A statement of revolutionary vision and pan-Arab unity.
+images: 000000.jpeg,000001.jpeg
