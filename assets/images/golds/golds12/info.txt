@@ -1,0 +1,4 @@
+name: Bar & Star Set
+price: 4899 EGP
+description: Crafted in solid 925 sterling silver with a luxurious gold plating, this striking two-tooth design pairs one sleek open-face tooth accented by a fully iced-out horizontal bar bursting with precision-set CZ diamonds, alongside an adjacent open-face tooth featuring a radiant shine star cutout centered by a single, brilliant solitary diamond
+images: 000000.jpeg,000001.jpeg,000002.jpeg,000003.jpeg,000004.jpeg
