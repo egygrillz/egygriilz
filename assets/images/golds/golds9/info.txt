@@ -1,4 +1,4 @@
-name: f
-price: 
-description: 
+name: n0 ruLE SET
+price: 38999 EGP
+description: One-of-a-kind 20-piece grillz set. Featuring a stunning iced-out Key of Life (Ankh), sculpted 3D forms, vibrant red enamel accents, and intricate detailing across the full set for maximum brilliance. Made in gold-plated 925 sterling silver. Handcrafted in Cairo. A powerful fusion of ancient Egyptian symbolism and modern high-luxury streetwear — the ultimate statement in heritage and opulence.
 images: 000000.jpg
