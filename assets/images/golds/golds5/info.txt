@@ -1,4 +1,4 @@
-name: .
-price: .
-description: 
+name: ANE's Set
+price: 11799 EGP
+description: Crafted in solid 925 sterling silver with a luxurious gold plating, featuring three elegantly floating letters "A", "N", "E" — spelling her name with graceful suspension — complemented by a finely detailed golden Cancer zodiac symbol in its classic crab form.
 images: 000000.jpg,000001.jpg,000002.jpg,000003.jpg,000004.jpg,000005.jpg,000006.jpg
