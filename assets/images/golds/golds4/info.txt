@@ -1,4 +1,4 @@
-name: .
-price: .
-description: .
+name: Diamond Doll Set
+price: 14799.99 EGP
+description: Crafted in solid 925 sterling silver with a luxurious gold coating, adorned with precision-set CZ diamonds and vibrant emerald accents across bold, sculpted fronts for a glamorous, jewel-like brilliance. A playful yet opulent expression of glamour and femininity, radiating pure doll-like sparkle and undeniable allure.
 images: 000000.jpg,000001.jpg
