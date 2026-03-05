@@ -1,4 +1,4 @@
-name: OpenFace & Heart CutOut
+name: OpenFace & Heart CutOut Chrome Edition
 price: 2899 EGP
 description: Crafted in premium cobalt chrome with a luxurious gold plating, this exclusive two-tooth design pairs one sleek open-face tooth with a refined heart-shaped cutout on the adjacent tooth. The crisp, sharp contours allow natural tooth brilliance to shine through both elements.
 images: 000000.jpg,000001.jpg,000002.jpg,000003.jpg,000004.jpg,000005.jpg,000006.jpg,000007.jpg,000008.jpg,000009.jpg
