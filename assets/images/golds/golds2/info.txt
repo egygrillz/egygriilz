@@ -1,4 +1,4 @@
 name: Golden Girl Set
-price: 4800 EGP
+price: 4799.99 EGP
 description: Open-face grillz crafted in solid 925 sterling silver with a luxurious gold coating, adorned with precision-set CZ diamonds on a refined horizontal bar and seamless gap filler. A discreet yet luminous expression of sophistication, created exclusively for director Zeina Abdelbaky
 images: 000001.jpg,000000.jpg,000002.jpg
