@@ -1,4 +1,4 @@
-name: mm
-price: n
-description: nn
+name: Scorpion Sterling Silver Edition
+price: 4799 EGP
+description: Crafted in solid 925 sterling silver with a smooth, rounded gold-plated finish, the elegant scorpion form is softly contoured for refined wear, highlighted by a luminous emerald CZ stone that captures light with serene brilliance.
 images: 000000.jpg
