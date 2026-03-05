@@ -1,4 +1,4 @@
-name: 0x
-price: xx
-description: x
+name: OOpenFace & Heart CutOut Silver Edition
+price: 4099 EGP
+description: Created from solid 925 sterling silver bathed in rich gold plating, the design elegantly contrasts a clean open-face tooth with an adjacent heart cutout. Smooth contours frame the natural smile beneath.
 images: 000001.jpg
