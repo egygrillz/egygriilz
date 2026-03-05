@@ -1,4 +1,4 @@
 name: Golden Frame Set
-price: 7600 EGP
+price: 7599.99 EGP
 description: Crafted in solid 925 sterling silver with a luxurious 21K gold coating, adorned with precision-set CZ diamonds on a bold horizontal bar framed by dual side bars and a seamless gap filler. A discreet yet luminous expression of sophistication, designed for this striking dual open-face set.
 images: 000002.jpg,000000.jpg
