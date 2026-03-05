@@ -1,4 +1,4 @@
-name: Open-Face & Iced-Out bar
+name: OpenFace & IcedOut Bar
 price: 2800 EGP
-description: crafted in solid 925 sterling silver with a luxurious gold plating, adorned with precision-set CZ diamonds on a bold iced-out horizontal bar. Captured in a vibrant Brazilian photoshoot.
+description: Crafted in solid 925 sterling silver with a luxurious gold plating, adorned with precision-set CZ diamonds on a bold iced-out horizontal bar. Captured in a vibrant Brazilian photoshoot.
 images: 000002.jpg,000000.jpg,000001.jpg
