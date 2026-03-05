@@ -1,4 +1,4 @@
-name: fff
-price: f
-description: 
-images: 000000.jpg,000001.jpg,000002.jpg
+name: Selene Blom Set
+price: 18399 EGP
+description: Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.
+images: 000000.jpeg,000001.jpeg,000002.jpeg
