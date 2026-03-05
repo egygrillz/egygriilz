@@ -1,4 +1,4 @@
 name: Scorpion Cobalt Chrome Edition
 price: 3599 EGP
-description: Crafted in premium cobalt chrome with a razor-sharp finish and luxurious gold coating, this fierce scorpion design features crisp, angular contours accented by vivid red enamel detailing and a single, intensely vibrant emerald CZ stone at its core. A bold statement of precision and intensity, blending metallic edge with jewel-like depth for commanding, enigmatic allure.
+description: Crafted in premium cobalt chrome with a razor-sharp finish and luxurious gold coating, this fierce scorpion design features crisp, angular contours accented by vivid red enamel detailing .
 images: 000000.jpg,000001.jpg,000002.jpg,000003.jpg
