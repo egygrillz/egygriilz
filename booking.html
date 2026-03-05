@@ -16,7 +16,6 @@
     img,video { display:block; max-width:100%; pointer-events:none; -webkit-user-drag:none; -webkit-touch-callout:none; }
     ::selection { background:transparent; }
 
-    /* HEADER */
     header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--bg); border-bottom:1px solid var(--border); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
     header.hidden { transform:translateY(-100%); }
     .floating-logo { position:fixed; top:20px; left:0; right:0; display:flex; align-items:center; justify-content:center; z-index:999; pointer-events:none; opacity:0; transform:translateY(-10px); transition:opacity 0.4s ease,transform 0.4s ease; }
@@ -36,7 +35,6 @@
       .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,0.06); width:100%; }
     }
 
-    /* PAGE */
     .container { max-width:800px; margin:0 auto; padding:100px 5% 100px; text-align:center; }
     h1 { font-family:'Playfair Display',serif; font-size:clamp(32px,8vw,56px); font-weight:400; letter-spacing:2px; margin-bottom:10px; text-transform:uppercase; }
     .tagline { color:var(--muted); margin-bottom:50px; text-transform:uppercase; letter-spacing:1.5px; font-size:11px; }
@@ -45,12 +43,15 @@
     /* Services */
     .service-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:40px; }
     .service-option { border:1px solid var(--border); padding:18px 25px; cursor:pointer; transition:0.2s; background:var(--bg); display:flex; justify-content:space-between; align-items:center; border-radius:2px; }
+    .service-info { display:flex; flex-direction:column; }
     .service-name { font-size:12px; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
-    .service-meta { font-size:10px; color:var(--muted); margin-top:3px; display:block; }
-    .service-price { font-size:12px; font-weight:700; }
+    .service-meta { font-size:10px; color:var(--muted); margin-top:2px; display:block; }
+    .service-desc { font-size:11px; color:#aaa; margin-top:6px; line-height:1.5; font-style:italic; max-width:420px; }
+    .service-price { font-size:12px; font-weight:700; white-space:nowrap; margin-left:20px; flex-shrink:0; }
     .service-option:hover { border-color:var(--text); }
     .service-option.active { background:var(--text); color:var(--bg); border-color:var(--text); }
-    .service-option.active .service-meta { color:rgba(250,250,249,0.65); }
+    .service-option.active .service-meta,
+    .service-option.active .service-desc { color:rgba(250,250,249,0.45); }
 
     /* Form */
     .booking-form { text-align:left; max-width:600px; margin:0 auto; }
@@ -63,7 +64,6 @@
     input:focus,textarea:focus,select:focus { border-bottom-color:var(--text); }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:30px; }
 
-    /* Terms checkbox */
     .terms-container { margin:35px 0; display:flex; align-items:center; gap:15px; padding:15px; background:#fff; border:1px solid var(--border); border-radius:2px; }
     #termsBox { width:20px; height:20px; cursor:pointer; accent-color:var(--text); border:1px solid var(--text); appearance:checkbox !important; -webkit-appearance:checkbox !important; }
     .terms-text { color:var(--muted); font-size:11px; line-height:1.4; cursor:pointer; }
@@ -72,7 +72,6 @@
     .submit-btn { width:100%; padding:18px; background:var(--text); color:var(--bg); border:1px solid var(--text); font-family:inherit; text-transform:uppercase; letter-spacing:3px; font-size:10px; font-weight:700; cursor:pointer; transition:0.25s; margin-top:10px; opacity:0.5; border-radius:2px; }
     .submit-btn:not(:disabled):hover { background:transparent; color:var(--text); opacity:1; }
 
-    /* CTA BAND */
     .cta-band { background:#fff; color:var(--text); text-align:center; padding:90px 5%; }
     .cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#aaa; margin-bottom:12px; }
     .cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; color:var(--text); }
@@ -83,7 +82,6 @@
     .cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #ddd; padding:15px 38px; color:#aaa; transition:border-color 0.25s,color 0.25s; }
     .cta-btn-outline:hover { border-color:#aaa; color:#666; }
 
-    /* FOOTER */
     footer { background:#fff; color:var(--text); padding:50px 5% 20px; }
     .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #eee; }
     .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
@@ -130,22 +128,43 @@
 
         <span class="section-label">1. Services</span>
         <div class="service-grid">
+
           <div class="service-option" onclick="toggleService(this,'Impression')">
-            <div><span class="service-name">Impression</span><span class="service-meta">30 min</span></div>
+            <div class="service-info">
+              <span class="service-name">Impression</span>
+              <span class="service-meta">30 min</span>
+              <span class="service-desc">We take a precise mold of your teeth — the essential first step to crafting your custom grillz.</span>
+            </div>
             <span class="service-price">200 EGP / Arch</span>
           </div>
+
           <div class="service-option" onclick="toggleService(this,'Consultation')">
-            <div><span class="service-name">Consultation</span><span class="service-meta">1 hour</span></div>
+            <div class="service-info">
+              <span class="service-name">Consultation</span>
+              <span class="service-meta">1 hour</span>
+              <span class="service-desc">Design your perfect set with our specialist — style, metal choice, stones, and fit, all planned together.</span>
+            </div>
             <span class="service-price">1000 EGP / hr</span>
           </div>
+
           <div class="service-option" onclick="toggleService(this,'Pickup')">
-            <div><span class="service-name">Pickup</span><span class="service-meta">10 min</span></div>
+            <div class="service-info">
+              <span class="service-name">Pickup</span>
+              <span class="service-meta">10 min</span>
+              <span class="service-desc">Your piece is finished and ready. Come in to collect and try on your grillz in person.</span>
+            </div>
             <span class="service-price">Free</span>
           </div>
+
           <div class="service-option" onclick="toggleService(this,'Toothgem Application')">
-            <div><span class="service-name">Gem Applying</span><span class="service-meta">30 min</span></div>
+            <div class="service-info">
+              <span class="service-name">Gem Applying</span>
+              <span class="service-meta">30 min</span>
+              <span class="service-desc">A single crystal or diamond bonded directly to your tooth — subtle, elegant, and completely painless.</span>
+            </div>
             <span class="service-price">From 500 EGP</span>
           </div>
+
         </div>
         <input type="hidden" name="Services" id="serviceInput" required>
 
