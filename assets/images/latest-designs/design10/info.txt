@@ -1,0 +1,4 @@
+name: FLEX Set
+price: Contact us for details
+description: This custom Chrome grillz set, crafted exclusively for the rapper FLEX , featured in his video clip FL EX FT. NAFEA [ELMAHATA EL OLA] - ( OFFICIAL MUSIC VIDEO ).
+images: 000000.jpeg,000001.jpeg,000002.jpeg,000003.mp4
