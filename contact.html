@@ -7,122 +7,83 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    :root { --bg:#FAFAF9; --text:#1a1a1a; --muted:#888; --border:rgba(0,0,0,0.08); }
-    *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
-    body { font-family:'Arimo',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
-    body.menu-open { overflow:hidden; }
-    a { text-decoration:none; color:inherit; }
-    img,video { display:block; max-width:100%; pointer-events:none; }
-    ::selection { background:transparent; }
-
-    header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--bg); border-bottom:1px solid var(--border); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
-    header.hidden { transform:translateY(-100%); }
-    .floating-logo { position:fixed; top:20px; left:0; right:0; display:flex; align-items:center; justify-content:center; z-index:999; pointer-events:none; opacity:0; transform:translateY(-10px); transition:opacity 0.4s ease,transform 0.4s ease; }
-    .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
-    .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
-    .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; color:var(--text); }
-    .main-nav { display:flex; gap:20px; }
-    .main-nav a { color:var(--text); font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color 0.3s; }
-    .main-nav a:hover { color:#666; }
-    .nav-active { font-weight:900; border-bottom:1px solid var(--text); }
-    .menu-toggle { display:none; flex-direction:column; gap:6px; background:none; border:none; cursor:pointer; }
-    .menu-toggle span { width:25px; height:1.5px; background:var(--text); display:block; }
-    @media(max-width:980px) {
-      .menu-toggle { display:flex; }
-      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:var(--bg); flex-direction:column; padding:10px 5%; transition:0.4s; box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
-      .main-nav.active { right:0; }
-      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,0.06); width:100%; }
+    :root{--bg:#FAFAF9;--text:#1a1a1a;--muted:#888;--border:rgba(0,0,0,0.08)}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{font-family:'Arimo',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+    body.menu-open{overflow:hidden}
+    a{text-decoration:none;color:inherit}
+    img,video{display:block;max-width:100%;pointer-events:none}
+    ::selection{background:transparent}
+    header{position:fixed;top:0;left:0;right:0;height:60px;background:var(--bg);border-bottom:1px solid var(--border);z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 5%;transition:transform 0.4s cubic-bezier(0.4,0,0.2,1)}
+    header.hidden{transform:translateY(-100%)}
+    .floating-logo{position:fixed;top:20px;left:0;right:0;display:flex;align-items:center;justify-content:center;z-index:999;pointer-events:none;opacity:0;transform:translateY(-10px);transition:opacity 0.4s ease,transform 0.4s ease}
+    .floating-logo.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+    .floating-logo a{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;letter-spacing:4px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,0.5)}
+    .logo-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:2px;color:var(--text)}
+    .main-nav{display:flex;gap:20px}
+    .main-nav a{color:var(--text);font-size:11px;text-transform:uppercase;letter-spacing:1px;transition:color 0.3s}
+    .main-nav a:hover{color:#666}
+    .nav-active{font-weight:900;border-bottom:1px solid var(--text)}
+    .menu-toggle{display:none;flex-direction:column;gap:6px;background:none;border:none;cursor:pointer}
+    .menu-toggle span{width:25px;height:1.5px;background:var(--text);display:block}
+    @media(max-width:980px){
+      .menu-toggle{display:flex}
+      .main-nav{position:fixed;top:60px;right:-100%;width:100%;background:var(--bg);flex-direction:column;padding:10px 5%;transition:0.4s;box-shadow:0 5px 10px rgba(0,0,0,0.05);z-index:1100}
+      .main-nav.active{right:0}
+      .main-nav a{font-size:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.06);width:100%}
     }
-
-    .contact-container { max-width:1200px; margin:100px auto 0; padding:0 6% 120px; display:grid; grid-template-columns:1fr 1fr; gap:80px; }
-    .contact-info h1 { font-family:'Playfair Display',serif; font-size:clamp(32px,5vw,48px); text-transform:uppercase; letter-spacing:3px; margin-bottom:30px; font-weight:400; }
-    .detail-item { margin-bottom:35px; }
-    .detail-item h3 { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:10px; }
-    .detail-item p, .detail-item a { font-size:17px; color:var(--text); display:block; line-height:1.6; }
-    .detail-item a:hover { color:#666; }
-
-    .contact-form { background:#fff; padding:40px; border:1px solid var(--border); border-radius:2px; }
-    .contact-form h2 { font-family:'Playfair Display',serif; font-size:24px; margin-bottom:30px; text-transform:uppercase; letter-spacing:2px; font-weight:400; }
-    .form-group { margin-bottom:20px; }
-    .form-group input,.form-group textarea {
-      width:100%; padding:15px; border:1px solid var(--border); background:#fff;
-      font-family:'Arimo',sans-serif; font-size:14px; outline:none; transition:0.3s;
-      color:var(--text); border-radius:2px;
-    }
-    .form-group input:focus,.form-group textarea:focus { border-color:var(--text); }
-    .submit-btn { width:100%; padding:15px; background:var(--text); color:var(--bg); border:1px solid var(--text); font-family:'Arimo',sans-serif; text-transform:uppercase; letter-spacing:3px; font-size:10px; font-weight:700; cursor:pointer; transition:0.25s; border-radius:2px; }
-    .submit-btn:hover { background:transparent; color:var(--text); }
-    .submit-btn:disabled { background:#ccc; border-color:#ccc; color:#fff; cursor:not-allowed; }
-
-    @media(max-width:900px) { .contact-container { grid-template-columns:1fr; gap:50px; margin-top:80px; } }
-
-    .cta-band { background:#fff; color:var(--text); text-align:center; padding:90px 5%; border-top:1px solid var(--border); }
-    .cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#aaa; margin-bottom:12px; }
-    .cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; }
-    .cta-band p { font-size:13px; color:#999; max-width:480px; margin:0 auto 40px; line-height:1.75; }
-    .cta-btns { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
-    .cta-btn-dark { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #aaa; padding:15px 38px; color:#666; transition:0.25s; }
-    .cta-btn-dark:hover { background:#666; color:#fff; border-color:#666; }
-    .cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #ddd; padding:15px 38px; color:#aaa; transition:0.25s; }
-    .cta-btn-outline:hover { border-color:#aaa; color:#666; }
-
-    footer { background:#fff; color:var(--text); padding:50px 5% 20px; }
-    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #eee; }
-    .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
-    .footer-col p { font-size:13px; color:#888; max-width:300px; line-height:1.6; }
-    .footer-col a { display:block; color:#333; font-size:12px; margin-bottom:8px; transition:0.3s; }
-    .footer-col a:hover { color:#000; }
-    .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
-    .footer-logo-img { height:10px; filter:brightness(0); }
-    .ceo-wrap { display:flex; align-items:center; gap:8px; }
-    .ceo-label { font-size:7px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
-    .ceo-name { font-family:'Alex Brush'; font-size:14px; color:#666; }
-    .legal-text { font-size:9px; color:#aaa; text-transform:uppercase; }
-    .footer-icons a { color:#333; margin-right:14px; font-size:16px; transition:0.3s; }
-    .footer-icons a:hover { color:#000; }
-    @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
+    .contact-container{max-width:1200px;margin:100px auto 0;padding:0 6% 120px;display:grid;grid-template-columns:1fr 1fr;gap:80px}
+    .contact-info h1{font-family:'Playfair Display',serif;font-size:clamp(32px,5vw,48px);text-transform:uppercase;letter-spacing:3px;margin-bottom:30px;font-weight:400}
+    .detail-item{margin-bottom:35px}
+    .detail-item h3{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px}
+    .detail-item p,.detail-item a{font-size:17px;color:var(--text);display:block;line-height:1.6}
+    .detail-item a:hover{color:#666}
+    .contact-form{background:#fff;padding:40px;border:1px solid var(--border);border-radius:2px}
+    .contact-form h2{font-family:'Playfair Display',serif;font-size:24px;margin-bottom:30px;text-transform:uppercase;letter-spacing:2px;font-weight:400}
+    .form-group{margin-bottom:20px}
+    .form-group input,.form-group textarea{width:100%;padding:15px;border:1px solid var(--border);background:#fff;font-family:'Arimo',sans-serif;font-size:14px;outline:none;transition:0.3s;color:var(--text);border-radius:2px}
+    .form-group input:focus,.form-group textarea:focus{border-color:var(--text)}
+    .submit-btn{width:100%;padding:15px;background:var(--text);color:var(--bg);border:1px solid var(--text);font-family:'Arimo',sans-serif;text-transform:uppercase;letter-spacing:3px;font-size:10px;font-weight:700;cursor:pointer;transition:0.25s;border-radius:2px}
+    .submit-btn:hover{background:transparent;color:var(--text)}
+    .submit-btn:disabled{background:#ccc;border-color:#ccc;color:#fff;cursor:not-allowed}
+    @media(max-width:900px){.contact-container{grid-template-columns:1fr;gap:50px;margin-top:80px}}
+    footer{background:#fff;color:var(--text);padding:50px 5% 20px;border-top:1px solid var(--border)}
+    .footer-main{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:40px;padding-bottom:40px;border-bottom:1px solid #eee}
+    .footer-col h4{font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;color:#999}
+    .footer-col p{font-size:13px;color:#888;max-width:300px;line-height:1.6}
+    .footer-col a{display:block;color:#333;font-size:12px;margin-bottom:8px;transition:0.3s}
+    .footer-col a:hover{color:#000}
+    .footer-bottom{padding-top:25px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+    .footer-logo-img{height:10px;filter:brightness(0)}
+    .ceo-wrap{display:flex;align-items:center;gap:8px}
+    .ceo-label{font-size:7px;color:#aaa;text-transform:uppercase;letter-spacing:1px}
+    .ceo-name{font-family:'Alex Brush';font-size:14px;color:#666}
+    .legal-text{font-size:9px;color:#aaa;text-transform:uppercase}
+    .footer-icons a{color:#333;margin-right:14px;font-size:16px;transition:0.3s}
+    .footer-icons a:hover{color:#000}
+    @media(max-width:768px){.footer-main{grid-template-columns:1fr;text-align:center;gap:30px}.footer-col{display:flex;flex-direction:column;align-items:center}.footer-bottom{flex-direction:column;text-align:center}}
   </style>
 </head>
 <body oncontextmenu="return false;">
-
   <div class="floating-logo" id="floating-logo"><a href="index.html">EGYGRILLZ</a></div>
-
   <header>
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="main-nav">
-      <a href="index.html">Home</a>
-      <a href="latest-designs.html">Latest</a>
-      <a href="booking.html">Schedule</a>
-      <a href="grillz-gallery.html">Gallery</a>
-      <a href="golds.html">Golds</a>
-      <a href="diamonds.html">Diamonds</a>
-      <a href="silvers.html">Silvers</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="nav-active">Contact</a>
+      <a href="index.html">Home</a><a href="latest-designs.html">Latest</a>
+      <a href="booking.html">Schedule</a><a href="grillz-gallery.html">Gallery</a>
+      <a href="golds.html">Golds</a><a href="diamonds.html">Diamonds</a><a href="silvers.html">Silvers</a>
+      <a href="about.html">About</a><a href="contact.html" class="nav-active">Contact</a>
     </nav>
   </header>
-
   <div class="contact-container">
     <div class="contact-info">
       <h1>Get in Touch</h1>
-      <div class="detail-item">
-        <h3>Our Location</h3>
-        <p><strong>Inside Smart Smile Clinics</strong></p>
-        <p>38 Abou Bakr EL-Sdeek, Heliopolis</p>
-        <p>Floor 5, Apt 504, Cairo, Egypt</p>
-      </div>
-      <div class="detail-item">
-        <h3>Email Inquiry</h3>
-        <a href="mailto:egygrillz@gmail.com">egygrillz@gmail.com</a>
-      </div>
-      <div class="detail-item">
-        <h3>Follow</h3>
-        <a href="https://instagram.com/egygrillz" target="_blank">Instagram / @egygrillz</a>
-      </div>
+      <div class="detail-item"><h3>Our Location</h3><p><strong>Inside Smart Smile Clinics</strong></p><p>38 Abou Bakr EL-Sdeek, Heliopolis</p><p>Floor 5, Apt 504, Cairo, Egypt</p></div>
+      <div class="detail-item"><h3>Email Inquiry</h3><a href="mailto:egygrillz@gmail.com">egygrillz@gmail.com</a></div>
+      <div class="detail-item"><h3>Follow</h3><a href="https://instagram.com/egygrillz" target="_blank">Instagram / @egygrillz</a></div>
     </div>
-
     <div class="contact-form">
       <div id="form-wrapper">
         <h2>Send a Message</h2>
@@ -137,124 +98,54 @@
       </div>
     </div>
   </div>
-
-  <div class="cta-band">
-    <div class="eyebrow">Begin Your Journey</div>
-    <h2>Book Your Appointment</h2>
-    <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
-    <div class="cta-btns">
-      <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
-      <a href="contact.html" class="cta-btn-outline">Contact Us</a>
-    </div>
-  </div>
-
   <footer>
     <div class="footer-main">
-      <div class="footer-col">
-        <h4>EGYGRILLZ Egypt</h4>
-        <p>Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Information</h4>
-        <a href="about.html">About Us</a>
-        <a href="booking.html">Schedule</a>
-        <a href="contact.html">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h4>Legal</h4>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="shipping.html">Care &amp; Shipping</a>
-      </div>
+      <div class="footer-col"><h4>EGYGRILLZ Egypt</h4><p>Handcrafting Egypt's most exclusive dental jewelry.</p></div>
+      <div class="footer-col"><h4>Information</h4><a href="about.html">About Us</a><a href="booking.html">Schedule</a><a href="contact.html">Contact</a></div>
+      <div class="footer-col"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="shipping.html">Care &amp; Shipping</a></div>
     </div>
     <div class="footer-bottom">
-      <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
-        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a>
-      </div>
+      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a></div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
-      <div class="ceo-wrap">
-        <span class="ceo-label">Founder</span>
-        <span class="ceo-name">DR Mohamed Mahdy</span>
-      </div>
+      <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
       <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
   </footer>
-
+  <script src="config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
   <script>
-    firebase.initializeApp({
-      apiKey: "AIzaSyDI0nyFc4CyBjTvSNW62KqFa-I7O-mgUew",
-      authDomain: "egygrillz-appointments.firebaseapp.com",
-      projectId: "egygrillz-appointments",
-      storageBucket: "egygrillz-appointments.firebasestorage.app",
-      messagingSenderId: "868481446848",
-      appId: "1:868481446848:web:df63bdcfde019edd280e25"
-    });
-    const db = firebase.firestore();
-    const WA_NUMBER = '201000353839';
-    const WA_APIKEY = '5240719';
+    firebase.initializeApp(EGYGRILLZ_CONFIG.firebase);
+    const db=firebase.firestore();
 
     (function(){
-      const header = document.querySelector('header');
-      const floatLogo = document.getElementById('floating-logo');
-      let lastY = window.scrollY;
-      window.addEventListener('scroll', () => {
-        const y = window.scrollY;
-        const hiding = y > lastY && y > 80;
-        header.classList.toggle('hidden', hiding);
-        floatLogo.classList.toggle('visible', hiding);
-        lastY = y;
-      }, { passive: true });
-      document.querySelector('.menu-toggle').addEventListener('click', () => {
-        document.querySelector('.main-nav').classList.toggle('active');
-        document.body.classList.toggle('menu-open');
-      });
+      const header=document.querySelector('header'),floatLogo=document.getElementById('floating-logo');
+      let lastY=window.scrollY;
+      window.addEventListener('scroll',()=>{const y=window.scrollY,h=y>lastY&&y>80;header.classList.toggle('hidden',h);floatLogo.classList.toggle('visible',h);lastY=y},{passive:true});
+      document.querySelector('.menu-toggle').addEventListener('click',()=>{document.querySelector('.main-nav').classList.toggle('active');document.body.classList.toggle('menu-open')});
     })();
 
-    async function submitContact() {
-      const name    = document.getElementById('contactName').value.trim();
-      const email   = document.getElementById('contactEmail').value.trim();
-      const message = document.getElementById('contactMessage').value.trim();
-      if (!name || !email || !message) { alert('Please fill in all fields.'); return; }
-
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true; btn.textContent = 'Sending…';
-
-      try {
-        await db.collection('messages').add({
-          name:      name,
-          email:     email,
-          message:   message,
-          read:      false,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // WhatsApp to admin
-        const msg = encodeURIComponent(
-          `💬 New Message — EGYGRILLZ\n\n👤 ${name}\n📧 ${email}\n\n"${message}"`
-        );
-        fetch(`https://api.callmebot.com/whatsapp.php?phone=${WA_NUMBER}&text=${msg}&apikey=${WA_APIKEY}`, { mode:'no-cors' })
-          .catch(e => console.warn('WA failed:', e));
-
-        document.getElementById('form-wrapper').style.display = 'none';
-        document.getElementById('success-message').style.display = 'block';
-
-      } catch(e) {
-        console.error(e);
-        alert('Something went wrong. Please try again.');
-        btn.disabled = false; btn.textContent = 'Send Message';
+    async function submitContact(){
+      const name=document.getElementById('contactName').value.trim(),
+            email=document.getElementById('contactEmail').value.trim(),
+            message=document.getElementById('contactMessage').value.trim();
+      if(!name||!email||!message){alert('Please fill in all fields.');return}
+      const btn=document.getElementById('submit-btn');
+      btn.disabled=true;btn.textContent='Sending…';
+      try{
+        await db.collection('messages').add({name,email,message,read:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        const msg=encodeURIComponent(`💬 New Message — EGYGRILLZ\n\n👤 ${name}\n📧 ${email}\n\n"${message}"`);
+        fetch(`https://api.callmebot.com/whatsapp.php?phone=${EGYGRILLZ_CONFIG.whatsapp.number}&text=${msg}&apikey=${EGYGRILLZ_CONFIG.whatsapp.apikey}`,{mode:'no-cors'}).catch(()=>{});
+        document.getElementById('form-wrapper').style.display='none';
+        document.getElementById('success-message').style.display='block';
+      } catch(e){
+        console.error(e);alert('Something went wrong. Please try again.');
+        btn.disabled=false;btn.textContent='Send Message';
       }
     }
-
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('dragstart', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if ((e.ctrlKey||e.metaKey) && ['s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
-      if (e.key==='F12') e.preventDefault();
-    });
+    document.addEventListener('contextmenu',e=>e.preventDefault());
+    document.addEventListener('dragstart',e=>e.preventDefault());
+    document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&['s','u','p'].includes(e.key.toLowerCase()))e.preventDefault();if(e.key==='F12')e.preventDefault()});
   </script>
 </body>
 </html>
