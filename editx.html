@@ -254,6 +254,7 @@ input,textarea,select{font-family:inherit}
         <div class="nav-item" onclick="showPage('latest')"><i class="fas fa-star"></i> Latest</div>
         <div class="nav-item" onclick="showPage('pages')"><i class="fas fa-file-alt"></i> Pages</div>
         <div class="nav-item" onclick="showPage('backup')"><i class="fas fa-database"></i> Backup</div>
+        <div class="nav-item" onclick="showPage('schedule')"><i class="fas fa-clock"></i> Schedule</div>
         <div class="nav-item" onclick="showPage('github')"><i class="fab fa-github"></i> GitHub</div>
       </nav>
       <div class="sidebar-footer">
@@ -390,6 +391,55 @@ input,textarea,select{font-family:inherit}
         </div>
       </div>
 
+      <!-- SCHEDULE SETTINGS -->
+      <div class="page" id="page-schedule">
+        <div class="card">
+          <div class="card-header"><h3>Schedule Settings</h3><button class="btn btn-dark btn-sm" onclick="saveSchedule()"><i class="fas fa-save"></i> Save All</button></div>
+          <div style="padding:28px">
+
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:16px">Open Days</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px" id="open-days-wrap">
+              <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:13px;background:#fff" id="day-label-0"><input type="checkbox" id="day-0" value="0" onchange="updateDayLabel(0)" style="accent-color:var(--text)"> Sunday</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:13px;background:#fff" id="day-label-1"><input type="checkbox" id="day-1" value="1" onchange="updateDayLabel(1)" style="accent-color:var(--text)"> Monday</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:13px;background:#fff" id="day-label-2"><input type="checkbox" id="day-2" value="2" onchange="updateDayLabel(2)" style="accent-color:var(--text)"> Tuesday</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:13px;background:#fff" id="day-label-3"><input type="checkbox" id="day-3" value="3" onchange="updateDayLabel(3)" style="accent-color:var(--text)"> Wednesday</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:13px;background:#fff" id="day-label-4"><input type="checkbox" id="day-4" value="4" onchange="updateDayLabel(4)" style="accent-color:var(--text)"> Thursday</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:13px;background:#fff" id="day-label-5"><input type="checkbox" id="day-5" value="5" onchange="updateDayLabel(5)" style="accent-color:var(--text)"> Friday</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:13px;background:#fff" id="day-label-6"><input type="checkbox" id="day-6" value="6" onchange="updateDayLabel(6)" style="accent-color:var(--text)"> Saturday</label>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px">
+              <div class="form-group">
+                <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px">Opening Hour</label>
+                <select id="open-hour" style="width:100%;padding:12px 14px;border:1px solid var(--border);font-size:14px;outline:none;border-radius:2px;background:#fff">
+                  <option value="9">9:00 AM</option><option value="10">10:00 AM</option><option value="11">11:00 AM</option>
+                  <option value="12">12:00 PM</option><option value="13">1:00 PM</option><option value="14">2:00 PM</option>
+                  <option value="15">3:00 PM</option><option value="16" selected>4:00 PM</option><option value="17">5:00 PM</option>
+                  <option value="18">6:00 PM</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px">Closing Hour</label>
+                <select id="close-hour" style="width:100%;padding:12px 14px;border:1px solid var(--border);font-size:14px;outline:none;border-radius:2px;background:#fff">
+                  <option value="18">6:00 PM</option><option value="19">7:00 PM</option><option value="20">8:00 PM</option>
+                  <option value="21">9:00 PM</option><option value="22" selected>10:00 PM</option><option value="23">11:00 PM</option>
+                  <option value="0">12:00 AM</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:12px">Holiday / Off Days</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7">Add specific dates when the studio is closed (e.g. public holidays, vacations). These dates will be blocked in the booking calendar.</div>
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+              <input type="date" id="holiday-input" style="padding:10px 14px;border:1px solid var(--border);font-size:14px;outline:none;border-radius:2px;background:#fff">
+              <button class="btn btn-dark" onclick="addHoliday()"><i class="fas fa-plus"></i> Add Holiday</button>
+            </div>
+            <div id="holidays-list" style="display:flex;flex-wrap:wrap;gap:8px;min-height:30px"></div>
+
+          </div>
+        </div>
+      </div>
+
       <!-- GITHUB -->
       <div class="page" id="page-github">
         <div class="card">
@@ -509,12 +559,12 @@ input,textarea,select{font-family:inherit}
 
 <div class="toast" id="toast"></div>
 
-<script src="config.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 // ── INIT ──
-firebase.initializeApp(EGYGRILLZ_CONFIG.firebase);
+firebase.initializeApp({apiKey:"AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",authDomain:"egygrillz-studio.firebaseapp.com",projectId:"egygrillz-studio",storageBucket:"egygrillz-studio.firebasestorage.app",messagingSenderId:"1022362401463",appId:"1:1022362401463:web:fec76b9c73e24d9cfeeb32"});
 const db = firebase.firestore();
 
 // ── AUTH ──
@@ -550,7 +600,7 @@ function doLogout() {
 
 // ── NAVIGATION ──
 let currentPage = 'overview';
-const pageTitles = {overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup & Export',github:'GitHub Setup'};
+const pageTitles = {overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup & Export',github:'GitHub Setup',schedule:'Schedule Settings'};
 
 function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -579,6 +629,7 @@ function initAdmin() {
   loadClients();
   loadGitHub();
   loadPages();
+  loadScheduleSettings();
 }
 
 // APPOINTMENTS
@@ -1038,8 +1089,79 @@ function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('active'); }));
 
-// TOAST
-function showToast(msg, type='') {
+// SCHEDULE SETTINGS
+let currentHolidays = [];
+async function loadScheduleSettings() {
+  try {
+    const snap = await db.collection('settings').doc('schedule').get();
+    if (snap.exists) {
+      const d = snap.data();
+      const openDays = d.openDays ?? [0,1,2,3,4,6];
+      currentHolidays = d.holidays ?? [];
+      for(let i=0;i<=6;i++) {
+        const cb = document.getElementById('day-'+i);
+        if(cb) { cb.checked = openDays.includes(i); updateDayLabel(i); }
+      }
+      const oh = document.getElementById('open-hour');
+      const ch = document.getElementById('close-hour');
+      if(oh) oh.value = d.openHour ?? 16;
+      if(ch) ch.value = d.closeHour ?? 22;
+      renderHolidays();
+    } else {
+      // defaults: Sat-Thu open
+      [0,1,2,3,4,6].forEach(i => { const cb=document.getElementById('day-'+i); if(cb){cb.checked=true;updateDayLabel(i);} });
+    }
+  } catch(e) { console.warn('Schedule load failed'); }
+}
+
+function updateDayLabel(i) {
+  const cb = document.getElementById('day-'+i);
+  const lbl = document.getElementById('day-label-'+i);
+  if(!lbl) return;
+  if(cb.checked) { lbl.style.borderColor='var(--text)'; lbl.style.background='#f0f0f0'; lbl.style.fontWeight='700'; }
+  else { lbl.style.borderColor='var(--border)'; lbl.style.background='#fff'; lbl.style.fontWeight='400'; }
+}
+
+function addHoliday() {
+  const val = document.getElementById('holiday-input').value;
+  if(!val) { showToast('Select a date first','error'); return; }
+  if(currentHolidays.includes(val)) { showToast('Already added','error'); return; }
+  currentHolidays.push(val);
+  currentHolidays.sort();
+  document.getElementById('holiday-input').value = '';
+  renderHolidays();
+}
+
+function removeHoliday(date) {
+  currentHolidays = currentHolidays.filter(d => d !== date);
+  renderHolidays();
+}
+
+function renderHolidays() {
+  const el = document.getElementById('holidays-list');
+  if(!el) return;
+  if(!currentHolidays.length) { el.innerHTML = '<span style="font-size:12px;color:var(--muted);font-style:italic">No holidays added</span>'; return; }
+  el.innerHTML = currentHolidays.map(d => {
+    const label = new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    return `<span style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:#fff;border:1px solid var(--border);border-radius:20px;font-size:12px">
+      ${label}
+      <button onclick="removeHoliday('${d}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0" title="Remove">×</button>
+    </span>`;
+  }).join('');
+}
+
+async function saveSchedule() {
+  const openDays = [];
+  for(let i=0;i<=6;i++) { if(document.getElementById('day-'+i)?.checked) openDays.push(i); }
+  const openHour = parseInt(document.getElementById('open-hour').value);
+  const closeHour = parseInt(document.getElementById('close-hour').value);
+  if(!openDays.length) { showToast('Select at least one open day','error'); return; }
+  try {
+    await db.collection('settings').doc('schedule').set({openDays, openHour, closeHour, holidays: currentHolidays}, {merge:true});
+    showToast('Schedule saved!','success');
+  } catch(e) { showToast('Error saving','error'); console.error(e); }
+}
+
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast'+(type?' '+type:'');
   t.classList.add('show');
