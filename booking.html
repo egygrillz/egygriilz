@@ -13,7 +13,7 @@
     body { font-family:'Arimo',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
     body.menu-open { overflow:hidden; }
     a { text-decoration:none; color:inherit; }
-    img,video { display:block; max-width:100%; pointer-events:none; -webkit-user-drag:none; -webkit-touch-callout:none; }
+    img,video { display:block; max-width:100%; pointer-events:none; -webkit-user-drag:none; }
     ::selection { background:transparent; }
 
     header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--bg); border-bottom:1px solid var(--border); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
@@ -40,7 +40,6 @@
     .tagline { color:var(--muted); margin-bottom:50px; text-transform:uppercase; letter-spacing:1.5px; font-size:11px; }
     .section-label { display:block; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:2px; margin-bottom:15px; color:var(--text); margin-top:40px; }
 
-    /* Services */
     .service-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:40px; }
     .service-option { border:1px solid var(--border); padding:18px 25px; cursor:pointer; transition:0.2s; background:var(--bg); display:flex; justify-content:space-between; align-items:center; border-radius:2px; }
     .service-info { display:flex; flex-direction:column; }
@@ -53,7 +52,6 @@
     .service-option.active .service-meta,
     .service-option.active .service-desc { color:rgba(250,250,249,0.45); }
 
-    /* Form */
     .booking-form { text-align:left; max-width:600px; margin:0 auto; }
     .form-group { margin-bottom:30px; }
     label.field-label { display:block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px; color:var(--muted); }
@@ -63,23 +61,29 @@
     }
     input:focus,textarea:focus,select:focus { border-bottom-color:var(--text); }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:30px; }
+    @media(max-width:600px) { .row { grid-template-columns:1fr; gap:0; } }
 
     .terms-container { margin:35px 0; display:flex; align-items:center; gap:15px; padding:15px; background:#fff; border:1px solid var(--border); border-radius:2px; }
-    #termsBox { width:20px; height:20px; cursor:pointer; accent-color:var(--text); border:1px solid var(--text); appearance:checkbox !important; -webkit-appearance:checkbox !important; }
+    #termsBox { width:20px; height:20px; cursor:pointer; accent-color:var(--text); }
     .terms-text { color:var(--muted); font-size:11px; line-height:1.4; cursor:pointer; }
     .terms-text a { color:var(--text); text-decoration:underline; font-weight:700; }
 
     .submit-btn { width:100%; padding:18px; background:var(--text); color:var(--bg); border:1px solid var(--text); font-family:inherit; text-transform:uppercase; letter-spacing:3px; font-size:10px; font-weight:700; cursor:pointer; transition:0.25s; margin-top:10px; opacity:0.5; border-radius:2px; }
     .submit-btn:not(:disabled):hover { background:transparent; color:var(--text); opacity:1; }
+    .submit-btn:disabled { cursor:not-allowed; }
+
+    .success-msg { text-align:center; padding:50px 20px; }
+    .success-msg h2 { font-family:'Playfair Display',serif; font-size:28px; text-transform:uppercase; letter-spacing:2px; font-weight:400; margin-bottom:12px; }
+    .success-msg p { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; line-height:1.8; }
 
     .cta-band { background:#fff; color:var(--text); text-align:center; padding:90px 5%; }
     .cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#aaa; margin-bottom:12px; }
-    .cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; color:var(--text); }
+    .cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; }
     .cta-band p { font-size:13px; color:#999; max-width:480px; margin:0 auto 40px; line-height:1.75; }
     .cta-btns { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
-    .cta-btn-dark { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #aaa; padding:15px 38px; color:#666; transition:background 0.25s,color 0.25s,border-color 0.25s; }
+    .cta-btn-dark { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #aaa; padding:15px 38px; color:#666; transition:0.25s; }
     .cta-btn-dark:hover { background:#666; color:#fff; border-color:#666; }
-    .cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #ddd; padding:15px 38px; color:#aaa; transition:border-color 0.25s,color 0.25s; }
+    .cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #ddd; padding:15px 38px; color:#aaa; transition:0.25s; }
     .cta-btn-outline:hover { border-color:#aaa; color:#666; }
 
     footer { background:#fff; color:var(--text); padding:50px 5% 20px; }
@@ -97,7 +101,6 @@
     .footer-icons a { color:#333; margin-right:14px; font-size:16px; transition:0.3s; }
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
-    @media(max-width:600px) { .row { grid-template-columns:1fr; gap:0; } }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -123,85 +126,83 @@
   <div class="container">
     <h1>Schedule</h1>
     <p class="tagline">Studio Hours: 4:00 PM – 10:00 PM (Sat–Thu)</p>
-    <div class="booking-form">
-      <form action="https://formspree.io/f/xojlazkb" method="POST" id="appForm">
 
-        <span class="section-label">1. Services</span>
-        <div class="service-grid">
-
-          <div class="service-option" onclick="toggleService(this,'Impression')">
-            <div class="service-info">
-              <span class="service-name">Impression</span>
-              <span class="service-meta">30 min</span>
-              <span class="service-desc">We take a precise mold of your teeth — the essential first step to crafting your custom grillz.</span>
-            </div>
-            <span class="service-price">200 EGP / Arch</span>
+    <div class="booking-form" id="booking-form-wrap">
+      <span class="section-label">1. Services</span>
+      <div class="service-grid">
+        <div class="service-option" onclick="toggleService(this,'Impression')">
+          <div class="service-info">
+            <span class="service-name">Impression</span>
+            <span class="service-meta">30 min</span>
+            <span class="service-desc">We take a precise mold of your teeth — the essential first step to crafting your custom grillz.</span>
           </div>
-
-          <div class="service-option" onclick="toggleService(this,'Consultation')">
-            <div class="service-info">
-              <span class="service-name">Consultation</span>
-              <span class="service-meta">1 hour</span>
-              <span class="service-desc">Design your perfect set with our specialist — style, metal choice, stones, and fit, all planned together.</span>
-            </div>
-            <span class="service-price">1000 EGP / hr</span>
-          </div>
-
-          <div class="service-option" onclick="toggleService(this,'Pickup')">
-            <div class="service-info">
-              <span class="service-name">Pickup</span>
-              <span class="service-meta">10 min</span>
-              <span class="service-desc">Your piece is finished and ready. Come in to collect and try on your grillz in person.</span>
-            </div>
-            <span class="service-price">Free</span>
-          </div>
-
-          <div class="service-option" onclick="toggleService(this,'Toothgem Application')">
-            <div class="service-info">
-              <span class="service-name">Gem Applying</span>
-              <span class="service-meta">30 min</span>
-              <span class="service-desc">A single crystal or diamond bonded directly to your tooth — subtle, elegant, and completely painless.</span>
-            </div>
-            <span class="service-price">From 500 EGP</span>
-          </div>
-
+          <span class="service-price">200 EGP / Arch</span>
         </div>
-        <input type="hidden" name="Services" id="serviceInput" required>
-
-        <span class="section-label">2. Date &amp; Time</span>
-        <div class="row">
-          <div class="form-group">
-            <label class="field-label">Select Day</label>
-            <input type="date" name="Date" id="datePicker" required>
+        <div class="service-option" onclick="toggleService(this,'Consultation')">
+          <div class="service-info">
+            <span class="service-name">Consultation</span>
+            <span class="service-meta">1 hour</span>
+            <span class="service-desc">Design your perfect set with our specialist — style, metal choice, stones, and fit, all planned together.</span>
           </div>
-          <div class="form-group">
-            <label class="field-label">Preferred Time</label>
-            <select name="Time" required>
-              <option value="" disabled selected>Select Time</option>
-              <option>04:00 PM</option><option>05:00 PM</option><option>06:00 PM</option>
-              <option>07:00 PM</option><option>08:00 PM</option><option>09:00 PM</option><option>10:00 PM</option>
-            </select>
+          <span class="service-price">1000 EGP / hr</span>
+        </div>
+        <div class="service-option" onclick="toggleService(this,'Pickup')">
+          <div class="service-info">
+            <span class="service-name">Pickup</span>
+            <span class="service-meta">10 min</span>
+            <span class="service-desc">Your piece is finished and ready. Come in to collect and try on your grillz in person.</span>
           </div>
+          <span class="service-price">Free</span>
         </div>
-
-        <span class="section-label">3. Personal Details</span>
-        <div class="form-group"><label class="field-label">Full Name</label><input type="text" name="Name" placeholder="Enter name" required></div>
-        <div class="row">
-          <div class="form-group"><label class="field-label">Phone</label><input type="tel" name="Phone" placeholder="+20..." required></div>
-          <div class="form-group"><label class="field-label">Email</label><input type="email" name="Email" placeholder="your@email.com" required></div>
+        <div class="service-option" onclick="toggleService(this,'Toothgem Application')">
+          <div class="service-info">
+            <span class="service-name">Gem Applying</span>
+            <span class="service-meta">30 min</span>
+            <span class="service-desc">A single crystal or diamond bonded directly to your tooth — subtle, elegant, and completely painless.</span>
+          </div>
+          <span class="service-price">From 500 EGP</span>
         </div>
-        <div class="form-group"><label class="field-label">Additional Notes</label><textarea name="Notes" rows="2" placeholder="Any special requests?"></textarea></div>
+      </div>
 
-        <div class="terms-container">
-          <input type="checkbox" id="termsBox" required>
-          <label for="termsBox" class="terms-text">
-            I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>. I understand that custom grillz require a non-refundable impression fee.
-          </label>
+      <span class="section-label">2. Date &amp; Time</span>
+      <div class="row">
+        <div class="form-group">
+          <label class="field-label">Select Day</label>
+          <input type="date" id="datePicker" required>
         </div>
+        <div class="form-group">
+          <label class="field-label">Preferred Time</label>
+          <select id="timePicker" required>
+            <option value="" disabled selected>Select Time</option>
+            <option>04:00 PM</option><option>05:00 PM</option><option>06:00 PM</option>
+            <option>07:00 PM</option><option>08:00 PM</option><option>09:00 PM</option><option>10:00 PM</option>
+          </select>
+        </div>
+      </div>
 
-        <input type="hidden" name="_subject" value="New Appointment Request - EGYGRILLZ">
-        <button type="submit" class="submit-btn" id="submitBtn" disabled>Request Appointment</button>
-      </form>
+      <span class="section-label">3. Personal Details</span>
+      <div class="form-group"><label class="field-label">Full Name</label><input type="text" id="clientName" placeholder="Enter name" required></div>
+      <div class="row">
+        <div class="form-group"><label class="field-label">Phone</label><input type="tel" id="clientPhone" placeholder="+20..." required></div>
+        <div class="form-group"><label class="field-label">Email</label><input type="email" id="clientEmail" placeholder="your@email.com" required></div>
+      </div>
+      <div class="form-group"><label class="field-label">Additional Notes</label><textarea id="clientNotes" rows="2" placeholder="Any special requests?"></textarea></div>
+
+      <div class="terms-container">
+        <input type="checkbox" id="termsBox" required>
+        <label for="termsBox" class="terms-text">
+          I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>. I understand that custom grillz require a non-refundable impression fee.
+        </label>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" disabled onclick="submitBooking()">Request Appointment</button>
+    </div>
+
+    <div id="success-wrap" style="display:none">
+      <div class="success-msg">
+        <h2>Request Received</h2>
+        <p>Thank you for choosing EGYGRILLZ.<br>A confirmation has been sent to your email.<br>We will contact you shortly.</p>
+      </div>
     </div>
   </div>
 
@@ -248,7 +249,31 @@
     </div>
   </footer>
 
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
   <script>
+    // ── CONFIG ──
+    firebase.initializeApp({
+      apiKey: "AIzaSyDI0nyFc4CyBjTvSNW62KqFa-I7O-mgUew",
+      authDomain: "egygrillz-appointments.firebaseapp.com",
+      projectId: "egygrillz-appointments",
+      storageBucket: "egygrillz-appointments.firebasestorage.app",
+      messagingSenderId: "868481446848",
+      appId: "1:868481446848:web:df63bdcfde019edd280e25"
+    });
+    const db = firebase.firestore();
+    emailjs.init('rvcNsK9pAj-jhd9RE');
+
+    const WA_NUMBER = '201000353839';
+    const WA_APIKEY = '5240719';
+    const EMAILJS_SERVICE  = 'service_r8fhuah';
+    const EMAILJS_TEMPLATE = 'template_d2twd6h';
+
+    // ── NAV ──
     (function(){
       const header = document.querySelector('header');
       const floatLogo = document.getElementById('floating-logo');
@@ -260,29 +285,37 @@
         floatLogo.classList.toggle('visible', hiding);
         lastY = y;
       }, { passive: true });
+      document.querySelector('.menu-toggle').addEventListener('click', () => {
+        document.querySelector('.main-nav').classList.toggle('active');
+        document.body.classList.toggle('menu-open');
+      });
     })();
-    document.querySelector('.menu-toggle').addEventListener('click', () => {
-      document.querySelector('.main-nav').classList.toggle('active');
-      document.body.classList.toggle('menu-open');
-    });
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('dragstart', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if ((e.ctrlKey||e.metaKey) && ['s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
-      if (e.key==='F12') e.preventDefault();
-    });
 
+    // ── SERVICES ──
     let selectedServices = [];
     function toggleService(el, val) {
-      if (selectedServices.includes(val)) { selectedServices = selectedServices.filter(s=>s!==val); el.classList.remove('active'); }
-      else { selectedServices.push(val); el.classList.add('active'); }
-      document.getElementById('serviceInput').value = selectedServices.join(', ');
+      if (selectedServices.includes(val)) {
+        selectedServices = selectedServices.filter(s => s !== val);
+        el.classList.remove('active');
+      } else {
+        selectedServices.push(val);
+        el.classList.add('active');
+      }
     }
 
+    // ── DATE VALIDATION ──
     document.getElementById('datePicker').addEventListener('input', function() {
-      if (new Date(this.value).getUTCDay() === 5) { this.value=''; alert('Studio is closed on Fridays.'); }
+      if (new Date(this.value).getUTCDay() === 5) {
+        this.value = '';
+        alert('Studio is closed on Fridays.');
+      }
+      const today = new Date().toISOString().split('T')[0];
+      if (this.value < today) { this.value = ''; alert('Please select a future date.'); }
     });
+    // Set min date
+    document.getElementById('datePicker').min = new Date().toISOString().split('T')[0];
 
+    // ── TERMS ──
     const termsBox = document.getElementById('termsBox');
     const submitBtn = document.getElementById('submitBtn');
     termsBox.addEventListener('change', function() {
@@ -290,19 +323,75 @@
       submitBtn.style.opacity = this.checked ? '1' : '0.5';
     });
 
-    document.getElementById('appForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
+    // ── SUBMIT ──
+    async function submitBooking() {
       if (!selectedServices.length) { alert('Please select at least one service.'); return; }
-      submitBtn.textContent = 'SENDING…'; submitBtn.disabled = true;
+      const name  = document.getElementById('clientName').value.trim();
+      const phone = document.getElementById('clientPhone').value.trim();
+      const email = document.getElementById('clientEmail').value.trim();
+      const date  = document.getElementById('datePicker').value;
+      const time  = document.getElementById('timePicker').value;
+      const notes = document.getElementById('clientNotes').value.trim();
+
+      if (!name || !phone || !email || !date || !time) { alert('Please fill in all required fields.'); return; }
+
+      submitBtn.textContent = 'SENDING…';
+      submitBtn.disabled = true;
+
       try {
-        const res = await fetch(this.action, { method:'POST', body:new FormData(this), headers:{'Accept':'application/json'} });
-        if (res.ok) {
-          this.innerHTML = `<div style="text-align:center;padding:40px 0;">
-            <h2 style="font-family:'Playfair Display',serif;font-size:28px;text-transform:uppercase;letter-spacing:2px;font-weight:400;">Request Received</h2>
-            <p style="font-size:12px;color:var(--muted);margin-top:15px;text-transform:uppercase;letter-spacing:1px;">Thank you for choosing EGYGRILLZ.<br>We will contact you shortly.</p>
-          </div>`;
-        } else { throw new Error(); }
-      } catch { alert('Oops! There was a problem. Please try again.'); submitBtn.textContent = 'REQUEST APPOINTMENT'; submitBtn.disabled = false; }
+        // Save to Firebase
+        const docRef = await db.collection('appointments').add({
+          service:   selectedServices.join(', '),
+          date:      date,
+          time:      time,
+          name:      name,
+          phone:     phone,
+          email:     email,
+          notes:     notes,
+          status:    'confirmed',
+          showedUp:  null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Send confirmation email to client
+        emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+          name:    name,
+          email:   email,
+          service: selectedServices.join(', '),
+          date:    date,
+          time:    time,
+          notes:   notes || 'None'
+        }).catch(e => console.warn('Email failed:', e));
+
+        // Send WhatsApp to admin
+        const msg = encodeURIComponent(
+          `📅 New Appointment — EGYGRILLZ\n\n` +
+          `👤 ${name}\n📞 ${phone}\n📧 ${email}\n` +
+          `💎 ${selectedServices.join(', ')}\n` +
+          `📆 ${date} at ${time}\n` +
+          `📝 ${notes || 'No notes'}\n\n` +
+          `ID: ${docRef.id.slice(0,8)}`
+        );
+        fetch(`https://api.callmebot.com/whatsapp.php?phone=${WA_NUMBER}&text=${msg}&apikey=${WA_APIKEY}`, { mode:'no-cors' })
+          .catch(e => console.warn('WA failed:', e));
+
+        // Show success
+        document.getElementById('booking-form-wrap').style.display = 'none';
+        document.getElementById('success-wrap').style.display = 'block';
+
+      } catch(e) {
+        console.error(e);
+        alert('Something went wrong. Please try again.');
+        submitBtn.textContent = 'REQUEST APPOINTMENT';
+        submitBtn.disabled = false;
+      }
+    }
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('dragstart', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey||e.metaKey) && ['s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
+      if (e.key==='F12') e.preventDefault();
     });
   </script>
 </body>
