@@ -143,6 +143,37 @@
       .main-area { margin-left:0; }
       .topbar { padding:0 18px; }
       .hamburger { display:flex; }
+      .content { padding:16px; }
+      .page-header-row { flex-wrap:wrap; gap:12px; }
+      .page-header-row > div:last-child { display:flex; gap:8px; flex-wrap:wrap; }
+      .stat-grid { grid-template-columns:repeat(3,1fr); }
+    }
+    @media(max-width:600px) {
+      .content { padding:10px; }
+      .stat-grid { grid-template-columns:repeat(2,1fr); gap:8px; }
+      .section-card { padding:12px; }
+      .page-header-row { flex-direction:column; align-items:flex-start; }
+      .page-header-row > div:last-child { width:100%; }
+      .page-header-row button, .page-header-row .btn-outline-sm, .page-header-row .btn-muted2 { flex:1; text-align:center; justify-content:center; }
+      .filter-row { flex-direction:column; }
+      .search-box { width:100%; }
+      .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      .table-wrap table { min-width:520px; }
+      th, td { font-size:12px; padding:7px 8px; }
+      .modal { width:98vw !important; max-width:98vw !important; max-height:88vh !important; overflow-y:auto; margin:6vh auto; }
+      .form-row { grid-template-columns:1fr !important; }
+      .clients-grid { grid-template-columns:repeat(2,1fr); gap:8px; padding:8px; }
+      .client-card { padding:14px; }
+      .grid { grid-template-columns:repeat(2,1fr) !important; }
+      .pages-grid { grid-template-columns:repeat(2,1fr); }
+      .hour-row { flex-direction:column; }
+      .days-grid { grid-template-columns:repeat(4,1fr); }
+    }
+    @media(max-width:380px) {
+      .stat-grid { grid-template-columns:1fr 1fr; }
+      .grid { grid-template-columns:repeat(2,1fr) !important; }
+      .clients-grid { grid-template-columns:1fr 1fr; }
+      .filter-tab { padding:5px 8px; font-size:10px; }
     }
 
     /* CONTENT */
@@ -432,6 +463,7 @@
       .form-row { grid-template-columns:1fr; }
       .reorder-grid { grid-template-columns:repeat(2,1fr); }
       .days-grid { grid-template-columns:repeat(4,1fr); }
+      .modal { width:98vw !important; max-width:98vw !important; max-height:88vh !important; overflow-y:auto; }
     }
   </style>
 </head>
@@ -540,11 +572,15 @@
         <div class="panel" id="panel-clients">
           <div class="page-header-row">
             <div><p class="ph-title">Clients</p><p class="ph-sub">Client profiles</p></div>
-            <div style="display:flex;gap:10px;">
-              <div class="search-box" style="min-width:220px;"><i class="fas fa-search"></i><input id="client-search" placeholder="Search clients…" oninput="filterClients(this.value)"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <div class="search-box" style="min-width:180px;"><i class="fas fa-search"></i><input id="client-search" placeholder="Search…" oninput="filterClients(this.value)"></div>
+              <button class="btn-outline-sm" onclick="openAddClientModal()">+ Add</button>
+              <button class="btn-muted2" onclick="importClientsCSV()">⬆ Import CSV</button>
+              <button class="btn-muted2" onclick="exportClientsCSV()">⬇ Export CSV</button>
             </div>
           </div>
           <div class="clients-grid" id="clients-grid"></div>
+          <input type="file" id="client-csv-input" accept=".csv" style="display:none" onchange="handleClientCSVImport(this.files[0])">
         </div>
 
         <!-- ══ MESSAGES ══ -->
@@ -608,8 +644,8 @@
         <!-- ══ SETS ══ -->
         <div class="panel" id="panel-sets">
           <div class="page-header-row">
-            <div><p class="ph-title">Sets</p><p class="ph-sub">Full grillz sets — click any field to edit</p></div>
-            <button class="btn-outline-sm" onclick="openModal('sets')">+ Add Set</button>
+            <div><p class="ph-title">Sets</p><p class="ph-sub">Drag to reorder</p></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn-muted2" onclick="toggleCatReorder('sets')"><i class="fas fa-sort"></i> Reorder</button><button class="btn-outline-sm" onclick="openModal('sets')">+ Add Set</button></div>
           </div>
           <div class="filter-bar-orig">
             <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search sets…" oninput="filterGrid('sets',this.value,document.getElementById('sort-sets').value)"></div>
@@ -646,7 +682,14 @@
 
         <!-- ══ LATEST ══ -->
         <div class="panel" id="panel-latest">
-          <div class="page-header-row"><div><p class="ph-title">Latest Designs</p><p class="ph-sub">Click any field to edit</p></div><button class="btn-outline-sm" onclick="openModal('latest')">+ Add Design</button></div>
+          <div class="page-header-row">
+            <div><p class="ph-title">Latest Designs</p><p class="ph-sub">Drag to reorder — first item shows first on site</p></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-muted2" id="latest-reorder-btn" onclick="toggleLatestReorder()"><i class="fas fa-sort"></i> Reorder</button>
+              <button class="btn-black" id="latest-reorder-save" style="display:none;" onclick="saveLatestOrder()">Save Order</button>
+              <button class="btn-outline-sm" onclick="openModal('latest')">+ Add Design</button>
+            </div>
+          </div>
           <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search latest…" oninput="filterGrid('latest',this.value,document.getElementById('sort-latest').value)"></div><select class="filter-select-orig" id="sort-latest" onchange="filterGrid('latest',document.querySelector('#panel-latest .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-latest"></span></div>
           <div class="bulk-bar" id="bulk-latest"><span class="bulk-count" id="bulk-count-latest">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('latest')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('latest')">Clear</button></div>
           <div class="grid" id="grid-latest"></div>
@@ -779,10 +822,36 @@
 
 <!-- CLIENT DETAIL MODAL -->
 <div class="modal-overlay" id="client-modal-overlay" onclick="if(event.target===this)closeClientModal()">
-  <div class="modal" style="width:640px;">
+  <div class="modal" style="max-width:640px;">
     <div class="modal-header"><h2 id="client-modal-name">Client</h2><button class="modal-close" onclick="closeClientModal()">×</button></div>
     <div class="modal-body" id="client-modal-body"></div>
-    <div class="modal-footer"><button class="btn-muted2" onclick="closeClientModal()">Close</button></div>
+    <div class="modal-footer">
+      <button class="btn-muted2" onclick="closeClientModal()">Close</button>
+      <button class="btn-black" id="client-edit-btn" onclick="editClientFromModal()">Edit</button>
+      <button class="btn-del-confirm" id="client-del-btn" onclick="deleteClientFromModal()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT CLIENT MODAL -->
+<div class="modal-overlay" id="add-client-modal-overlay" onclick="if(event.target===this)closeAddClientModal()">
+  <div class="modal">
+    <div class="modal-header"><h2 id="add-client-modal-title">Add Client</h2><button class="modal-close" onclick="closeAddClientModal()">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="client-edit-id">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full Name *</label><input type="text" class="form-input" id="client-name" placeholder="Client name"></div>
+        <div class="form-group"><label class="form-label">Phone *</label><input type="tel" class="form-input" id="client-phone" placeholder="+20..."></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="client-email" placeholder="email@example.com"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">First Visit</label><input type="date" class="form-input" id="client-first-visit"></div>
+        <div class="form-group"><label class="form-label">Last Visit</label><input type="date" class="form-input" id="client-last-visit"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Services (comma-separated)</label><input type="text" class="form-input" id="client-services" placeholder="Impression, Consultation"></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="client-notes" placeholder="Any notes about this client…"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn-muted2" onclick="closeAddClientModal()">Cancel</button><button class="btn-black" onclick="saveClient()">Save Client</button></div>
   </div>
 </div>
 
@@ -1039,25 +1108,36 @@
     if (!file || !db) return;
     var r = new FileReader();
     r.onload = async function(e) {
-      var lines = e.target.result.trim().split('\n');
-      var headers = lines[0].split(',').map(function(h) { return h.trim().toLowerCase(); });
-      var count = 0;
+      var text = e.target.result;
+      var lines = text.split(/\r?\n/);
+      var headers = lines[0].split(',').map(function(h) { return h.replace(/^"|"$/g,'').trim().toLowerCase(); });
+      var count = 0, errs = 0;
       for (var i = 1; i < lines.length; i++) {
-        var vals = lines[i].split(',').map(function(v) { return v.trim(); });
+        if (!lines[i].trim()) continue;
+        var vals = parseCSVLine(lines[i]);
         var row = {};
         headers.forEach(function(h,j) { row[h] = vals[j]||''; });
-        if (!row.name || !row.phone) continue;
+        var rname = row.name||row['full name']||'';
+        var rphone = row.phone||row['phone number']||'';
+        if (!rname && !rphone) continue;
+        var su = null;
+        if (['true','1','yes'].indexOf((row.showedup||'').toLowerCase())>-1) su=true;
+        else if (['false','0','no'].indexOf((row.showedup||'').toLowerCase())>-1) su=false;
         try {
           await db.collection('appointments').add({
-            name:row.name, phone:row.phone, email:row.email||'',
-            service:row.service||'', date:row.date||'', time:row.time||'',
-            notes:row.notes||'', status:'confirmed', showedUp:null,
+            name:rname.trim(), phone:rphone.trim(), email:(row.email||'').trim(),
+            service:row.service||row.services||'Appointment',
+            date:row.date||'', time:row.time||'',
+            notes:(row.notes||'').trim(),
+            price:row.price||'0',
+            status:'confirmed',
+            showedUp: su,
             createdAt:firebase.firestore.FieldValue.serverTimestamp()
           });
           count++;
-        } catch(err) {}
+        } catch(err) { errs++; }
       }
-      showToast('✓ Imported '+count+' appointments', 'success');
+      showToast('✓ Imported '+count+' appointments'+(errs?' ('+errs+' errors)':''), 'success');
       loadAppointments();
     };
     r.readAsText(file);
@@ -1115,6 +1195,7 @@
   async function openClientModal(id) {
     var c = allClients.find(function(x) { return x.id === id; });
     if (!c) return;
+    _viewingClientId = id;
     document.getElementById('client-modal-name').textContent = c.name || 'Client';
     var body = document.getElementById('client-modal-body');
     body.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Loading history…</p>';
@@ -1144,7 +1225,273 @@
   }
   function closeClientModal() { document.getElementById('client-modal-overlay').classList.remove('open'); }
 
+  // ── CLIENT CRUD ──────────────────────────────────────────────────────────
+  var _viewingClientId = null;
+
+  function openAddClientModal(prefill) {
+    document.getElementById('client-edit-id').value = '';
+    document.getElementById('add-client-modal-title').textContent = 'Add Client';
+    ['client-name','client-phone','client-email','client-first-visit','client-last-visit','client-services','client-notes'].forEach(function(id){document.getElementById(id).value='';});
+    if (prefill) {
+      if (prefill.name) document.getElementById('client-name').value = prefill.name;
+      if (prefill.phone) document.getElementById('client-phone').value = prefill.phone;
+      if (prefill.email) document.getElementById('client-email').value = prefill.email;
+    }
+    document.getElementById('add-client-modal-overlay').classList.add('open');
+  }
+  function closeAddClientModal() { document.getElementById('add-client-modal-overlay').classList.remove('open'); }
+
+  function editClientFromModal() {
+    var c = allClients.find(function(x){return x.id===_viewingClientId;});
+    if (!c) return;
+    closeClientModal();
+    document.getElementById('client-edit-id').value = c.id;
+    document.getElementById('add-client-modal-title').textContent = 'Edit Client';
+    document.getElementById('client-name').value = c.name||'';
+    document.getElementById('client-phone').value = c.phone||'';
+    document.getElementById('client-email').value = c.email||'';
+    document.getElementById('client-first-visit').value = c.firstVisit||'';
+    document.getElementById('client-last-visit').value = c.lastVisit||'';
+    var svcs = Array.isArray(c.services) ? c.services.join(', ') : (c.services||'');
+    document.getElementById('client-services').value = svcs;
+    document.getElementById('client-notes').value = c.notes||'';
+    document.getElementById('add-client-modal-overlay').classList.add('open');
+  }
+
+  async function deleteClientFromModal() {
+    if (!db || !_viewingClientId) return;
+    if (!confirm('Delete this client permanently?')) return;
+    closeClientModal();
+    try {
+      await db.collection('clients').doc(_viewingClientId).delete();
+      allClients = allClients.filter(function(c){return c.id!==_viewingClientId;});
+      renderClients(allClients);
+      showToast('\u2713 Client deleted','success');
+    } catch(e) { showToast('Error: '+e.message,'error'); }
+  }
+
+  async function saveClient() {
+    if (!db) return;
+    var id = document.getElementById('client-edit-id').value;
+    var name = document.getElementById('client-name').value.trim();
+    var phone = document.getElementById('client-phone').value.trim();
+    if (!name || !phone) { showToast('Name and phone are required','error'); return; }
+    var svcsRaw = document.getElementById('client-services').value;
+    var services = svcsRaw ? svcsRaw.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
+    var data = {
+      name: name,
+      phone: phone,
+      email: document.getElementById('client-email').value.trim(),
+      firstVisit: document.getElementById('client-first-visit').value,
+      lastVisit: document.getElementById('client-last-visit').value,
+      services: services,
+      notes: document.getElementById('client-notes').value.trim(),
+    };
+    try {
+      if (id) {
+        await db.collection('clients').doc(id).update(data);
+        var idx = allClients.findIndex(function(c){return c.id===id;});
+        if (idx>-1) Object.assign(allClients[idx], data);
+        showToast('\u2713 Client updated','success');
+      } else {
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        data.totalAppointments = 0;
+        var ref = await db.collection('clients').add(data);
+        allClients.unshift({id:ref.id,...data});
+        showToast('\u2713 Client added','success');
+      }
+      renderClients(allClients);
+      closeAddClientModal();
+    } catch(e) { showToast('Error: '+e.message,'error'); }
+  }
+
+  // ── CLIENTS CSV IMPORT / EXPORT ──────────────────────────────────────────
+  function importClientsCSV() { document.getElementById('client-csv-input').click(); }
+
+  function handleClientCSVImport(file) {
+    if (!file || !db) return;
+    var r = new FileReader();
+    r.onload = async function(e) {
+      var text = e.target.result;
+      var lines = text.split(/\r?\n/);
+      var headers = lines[0].split(',').map(function(h){return h.replace(/^"|"$/g,'').trim().toLowerCase();});
+      var count = 0, errors = 0;
+      for (var i=1;i<lines.length;i++) {
+        if (!lines[i].trim()) continue;
+        // Handle quoted commas in CSV
+        var vals = parseCSVLine(lines[i]);
+        var row = {};
+        headers.forEach(function(h,j){row[h]=vals[j]||'';});
+        var name = row.name||row['full name']||'';
+        var phone = row.phone||row['phone number']||'';
+        if (!name&&!phone) continue;
+        var services = row.services ? row.services.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
+        try {
+          var data = {
+            name: name.trim(),
+            phone: phone.trim(),
+            email: (row.email||'').trim(),
+            firstVisit: row.firstvisit||row['first visit']||row['first_visit']||'',
+            lastVisit: row.lastvisit||row['last visit']||row['last_visit']||'',
+            services: services,
+            notes: (row.notes||'').trim(),
+            totalAppointments: parseInt(row.totalappointments||row['total appointments']||'0')||0,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          await db.collection('clients').add(data);
+          count++;
+        } catch(err){ errors++; }
+      }
+      showToast('\u2713 Imported '+count+' clients'+(errors?' ('+errors+' errors)':''),'success');
+      loadClients();
+    };
+    r.readAsText(file);
+    document.getElementById('client-csv-input').value='';
+  }
+
+  function exportClientsCSV() {
+    var headers = ['name','phone','email','totalAppointments','firstVisit','lastVisit','services','notes'];
+    var rows = allClients.map(function(c){
+      return headers.map(function(h){
+        var v = h==='services' ? (Array.isArray(c[h])?c[h].join('; '):c[h]||'') : (c[h]||'');
+        return '"'+String(v).replace(/"/g,'""')+'"';
+      }).join(',');
+    });
+    var csv = [headers.join(','),...rows].join('\n');
+    var blob = new Blob([csv],{type:'text/csv'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'clients-'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();
+    showToast('\u2713 Exported '+allClients.length+' clients','success');
+  }
+
+  // helper: parse one CSV line respecting quotes
+  function parseCSVLine(line) {
+    var result=[], cur='', inQ=false;
+    for (var i=0;i<line.length;i++){
+      var ch=line[i];
+      if (ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else{inQ=!inQ;}}
+      else if(ch===','&&!inQ){result.push(cur.trim());cur='';}
+      else{cur+=ch;}
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+
   // ──────────────────────────────────────
+  // DESIGN SORT ORDER (Latest Designs)
+  // ──────────────────────────────────────
+  var _latestReorderMode = false;
+  var _latestDragSrc = null;
+
+  function toggleLatestReorder() {
+    _latestReorderMode = !_latestReorderMode;
+    var btn = document.getElementById('latest-reorder-btn');
+    var saveBtn = document.getElementById('latest-reorder-save');
+    if (_latestReorderMode) {
+      btn.textContent = '\u00d7 Cancel';
+      saveBtn.style.display = '';
+      enableLatestDrag();
+    } else {
+      btn.innerHTML = '<i class="fas fa-sort"></i> Reorder';
+      saveBtn.style.display = 'none';
+      disableLatestDrag();
+    }
+  }
+
+  function enableLatestDrag() {
+    var items = document.querySelectorAll('#grid-latest .set-card');
+    items.forEach(function(card, i) {
+      card.setAttribute('draggable', 'true');
+      card.style.cursor = 'grab';
+      card.style.outline = '2px dashed #ccc';
+      card.style.outlineOffset = '2px';
+      card.addEventListener('dragstart', latestDragStart);
+      card.addEventListener('dragover', latestDragOver);
+      card.addEventListener('drop', latestDrop);
+      card.addEventListener('dragend', latestDragEnd);
+    });
+  }
+
+  function disableLatestDrag() {
+    var items = document.querySelectorAll('#grid-latest .set-card');
+    items.forEach(function(card) {
+      card.setAttribute('draggable', 'false');
+      card.style.cursor = '';
+      card.style.outline = '';
+      card.removeEventListener('dragstart', latestDragStart);
+      card.removeEventListener('dragover', latestDragOver);
+      card.removeEventListener('drop', latestDrop);
+      card.removeEventListener('dragend', latestDragEnd);
+    });
+  }
+
+  function latestDragStart(e) {
+    _latestDragSrc = this;
+    e.dataTransfer.effectAllowed = 'move';
+    this.style.opacity = '0.4';
+  }
+  function latestDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var items = Array.from(document.querySelectorAll('#grid-latest .set-card'));
+    var target = this;
+    if (target !== _latestDragSrc) {
+      items.forEach(function(c){c.style.borderTop='';c.style.borderBottom='';});
+      var srcIdx = items.indexOf(_latestDragSrc);
+      var tgtIdx = items.indexOf(target);
+      if (tgtIdx > srcIdx) target.style.borderBottom = '3px solid #000';
+      else target.style.borderTop = '3px solid #000';
+    }
+  }
+  function latestDrop(e) {
+    e.stopPropagation();
+    if (_latestDragSrc !== this) {
+      var grid = document.getElementById('grid-latest');
+      var items = Array.from(grid.querySelectorAll('.card'));
+      var srcIdx = items.indexOf(_latestDragSrc);
+      var tgtIdx = items.indexOf(this);
+      if (tgtIdx > srcIdx) grid.insertBefore(_latestDragSrc, this.nextSibling);
+      else grid.insertBefore(_latestDragSrc, this);
+    }
+    items = document.querySelectorAll('#grid-latest .set-card');
+    items.forEach(function(c){c.style.borderTop='';c.style.borderBottom='';});
+    return false;
+  }
+  function latestDragEnd(e) {
+    this.style.opacity = '';
+    var items = document.querySelectorAll('#grid-latest .set-card');
+    items.forEach(function(c){c.style.borderTop='';c.style.borderBottom='';});
+  }
+
+  async function saveLatestOrder() {
+    if (!db) return;
+    var cards = document.querySelectorAll('#grid-latest .set-card');
+    var batch = db.batch();
+    var pos = 0;
+    cards.forEach(function(card) {
+      var id = card.getAttribute('data-id');
+      if (id) {
+        batch.update(db.collection('latest').doc(id), { sortOrder: pos });
+        pos++;
+      }
+    });
+    try {
+      await batch.commit();
+      showToast('\u2713 Order saved — site will update', 'success');
+      // Update local cache
+      if (cache['latest']) {
+        var order = Array.from(cards).map(function(c){return c.getAttribute('data-id');});
+        cache['latest'].list.sort(function(a,b){return order.indexOf(a)-order.indexOf(b);});
+        cache['latest'].items.sort(function(a,b){return order.indexOf(a.id)-order.indexOf(b.id);});
+      }
+      toggleLatestReorder();
+    } catch(e) { showToast('Error: '+e.message,'error'); }
+  }
+
+    // ──────────────────────────────────────
   // MESSAGES
   // ──────────────────────────────────────
   var allMessages = [], msgFilter = 'all', selectedMsgId = null;
