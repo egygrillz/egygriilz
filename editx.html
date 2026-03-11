@@ -219,6 +219,44 @@ input,textarea,select{font-family:inherit}
 .toast.success{background:var(--success)}
 .toast.error{background:var(--danger)}
 </style>
+<script data-cfasync="false">
+// Global auth functions — must exist before login button renders
+var _loginAttempts = 0;
+var _PASS_HASH = '8e48868fbb1f1066dade8e5decd84645eec47ca1cf653776413a86cb4b9a2f6b';
+
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
+  if (_loginAttempts >= 5) { alert('Too many attempts. Please refresh the page.'); return; }
+  const pass = document.getElementById('login-pass').value;
+  if (!pass) return;
+  try {
+    const hash = await _sha256(pass);
+    if (hash === _PASS_HASH) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-app').style.display = 'block';
+      if (typeof initAdmin === 'function') initAdmin();
+    } else {
+      _loginAttempts++;
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('login-pass').value = '';
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function doLogout() {
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+  _loginAttempts = 0;
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('active'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('active'); }
+</script>
 </head>
 <body>
 
@@ -560,52 +598,15 @@ input,textarea,select{font-family:inherit}
 <div class="toast" id="toast"></div>
 
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script>
+<script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script data-cfasync="false">
 // ── INIT ──
 var db;
 try {
   firebase.initializeApp({apiKey:"AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",authDomain:"egygrillz-studio.firebaseapp.com",projectId:"egygrillz-studio",storageBucket:"egygrillz-studio.firebasestorage.app",messagingSenderId:"1022362401463",appId:"1:1022362401463:web:fec76b9c73e24d9cfeeb32"});
   db = firebase.firestore();
 } catch(e) { console.error('Firebase init failed:', e); }
-
-// ── AUTH ──
-const PASS_HASH = '8e48868fbb1f1066dade8e5decd84645eec47ca1cf653776413a86cb4b9a2f6b';
-let attempts = 0;
-
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-async function doLogin() {
-  if (attempts >= 5) { alert('Too many attempts. Refresh to try again.'); return; }
-  const pass = document.getElementById('login-pass').value;
-  if (!pass) return;
-  try {
-    const hash = await sha256(pass);
-    if (hash === PASS_HASH) {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('admin-app').style.display = 'block';
-      initAdmin();
-    } else {
-      attempts++;
-      document.getElementById('login-error').style.display = 'block';
-      document.getElementById('login-pass').value = '';
-    }
-  } catch(e) {
-    console.error('Login error:', e);
-    alert('Login error: ' + e.message);
-  }
-}
-
-function doLogout() {
-  document.getElementById('admin-app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-pass').value = '';
-  attempts = 0;
-}
 
 // ── NAVIGATION ──
 let currentPage = 'overview';
@@ -622,9 +623,6 @@ function showPage(page) {
   if(page==='messages') renderMessages();
   if(page==='clients') renderClients();
 }
-
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('active'); }
-function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('active'); }
 
 // ── DATA ──
 let allAppointments = [], allMessages = [], allClients = [];
