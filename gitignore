@@ -1,0 +1,18 @@
+# ============================================================
+#  EGYGRILLZ — Git Ignore
+# ============================================================
+
+# 🔐 PRIVATE CONFIG — never push to GitHub
+config.js
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor folders
+.vscode/
+.idea/
+
+# Logs
+*.log
