@@ -1555,12 +1555,13 @@
     var openSel=document.getElementById('open-hour');
     var closeSel=document.getElementById('close-hour');
     var html='';
-    for(var h=0;h<24;h++){
-      var label=h===0?'12:00 AM':h<12?h+':00 AM':h===12?'12:00 PM':(h-12)+':00 PM';
+    for(var h=1;h<24;h++){
+      var label=h<12?h+':00 AM':h===12?'12:00 PM':(h-12)+':00 PM';
       html+='<option value="'+h+'">'+label+'</option>';
     }
-    openSel.innerHTML=html;closeSel.innerHTML=html;
-    openSel.value='10';closeSel.value='22';
+    openSel.innerHTML=html;
+    closeSel.innerHTML=html+'<option value="0">12:00 AM (Midnight)</option>';
+    openSel.value='16';closeSel.value='22';
   }
 
   async function loadScheduleSettings(){
