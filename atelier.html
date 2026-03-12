@@ -464,8 +464,8 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
     <p class="section-sub">From clean and minimal to masterpiece-level sculpture. Complexity adds to the designer fee and final retail price.</p>
     <div class="info-panel" id="info-cplx">
       <div class="info-content">
-        <strong>Level 1 — Basic (0%)</strong> Standard plain cap. No extra detailing.<br>
-        <strong>Level 2 — Simple (+5%)</strong> Basic shape changes or simple cutouts (e.g. window/open face).<br>
+        <strong>Level 1 — The Bar (0%)</strong> Simple solid bar — no cuts or detail. Lowest complexity.<br>
+        <strong>Level 2 — Solid Cap (+5%)</strong> Seamless polished plain cap. Standard base design.<br>
         <strong>Level 3 — Medium (+10%)</strong> Texture work or shaped framing (e.g. drip, flame).<br>
         <strong>Level 4 — Hard (+15%)</strong> Intricate manual detail (e.g. flower).<br>
         <strong>Level 5 — Complex (+25%)</strong> Advanced layering or multi-step design (e.g. snake, scorpion).<br>
@@ -817,47 +817,43 @@ const GOLD_REFRESH_MS = 5 * 60 * 60 * 1000; /* 5 hours */
 const MATS = [
   {
     id:'Silver 925', nm:'Silver 925', sub:'Sterling Silver · Lost-Wax Cast',
-    desc:'The brilliant, affordable classic. Perfect for intricate cutwork and iced-out designs. Price calculated from live silver rate (default 125 EGP/g).',
-    time:'10–14 days', precious:true,
+    desc:'The brilliant, affordable classic. Perfect for intricate cutwork and iced-out designs. Hypoallergenic and easy to polish.',
+    precious:true,
     img:_BASE+'materials/SILVER.png',
-    /* formula per tooth: (200 design + 37.5 resin + 46 labor + 2.3g×silver_rate) × 2.8 */
     calcBase: ()=> Math.round((200 + 37.5 + 46 + 2.3 * SILVER_PER_GRAM) * 2.8)
   },
   {
     id:'Gold 18K', nm:'Gold 18K', sub:'Solid 18K Gold · Lost-Wax Cast',
-    desc:'The pinnacle of grillz. Hypoallergenic, tarnish-free. Price auto-calculated from live 18K gold market rate.',
-    time:'10–14 days', precious:true,
+    desc:'The pinnacle of grillz. Hypoallergenic, tarnish-free, holds its value. Karat purity certified at point of sale.',
+    precious:true,
     img:_BASE+'materials/GOLD.png',
-    /* formula per tooth: (200 design + 60 resin + 50 labor + 1.15g×gold18k_rate) × 2.8 */
     calcBase: ()=> Math.round((200 + 60 + 50 + 1.15 * GOLD18K_PER_GRAM) * 2.8)
   },
   {
     id:'Cobalt Chrome', nm:'Cobalt Chrome', sub:'Gunmetal Alloy · 3D Printed (DMLS)',
     desc:'Ultra-durable, scratch-resistant. Distinctive dark silver appearance. Fixed production cost — no metal market fluctuation.',
-    time:'5–7 days', precious:false,
+    precious:false,
     img:_BASE+'materials/CHROME.png',
-    /* formula: (200 design + 40 print) × 4.2 = 1,008 → 1,000 */
     calcBase: ()=> 1000
   },
   {
     id:'Titanium', nm:'Titanium', sub:'Aerospace Grade · 3D Printed (DMLS)',
     desc:'Lightest material, fully biocompatible (used in dental implants). Stronger than steel. Anodize-ready for permanent vivid colors.',
-    time:'5–7 days', precious:false,
+    precious:false,
     img:_BASE+'materials/TITANUM.png',
-    /* formula: (200 design + 40 print) × 8.4 = 2,016 → 2,000 */
     calcBase: ()=> 2000
   }
 ];
 
 /* ── LEVELS (1–7, pics named LEVEL 1.png … LEVEL 7.png) ── */
 const CPLX = [
-  {id:'L1', nm:'Level 1 — Basic',       sub:'Standard plain cap. No extra detail.',               mult:1.00, img:_BASE+'levels/LEVEL 1.png'},
-  {id:'L2', nm:'Level 2 — Simple',      sub:'Simple cutout or basic shape change.',               mult:1.05, img:_BASE+'levels/LEVEL 2.png'},
-  {id:'L3', nm:'Level 3 — Medium',      sub:'Texture work or shaped framing (drip / flame).',     mult:1.10, img:_BASE+'levels/LEVEL 3.png'},
-  {id:'L4', nm:'Level 4 — Hard',        sub:'Intricate manual detail (e.g. flower).',             mult:1.15, img:_BASE+'levels/LEVEL 4.png'},
-  {id:'L5', nm:'Level 5 — Complex',     sub:'Advanced layering, multi-step (snake / scorpion).',  mult:1.25, img:_BASE+'levels/LEVEL 5.png'},
-  {id:'L6', nm:'Level 6 — Master',      sub:'Full artistic sculpting, expert modeling (mermaid).',mult:1.40, img:_BASE+'levels/LEVEL 6.png'},
-  {id:'L7', nm:'Level 7 — Masterpiece', sub:'Maximum complexity. One-of-a-kind commission.',      mult:1.60, img:_BASE+'levels/LEVEL 7.png'}
+  {id:'L1', nm:'Level 1 — The Bar',      sub:'Simple solid bar — no cuts, no detail.',             mult:1.00, img:_BASE+'levels/LEVEL 1.png'},
+  {id:'L2', nm:'Level 2 — Solid Cap',    sub:'Seamless polished plain cap. Standard base.',        mult:1.05, img:_BASE+'levels/LEVEL 2.png'},
+  {id:'L3', nm:'Level 3 — Medium',       sub:'Texture work or shaped framing (drip / flame).',     mult:1.10, img:_BASE+'levels/LEVEL 3.png'},
+  {id:'L4', nm:'Level 4 — Hard',         sub:'Intricate manual detail (e.g. flower).',             mult:1.15, img:_BASE+'levels/LEVEL 4.png'},
+  {id:'L5', nm:'Level 5 — Complex',      sub:'Advanced layering, multi-step (snake / scorpion).',  mult:1.25, img:_BASE+'levels/LEVEL 5.png'},
+  {id:'L6', nm:'Level 6 — Master',       sub:'Full artistic sculpting, expert modeling (mermaid).',mult:1.40, img:_BASE+'levels/LEVEL 6.png'},
+  {id:'L7', nm:'Level 7 — Masterpiece',  sub:'Maximum complexity. One-of-a-kind commission.',      mult:1.60, img:_BASE+'levels/LEVEL 7.png'}
 ];
 
 /* ── PLATES ── */
@@ -882,20 +878,70 @@ const ICED_GEM_EXTRA = {CZ:0,Moissanite:1800,Natural:5000}; /* per tooth extra f
 
 /* ── FAQ ── */
 const FAQ_DATA = [
-  {q:'How much does it cost?', a:'Prices vary by material, number of teeth, and design complexity. Silver 925 starts around 1,600 EGP per tooth at Level 1. Gold 18K price changes daily with the gold market — check the live estimate at the top of this page. Cobalt Chrome is 1,000 EGP/tooth and Titanium is 2,000 EGP/tooth at base level. Use the builder above for your exact combination.'},
-  {q:'How is the price calculated for Gold?', a:'Gold 18K pricing is calculated from the live international gold price in EGP. We use 1.15 grams of gold per tooth (including casting waste), plus design, resin, and labor fees, then apply our standard retail margin. The price updates automatically every 5 hours on this page.'},
-  {q:'What materials do you work with?', a:'We work with four materials: Sterling Silver 925 (lost-wax cast), Gold 18K (lost-wax cast), Cobalt Chrome (3D printed metal / DMLS), and Titanium (aerospace-grade 3D printed DMLS). Each has different properties, costs, and turnaround times.'},
-  {q:'How long does it take to make my grillz?', a:'Cobalt Chrome and Titanium pieces are typically ready in 5–7 business days. Gold 18K and Silver 925 take 10–14 business days. Rush service is available for an additional fee — contact us to discuss.'},
-  {q:'What are the design levels?', a:'We offer 7 design levels from Level 1 (standard plain cap) to Level 7 (masterpiece-level custom commission). Each level adds complexity and craftsmanship time — Level 1 has no extra charge, while Level 6 adds 40% to the base price. Level 7 is priced on consultation.'},
-  {q:'Are diamonds available on all materials?', a:'No — diamond setting is only available on precious metals: Silver 925 and Gold 18K. It is not available on Cobalt Chrome or Titanium. We offer CZ (cubic zirconia), Moissanite (GRA-certified VVS1), and Natural Diamonds (SI or VS grade).'},
-  {q:'What is the difference between CZ, Moissanite, and Natural Diamond?', a:'CZ (Cubic Zirconia) is a lab-made crystal — excellent sparkle, very affordable at +50 EGP per stone. Moissanite is lab-grown, GRA-certified VVS1/D color — near-identical to diamond brilliance at a fraction of real diamond cost. Natural Diamonds are genuine earth-mined gems, the most prestigious option — priced on market rate.'},
-  {q:'Does it hurt to get grillz or wear them?', a:'Not at all. The impression process takes 3–5 minutes using dental-grade impression material — the same used by dentists worldwide. There is no discomfort. When properly fitted, grillz rest snugly over your teeth with no adhesive or permanent attachment.'},
-  {q:'Can I eat and drink with grillz in?', a:'We recommend removing grillz before eating or drinking anything other than plain water. Food can get trapped underneath, which can cause hygiene issues. Always rinse grillz before and after wearing.'},
-  {q:'How do I clean my grillz?', a:'Rinse with warm water before and after each use. Use a soft toothbrush with mild soap or non-abrasive toothpaste. Never use bleach or harsh chemicals. Store dry in the provided case when not wearing them.'},
-  {q:'How does payment work?', a:'A 50% deposit is required to confirm your order and begin production. The remaining 50% is due upon pickup. We accept cash, bank transfer, and Vodafone Cash.'},
-  {q:'Do you ship internationally?', a:'Yes — we ship worldwide. International shipping costs and delivery times vary by destination. Contact us for a shipping quote to your country.'},
-  {q:'What is the minimum order?', a:'There is no minimum. You can order a single tooth grillz or a complete full-mouth set. Each piece is priced individually so you only pay for what you want.'},
-  {q:'Will grillz damage my teeth?', a:'Our grillz are 100% removable — no drilling, no bonding, no permanent alteration to your teeth whatsoever. When worn correctly and kept clean, they are safe. Avoid sleeping with them in and remove before eating.'}
+  {
+    q:'How much does it cost?',
+    a:'Prices depend on material, number of teeth, and design level. Cobalt Chrome starts at 1,000 EGP per tooth and Titanium at 2,000 EGP at Level 1. Silver 925 and Gold 18K are calculated from live metal rates. Use the builder above to get your exact estimate — the price updates in real time as you configure your set.'
+  },
+  {
+    q:'How does payment work?',
+    a:'A 50% deposit is required to confirm your order and begin production. No changes can be made after the deposit is received. The remaining 50% is due in full before the finished piece is released or shipped. We accept cash, bank transfer, and Vodafone Cash. All deposits are 100% non-refundable.'
+  },
+  {
+    q:'Is my price locked after I get a quote?',
+    a:'Price quotations are valid for 7 calendar days from the date of issue. Gold 18K prices in particular fluctuate with the live gold market. Your quoted price is only locked once you pay the deposit — not before. A fresh quote will be issued if the 7-day window expires.'
+  },
+  {
+    q:'What is your refund and return policy?',
+    a:'All products are custom-made to your exact dental measurements and are strictly non-refundable and non-exchangeable under any circumstance. Used dental jewelry cannot be returned for hygiene reasons. The only exception is if EGYGRILLZ cancels your order — in that case a full deposit refund is issued.'
+  },
+  {
+    q:'What are the design levels?',
+    a:'We offer 7 design levels. Level 1 is a simple solid bar — the most minimal design. Level 2 is a seamless polished solid cap — the standard base. Levels 3 through 6 increase in complexity from texture work and shaped framing up to full artistic sculpting. Level 7 is a one-of-a-kind masterpiece commission priced individually on consultation.'
+  },
+  {
+    q:'What materials do you work with?',
+    a:'We work with four materials: Sterling Silver 925 and Gold 18K (both made by lost-wax casting), and Cobalt Chrome and Titanium (both 3D printed using DMLS). Each has different properties and price points. Diamond setting is only available on Silver 925 and Gold 18K — not on Chrome or Titanium.'
+  },
+  {
+    q:'Are diamonds available on all materials?',
+    a:'No. Diamond setting is only available for precious metals — Silver 925 and Gold 18K. It is not available for Cobalt Chrome or Titanium. We offer CZ (AAAAA cubic zirconia), Moissanite (GRA-certified VVS1 / D color), and Natural Diamonds (SI or VS grade).'
+  },
+  {
+    q:'How do I care for my grillz?',
+    a:'Rinse with cold water immediately after every wear. Use a soft-bristle toothbrush only — never hard bristle or metal tools. Do not use whitening or abrasive toothpaste on plated pieces. Pat dry with a microfiber cloth and store in the provided EGYGRILLZ case. Avoid all chemicals including bleach, chlorine, perfume, and hairspray. Check stones for looseness weekly and do a deep clean with jewelry-specific solution once a month.'
+  },
+  {
+    q:'Can I eat, drink, or sleep wearing my grillz?',
+    a:'No. Remove your grillz before eating, drinking anything other than plain water, smoking, or sleeping. Food trapped under the piece causes hygiene issues. Sleeping with grillz in can cause dental shifting, for which EGYGRILLZ is not responsible. Misuse is solely the client\'s liability.'
+  },
+  {
+    q:'Does it hurt to get grillz or wear them?',
+    a:'Not at all. The impression process takes 3–5 minutes using dental-grade impression material — the same used by dentists worldwide. There is no discomfort. When properly fitted, grillz rest snugly over your teeth with no adhesive, no drilling, and no permanent alteration.'
+  },
+  {
+    q:'What if my grillz don\'t fit properly?',
+    a:'Fit-related complaints must be reported within 48 hours of receiving your piece, with clear photo or video evidence. Requests submitted after that 48-hour window will incur a service fee. The client is solely responsible for providing accurate dental impressions — errors caused by incorrect impression data are not covered.'
+  },
+  {
+    q:'How do you ship orders?',
+    a:'Our official carrier is FedEx. All FedEx shipments are fully tracked and tracking numbers are sent via WhatsApp or email immediately upon dispatch. Domestic delivery within Egypt takes 2–4 business days. International rates and timelines vary by destination. Clients requesting alternative carriers assume full liability for any loss or damage. Shipping insurance must be requested and paid before dispatch — default shipping is uninsured.'
+  },
+  {
+    q:'What happens if my package is lost or damaged?',
+    a:'Report any shipping damage within 12 hours of receipt with time-stamped unboxing photos. Lost FedEx packages are subject to FedEx\'s own investigation timelines. EGYGRILLZ is not liable for packages marked as delivered but not received. Risk of loss transfers to the client once the item is handed to the courier.'
+  },
+  {
+    q:'Can I collect my order in person?',
+    a:'Yes — in-person collection is by confirmed appointment only. Proof of identity is required for all high-value orders at the time of collection. Items not collected within 30 days may incur storage fees. Items abandoned beyond 90 days will be melted for scrap value with no compensation issued.'
+  },
+  {
+    q:'What is the minimum order?',
+    a:'There is no minimum. You can order a single tooth or a full-mouth set. Each piece is priced individually so you only pay for exactly what you want. All orders, regardless of size, go through the same custom impression and production process.'
+  },
+  {
+    q:'Is my personal data kept private?',
+    a:'Yes. Your name, contact details, and dental impressions are kept strictly confidential. Physical moulds are classified as private health data and are destroyed after order completion. Digital scans are stored on encrypted offline drives and records are retained for 24 months to allow for potential remakes. We do not store payment card numbers and do not share data with third parties except registered shipping partners. Contact: egygrillz@gmail.com.'
+  }
 ];
 
 /* ════════════════════════════════════════
@@ -1075,7 +1121,7 @@ function buildCarousel(trackId, dotsId, data) {
   data.forEach((d,i) => {
     const item = document.createElement('div');
     item.className = 'c-item';
-    item.innerHTML = `<div class="c-img-wrap"><img src="${d.img}" alt="${d.nm}" loading="lazy"></div><div class="c-name">${d.nm}</div><div class="c-sub">${d.sub}</div>${d.time?`<div class="c-tag">${d.time}</div>`:''}`;
+    item.innerHTML = `<div class="c-img-wrap"><img src="${d.img}" alt="${d.nm}" loading="lazy"></div><div class="c-name">${d.nm}</div><div class="c-sub">${d.sub}</div>`;
     item.onclick = () => carouselClick(trackId, i);
     track.appendChild(item);
     const dot = document.createElement('button');
@@ -1130,14 +1176,11 @@ function updateMatDesc() {
   const m = MATS[S.matIdx];
   const box = document.getElementById('mat-single-desc');
   if(!box) return;
-  let goldLine = '';
+  let extraLine = '';
   if(m.id === 'Gold 18K') {
-    goldLine = `<div class="mg"><span class="gold-dot" style="display:inline-block;margin-right:4px;"></span>Live 18K: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g · Base price/tooth: ${m.calcBase().toLocaleString()} EGP</div>`;
-  } else if(m.id === 'Silver 925') {
-    const baseP = m.calcBase();
-    goldLine = `<div class="mg" style="background:#f5f5f5;border:1px solid #ddd;color:#555;">Silver rate: ${SILVER_PER_GRAM} EGP/g · Base price/tooth: ${baseP.toLocaleString()} EGP</div>`;
+    extraLine = `<div class="mg"><span class="gold-dot" style="display:inline-block;margin-right:4px;"></span>Live 18K rate: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g</div>`;
   }
-  box.innerHTML = `<div class="mn">${m.nm}</div><div class="md">${m.desc}</div><div class="mt">${m.time}</div>${goldLine}`;
+  box.innerHTML = `<div class="mn">${m.nm}</div><div class="md">${m.desc}</div>${extraLine}`;
   /* show/hide gold badge in price bar */
   const badge = document.getElementById('gold-badge');
   if(badge) badge.style.display = m.id === 'Gold 18K' ? 'flex' : 'none';
