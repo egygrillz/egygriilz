@@ -14,17 +14,17 @@
   <script data-cfasync="false" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
   <script data-cfasync="false">
-    // ── STATE (var so onclick can access) ──
     var selectedServices = [];
-    var selectedDate = null;       // "YYYY-MM-DD"
-    var selectedTime = null;       // "hh:mm AM/PM"
+    var selectedDate = null;
+    var selectedTime = null;
     var calYear = new Date().getFullYear();
     var calMonth = new Date().getMonth();
-    var takenSlots = {};           // { "YYYY-MM-DD": ["hh:mm AM/PM", ...] }
+    var takenSlots = {};
     var scheduleSettings = {
-      openDays: [0,1,2,3,4,6],    // default: Sun–Thu + Sat
+      openDays: [0,1,2,3,4,6],
       openHour: 16,
       closeHour: 22,
+      slotDuration: 60,
       holidays: []
     };
     var currentStep = 1;
@@ -98,6 +98,35 @@
     function toggleMenu() {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
+    }
+
+    // ── HELPERS ──
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+    // Parse "YYYY-MM-DD" safely into a local Date (midnight local time)
+    // Avoids the UTC-shift bug from new Date("YYYY-MM-DD") which gives midnight UTC
+    function parseLocalDate(dateStr) {
+      var parts = dateStr.split('-');
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+
+    // Build a local Date for a specific date + hour
+    function makeSlotDate(dateStr, hour) {
+      var parts = dateStr.split('-');
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), hour, 0, 0, 0);
+    }
+
+    function formatTime(h) {
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      var h12 = h % 12 || 12;
+      return pad(h12) + ':00 ' + ampm;
+    }
+
+    // formatTimeHM: supports 30-min slots (e.g. "04:30 PM")
+    function formatTimeHM(h, min) {
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      var h12 = h % 12 || 12;
+      return pad(h12) + ':' + pad(min) + ' ' + ampm;
     }
   </script>
 
@@ -301,11 +330,10 @@
       <span class="step-label-item" id="sl4">Review</span>
     </div>
 
-    <!-- STEP 1: SERVICES -->
+    <!-- STEP 1 -->
     <div class="step-panel active" id="step1">
       <h1 class="page-heading">Schedule</h1>
       <p class="page-sub">Studio Hours: 4:00 PM – 10:00 PM (Sat–Thu)</p>
-
       <span class="section-label">Select Service(s)</span>
       <div class="service-grid">
         <div class="service-option" onclick="toggleService(this,'Impression')">
@@ -353,17 +381,15 @@
           <span class="service-price">From 500 EGP</span>
         </div>
       </div>
-
       <div class="btn-row">
         <button class="btn-primary" id="step1-next" onclick="goStep(2)" disabled>Continue →</button>
       </div>
     </div>
 
-    <!-- STEP 2: DATE & TIME -->
+    <!-- STEP 2 -->
     <div class="step-panel" id="step2">
       <h1 class="page-heading">Date &amp; Time</h1>
       <p class="page-sub">Select an available appointment slot</p>
-
       <div class="cal-wrap">
         <div class="cal-header">
           <button class="cal-nav" onclick="calPrev()"><i class="fas fa-chevron-left"></i></button>
@@ -381,23 +407,20 @@
         </div>
         <div class="cal-grid" id="cal-grid"></div>
       </div>
-
       <div class="slots-wrap" id="slots-wrap" style="display:none;">
         <div class="slots-count" id="slots-count"></div>
         <div class="time-grid" id="time-grid"></div>
       </div>
-
       <div class="btn-row">
         <button class="btn-ghost" onclick="goStep(1)">← Back</button>
         <button class="btn-primary" id="step2-next" onclick="goStep(3)" disabled>Continue →</button>
       </div>
     </div>
 
-    <!-- STEP 3: PERSONAL DETAILS -->
+    <!-- STEP 3 -->
     <div class="step-panel" id="step3">
       <h1 class="page-heading">Your Details</h1>
       <p class="page-sub">Personal information for your appointment</p>
-
       <div class="booking-form">
         <div class="form-group">
           <label class="field-label">Full Name *</label>
@@ -417,14 +440,12 @@
           <label class="field-label">Additional Notes</label>
           <textarea id="f-notes" rows="2" placeholder="Any special requests?"></textarea>
         </div>
-
         <div class="terms-container">
           <input type="checkbox" id="termsBox" onchange="checkStep3()">
           <label for="termsBox" class="terms-text">
             I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>. I understand a 50% deposit is required to confirm the appointment.
           </label>
         </div>
-
         <div class="btn-row">
           <button class="btn-ghost" onclick="goStep(2)">← Back</button>
           <button class="btn-primary" id="step3-next" onclick="goStep(4)" disabled>Review →</button>
@@ -432,20 +453,18 @@
       </div>
     </div>
 
-    <!-- STEP 4: REVIEW -->
+    <!-- STEP 4 -->
     <div class="step-panel" id="step4">
       <h1 class="page-heading">Review</h1>
       <p class="page-sub">Confirm your appointment details</p>
-
       <div class="review-card" id="review-card"></div>
-
       <div class="btn-row">
         <button class="btn-ghost" onclick="goStep(3)">← Back</button>
         <button class="btn-primary" id="confirm-btn" onclick="submitBooking()">Confirm Appointment</button>
       </div>
     </div>
 
-    <!-- STEP 5: SUCCESS -->
+    <!-- STEP 5 -->
     <div class="step-panel" id="step5">
       <div class="success-wrap">
         <div class="check-circle"><i class="fas fa-check"></i></div>
@@ -514,7 +533,6 @@
       db = firebase.firestore();
     } catch(e) { console.error('Firebase init failed:', e); }
 
-    // ── EMAILJS INIT ──
     emailjs.init('rvcNsK9pAj-jhd9RE');
 
     // ── HEADER SCROLL ──
@@ -531,7 +549,6 @@
       }, { passive: true });
     })();
 
-    // ── CONTEXT MENU / KEY PROTECTION ──
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     document.addEventListener('dragstart', function(e) { e.preventDefault(); });
     document.addEventListener('keydown', function(e) {
@@ -539,7 +556,7 @@
       if (e.key === 'F12') e.preventDefault();
     });
 
-    // ── LOAD SETTINGS FROM FIRESTORE ──
+    // ── LOAD SETTINGS ──
     async function loadSettings() {
       if (!db) return;
       try {
@@ -549,7 +566,13 @@
           if (d.openDays) scheduleSettings.openDays = d.openDays;
           if (typeof d.openHour !== 'undefined') scheduleSettings.openHour = d.openHour;
           if (typeof d.closeHour !== 'undefined') scheduleSettings.closeHour = d.closeHour;
-          if (d.holidays) scheduleSettings.holidays = d.holidays;
+          if (typeof d.slotDuration !== 'undefined') scheduleSettings.slotDuration = parseInt(d.slotDuration) || 60;
+          // Normalize holidays — support legacy string array and new {date,note} object array
+          if (d.holidays) {
+            scheduleSettings.holidays = d.holidays.map(function(h) {
+              return typeof h === 'string' ? h : (h.date || '');
+            }).filter(Boolean);
+          }
         }
       } catch(e) { console.warn('Could not load settings:', e); }
     }
@@ -584,36 +607,47 @@
       document.getElementById('cal-month-label').textContent = MONTHS[calMonth] + ' ' + calYear;
       var grid = document.getElementById('cal-grid');
       var now = new Date();
-      var today = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
-      var maxDate = new Date(now); maxDate.setDate(now.getDate() + 10);
+
+      // Today as YYYY-MM-DD using local time (no UTC shift)
+      var todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+
+      // Allow booking up to 60 days ahead
+      var maxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 60);
 
       var firstDay = new Date(calYear, calMonth, 1).getDay();
-      var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+      var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
       var html = '';
 
       for (var i = 0; i < firstDay; i++) html += '<div class="cal-cell empty"></div>';
 
       for (var d = 1; d <= daysInMonth; d++) {
-        var dateStr = calYear + '-' + pad(calMonth+1) + '-' + pad(d);
+        var dateStr = calYear + '-' + pad(calMonth + 1) + '-' + pad(d);
+
+        // Use local midnight comparison — avoids UTC timezone shift bug
         var cellDate = new Date(calYear, calMonth, d);
+        var todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
         var dow = cellDate.getDay();
-        var isPast = cellDate < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var isPast = cellDate < todayMidnight;
         var isTooFar = cellDate > maxDate;
         var isClosedDay = scheduleSettings.openDays.indexOf(dow) === -1;
         var isHoliday = scheduleSettings.holidays.indexOf(dateStr) > -1;
         var isDisabled = isPast || isTooFar || isClosedDay || isHoliday;
+
         var cls = 'cal-cell';
-        if (dateStr === today) cls += ' today';
+        if (dateStr === todayStr) cls += ' today';
         if (dateStr === selectedDate) cls += ' selected';
         if (isDisabled) cls += ' disabled';
+
         var onclick = isDisabled ? '' : 'onclick="pickDate(\'' + dateStr + '\')"';
         html += '<div class="' + cls + '" ' + onclick + '>' + d + '</div>';
       }
       grid.innerHTML = html;
     }
 
-    function pad(n) { return n < 10 ? '0' + n : '' + n; }
-
+    // ── TIME SLOTS ──
+    // Respects slotDuration from admin (30/60/90/120 min).
+    // Uses local-time date construction to avoid UTC timezone bugs.
     function renderTimeSlots(dateStr) {
       var wrap = document.getElementById('slots-wrap');
       var grid = document.getElementById('time-grid');
@@ -621,20 +655,37 @@
       wrap.style.display = 'block';
 
       var now = new Date();
-      var minTime = new Date(now.getTime() + 6 * 3600 * 1000); // 6hr window
+      var todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var selectedMidnight = parseLocalDate(dateStr);
+      var isToday = selectedMidnight.getTime() === todayMidnight.getTime();
+
       var taken = takenSlots[dateStr] || [];
       var slots = [];
+      var stepMins = scheduleSettings.slotDuration || 60;
+      var openMins  = scheduleSettings.openHour  * 60;
+      var closeMins = scheduleSettings.closeHour * 60;
 
-      for (var h = scheduleSettings.openHour; h < scheduleSettings.closeHour; h++) {
-        var slotDate = new Date(dateStr + 'T' + pad(h) + ':00:00');
-        if (slotDate < minTime) continue;
-        var timeStr = formatTime(h);
-        if (taken.indexOf(timeStr) > -1) continue; // fully remove taken slots
+      for (var m = openMins; m < closeMins; m += stepMins) {
+        var slotH = Math.floor(m / 60);
+        var slotM = m % 60;
+
+        // For today: require at least 1 hour notice
+        if (isToday) {
+          var parts = dateStr.split('-');
+          var slotDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), slotH, slotM, 0, 0);
+          if (slotDate.getTime() <= now.getTime() + 3600000) continue;
+        }
+
+        var timeStr = formatTimeHM(slotH, slotM);
+        if (taken.indexOf(timeStr) > -1) continue;
         slots.push(timeStr);
       }
 
       if (!slots.length) {
-        grid.innerHTML = '<div class="no-slots">No available slots for this date.</div>';
+        var msg = isToday
+          ? 'No more slots available today. Please select a different date.'
+          : 'No available slots for this date.';
+        grid.innerHTML = '<div class="no-slots">' + msg + '</div>';
         countEl.textContent = '0 SLOTS AVAILABLE';
         document.getElementById('step2-next').disabled = true;
         return;
@@ -644,12 +695,6 @@
       grid.innerHTML = slots.map(function(t) {
         return '<div class="time-slot' + (t === selectedTime ? ' active' : '') + '" data-time="' + t + '" onclick="pickTime(\'' + t + '\')">' + t + '</div>';
       }).join('');
-    }
-
-    function formatTime(h) {
-      var ampm = h >= 12 ? 'PM' : 'AM';
-      var h12 = h % 12 || 12;
-      return pad(h12) + ':00 ' + ampm;
     }
 
     // ── STEP 3 VALIDATION ──
@@ -697,7 +742,6 @@
       var phoneId = phone.replace(/\D/g, '');
 
       try {
-        // 1. Save appointment
         var apptRef = await db.collection('appointments').add({
           service: selectedServices.join(', '),
           date: selectedDate,
@@ -711,7 +755,6 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // 2. Create/update client profile
         var clientRef = db.collection('clients').doc(phoneId);
         var clientSnap = await clientRef.get();
         if (clientSnap.exists) {
@@ -737,7 +780,6 @@
           });
         }
 
-        // 3. EmailJS confirmation
         try {
           await emailjs.send('service_r8fhuah', 'template_d2twd6h', {
             to_name: name,
@@ -749,7 +791,6 @@
           });
         } catch(emailErr) { console.warn('EmailJS error:', emailErr); }
 
-        // 4. WhatsApp via CallMeBot
         try {
           var msg = encodeURIComponent(
             '📅 New Appointment — EGYGRILLZ\n' +
@@ -763,7 +804,6 @@
           await fetch('https://api.callmebot.com/whatsapp.php?phone=+201000353839&text=' + msg + '&apikey=5240719');
         } catch(waErr) { console.warn('WhatsApp error:', waErr); }
 
-        // Show success
         document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
         document.getElementById('step5').classList.add('active');
         document.querySelectorAll('.step-label-item').forEach(function(l) { l.classList.add('done'); });
