@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Price Estimator — EGYGRILLZ</title>
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* CSS remains exactly as you designed it - keeping that clean Apple aesthetic */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --white:#ffffff;
+  --off:#f5f5f7;
+  --text:#1d1d1f;
+  --text2:#6e6e73;
+  --text3:#aeaeb2;
+  --border:rgba(0,0,0,0.08);
+  --accent:#1d1d1f;
+}
+html{scroll-behavior:smooth;font-size:16px;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',sans-serif;
+  background:var(--white);color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+nav{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:rgba(255,255,255,0.85);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(0,0,0,0.06);
+  z-index:1000;display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;
+}
+.nav-logo{font-size:17px;font-weight:600;letter-spacing:0.5px;color:var(--text);}
+.nav-links{display:flex;gap:24px;}
+.nav-links a{font-size:12px;color:var(--text2);text-decoration:none;letter-spacing:0.2px;transition:color .2s;}
+.nav-links a:hover{color:var(--text);}
+
+.price-bar{
+  position:sticky;top:52px;z-index:900;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(0,0,0,0.06);
+  padding:18px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.pb-left{display:flex;flex-direction:column;gap:2px;}
+.pb-est{font-size:11px;font-weight:500;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;}
+.pb-price{font-size:42px;font-weight:300;color:var(--text);letter-spacing:-1px;line-height:1;}
+.pb-price span{font-size:18px;font-weight:400;color:var(--text2);margin-left:4px;}
+
+.hero{padding:100px 48px 60px;text-align:center;border-bottom:1px solid var(--border);}
+.hero h1{font-size:clamp(40px,5vw,72px);font-weight:300;letter-spacing:-2px;line-height:1.05;margin-bottom:16px;}
+
+.section{padding:80px 0 40px;border-bottom:1px solid var(--border);}
+.section-inner{max-width:1100px;margin:0 auto;padding:0 48px;}
+.section-title{text-align:center;font-size:38px;font-weight:300;margin-bottom:8px;}
+.section-sub{text-align:center;font-size:14px;color:var(--text2);margin-bottom:48px;}
+
+/* Teeth Selection Styles */
+.jaw-row{display:flex;justify-content:center;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+.tooth{
+  width:46px;height:52px;background:var(--off);border:none;border-radius:10px;
+  font-size:12px;cursor:pointer;transition:all .2s;
+}
+.tooth.on{background:var(--text);color:#fff;transform:scale(1.1);}
+
+/* Carousel Styles */
+.carousel-wrap{overflow:hidden;position:relative;padding:20px 0;}
+.carousel-track{display:flex;align-items:center;justify-content:center;transition:transform 0.5s ease;}
+.c-item{flex-shrink:0;width:220px;display:flex;flex-direction:column;align-items:center;opacity:0.3;transform:scale(0.8);transition:all 0.4s;}
+.c-item.active{opacity:1;transform:scale(1);}
+.c-img{width:180px;height:180px;object-fit:contain;}
+
+.c-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.9);
+  border:none;cursor:pointer;z-index:10;font-size:20px;
+}
+.c-arrow.left{left:12px;}
+.c-arrow.right{right:12px;}
+
+.sum-footer{background:var(--off);padding:60px 48px;text-align:center;}
+.sf-price-big{font-size:72px;font-weight:300;letter-spacing:-3px;}
+.sf-cta{display:inline-block;background:var(--text);color:#fff;padding:16px 48px;border-radius:30px;text-decoration:none;font-weight:600;}
+
+@media(max-width:768px){
+    .section-inner{padding:0 20px;}
+    .c-img{width:140px;height:140px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">EGYGRILLZ</span>
+  <div class="nav-links">
+    <a href="#">Latest</a>
+    <a href="#">Book</a>
+    <a href="#">Gallery</a>
+  </div>
+</nav>
+
+<div class="price-bar">
+  <div class="pb-left">
+    <span class="pb-est">Estimated Price</span>
+    <div class="pb-price" id="pb-price">0 <span>EGP</span></div>
+  </div>
+  <a href="#" class="sf-cta" style="padding: 10px 20px; font-size: 13px;">Book Now</a>
+</div>
+
+<div class="hero">
+  <h1>Design Your<br><strong>Perfect Set.</strong></h1>
+  <p>Configure your custom grillz in real-time.</p>
+</div>
+
+<div class="section">
+  <div class="section-inner">
+    <h2 class="section-title">1. Select Teeth</h2>
+    <div class="jaw-row" id="upper-row"></div>
+    <div class="jaw-row" id="lower-row"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-inner">
+    <h2 class="section-title">2. Material</h2>
+    <div style="position:relative;">
+      <button class="c-arrow left" onclick="moveCarousel('mat',-1)">&#8249;</button>
+      <div class="carousel-wrap">
+        <div class="carousel-track" id="mat-track"></div>
+      </div>
+      <button class="c-arrow right" onclick="moveCarousel('mat',1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-inner">
+    <h2 class="section-title">3. Complexity Level</h2>
+    <div style="position:relative;">
+      <button class="c-arrow left" onclick="moveCarousel('cplx',-1)">&#8249;</button>
+      <div class="carousel-wrap">
+        <div class="carousel-track" id="cplx-track"></div>
+      </div>
+      <button class="c-arrow right" onclick="moveCarousel('cplx',1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<div class="sum-footer">
+  <div class="sf-price-big" id="sf-price"><sup>EGP</sup>0</div>
+  <p>Final price confirmed at the studio.</p><br>
+  <a href="#" class="sf-cta">Book Appointment</a>
+</div>
+
+<script>
+/* ─── DATA CONFIGURATION ─── */
+const MATS = [
+  { id: 'Silver 925', nm: 'Silver 925', img: 'materials/SILVER.png', base: 1000 },
+  { id: 'Gold 18K', nm: 'Gold 18K', img: 'materials/GOLD.png', base: 4500 },
+  { id: 'Cobalt Chrome', nm: 'Cobalt Chrome', img: 'materials/CHROME.png', base: 800 },
+  { id: 'Titanium', nm: 'Titanium', img: 'materials/TITANUM.png', base: 1200 }
+];
+
+const LEVELS = [
+  { id: 'L1', nm: 'Level 1', img: 'levels/LEVEL 1.png', mult: 1.0 },
+  { id: 'L2', nm: 'Level 2', img: 'levels/LEVEL 2.png', mult: 1.2 },
+  { id: 'L3', nm: 'Level 3', img: 'levels/LEVEL 3.png', mult: 1.4 },
+  { id: 'L4', nm: 'Level 4', img: 'levels/LEVEL 4.png', mult: 1.6 },
+  { id: 'L5', nm: 'Level 5', img: 'levels/LEVEL 5.png', mult: 1.8 },
+  { id: 'L6', nm: 'Level 6', img: 'levels/LEVEL 6.png', mult: 2.0 },
+  { id: 'L7', nm: 'Level 7', img: 'levels/LEVEL 7.png', mult: 2.5 }
+];
+
+let state = {
+  teeth: new Set(),
+  matIdx: 0,
+  cplxIdx: 0
+};
+
+/* ─── INITIALIZATION ─── */
+function init() {
+  // Build Teeth
+  const uRow = document.getElementById('upper-row');
+  const lRow = document.getElementById('lower-row');
+  for(let i=1; i<=8; i++) {
+    uRow.innerHTML += `<button class="tooth" onclick="toggleTooth('U${i}', this)">U${i}</button>`;
+    lRow.innerHTML += `<button class="tooth" onclick="toggleTooth('L${i}', this)">L${i}</button>`;
+  }
+
+  // Build Material Carousel
+  const mTrack = document.getElementById('mat-track');
+  MATS.forEach((m, i) => {
+    mTrack.innerHTML += `
+      <div class="c-item ${i===0?'active':''}">
+        <img src="${m.img}" class="c-img" onerror="this.src='https://via.placeholder.com/150?text=Image+Missing'">
+        <div style="margin-top:10px; font-weight:600;">${m.nm}</div>
+      </div>`;
+  });
+
+  // Build Complexity Carousel
+  const cTrack = document.getElementById('cplx-track');
+  LEVELS.forEach((l, i) => {
+    cTrack.innerHTML += `
+      <div class="c-item ${i===0?'active':''}">
+        <img src="${l.img}" class="c-img" onerror="this.src='https://via.placeholder.com/150?text=Level+Missing'">
+        <div style="margin-top:10px; font-weight:600;">${l.nm}</div>
+      </div>`;
+  });
+
+  updatePrice();
+}
+
+/* ─── LOGIC ─── */
+function toggleTooth(id, btn) {
+  if(state.teeth.has(id)) state.teeth.delete(id);
+  else state.teeth.add(id);
+  btn.classList.toggle('on');
+  updatePrice();
+}
+
+function moveCarousel(type, dir) {
+  if(type === 'mat') {
+    state.matIdx = (state.matIdx + dir + MATS.length) % MATS.length;
+    updateCarouselUI('mat-track', state.matIdx);
+  } else {
+    state.cplxIdx = (state.cplxIdx + dir + LEVELS.length) % LEVELS.length;
+    updateCarouselUI('cplx-track', state.cplxIdx);
+  }
+  updatePrice();
+}
+
+function updateCarouselUI(trackId, activeIdx) {
+  const track = document.getElementById(trackId);
+  const items = track.querySelectorAll('.c-item');
+  items.forEach((item, i) => {
+    item.classList.toggle('active', i === activeIdx);
+  });
+  // Center the active item
+  const offset = -activeIdx * 220; 
+  track.style.transform = `translateX(${offset}px)`;
+}
+
+function updatePrice() {
+  const toothCount = state.teeth.size;
+  const basePrice = MATS[state.matIdx].base;
+  const multiplier = LEVELS[state.cplxIdx].mult;
+  
+  const total = Math.round(toothCount * basePrice * multiplier);
+  
+  const display = total.toLocaleString();
+  document.getElementById('pb-price').innerHTML = `${display} <span>EGP</span>`;
+  document.getElementById('sf-price').innerHTML = `<sup>EGP</sup>${display}`;
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
