@@ -575,6 +575,7 @@
           }
         }
       } catch(e) { console.warn('Could not load settings:', e); }
+      console.log('[EGYGRILLZ] Schedule loaded:', JSON.stringify(scheduleSettings));
     }
 
     // ── LOAD TAKEN SLOTS ──
@@ -664,8 +665,6 @@
       var stepMins = scheduleSettings.slotDuration || 60;
       var openMins  = parseInt(scheduleSettings.openHour)  * 60;
       var closeMins = parseInt(scheduleSettings.closeHour) * 60;
-      // Safety: if closeHour <= openHour something is wrong, use defaults
-      if (closeMins <= openMins) { openMins = 16 * 60; closeMins = 22 * 60; }
 
       for (var m = openMins; m < closeMins; m += stepMins) {
         var slotH = Math.floor(m / 60);
