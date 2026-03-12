@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Price Estimator — EGYGRILLZ</title>
+<title>The Atelier — EGYGRILLZ</title>
 <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* CSS remains exactly as you designed it - keeping that clean Apple aesthetic */
+/* Using your specific CSS framework for the Apple-style aesthetic */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --white:#ffffff;
@@ -36,8 +36,7 @@ nav{
 }
 .nav-logo{font-size:17px;font-weight:600;letter-spacing:0.5px;color:var(--text);}
 .nav-links{display:flex;gap:24px;}
-.nav-links a{font-size:12px;color:var(--text2);text-decoration:none;letter-spacing:0.2px;transition:color .2s;}
-.nav-links a:hover{color:var(--text);}
+.nav-links a{font-size:12px;color:var(--text2);text-decoration:none;letter-spacing:0.2px;}
 
 .price-bar{
   position:sticky;top:52px;z-index:900;
@@ -48,8 +47,6 @@ nav{
   padding:18px 48px;
   display:flex;align-items:center;justify-content:space-between;
 }
-.pb-left{display:flex;flex-direction:column;gap:2px;}
-.pb-est{font-size:11px;font-weight:500;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;}
 .pb-price{font-size:42px;font-weight:300;color:var(--text);letter-spacing:-1px;line-height:1;}
 .pb-price span{font-size:18px;font-weight:400;color:var(--text2);margin-left:4px;}
 
@@ -58,10 +55,9 @@ nav{
 
 .section{padding:80px 0 40px;border-bottom:1px solid var(--border);}
 .section-inner{max-width:1100px;margin:0 auto;padding:0 48px;}
-.section-title{text-align:center;font-size:38px;font-weight:300;margin-bottom:8px;}
-.section-sub{text-align:center;font-size:14px;color:var(--text2);margin-bottom:48px;}
+.section-title{text-align:center;font-size:38px;font-weight:300;margin-bottom:48px;}
 
-/* Teeth Selection Styles */
+/* Teeth */
 .jaw-row{display:flex;justify-content:center;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
 .tooth{
   width:46px;height:52px;background:var(--off);border:none;border-radius:10px;
@@ -69,7 +65,7 @@ nav{
 }
 .tooth.on{background:var(--text);color:#fff;transform:scale(1.1);}
 
-/* Carousel Styles */
+/* Carousel */
 .carousel-wrap{overflow:hidden;position:relative;padding:20px 0;}
 .carousel-track{display:flex;align-items:center;justify-content:center;transition:transform 0.5s ease;}
 .c-item{flex-shrink:0;width:220px;display:flex;flex-direction:column;align-items:center;opacity:0.3;transform:scale(0.8);transition:all 0.4s;}
@@ -88,10 +84,7 @@ nav{
 .sf-price-big{font-size:72px;font-weight:300;letter-spacing:-3px;}
 .sf-cta{display:inline-block;background:var(--text);color:#fff;padding:16px 48px;border-radius:30px;text-decoration:none;font-weight:600;}
 
-@media(max-width:768px){
-    .section-inner{padding:0 20px;}
-    .c-img{width:140px;height:140px;}
-}
+@media(max-width:768px){ .c-img{width:140px;height:140px;} .section-inner{padding:0 20px;} }
 </style>
 </head>
 <body>
@@ -107,15 +100,14 @@ nav{
 
 <div class="price-bar">
   <div class="pb-left">
-    <span class="pb-est">Estimated Price</span>
     <div class="pb-price" id="pb-price">0 <span>EGP</span></div>
   </div>
   <a href="#" class="sf-cta" style="padding: 10px 20px; font-size: 13px;">Book Now</a>
 </div>
 
 <div class="hero">
-  <h1>Design Your<br><strong>Perfect Set.</strong></h1>
-  <p>Configure your custom grillz in real-time.</p>
+  <h1>Bespoke<br><strong>Grillz Studio.</strong></h1>
+  <p>Select your specifications for a real-time estimate.</p>
 </div>
 
 <div class="section">
@@ -128,7 +120,7 @@ nav{
 
 <div class="section">
   <div class="section-inner">
-    <h2 class="section-title">2. Material</h2>
+    <h2 class="section-title">2. Choose Material</h2>
     <div style="position:relative;">
       <button class="c-arrow left" onclick="moveCarousel('mat',-1)">&#8249;</button>
       <div class="carousel-wrap">
@@ -141,7 +133,7 @@ nav{
 
 <div class="section">
   <div class="section-inner">
-    <h2 class="section-title">3. Complexity Level</h2>
+    <h2 class="section-title">3. Detail & Level</h2>
     <div style="position:relative;">
       <button class="c-arrow left" onclick="moveCarousel('cplx',-1)">&#8249;</button>
       <div class="carousel-wrap">
@@ -152,14 +144,27 @@ nav{
   </div>
 </div>
 
+<div class="section">
+  <div class="section-inner">
+    <h2 class="section-title">4. Surface Finish</h2>
+    <div style="position:relative;">
+      <button class="c-arrow left" onclick="moveCarousel('plate',-1)">&#8249;</button>
+      <div class="carousel-wrap">
+        <div class="carousel-track" id="plate-track"></div>
+      </div>
+      <button class="c-arrow right" onclick="moveCarousel('plate',1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
 <div class="sum-footer">
   <div class="sf-price-big" id="sf-price"><sup>EGP</sup>0</div>
   <p>Final price confirmed at the studio.</p><br>
-  <a href="#" class="sf-cta">Book Appointment</a>
+  <a href="#" class="sf-cta">Secure Appointment</a>
 </div>
 
 <script>
-/* ─── DATA CONFIGURATION ─── */
+/* ─── DATA & EXACT MATH VARIABLES ─── */
 const MATS = [
   { id: 'Silver 925', nm: 'Silver 925', img: 'materials/SILVER.png', base: 1000 },
   { id: 'Gold 18K', nm: 'Gold 18K', img: 'materials/GOLD.png', base: 4500 },
@@ -177,15 +182,23 @@ const LEVELS = [
   { id: 'L7', nm: 'Level 7', img: 'levels/LEVEL 7.png', mult: 2.5 }
 ];
 
+const PLATES = [
+  { id: 'None', nm: 'Polished Natural', img: 'materials/SILVER.png', add: 0 },
+  { id: 'Yellow', nm: 'Yellow Gold Plating', img: 'plating/YELLOW GOLD PLATING.png', add: 300 },
+  { id: 'White', nm: 'White Gold Plating', img: 'plating/WHITE GOLD PLATING.png', add: 300 },
+  { id: 'Rose', nm: 'Rose Gold Plating', img: 'plating/ROSE GOLD PLATING.png', add: 350 },
+  { id: 'Black', nm: 'Black Gold Plating', img: 'plating/BLACK GOLD PLATING.png', add: 400 }
+];
+
 let state = {
   teeth: new Set(),
   matIdx: 0,
-  cplxIdx: 0
+  cplxIdx: 0,
+  plateIdx: 0
 };
 
 /* ─── INITIALIZATION ─── */
 function init() {
-  // Build Teeth
   const uRow = document.getElementById('upper-row');
   const lRow = document.getElementById('lower-row');
   for(let i=1; i<=8; i++) {
@@ -193,33 +206,27 @@ function init() {
     lRow.innerHTML += `<button class="tooth" onclick="toggleTooth('L${i}', this)">L${i}</button>`;
   }
 
-  // Build Material Carousel
-  const mTrack = document.getElementById('mat-track');
-  MATS.forEach((m, i) => {
-    mTrack.innerHTML += `
-      <div class="c-item ${i===0?'active':''}">
-        <img src="${m.img}" class="c-img" onerror="this.src='https://via.placeholder.com/150?text=Image+Missing'">
-        <div style="margin-top:10px; font-weight:600;">${m.nm}</div>
-      </div>`;
-  });
-
-  // Build Complexity Carousel
-  const cTrack = document.getElementById('cplx-track');
-  LEVELS.forEach((l, i) => {
-    cTrack.innerHTML += `
-      <div class="c-item ${i===0?'active':''}">
-        <img src="${l.img}" class="c-img" onerror="this.src='https://via.placeholder.com/150?text=Level+Missing'">
-        <div style="margin-top:10px; font-weight:600;">${l.nm}</div>
-      </div>`;
-  });
-
+  renderCarousel('mat-track', MATS);
+  renderCarousel('cplx-track', LEVELS);
+  renderCarousel('plate-track', PLATES);
+  
   updatePrice();
 }
 
-/* ─── LOGIC ─── */
+function renderCarousel(id, data) {
+  const track = document.getElementById(id);
+  data.forEach((item, i) => {
+    track.innerHTML += `
+      <div class="c-item ${i===0?'active':''}">
+        <img src="${item.img}" class="c-img" onerror="this.src='https://via.placeholder.com/150'">
+        <div style="margin-top:10px; font-weight:600;">${item.nm}</div>
+      </div>`;
+  });
+}
+
+/* ─── MATH LOGIC ─── */
 function toggleTooth(id, btn) {
-  if(state.teeth.has(id)) state.teeth.delete(id);
-  else state.teeth.add(id);
+  state.teeth.has(id) ? state.teeth.delete(id) : state.teeth.add(id);
   btn.classList.toggle('on');
   updatePrice();
 }
@@ -228,9 +235,12 @@ function moveCarousel(type, dir) {
   if(type === 'mat') {
     state.matIdx = (state.matIdx + dir + MATS.length) % MATS.length;
     updateCarouselUI('mat-track', state.matIdx);
-  } else {
+  } else if(type === 'cplx') {
     state.cplxIdx = (state.cplxIdx + dir + LEVELS.length) % LEVELS.length;
     updateCarouselUI('cplx-track', state.cplxIdx);
+  } else if(type === 'plate') {
+    state.plateIdx = (state.plateIdx + dir + PLATES.length) % PLATES.length;
+    updateCarouselUI('plate-track', state.plateIdx);
   }
   updatePrice();
 }
@@ -238,20 +248,18 @@ function moveCarousel(type, dir) {
 function updateCarouselUI(trackId, activeIdx) {
   const track = document.getElementById(trackId);
   const items = track.querySelectorAll('.c-item');
-  items.forEach((item, i) => {
-    item.classList.toggle('active', i === activeIdx);
-  });
-  // Center the active item
-  const offset = -activeIdx * 220; 
-  track.style.transform = `translateX(${offset}px)`;
+  items.forEach((item, i) => item.classList.toggle('active', i === activeIdx));
+  track.style.transform = `translateX(${-activeIdx * 220}px)`;
 }
 
 function updatePrice() {
-  const toothCount = state.teeth.size;
-  const basePrice = MATS[state.matIdx].base;
-  const multiplier = LEVELS[state.cplxIdx].mult;
-  
-  const total = Math.round(toothCount * basePrice * multiplier);
+  const count = state.teeth.size;
+  const base = MATS[state.matIdx].base;
+  const mult = LEVELS[state.cplxIdx].mult;
+  const plateAdd = PLATES[state.plateIdx].add;
+
+  // Formula: (Count * Base * Multiplier) + (Count * Plating Fee)
+  const total = Math.round((count * base * mult) + (count * plateAdd));
   
   const display = total.toLocaleString();
   document.getElementById('pb-price').innerHTML = `${display} <span>EGP</span>`;
