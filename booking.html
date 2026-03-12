@@ -630,7 +630,7 @@
         var dow = cellDate.getDay();
         var isPast = cellDate < todayMidnight;
         var isTooFar = cellDate > maxDate;
-        var isClosedDay = scheduleSettings.openDays.indexOf(dow) === -1;
+        var isClosedDay = scheduleSettings.openDays.map(Number).indexOf(dow) === -1;
         var isHoliday = scheduleSettings.holidays.indexOf(dateStr) > -1;
         var isDisabled = isPast || isTooFar || isClosedDay || isHoliday;
 
@@ -662,8 +662,10 @@
       var taken = takenSlots[dateStr] || [];
       var slots = [];
       var stepMins = scheduleSettings.slotDuration || 60;
-      var openMins  = scheduleSettings.openHour  * 60;
-      var closeMins = scheduleSettings.closeHour * 60;
+      var openMins  = parseInt(scheduleSettings.openHour)  * 60;
+      var closeMins = parseInt(scheduleSettings.closeHour) * 60;
+      // Safety: if closeHour <= openHour something is wrong, use defaults
+      if (closeMins <= openMins) { openMins = 16 * 60; closeMins = 22 * 60; }
 
       for (var m = openMins; m < closeMins; m += stepMins) {
         var slotH = Math.floor(m / 60);
