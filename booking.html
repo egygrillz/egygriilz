@@ -663,8 +663,10 @@
       var taken = takenSlots[dateStr] || [];
       var slots = [];
       var stepMins = scheduleSettings.slotDuration || 60;
-      var openMins  = parseInt(scheduleSettings.openHour)  * 60;
-      var closeMins = parseInt(scheduleSettings.closeHour) * 60;
+      var openMins  = parseInt(scheduleSettings.openHour) * 60;
+      var closeHourFixed = parseInt(scheduleSettings.closeHour);
+      if (closeHourFixed === 0) closeHourFixed = 24; // midnight = end of day
+      var closeMins = closeHourFixed * 60;
 
       for (var m = openMins; m < closeMins; m += stepMins) {
         var slotH = Math.floor(m / 60);
