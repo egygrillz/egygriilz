@@ -10,15 +10,55 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --bg:#ffffff;--off:#f5f5f5;--text:#1a1a1a;--text2:#6e6e73;--text3:#aeaeb2;--border:rgba(0,0,0,0.08);
+  --gold:#c9a227;--gold-light:#fffbea;--gold-border:#e8d87a;
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Arimo',sans-serif;background:#fff;color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 a{text-decoration:none;color:inherit;}
-img{display:block;max-width:100%;background:#ffffff;}
+img{display:block;max-width:100%;}
 
-/* ── HEADER (hides on scroll, replaced by price bar) ── */
+/* ══════════════════════════════════════
+   SPLINE HERO BACKGROUND
+══════════════════════════════════════ */
+.spline-bg {
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:0;pointer-events:none;overflow:hidden;
+}
+.spline-bg iframe {
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  border:none;pointer-events:none;
+}
+/* Mask off Spline logo in bottom-right */
+.spline-bg::after {
+  content:'';
+  position:absolute;bottom:0;right:0;
+  width:180px;height:56px;
+  background:#fff;
+  z-index:2;
+}
+/* Fade out the bg as user scrolls into content */
+.spline-fade-mask {
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:linear-gradient(to bottom,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0) 55%,
+    rgba(255,255,255,0.85) 75%,
+    rgba(255,255,255,1) 100%
+  );
+  z-index:1;pointer-events:none;
+}
+
+/* ══════════════════════════════════════
+   PAGE CONTENT LAYER
+══════════════════════════════════════ */
+.page-content {
+  position:relative;z-index:2;
+}
+
+/* ── HEADER ── */
 header{
-  position:fixed;top:0;left:0;right:0;height:60px;background:#fff;
+  position:fixed;top:0;left:0;right:0;height:60px;
+  background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);z-index:900;
   display:flex;align-items:center;justify-content:space-between;padding:0 5%;
   transition:transform 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.35s;
@@ -32,42 +72,37 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .menu-toggle span{width:25px;height:1.5px;background:var(--text);display:block;}
 @media(max-width:980px){
   .menu-toggle{display:flex;}
-  .main-nav{position:fixed;top:60px;right:-100%;width:100%;background:#fff;flex-direction:column;padding:10px 5%;transition:.4s cubic-bezier(.4,0,.2,1);box-shadow:0 5px 10px rgba(0,0,0,.05);z-index:1100;}
+  .main-nav{position:fixed;top:60px;right:-100%;width:100%;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);flex-direction:column;padding:10px 5%;transition:.4s cubic-bezier(.4,0,.2,1);box-shadow:0 5px 10px rgba(0,0,0,.05);z-index:1100;}
   .main-nav.active{right:0;}
   .main-nav a{font-size:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06);width:100%;}
 }
 
-/* ── FLOATING PRICE BAR (replaces header on scroll, z-index above header) ── */
+/* ── FLOATING PRICE BAR ── */
 .price-bar{
   position:fixed;top:0;left:0;right:0;z-index:1000;
-  background:#fff;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
   transform:translateY(-100%);opacity:0;pointer-events:none;
   transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .3s,box-shadow .3s;
 }
 .price-bar.pb-visible{transform:translateY(0);opacity:1;pointer-events:all;}
-.price-bar.pb-expanded{box-shadow:0 8px 32px rgba(0,0,0,.10);}
-/* expanded state */
+.price-bar.pb-expanded{box-shadow:0 8px 32px rgba(0,0,0,.06);}
 .pb-inner{max-width:1200px;margin:0 auto;padding:14px 5%;display:flex;align-items:center;justify-content:space-between;}
 .price-bar.pb-collapsed .pb-inner{display:none;}
-/* collapsed mini */
 .pb-collapsed-row{display:none;padding:10px 5%;cursor:pointer;align-items:center;justify-content:space-between;}
 .price-bar.pb-collapsed .pb-collapsed-row{display:flex;}
-/* left side */
 .pb-left{display:flex;flex-direction:column;gap:2px;}
 .pb-est{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
 .pb-price{font-family:'Playfair Display',serif;font-size:36px;font-weight:400;color:var(--text);letter-spacing:-1px;line-height:1;}
 .pb-price .curr{font-size:15px;font-weight:400;color:var(--text2);margin-left:4px;font-family:'Arimo',sans-serif;}
-.pb-usd{font-size:11px;color:var(--text3);margin-top:2px;}
-/* right side */
+.pb-secondary{font-size:11px;color:var(--text3);margin-top:2px;}
 .pb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .pb-note{font-size:11px;color:var(--text3);background:var(--off);border-radius:20px;padding:5px 12px;}
-/* gold live badge */
 .gold-badge{font-size:10px;color:#9a7f1a;background:#fffbea;border:1px solid #e8d87a;border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.gold-dot{width:6px;height:6px;border-radius:50%;background:#c9a227;animation:gp 2s infinite;}
+.gold-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:gp 2s infinite;}
 @keyframes gp{0%,100%{opacity:1;}50%{opacity:.3;}}
-.cta-book{background:var(--text);color:#fff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 22px;border-radius:2px;transition:opacity .2s;display:inline-block;}
-.cta-book:hover{opacity:.8;}
-/* mini bar */
+.cta-book{background:var(--text);color:#fff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 22px;border-radius:2px;transition:opacity .2s,transform .2s;display:inline-block;}
+.cta-book:hover{opacity:.8;transform:translateY(-1px);}
 .pb-mini-left{display:flex;align-items:center;gap:12px;}
 .pb-mini-logo{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;letter-spacing:2px;color:var(--text);}
 .pb-mini-sep{width:1px;height:28px;background:var(--border);}
@@ -75,12 +110,32 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .pb-mini-price .curr{font-size:12px;color:var(--text2);margin-left:3px;}
 .pb-mini-label{font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1px;}
 .pb-mini-expand{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;}
-@keyframes numPop{0%{opacity:0;transform:translateY(5px);}100%{opacity:1;transform:translateY(0);}}
+@keyframes numPop{0%{opacity:0;transform:translateY(4px);}100%{opacity:1;transform:translateY(0);}}
 .pb-price.pop{animation:numPop .22s ease;}
 .bar-spacer{height:60px;}
 
+/* ── CURRENCY SWITCHER ── */
+.currency-switcher{
+  display:flex;align-items:center;gap:3px;
+  background:var(--off);border-radius:20px;padding:3px;
+  border:1px solid var(--border);
+}
+.cur-btn{
+  font-size:10px;font-weight:700;letter-spacing:.5px;
+  padding:4px 10px;border-radius:16px;border:none;
+  background:transparent;color:var(--text3);cursor:pointer;
+  transition:all .2s;font-family:'Arimo',sans-serif;
+}
+.cur-btn.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.cur-btn:hover:not(.active){color:var(--text);}
+
 /* ── PROGRESS ── */
-.progress-wrap{background:#fff;padding:12px 5%;border-bottom:1px solid var(--border);display:flex;gap:0;align-items:center;justify-content:center;}
+.progress-wrap{
+  background:rgba(255,255,255,0.9);backdrop-filter:blur(8px);
+  padding:12px 5%;border-bottom:1px solid var(--border);
+  display:flex;gap:0;align-items:center;justify-content:center;
+  position:relative;z-index:5;
+}
 .prog-step{display:flex;align-items:center;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);transition:color .3s;padding:0 14px;}
 .prog-step.done{color:var(--text);}
 .prog-step.done .prog-num{background:var(--text);color:#fff;border-color:var(--text);}
@@ -88,15 +143,60 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .prog-sep{width:28px;height:1px;background:var(--border);}
 @media(max-width:600px){.prog-step span:last-child{display:none;}.prog-step{padding:0 6px;}}
 
-/* ── HERO ── */
-.hero{padding:60px 5%;text-align:center;border-bottom:1px solid var(--border);background:#fff;}
-.hero-eyebrow{font-size:10px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;display:block;}
-.hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,68px);font-weight:400;letter-spacing:2px;line-height:1.05;color:var(--text);margin-bottom:16px;text-transform:uppercase;}
+/* ══════════════════════════════════════
+   HERO — transparent, floats over Spline
+══════════════════════════════════════ */
+.hero{
+  padding:120px 5% 100px;text-align:center;
+  background:transparent;
+  position:relative;z-index:3;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.hero-eyebrow{
+  font-size:10px;color:var(--text2);letter-spacing:4px;text-transform:uppercase;
+  margin-bottom:20px;display:block;
+  opacity:0;animation:fadeUp .8s ease 0.2s forwards;
+}
+.hero h1{
+  font-family:'Playfair Display',serif;font-size:clamp(42px,6vw,80px);
+  font-weight:400;letter-spacing:2px;line-height:1.05;color:var(--text);
+  margin-bottom:20px;text-transform:uppercase;
+  opacity:0;animation:fadeUp .8s ease 0.4s forwards;
+}
 .hero h1 em{font-style:italic;}
-.hero-sub{font-size:14px;color:var(--text2);max-width:480px;margin:0 auto 20px;line-height:1.7;}
-/* live gold strip in hero */
-.gold-strip{display:inline-flex;align-items:center;gap:8px;background:#fffbea;border:1px solid #e8d87a;border-radius:20px;padding:6px 16px;font-size:12px;color:#8a6f10;}
+.hero-sub{
+  font-size:14px;color:var(--text2);max-width:480px;margin:0 auto 28px;line-height:1.8;
+  opacity:0;animation:fadeUp .8s ease 0.6s forwards;
+}
+.hero-actions{
+  display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+  opacity:0;animation:fadeUp .8s ease 0.8s forwards;
+}
+.gold-strip{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,251,234,0.9);backdrop-filter:blur(8px);
+  border:1px solid var(--gold-border);border-radius:20px;padding:8px 18px;
+  font-size:12px;color:#8a6f10;
+}
 .gold-strip strong{color:#6b520a;}
+.hero-scroll-hint{
+  position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  opacity:0;animation:fadeUp .8s ease 1.2s forwards;
+  color:var(--text3);font-size:9px;letter-spacing:3px;text-transform:uppercase;
+}
+.scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--text3),transparent);animation:scrollPulse 2s ease-in-out infinite;}
+@keyframes scrollPulse{0%,100%{opacity:.3;transform:scaleY(1);}50%{opacity:1;transform:scaleY(1.2);}}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+
+/* ══════════════════════════════════════
+   CONTENT CARD — white background starts here
+══════════════════════════════════════ */
+.content-start {
+  position:relative;z-index:5;
+  background:#fff;
+}
 
 /* ── SECTION ── */
 .section{padding:72px 0 48px;border-bottom:1px solid var(--border);background:#fff;}
@@ -104,6 +204,14 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .section-label{text-align:center;font-size:10px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;}
 .section-title{font-family:'Playfair Display',serif;text-align:center;font-size:clamp(22px,3vw,36px);font-weight:400;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin-bottom:8px;}
 .section-sub{text-align:center;font-size:13px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.4,0,.2,1),transform .7s cubic-bezier(.4,0,.2,1);}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-delay-1{transition-delay:.1s;}
+.reveal-delay-2{transition-delay:.2s;}
+.reveal-delay-3{transition-delay:.3s;}
+.reveal-delay-4{transition-delay:.4s;}
 
 /* ── INFO TOOLTIP ── */
 .info-trigger{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--text3);font-size:10px;font-weight:700;color:var(--text3);cursor:pointer;flex-shrink:0;transition:all .2s;font-style:normal;vertical-align:middle;margin-left:6px;user-select:none;}
@@ -114,57 +222,122 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .info-content{background:var(--off);border-radius:10px;padding:16px 18px;margin:12px 0;font-size:13px;color:var(--text2);line-height:1.75;border-left:2px solid var(--text3);}
 .info-content strong{color:var(--text);}
 
-/* ── TOOTH DIAGRAM ── */
-.tooth-diagram{max-width:700px;margin:0 auto 32px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-align:center;}
-.tooth-diagram-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:16px;}
-.diagram-img-wrap{display:flex;align-items:flex-start;justify-content:center;gap:40px;flex-wrap:wrap;}
-.diagram-arch{display:flex;gap:3px;justify-content:center;margin-bottom:6px;}
-.diagram-tooth{width:28px;height:32px;background:var(--off);border:1px solid var(--border);border-radius:6px 6px 10px 10px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text2);transition:all .2s;cursor:default;}
-.diagram-tooth:hover{background:var(--text);color:#fff;}
-.diagram-sep{width:2px;background:var(--border);margin:4px 2px;border-radius:1px;}
-
-/* ── TEETH BUTTONS ── */
-.teeth-wrap{max-width:800px;margin:0 auto;}
-.jaw-title{font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:12px;}
-.jaw-row{display:flex;justify-content:center;gap:5px;margin-bottom:8px;flex-wrap:nowrap;}
-.jaw-sep{width:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.jaw-sep-line{width:1px;height:40px;background:var(--border);}
-.tooth-btn{
-  width:48px;height:54px;background:#f5f5f5;border:1.5px solid var(--border);border-radius:10px;
-  font-size:12px;font-weight:700;color:var(--text3);cursor:pointer;
-  transition:background .15s,color .15s,transform .15s,box-shadow .15s;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;
+/* ══════════════════════════════════════
+   ODONTOGRAM
+══════════════════════════════════════ */
+.odontogram-wrap{
+  max-width:780px;margin:0 auto 12px;
+  padding:32px 20px 20px;
+  background:#fff;border:1px solid var(--border);border-radius:16px;
+  user-select:none;
 }
-.tooth-btn.on{background:var(--text) !important;color:#fff !important;transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.15);border-color:var(--text) !important;}
-.tooth-btn .tn{font-size:8px;opacity:.6;font-weight:400;}
-.teeth-counter{text-align:center;margin-top:28px;font-family:'Playfair Display',serif;font-size:52px;font-weight:400;color:var(--text);letter-spacing:-2px;line-height:1;}
-.teeth-counter small{font-family:'Arimo',sans-serif;font-size:14px;color:var(--text3);font-weight:400;margin-left:8px;}
-@media(max-width:600px){.tooth-btn{width:36px;height:42px;font-size:11px;}.tooth-btn .tn{font-size:7px;}.jaw-row{gap:3px;}}
+.odontogram-label{
+  text-align:center;font-size:10px;text-transform:uppercase;
+  letter-spacing:2.5px;color:var(--text3);margin-bottom:22px;
+}
+.odontogram-svg{
+  display:block;width:100%;height:auto;
+  cursor:pointer;overflow:visible;
+}
+/* tooth paths default */
+.tooth-path{
+  fill:#f7f7f7;
+  stroke:#ccc;
+  stroke-width:1.2;
+  transition:fill .18s,stroke .18s,filter .18s;
+}
+.tooth-path:hover{
+  fill:#e8e8e8;stroke:#999;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.10));
+}
+.tooth-path.selected{
+  fill:#1a1a1a;stroke:#1a1a1a;
+  filter:drop-shadow(0 3px 10px rgba(0,0,0,.22));
+}
+.tooth-path.selected:hover{
+  fill:#333;stroke:#333;
+}
+/* tooth labels */
+.tooth-label{
+  font-family:'Arimo',sans-serif;
+  font-size:9px;font-weight:700;
+  fill:#aaa;
+  text-anchor:middle;dominant-baseline:middle;
+  pointer-events:none;
+  transition:fill .18s;
+  letter-spacing:.5px;
+}
+.tooth-path.selected ~ .tooth-label,
+.tooth-group.selected .tooth-label{
+  fill:#fff;
+}
+.jaw-label{
+  font-family:'Arimo',sans-serif;
+  font-size:8px;font-weight:700;letter-spacing:2px;
+  fill:#ccc;text-anchor:middle;text-transform:uppercase;
+}
+/* midline */
+.midline{stroke:#e0e0e0;stroke-width:1;stroke-dasharray:3,3;}
 
-/* ── CAROUSEL ── */
+/* quick-select combos */
+.combo-bar{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:7px;
+  margin-top:20px;
+}
+.combo-btn{
+  font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  padding:5px 14px;border-radius:20px;border:1px solid var(--border);
+  background:#fff;color:var(--text3);cursor:pointer;
+  transition:all .2s;font-family:'Arimo',sans-serif;
+}
+.combo-btn:hover{border-color:var(--text);color:var(--text);}
+.combo-btn.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+.teeth-counter{
+  text-align:center;margin-top:24px;
+  font-family:'Playfair Display',serif;font-size:52px;font-weight:400;
+  color:var(--text);letter-spacing:-2px;line-height:1;
+}
+.teeth-counter small{
+  font-family:'Arimo',sans-serif;font-size:14px;color:var(--text3);font-weight:400;margin-left:8px;
+}
+
+/* ══════════════════════════════════════
+   CAROUSEL + IMAGE FIX (mix-blend-mode)
+══════════════════════════════════════ */
 .carousel-outer{overflow:hidden;position:relative;padding:28px 0 10px;}
 .carousel-track{display:flex;align-items:center;transition:transform .45s cubic-bezier(.4,0,.2,1);will-change:transform;}
 .c-item{flex-shrink:0;width:220px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:all .45s cubic-bezier(.34,1.2,.64,1);padding:0 12px;opacity:.3;transform:scale(.75);}
 .c-item.active{opacity:1;transform:scale(1);}
 .c-item.near{opacity:.6;transform:scale(.85);}
-/* images: pure white bg, NO border ever */
-.c-img-wrap{width:160px;height:160px;border-radius:16px;overflow:hidden;background:#ffffff;border:none !important;outline:none !important;box-shadow:0 4px 20px rgba(0,0,0,.06);transition:all .45s cubic-bezier(.34,1.2,.64,1);}
+
+/* Fix white bg images: transparent background + multiply blend */
+.c-img-wrap{
+  width:160px;height:160px;border-radius:16px;overflow:hidden;
+  background:var(--off);border:none !important;outline:none !important;
+  box-shadow:0 4px 20px rgba(0,0,0,.06);transition:all .45s cubic-bezier(.34,1.2,.64,1);
+}
 .c-item.active .c-img-wrap{width:190px;height:190px;box-shadow:0 12px 40px rgba(0,0,0,.10);}
-.c-img-wrap img{width:100%;height:100%;object-fit:cover;background:#ffffff;border:none;outline:none;}
+.c-img-wrap img{
+  width:100%;height:100%;object-fit:contain;
+  border:none;outline:none;
+  mix-blend-mode:multiply;  /* knocks out white backgrounds */
+  background:transparent;
+  display:block;
+}
 .c-name{font-size:14px;font-weight:700;color:var(--text);margin-top:14px;opacity:0;transition:opacity .3s;text-align:center;letter-spacing:.5px;}
 .c-sub{font-size:11px;color:var(--text2);margin-top:3px;opacity:0;transition:opacity .3s;text-align:center;}
 .c-tag{font-size:10px;color:var(--text3);margin-top:4px;opacity:0;transition:opacity .3s;text-align:center;letter-spacing:1px;text-transform:uppercase;}
 .c-item.active .c-name,.c-item.active .c-sub,.c-item.active .c-tag{opacity:1;}
 .c-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.95);box-shadow:0 2px 12px rgba(0,0,0,.08);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text);transition:all .2s;z-index:10;}
-.c-arrow:hover{background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.12);}
+.c-arrow:hover{background:var(--text);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.12);}
 .c-arrow.left{left:16px;}
 .c-arrow.right{right:16px;}
 .c-dots{display:flex;justify-content:center;gap:6px;padding-bottom:8px;}
 .c-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);transition:all .3s;cursor:pointer;border:none;padding:0;}
 .c-dot.on{background:var(--text);transform:scale(1.3);}
 
-/* ── MATERIAL SINGLE DESC (only active mat shown) ── */
+/* ── MATERIAL SINGLE DESC ── */
 .mat-single-desc{
   max-width:520px;margin:0 auto;
   text-align:center;padding:18px 24px;
@@ -196,7 +369,6 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .ao-sub{font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;}
 .ao-sub:first-child{margin-top:0;}
 .ao-sub-row{display:flex;align-items:center;gap:4px;}
-/* availability note */
 .ao-avail-note{font-size:11px;color:#c0392b;background:#fff5f5;border:1px solid #fcc;border-radius:8px;padding:8px 12px;margin-bottom:12px;display:none;}
 .ao-avail-note.show{display:block;}
 
@@ -242,7 +414,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .sf-label{font-size:10px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;display:block;}
 .sf-price-big{font-family:'Playfair Display',serif;font-size:80px;font-weight:400;color:var(--text);letter-spacing:-3px;line-height:1;margin-bottom:4px;}
 .sf-price-big sup{font-size:28px;vertical-align:super;letter-spacing:0;font-family:'Arimo',sans-serif;}
-.sf-usd{font-size:13px;color:var(--text3);margin-bottom:8px;}
+.sf-secondary{font-size:13px;color:var(--text3);margin-bottom:8px;}
 .sf-est-note{font-size:12px;color:var(--text3);background:rgba(0,0,0,.04);border-radius:10px;padding:10px 20px;display:inline-block;margin-bottom:36px;}
 .sf-cta{display:inline-block;background:var(--text);color:#fff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:16px 44px;border-radius:2px;transition:opacity .2s,transform .2s;}
 .sf-cta:hover{opacity:.85;transform:translateY(-1px);}
@@ -253,7 +425,11 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .why-section{padding:80px 5%;background:#fff;border-bottom:1px solid var(--border);}
 .why-inner{max-width:1000px;margin:0 auto;}
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;margin-top:48px;}
-.why-card{text-align:center;padding:0 16px;}
+.why-card{
+  text-align:center;padding:32px 24px;border:1px solid var(--border);border-radius:16px;
+  transition:transform .3s,box-shadow .3s;cursor:default;
+}
+.why-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.06);}
 .why-icon{font-size:24px;margin-bottom:16px;color:var(--text);}
 .why-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:400;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .why-desc{font-size:13px;color:var(--text2);line-height:1.7;}
@@ -297,9 +473,61 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 .footer-icons a{color:#333;margin-right:14px;font-size:16px;transition:.3s;}
 .footer-icons a:hover{color:#000;}
 @media(max-width:768px){.footer-main{grid-template-columns:1fr;text-align:center;gap:30px;}.footer-col{display:flex;flex-direction:column;align-items:center;}.footer-bottom{flex-direction:column;text-align:center;}}
+
+/* ── PARALLAX grain overlay ── */
+body::before{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:.3;pointer-events:none;z-index:0;
+}
+
+/* ── CUSTOM CURSOR ── */
+.cursor{
+  position:fixed;top:0;left:0;z-index:9999;pointer-events:none;
+  mix-blend-mode:multiply;
+}
+.cursor-ring{
+  width:32px;height:32px;border-radius:50%;
+  border:1.5px solid rgba(26,26,26,0.4);
+  position:absolute;top:-16px;left:-16px;
+  transition:transform .15s ease,opacity .3s;
+  transform-origin:center;
+}
+.cursor-dot{
+  width:5px;height:5px;border-radius:50%;background:var(--text);
+  position:absolute;top:-2.5px;left:-2.5px;
+  transition:transform .08s;
+}
+body.cursor-hover .cursor-ring{transform:scale(1.7);opacity:.6;}
+body.cursor-hover .cursor-dot{transform:scale(0);}
+
+@media(hover:none){.cursor{display:none;}}
+
+/* ── INTERACTIVE NUMBER GLOW ── */
+@keyframes priceGlow{
+  0%{text-shadow:none;}
+  50%{text-shadow:0 0 30px rgba(201,162,39,0.15);}
+  100%{text-shadow:none;}
+}
+.pb-price.pop{animation:numPop .22s ease, priceGlow .6s ease;}
 </style>
 </head>
 <body>
+
+<!-- CUSTOM CURSOR -->
+<div class="cursor" id="cursor">
+  <div class="cursor-ring" id="cursor-ring"></div>
+  <div class="cursor-dot"></div>
+</div>
+
+<!-- SPLINE BACKGROUND (full-screen, fixed, below all content) -->
+<div class="spline-bg" id="spline-bg">
+  <iframe src='https://my.spline.design/nexbotrobotcharacterconcept-2M1XTKpYE5hFuPQqM1LZr5at/' frameborder='0' width='100%' height='100%'></iframe>
+</div>
+<div class="spline-fade-mask"></div>
+
+<!-- PAGE CONTENT -->
+<div class="page-content">
 
 <!-- HEADER -->
 <header id="site-header">
@@ -320,16 +548,24 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
   </nav>
 </header>
 
-<!-- FLOATING PRICE BAR (replaces header on scroll) -->
+<!-- FLOATING PRICE BAR -->
 <div class="price-bar pb-expanded" id="price-bar">
   <!-- Expanded -->
   <div class="pb-inner">
     <div class="pb-left">
       <span class="pb-est">Estimated Price</span>
       <div class="pb-price" id="pb-price">0 <span class="curr">EGP</span></div>
-      <div class="pb-usd" id="pb-usd"></div>
+      <div class="pb-secondary" id="pb-secondary"></div>
     </div>
     <div class="pb-right">
+      <!-- Currency Switcher -->
+      <div class="currency-switcher" id="pb-currency-switcher">
+        <button class="cur-btn active" data-cur="EGP" onclick="setCurrency('EGP',this)">EGP</button>
+        <button class="cur-btn" data-cur="USD" onclick="setCurrency('USD',this)">USD</button>
+        <button class="cur-btn" data-cur="EUR" onclick="setCurrency('EUR',this)">EUR</button>
+        <button class="cur-btn" data-cur="SAR" onclick="setCurrency('SAR',this)">SAR</button>
+        <button class="cur-btn" data-cur="AED" onclick="setCurrency('AED',this)">AED</button>
+      </div>
       <div class="gold-badge" id="gold-badge" style="display:none">
         <div class="gold-dot"></div>
         <span id="gold-badge-text">18K: — EGP/g</span>
@@ -355,6 +591,28 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 
 <div class="bar-spacer"></div>
 
+<!-- HERO (transparent — Spline shows through) -->
+<div class="hero" id="hero-section">
+  <span class="hero-eyebrow">Custom Grillz Builder</span>
+  <h1>Design Your<br><em>Perfect Set.</em></h1>
+  <p class="hero-sub">Configure every detail and see your estimated price update live. Final price confirmed at the studio after your impression.</p>
+  <div class="hero-actions">
+    <div class="gold-strip">
+      <div class="gold-dot"></div>
+      <span>Live Gold 18K: <strong id="hero-gold-price">Loading…</strong></span>
+      <span style="color:var(--gold);margin-left:4px;font-size:10px;" id="hero-gold-time"></span>
+    </div>
+    <a href="#sec-teeth" class="cta-book" style="padding:10px 28px;font-size:10px;">Start Building ↓</a>
+  </div>
+  <div class="hero-scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</div>
+
+<!-- WHITE CONTENT AREA STARTS HERE -->
+<div class="content-start">
+
 <!-- PROGRESS -->
 <div class="progress-wrap">
   <div class="prog-step" id="ps1"><div class="prog-num">1</div><span>Teeth</span></div>
@@ -366,58 +624,39 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
   <div class="prog-step" id="ps4"><div class="prog-num">4</div><span>Add-Ons</span></div>
 </div>
 
-<!-- HERO -->
-<div class="hero">
-  <span class="hero-eyebrow">Custom Grillz Builder</span>
-  <h1>Design Your<br><em>Perfect Set.</em></h1>
-  <p class="hero-sub">Configure every detail and see your estimated price update live. Final price confirmed at the studio after your impression.</p>
-  <div class="gold-strip">
-    <div class="gold-dot"></div>
-    <span>Live Gold (18K): <strong id="hero-gold-price">Loading…</strong></span>
-    <span style="color:#c9a227;margin-left:4px;font-size:10px;" id="hero-gold-time"></span>
-  </div>
-</div>
-
 <!-- STEP 1: TEETH -->
 <div class="section" id="sec-teeth">
   <div class="section-inner">
-    <div class="section-label">Step 01</div>
-    <h2 class="section-title">
+    <div class="section-label reveal">Step 01</div>
+    <h2 class="section-title reveal reveal-delay-1">
       Select Your Teeth
       <span class="info-trigger" onclick="toggleInfo('info-teeth')">i</span>
     </h2>
-    <p class="section-sub">Tap each tooth you want covered. Tap again to deselect.</p>
+    <p class="section-sub reveal reveal-delay-2">Tap each tooth you want covered. Tap again to deselect.</p>
     <div class="info-panel" id="info-teeth">
       <div class="info-content">
-        <strong>U = Upper jaw</strong> · <strong>L = Lower jaw</strong><br>
-        Numbers 1–8 count outward from your center front tooth. U1/L1 = front center. U8/L8 = back molar.<br><br>
-        <strong>Common combos:</strong> Top 6 (U1–U3 each side) · Bottom 6 (L1–L3 each side) · Fang Set (U3+L3) · Full Set (both rows) · Single tooth
+        <strong>R = Right side · L = Left side</strong> (as seen from the front)<br>
+        Numbers 1–5 count outward from the center: 1 = front incisor, 2 = lateral incisor, 3 = canine (fang), 4–5 = premolars.<br><br>
+        <strong>Common combos:</strong> Top 6 (R3–L3 upper) · Bottom 6 (R3–L3 lower) · Fangs (R3+L3 both jaws) · Full Set · Single tooth
       </div>
     </div>
-    <div class="tooth-diagram">
-      <div class="tooth-diagram-title">Tooth Reference — hover to identify</div>
-      <div class="diagram-img-wrap">
-        <div>
-          <div style="font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Upper</div>
-          <div class="diagram-arch" id="diag-upper"></div>
-          <div style="font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin:10px 0 8px;">Lower</div>
-          <div class="diagram-arch" id="diag-lower"></div>
-        </div>
-        <div style="max-width:220px;font-size:12px;color:var(--text2);line-height:2.1;">
-          <div style="font-weight:700;margin-bottom:8px;">Common Combinations</div>
-          <div>Top 6 — U1–U3 both sides</div>
-          <div>Top 8 — Full upper front</div>
-          <div>Bottom 6 — L1–L3 both sides</div>
-          <div>Fang Set — U3 + L3 only</div>
-          <div>Full Set — Both rows</div>
-        </div>
+
+    <!-- ODONTOGRAM -->
+    <div class="odontogram-wrap reveal reveal-delay-2">
+      <div class="odontogram-label">Click or tap any tooth to select · Click again to deselect</div>
+      <svg id="odontogram-svg" class="odontogram-svg" viewBox="0 0 740 300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Generated by buildOdontogram() -->
+      </svg>
+      <!-- Quick-select combos -->
+      <div class="combo-bar">
+        <button class="combo-btn" onclick="selectCombo('top6')">Top 6</button>
+        <button class="combo-btn" onclick="selectCombo('top8')">Top 8</button>
+        <button class="combo-btn" onclick="selectCombo('bot6')">Bottom 6</button>
+        <button class="combo-btn" onclick="selectCombo('bot8')">Bottom 8</button>
+        <button class="combo-btn" onclick="selectCombo('fangs')">Fangs</button>
+        <button class="combo-btn" onclick="selectCombo('full')">Full Set</button>
+        <button class="combo-btn" onclick="selectCombo('none')">Clear All</button>
       </div>
-    </div>
-    <div class="teeth-wrap">
-      <div class="jaw-title">Upper Jaw</div>
-      <div class="jaw-row" id="upper-row"></div>
-      <div class="jaw-title" style="margin-top:20px;">Lower Jaw</div>
-      <div class="jaw-row" id="lower-row"></div>
       <div class="teeth-counter"><span id="tooth-cnt">0</span><small>pieces selected</small></div>
     </div>
   </div>
@@ -426,12 +665,12 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 <!-- STEP 2: MATERIAL -->
 <div class="section" id="sec-mat">
   <div class="section-inner">
-    <div class="section-label">Step 02</div>
-    <h2 class="section-title">
+    <div class="section-label reveal">Step 02</div>
+    <h2 class="section-title reveal reveal-delay-1">
       Choose Your Material
       <span class="info-trigger" onclick="toggleInfo('info-mat')">i</span>
     </h2>
-    <p class="section-sub">Each material determines look, price, and turnaround time.</p>
+    <p class="section-sub reveal reveal-delay-2">Each material determines look, price, and turnaround time.</p>
     <div class="info-panel" id="info-mat">
       <div class="info-content">
         <strong>Silver 925</strong> — Lost-wax cast sterling silver. Brilliant, affordable. Price tied to live silver rate (default: 125 EGP/g).<br><br>
@@ -441,13 +680,12 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
       </div>
     </div>
   </div>
-  <div style="position:relative;">
+  <div style="position:relative;" class="reveal reveal-delay-2">
     <button class="c-arrow left" onclick="moveCarousel('mat',-1)"><i class="fas fa-chevron-left"></i></button>
     <div class="carousel-outer"><div class="carousel-track" id="mat-track"></div></div>
     <button class="c-arrow right" onclick="moveCarousel('mat',1)"><i class="fas fa-chevron-right"></i></button>
   </div>
   <div class="c-dots" id="mat-dots"></div>
-  <!-- single description of active material only -->
   <div class="section-inner">
     <div class="mat-single-desc" id="mat-single-desc"></div>
   </div>
@@ -456,12 +694,12 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 <!-- STEP 3: DESIGN LEVEL -->
 <div class="section" id="sec-cplx">
   <div class="section-inner">
-    <div class="section-label">Step 03</div>
-    <h2 class="section-title">
+    <div class="section-label reveal">Step 03</div>
+    <h2 class="section-title reveal reveal-delay-1">
       Design Level
       <span class="info-trigger" onclick="toggleInfo('info-cplx')">i</span>
     </h2>
-    <p class="section-sub">From clean and minimal to masterpiece-level sculpture. Complexity adds to the designer fee and final retail price.</p>
+    <p class="section-sub reveal reveal-delay-2">From clean and minimal to masterpiece-level sculpture. Complexity adds to the designer fee and final retail price.</p>
     <div class="info-panel" id="info-cplx">
       <div class="info-content">
         <strong>Level 1 — The Bar (0%)</strong> Simple solid bar — no cuts or detail. Lowest complexity.<br>
@@ -474,7 +712,7 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
       </div>
     </div>
   </div>
-  <div style="position:relative;">
+  <div style="position:relative;" class="reveal reveal-delay-2">
     <button class="c-arrow left" onclick="moveCarousel('cplx',-1)"><i class="fas fa-chevron-left"></i></button>
     <div class="carousel-outer"><div class="carousel-track" id="cplx-track"></div></div>
     <button class="c-arrow right" onclick="moveCarousel('cplx',1)"><i class="fas fa-chevron-right"></i></button>
@@ -485,11 +723,11 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 <!-- STEP 4: ADD-ONS -->
 <div class="section" id="sec-addons">
   <div class="section-inner">
-    <div class="section-label">Step 04</div>
-    <h2 class="section-title">Add-Ons</h2>
-    <p class="section-sub">All optional. Click any card to expand and customise.</p>
+    <div class="section-label reveal">Step 04</div>
+    <h2 class="section-title reveal reveal-delay-1">Add-Ons</h2>
+    <p class="section-sub reveal reveal-delay-2">All optional. Click any card to expand and customise.</p>
 
-    <div class="addons-grid">
+    <div class="addons-grid reveal reveal-delay-3">
 
       <!-- STONES -->
       <div id="ao-stones" class="addon-tile" onclick="toggleAO('stones',this)">
@@ -508,12 +746,11 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
           </div>
           <div class="info-panel" id="info-stones">
             <div class="info-content">
-              <strong>Single Stone(s)</strong> — Individual gems set at specific spots. Choose setting type, gem, and quantity.<br><br>
+              <strong>Single Stone(s)</strong> — Individual gems set at specific spots.<br><br>
               <strong>Iced Out</strong> — Full honeycomb coverage across the entire tooth surface.<br><br>
-              <strong>Settings:</strong> Flush (sunk flat) · Prong (raised claws) · Bezel (full metal rim)<br><br>
               <strong>CZ</strong> — AAAAA cubic zirconia. Excellent sparkle, very affordable.<br>
               <strong>Moissanite</strong> — VVS1 / D color / GRA certified. Near-diamond brilliance.<br>
-              <strong>Natural Diamond</strong> — SI or VS certified real diamonds. Ultimate luxury.
+              <strong>Natural Diamond</strong> — SI or VS certified real diamonds.
             </div>
           </div>
           <div class="pills" id="sg-pills">
@@ -521,7 +758,6 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
             <button class="pill"    data-v="Single" onclick="pp(event,this,'sg')">Single Stone(s)</button>
             <button class="pill"    data-v="Iced"   onclick="pp(event,this,'sg')">Iced Out</button>
           </div>
-
           <div id="single-wrap" style="display:none;">
             <div class="ao-sub">Setting Type</div>
             <div class="pills" id="set-pills">
@@ -542,7 +778,6 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
               <button class="stp-btn" onclick="adjS(event,1)">+</button>
             </div>
           </div>
-
           <div id="iced-wrap" style="display:none;">
             <div class="ao-sub-row">
               <div class="ao-sub" style="margin-top:16px;">Iced Out Pattern</div>
@@ -550,8 +785,8 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
             </div>
             <div class="info-panel" id="info-iced">
               <div class="info-content">
-                <strong>Pavé (Honeycomb)</strong> — Stones packed tightly together, only works with Round Brilliant cut. +1,000 EGP / tooth.<br><br>
-                <strong>Channel (Linear Rows)</strong> — Stones in rows between metal walls. Works with Princess and Baguette cuts. +1,500 EGP / tooth.
+                <strong>Pavé (Honeycomb)</strong> — Stones packed tightly. +1,000 EGP / tooth.<br><br>
+                <strong>Channel (Linear Rows)</strong> — Stones in rows. +1,500 EGP / tooth.
               </div>
             </div>
             <div class="pills" id="ios-pills">
@@ -585,8 +820,8 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
           <div class="info-panel" id="info-enamel">
             <div class="info-content">
               <strong>Single Tone</strong> — 1 color, solid fill. 200 EGP / tooth.<br>
-              <strong>Multi-Tone</strong> — 2 to 4 colors, patterned design (e.g. flag, character). 350 EGP / tooth.<br>
-              <strong>Master Color</strong> — More than 4 colors, complex artwork with realistic shading. 750 EGP / tooth.
+              <strong>Multi-Tone</strong> — 2–4 colors, patterned. 350 EGP / tooth.<br>
+              <strong>Master Color</strong> — 4+ colors, complex artwork. 750 EGP / tooth.
             </div>
           </div>
           <div class="pills" id="en-pills">
@@ -613,7 +848,7 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
           </div>
           <div class="info-panel" id="info-plate">
             <div class="info-content">
-              A thin layer of precious metal applied over the base, changing the color without changing the base material.<br><br>
+              A thin layer of precious metal applied over the base.<br><br>
               <strong>Black Gold / White Gold</strong> — 400 EGP / tooth<br>
               <strong>Rose Gold / Standard White</strong> — 300 EGP / tooth<br>
               <strong>Silver Plating</strong> — 200 EGP / tooth
@@ -644,9 +879,9 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
           </div>
           <div class="info-panel" id="info-laser">
             <div class="info-content">
-              <strong>Small (200 EGP)</strong> — Simple logo, single number, minimal mark.<br>
+              <strong>Small (200 EGP)</strong> — Simple logo, single number.<br>
               <strong>Medium (450 EGP)</strong> — Full name, drawing, center-face coverage.<br>
-              <strong>Large (700 EGP)</strong> — Full surface detail, wrapped pattern, graphic art.
+              <strong>Large (700 EGP)</strong> — Full surface detail, wrapped pattern.
             </div>
           </div>
           <div class="pills" id="ls-pills">
@@ -673,8 +908,7 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
           </div>
           <div class="info-panel" id="info-anod">
             <div class="info-content">
-              Electrical process that colors Titanium at the molecular level — never peels, chips, or fades.<br>
-              Available colors: Gold, Bronze, Purple, Dark Blue, Light Blue, Teal, Green, Pink, Rainbow.<br><br>
+              Electrical process that colors Titanium at the molecular level — never peels, chips, or fades.<br><br>
               <strong>Single Color (300 EGP)</strong> — Any single color, any number of teeth.<br>
               <strong>Dual Tone (350 EGP)</strong> — Two distinct colors. Minimum 2 teeth.<br>
               <strong>Multi-Color (450 EGP)</strong> — 3+ colors / rainbow. Minimum 3 teeth.
@@ -709,8 +943,18 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
     <div class="sf-config" id="sf-config"></div>
     <span class="sf-label">Your Estimated Price</span>
     <div class="sf-price-big" id="sf-price"><sup>EGP</sup>0</div>
-    <div class="sf-usd" id="sf-usd"></div>
+    <div class="sf-secondary" id="sf-secondary"></div>
     <div style="margin-bottom:36px;"><div class="sf-est-note">Estimate only — final price confirmed at your studio visit after impression</div></div>
+    <!-- Currency switcher in footer too -->
+    <div style="display:flex;justify-content:center;margin-bottom:28px;">
+      <div class="currency-switcher">
+        <button class="cur-btn active" data-cur="EGP" onclick="setCurrency('EGP',this)">EGP</button>
+        <button class="cur-btn" data-cur="USD" onclick="setCurrency('USD',this)">USD</button>
+        <button class="cur-btn" data-cur="EUR" onclick="setCurrency('EUR',this)">EUR</button>
+        <button class="cur-btn" data-cur="SAR" onclick="setCurrency('SAR',this)">SAR</button>
+        <button class="cur-btn" data-cur="AED" onclick="setCurrency('AED',this)">AED</button>
+      </div>
+    </div>
     <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
       <a href="booking.html" class="sf-cta">Book Your Appointment</a>
     </div>
@@ -724,14 +968,14 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 <!-- WHY EGYGRILLZ -->
 <div class="why-section">
   <div class="why-inner">
-    <div class="section-label" style="text-align:center;">Why Choose Us</div>
-    <h2 class="section-title">Why EGYGRILLZ</h2>
-    <p class="section-sub">Egypt's most trusted custom dental jewelry studio.</p>
+    <div class="section-label" style="text-align:center;" class="reveal">Why Choose Us</div>
+    <h2 class="section-title reveal">Why EGYGRILLZ</h2>
+    <p class="section-sub reveal reveal-delay-1">Egypt's most trusted custom dental jewelry studio.</p>
     <div class="why-grid">
-      <div class="why-card"><div class="why-icon"><i class="fas fa-fingerprint"></i></div><div class="why-title">100% Custom</div><div class="why-desc">Every piece made from an impression of your exact teeth. Your smile is unique — your grillz should be too.</div></div>
-      <div class="why-card"><div class="why-icon"><i class="fas fa-gem"></i></div><div class="why-title">Certified Materials</div><div class="why-desc">Genuine 18K gold, real 925 silver, aerospace titanium, and cobalt chrome. GRA-certified diamonds available.</div></div>
-      <div class="why-card"><div class="why-icon"><i class="fas fa-shield-alt"></i></div><div class="why-title">Safe &amp; Removable</div><div class="why-desc">No drilling, no permanent attachment. Fully removable, safe for daily wear when kept clean.</div></div>
-      <div class="why-card"><div class="why-icon"><i class="fas fa-clock"></i></div><div class="why-title">Fast Turnaround</div><div class="why-desc">Chrome &amp; Titanium: 5–7 days. Gold &amp; Silver: 10–14 days. Rush service available on request.</div></div>
+      <div class="why-card reveal reveal-delay-1"><div class="why-icon"><i class="fas fa-fingerprint"></i></div><div class="why-title">100% Custom</div><div class="why-desc">Every piece made from an impression of your exact teeth. Your smile is unique — your grillz should be too.</div></div>
+      <div class="why-card reveal reveal-delay-2"><div class="why-icon"><i class="fas fa-gem"></i></div><div class="why-title">Certified Materials</div><div class="why-desc">Genuine 18K gold, real 925 silver, aerospace titanium, and cobalt chrome. GRA-certified diamonds available.</div></div>
+      <div class="why-card reveal reveal-delay-3"><div class="why-icon"><i class="fas fa-shield-alt"></i></div><div class="why-title">Safe &amp; Removable</div><div class="why-desc">No drilling, no permanent attachment. Fully removable, safe for daily wear when kept clean.</div></div>
+      <div class="why-card reveal reveal-delay-4"><div class="why-icon"><i class="fas fa-clock"></i></div><div class="why-title">Fast Turnaround</div><div class="why-desc">Chrome &amp; Titanium: 5–7 days. Gold &amp; Silver: 10–14 days. Rush service available on request.</div></div>
     </div>
   </div>
 </div>
@@ -791,6 +1035,9 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
   </div>
 </footer>
 
+</div><!-- /content-start -->
+</div><!-- /page-content -->
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box">
@@ -805,13 +1052,27 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
    DATA
 ════════════════════════════════════════ */
 const _BASE = 'https://raw.githubusercontent.com/egygrillz/egygriilz/main/';
-const USD_RATE = 0.021;
 
-/* Silver: 125 EGP/g default, user can override via live fetch */
+/* ── CURRENCY CONFIG ── */
+// Rates are multiplied against the EGP total to get the display currency
+// These are approximate rates — the app fetches live EGP/USD from the gold API
+// and derives the others from stable cross-rates
+const CURRENCIES = {
+  EGP: { symbol: 'EGP', sign: '',    rate: 1,       decimals: 0  },
+  USD: { symbol: 'USD', sign: '$',   rate: 0.021,   decimals: 0  },
+  EUR: { symbol: 'EUR', sign: '€',   rate: 0.019,   decimals: 0  },
+  SAR: { symbol: 'SAR', sign: 'ر.س', rate: 0.079,   decimals: 0  },
+  AED: { symbol: 'AED', sign: 'د.إ', rate: 0.077,   decimals: 0  },
+};
+let activeCurrency = 'EGP';
+// EGP/USD rate updated after live gold fetch
+let EGP_TO_USD = 0.021;
+
+/* Silver: 125 EGP/g default */
 let SILVER_PER_GRAM = 125;
 let GOLD18K_PER_GRAM = 6250; /* fallback, overridden by live fetch */
 let goldFetchedAt = 0;
-const GOLD_REFRESH_MS = 5 * 60 * 60 * 1000; /* 5 hours */
+const GOLD_REFRESH_MS = 60 * 60 * 1000; /* 1 hour */
 
 /* ── MATERIALS ── */
 const MATS = [
@@ -845,7 +1106,7 @@ const MATS = [
   }
 ];
 
-/* ── LEVELS (1–7, pics named LEVEL 1.png … LEVEL 7.png) ── */
+/* ── LEVELS ── */
 const CPLX = [
   {id:'L1', nm:'Level 1 — The Bar',      sub:'Simple solid bar — no cuts, no detail.',             mult:1.00, img:_BASE+'levels/LEVEL 1.png'},
   {id:'L2', nm:'Level 2 — Solid Cap',    sub:'Seamless polished plain cap. Standard base.',        mult:1.05, img:_BASE+'levels/LEVEL 2.png'},
@@ -858,90 +1119,39 @@ const CPLX = [
 
 /* ── PLATES ── */
 const PLATES = [
-  {id:'Yellow Gold', nm:'Yellow Gold Plating', sub:'Classic warm gold tone',   price:300, img:_BASE+'plating/YELLOW GOLD PLATING.png'},
-  {id:'Rose Gold',   nm:'Rose Gold Plating',   sub:'Romantic pink-gold tone',  price:300, img:_BASE+'plating/ROSE GOLD PLATING.png'},
-  {id:'White Gold',  nm:'White Gold Plating',  sub:'Cool bright silver-white', price:400, img:_BASE+'plating/WHITE GOLD PLATING.png'},
-  {id:'Black Gold',  nm:'Black Gold Plating',  sub:'Dark edgy gunmetal finish', price:400, img:_BASE+'plating/BLACK GOLD PLATING.png'},
-  {id:'Silver',      nm:'Silver Plating',       sub:'Bright mirror silver coat', price:200, img:_BASE+'plating/SILVER PLATING.png'}
+  {id:'Yellow Gold', nm:'Yellow Gold Plating', sub:'Classic warm gold tone',    price:300, img:_BASE+'plating/YELLOW GOLD PLATING.png'},
+  {id:'Rose Gold',   nm:'Rose Gold Plating',   sub:'Romantic pink-gold tone',   price:300, img:_BASE+'plating/ROSE GOLD PLATING.png'},
+  {id:'White Gold',  nm:'White Gold Plating',  sub:'Cool bright silver-white',  price:400, img:_BASE+'plating/WHITE GOLD PLATING.png'},
+  {id:'Black Gold',  nm:'Black Gold Plating',  sub:'Dark edgy gunmetal finish',  price:400, img:_BASE+'plating/BLACK GOLD PLATING.png'},
+  {id:'Silver',      nm:'Silver Plating',       sub:'Bright mirror silver coat',  price:200, img:_BASE+'plating/SILVER PLATING.png'}
 ];
 
-/* ── PRICING TABLES (from ALL_CARDS.txt) ── */
+/* ── PRICING TABLES ── */
 const ENAMEL_PRICES  = {'Single Tone':200,'Multi-Tone':350,'Master Color':750};
 const LASER_PRICES   = {'Small':200,'Medium':450,'Large':700};
 const ANOD_PRICES    = {'Single':300,'Dual':350,'Multi':450};
-/* Single stone: setting labor + gem price */
 const SETTING_PRICE  = {Flush:150,Prong:200,Bezel:250};
-const GEM_SINGLE     = {CZ:50,Moissanite:360,Natural:0}; /* Natural: contact for quote */
-/* Iced out: CZ stones included in flat rate, Moissanite/Natural add extra */
+const GEM_SINGLE     = {CZ:50,Moissanite:360,Natural:0};
 const ICED_SETTING   = {Pave:1000,Channel:1500};
-const ICED_GEM_EXTRA = {CZ:0,Moissanite:1800,Natural:5000}; /* per tooth extra for upgrade */
+const ICED_GEM_EXTRA = {CZ:0,Moissanite:1800,Natural:5000};
 
 /* ── FAQ ── */
 const FAQ_DATA = [
-  {
-    q:'How much does it cost?',
-    a:'Prices depend on material, number of teeth, and design level. Cobalt Chrome starts at 1,000 EGP per tooth and Titanium at 2,000 EGP at Level 1. Silver 925 and Gold 18K are calculated from live metal rates. Use the builder above to get your exact estimate — the price updates in real time as you configure your set.'
-  },
-  {
-    q:'How does payment work?',
-    a:'A 50% deposit is required to confirm your order and begin production. No changes can be made after the deposit is received. The remaining 50% is due in full before the finished piece is released or shipped. We accept cash, bank transfer, and Vodafone Cash. All deposits are 100% non-refundable.'
-  },
-  {
-    q:'Is my price locked after I get a quote?',
-    a:'Price quotations are valid for 7 calendar days from the date of issue. Gold 18K prices in particular fluctuate with the live gold market. Your quoted price is only locked once you pay the deposit — not before. A fresh quote will be issued if the 7-day window expires.'
-  },
-  {
-    q:'What is your refund and return policy?',
-    a:'All products are custom-made to your exact dental measurements and are strictly non-refundable and non-exchangeable under any circumstance. Used dental jewelry cannot be returned for hygiene reasons. The only exception is if EGYGRILLZ cancels your order — in that case a full deposit refund is issued.'
-  },
-  {
-    q:'What are the design levels?',
-    a:'We offer 7 design levels. Level 1 is a simple solid bar — the most minimal design. Level 2 is a seamless polished solid cap — the standard base. Levels 3 through 6 increase in complexity from texture work and shaped framing up to full artistic sculpting. Level 7 is a one-of-a-kind masterpiece commission priced individually on consultation.'
-  },
-  {
-    q:'What materials do you work with?',
-    a:'We work with four materials: Sterling Silver 925 and Gold 18K (both made by lost-wax casting), and Cobalt Chrome and Titanium (both 3D printed using DMLS). Each has different properties and price points. Diamond setting is only available on Silver 925 and Gold 18K — not on Chrome or Titanium.'
-  },
-  {
-    q:'Are diamonds available on all materials?',
-    a:'No. Diamond setting is only available for precious metals — Silver 925 and Gold 18K. It is not available for Cobalt Chrome or Titanium. We offer CZ (AAAAA cubic zirconia), Moissanite (GRA-certified VVS1 / D color), and Natural Diamonds (SI or VS grade).'
-  },
-  {
-    q:'How do I care for my grillz?',
-    a:'Rinse with cold water immediately after every wear. Use a soft-bristle toothbrush only — never hard bristle or metal tools. Do not use whitening or abrasive toothpaste on plated pieces. Pat dry with a microfiber cloth and store in the provided EGYGRILLZ case. Avoid all chemicals including bleach, chlorine, perfume, and hairspray. Check stones for looseness weekly and do a deep clean with jewelry-specific solution once a month.'
-  },
-  {
-    q:'Can I eat, drink, or sleep wearing my grillz?',
-    a:'No. Remove your grillz before eating, drinking anything other than plain water, smoking, or sleeping. Food trapped under the piece causes hygiene issues. Sleeping with grillz in can cause dental shifting, for which EGYGRILLZ is not responsible. Misuse is solely the client\'s liability.'
-  },
-  {
-    q:'Does it hurt to get grillz or wear them?',
-    a:'Not at all. The impression process takes 3–5 minutes using dental-grade impression material — the same used by dentists worldwide. There is no discomfort. When properly fitted, grillz rest snugly over your teeth with no adhesive, no drilling, and no permanent alteration.'
-  },
-  {
-    q:'What if my grillz don\'t fit properly?',
-    a:'Fit-related complaints must be reported within 48 hours of receiving your piece, with clear photo or video evidence. Requests submitted after that 48-hour window will incur a service fee. The client is solely responsible for providing accurate dental impressions — errors caused by incorrect impression data are not covered.'
-  },
-  {
-    q:'How do you ship orders?',
-    a:'Our official carrier is FedEx. All FedEx shipments are fully tracked and tracking numbers are sent via WhatsApp or email immediately upon dispatch. Domestic delivery within Egypt takes 2–4 business days. International rates and timelines vary by destination. Clients requesting alternative carriers assume full liability for any loss or damage. Shipping insurance must be requested and paid before dispatch — default shipping is uninsured.'
-  },
-  {
-    q:'What happens if my package is lost or damaged?',
-    a:'Report any shipping damage within 12 hours of receipt with time-stamped unboxing photos. Lost FedEx packages are subject to FedEx\'s own investigation timelines. EGYGRILLZ is not liable for packages marked as delivered but not received. Risk of loss transfers to the client once the item is handed to the courier.'
-  },
-  {
-    q:'Can I collect my order in person?',
-    a:'Yes — in-person collection is by confirmed appointment only. Proof of identity is required for all high-value orders at the time of collection. Items not collected within 30 days may incur storage fees. Items abandoned beyond 90 days will be melted for scrap value with no compensation issued.'
-  },
-  {
-    q:'What is the minimum order?',
-    a:'There is no minimum. You can order a single tooth or a full-mouth set. Each piece is priced individually so you only pay for exactly what you want. All orders, regardless of size, go through the same custom impression and production process.'
-  },
-  {
-    q:'Is my personal data kept private?',
-    a:'Yes. Your name, contact details, and dental impressions are kept strictly confidential. Physical moulds are classified as private health data and are destroyed after order completion. Digital scans are stored on encrypted offline drives and records are retained for 24 months to allow for potential remakes. We do not store payment card numbers and do not share data with third parties except registered shipping partners. Contact: egygrillz@gmail.com.'
-  }
+  {q:'How much does it cost?',a:'Prices depend on material, number of teeth, and design level. Cobalt Chrome starts at 1,000 EGP per tooth and Titanium at 2,000 EGP at Level 1. Silver 925 and Gold 18K are calculated from live metal rates. Use the builder above to get your exact estimate — the price updates in real time as you configure your set.'},
+  {q:'How does payment work?',a:'A 50% deposit is required to confirm your order and begin production. No changes can be made after the deposit is received. The remaining 50% is due in full before the finished piece is released or shipped. We accept cash, bank transfer, and Vodafone Cash. All deposits are 100% non-refundable.'},
+  {q:'Is my price locked after I get a quote?',a:'Price quotations are valid for 7 calendar days from the date of issue. Gold 18K prices in particular fluctuate with the live gold market. Your quoted price is only locked once you pay the deposit — not before. A fresh quote will be issued if the 7-day window expires.'},
+  {q:'What is your refund and return policy?',a:'All products are custom-made to your exact dental measurements and are strictly non-refundable and non-exchangeable under any circumstance. Used dental jewelry cannot be returned for hygiene reasons. The only exception is if EGYGRILLZ cancels your order — in that case a full deposit refund is issued.'},
+  {q:'What are the design levels?',a:'We offer 7 design levels. Level 1 is a simple solid bar. Level 2 is a seamless polished solid cap. Levels 3 through 6 increase in complexity from texture work up to full artistic sculpting. Level 7 is a one-of-a-kind masterpiece commission priced individually on consultation.'},
+  {q:'What materials do you work with?',a:'We work with four materials: Sterling Silver 925 and Gold 18K (both made by lost-wax casting), and Cobalt Chrome and Titanium (both 3D printed using DMLS). Diamond setting is only available on Silver 925 and Gold 18K — not on Chrome or Titanium.'},
+  {q:'Are diamonds available on all materials?',a:'No. Diamond setting is only available for precious metals — Silver 925 and Gold 18K. We offer CZ (AAAAA cubic zirconia), Moissanite (GRA-certified VVS1 / D color), and Natural Diamonds (SI or VS grade).'},
+  {q:'How do I care for my grillz?',a:'Rinse with cold water immediately after every wear. Use a soft-bristle toothbrush only. Do not use whitening or abrasive toothpaste on plated pieces. Pat dry with a microfiber cloth and store in the provided EGYGRILLZ case. Avoid all chemicals including bleach, chlorine, perfume, and hairspray.'},
+  {q:'Can I eat, drink, or sleep wearing my grillz?',a:'No. Remove your grillz before eating, drinking anything other than plain water, smoking, or sleeping. Food trapped under the piece causes hygiene issues. Sleeping with grillz in can cause dental shifting.'},
+  {q:'Does it hurt to get grillz or wear them?',a:'Not at all. The impression process takes 3–5 minutes using dental-grade impression material. There is no discomfort. When properly fitted, grillz rest snugly over your teeth with no adhesive, no drilling, and no permanent alteration.'},
+  {q:'What if my grillz don\'t fit properly?',a:'Fit-related complaints must be reported within 48 hours of receiving your piece, with clear photo or video evidence. Requests submitted after that 48-hour window will incur a service fee.'},
+  {q:'How do you ship orders?',a:'Our official carrier is FedEx. All FedEx shipments are fully tracked and tracking numbers are sent via WhatsApp or email immediately upon dispatch. Domestic delivery within Egypt takes 2–4 business days.'},
+  {q:'Can I collect my order in person?',a:'Yes — in-person collection is by confirmed appointment only. Proof of identity is required for all high-value orders at the time of collection. Items not collected within 30 days may incur storage fees.'},
+  {q:'What is the minimum order?',a:'There is no minimum. You can order a single tooth or a full-mouth set. Each piece is priced individually so you only pay for exactly what you want.'},
+  {q:'Is my personal data kept private?',a:'Yes. Your name, contact details, and dental impressions are kept strictly confidential. Physical moulds are classified as private health data and are destroyed after order completion. Contact: egygrillz@gmail.com.'}
 ];
 
 /* ════════════════════════════════════════
@@ -957,52 +1167,137 @@ const S = {
 };
 
 /* ════════════════════════════════════════
-   LIVE GOLD PRICE
+   CURRENCY FUNCTIONS
+════════════════════════════════════════ */
+function setCurrency(cur, btn) {
+  activeCurrency = cur;
+  // Sync all currency switchers
+  document.querySelectorAll('.cur-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.cur === cur);
+  });
+  updatePrice();
+}
+
+function convertEGP(egpAmount) {
+  const cfg = CURRENCIES[activeCurrency];
+  if (!cfg) return { amount: egpAmount, symbol: 'EGP', sign: '' };
+  let rate = cfg.rate;
+  // If currency is USD, use the live-fetched rate
+  if (activeCurrency === 'USD') rate = EGP_TO_USD;
+  // Derive other currencies from USD cross-rates
+  if (activeCurrency === 'EUR') rate = EGP_TO_USD * 0.92;
+  if (activeCurrency === 'SAR') rate = EGP_TO_USD * 3.75;
+  if (activeCurrency === 'AED') rate = EGP_TO_USD * 3.67;
+  return {
+    amount: Math.round(egpAmount * rate),
+    symbol: cfg.symbol,
+    sign: cfg.sign
+  };
+}
+
+function formatCurrency(egpAmount) {
+  if (!egpAmount) return '0';
+  const { amount, symbol, sign } = convertEGP(egpAmount);
+  return `${amount.toLocaleString()} <span class="curr">${symbol}</span>`;
+}
+
+function formatSecondary(egpAmount) {
+  if (!egpAmount || activeCurrency === 'EGP') return '';
+  // Always show EGP equivalent when displaying non-EGP
+  return `≈ ${egpAmount.toLocaleString()} EGP`;
+}
+
+/* ════════════════════════════════════════
+   LIVE GOLD PRICE — Multiple fallback APIs
 ════════════════════════════════════════ */
 async function fetchGoldPrice() {
-  try {
-    /* Use a CORS-friendly JSON endpoint — goldapi.io or metalpriceapi */
-    /* We use open.er-api for EGP rate, then gold spot from a public endpoint */
-    /* Fallback: goldprice.org open endpoint */
-    const res = await fetch('https://data-asg.goldprice.org/dbXRates/EGP', {cache:'no-store'});
-    if (!res.ok) throw new Error('fetch failed');
-    const data = await res.json();
-    /* data.items[0].xauPrice = price per troy oz in EGP */
-    if (data && data.items && data.items[0]) {
-      const perOzEGP = data.items[0].xauPrice; /* 24K per troy oz */
-      const perGram24K = perOzEGP / 31.1035;
-      /* 18K = 75% of 24K */
-      GOLD18K_PER_GRAM = Math.round(perGram24K * 0.75);
-      goldFetchedAt = Date.now();
-      updateGoldUI();
-      updatePrice();
-      return;
-    }
-  } catch(e) {}
-  /* fallback: use search-derived value */
+  const apis = [
+    tryGoldPriceOrg,
+    tryMetalsPriceAPI,
+  ];
+  for (const fn of apis) {
+    try {
+      const result = await fn();
+      if (result) {
+        GOLD18K_PER_GRAM = result;
+        goldFetchedAt = Date.now();
+        updateGoldUI();
+        updatePrice();
+        return;
+      }
+    } catch(e) { /* try next */ }
+  }
+  /* All APIs failed — use fallback */
   GOLD18K_PER_GRAM = 6250;
   goldFetchedAt = Date.now();
   updateGoldUI();
   updatePrice();
 }
 
+async function tryGoldPriceOrg() {
+  const res = await fetch('https://data-asg.goldprice.org/dbXRates/EGP', {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(6000)
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data && data.items && data.items[0] && data.items[0].xauPrice) {
+    const perOzEGP = data.items[0].xauPrice;
+    const perGram24K = perOzEGP / 31.1035;
+    const gold18k = Math.round(perGram24K * 0.75);
+    // Also extract USD rate for currency conversion
+    if (data.items[0].xauPrice && data.items[0].chgVnit) {
+      // Derive EGP/USD rate: if we know gold oz in EGP and oz in USD (~3300 USD/oz)
+      // Use a conservative estimate
+      const goldUSDoz = 3300;
+      EGP_TO_USD = goldUSDoz / perOzEGP;
+      // Clamp to reasonable range
+      EGP_TO_USD = Math.max(0.015, Math.min(0.03, EGP_TO_USD));
+    }
+    return gold18k;
+  }
+  return null;
+}
+
+async function tryMetalsPriceAPI() {
+  /* Backup: metals-api free tier or similar CORS endpoint */
+  const res = await fetch('https://api.gold-api.com/price/XAU', {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(6000)
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data && data.price) {
+    // data.price is in USD per troy oz
+    const goldUSDoz = data.price;
+    // Convert to EGP using our current rate
+    const perOzEGP = goldUSDoz / EGP_TO_USD;
+    const perGram24K = perOzEGP / 31.1035;
+    return Math.round(perGram24K * 0.75);
+  }
+  return null;
+}
+
 function updateGoldUI() {
-  const txt = `18K: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g`;
+  const txt = `${GOLD18K_PER_GRAM.toLocaleString()} EGP/g`;
   const el1 = document.getElementById('hero-gold-price');
   const el2 = document.getElementById('gold-badge-text');
   const t   = document.getElementById('hero-gold-time');
   const badge = document.getElementById('gold-badge');
   if(el1) el1.textContent = txt;
-  if(el2) el2.textContent = txt;
+  if(el2) el2.textContent = `18K: ${txt}`;
   if(badge) badge.style.display = MATS[S.matIdx].id === 'Gold 18K' ? 'flex' : 'none';
-  if(t) { const d=new Date(); t.textContent=`(${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')})`; }
+  if(t) {
+    const d = new Date();
+    t.textContent = `(${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')})`;
+  }
   updateMatDesc();
 }
 
 function maybeRefreshGold() {
   if(Date.now() - goldFetchedAt > GOLD_REFRESH_MS) fetchGoldPrice();
 }
-setInterval(maybeRefreshGold, 60000); /* check every minute, refresh if 5h passed */
+setInterval(maybeRefreshGold, 60000);
 
 /* ════════════════════════════════════════
    CAROUSEL REGISTRY
@@ -1028,7 +1323,10 @@ function init() {
   updateMatDesc();
   updatePrice();
   initScrollBehavior();
-  fetchGoldPrice(); /* initial fetch */
+  initReveal();
+  initCursor();
+  initSplineOpacity();
+  fetchGoldPrice();
 }
 
 /* ── DIAGRAM ── */
@@ -1047,7 +1345,7 @@ function buildDiagram() {
   });
 }
 
-/* ── TEETH — mobile-safe, no clearing on resize ── */
+/* ── TEETH ── */
 function buildTeeth() {
   buildJawRow('upper-row', 'U');
   buildJawRow('lower-row', 'L');
@@ -1057,17 +1355,14 @@ function buildJawRow(containerId, prefix) {
   const row = document.getElementById(containerId);
   row.innerHTML = '';
   const n = 8;
-  /* left side */
   for(let i=n;i>=1;i--) {
     const id = `${prefix}R${i}`;
     row.appendChild(makeToothBtn(id, i, prefix, i));
   }
-  /* separator */
   const sep = document.createElement('div');
   sep.className='jaw-sep';
   sep.innerHTML='<div class="jaw-sep-line"></div>';
   row.appendChild(sep);
-  /* right side */
   for(let i=1;i<=n;i++) {
     const id = `${prefix}L${i}`;
     row.appendChild(makeToothBtn(id, i, prefix, i));
@@ -1079,23 +1374,19 @@ function makeToothBtn(id, num, prefix, pos) {
   btn.className = 'tooth-btn' + (S.teeth.has(id) ? ' on' : '');
   btn.type = 'button';
   btn.innerHTML = `${num}<span class="tn">${prefix}${num}</span>`;
-
-  /* Use both touchend and click — prevent double-fire */
   let lastTouch = 0;
   btn.addEventListener('touchend', (e) => {
     e.preventDefault();
     const now = Date.now();
-    if(now - lastTouch < 300) return; /* debounce */
+    if(now - lastTouch < 300) return;
     lastTouch = now;
     toggleTooth(id, btn);
   }, {passive:false});
-
   btn.addEventListener('click', (e) => {
     const now = Date.now();
-    if(now - lastTouch < 400) return; /* skip if just handled by touch */
+    if(now - lastTouch < 400) return;
     toggleTooth(id, btn);
   });
-
   return btn;
 }
 
@@ -1171,7 +1462,7 @@ function centerAll() {
   updateCarouselUI('plate-track','plate-dots',S.plateIdx);
 }
 
-/* ── MATERIAL DESC (active only) ── */
+/* ── MATERIAL DESC ── */
 function updateMatDesc() {
   const m = MATS[S.matIdx];
   const box = document.getElementById('mat-single-desc');
@@ -1181,15 +1472,12 @@ function updateMatDesc() {
     extraLine = `<div class="mg"><span class="gold-dot" style="display:inline-block;margin-right:4px;"></span>Live 18K rate: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g</div>`;
   }
   box.innerHTML = `<div class="mn">${m.nm}</div><div class="md">${m.desc}</div>${extraLine}`;
-  /* show/hide gold badge in price bar */
   const badge = document.getElementById('gold-badge');
   if(badge) badge.style.display = m.id === 'Gold 18K' ? 'flex' : 'none';
 }
 
 function onMatChange() {
-  /* anodize only for Titanium */
   document.getElementById('ao-anod').style.display = MATS[S.matIdx].id === 'Titanium' ? '' : 'none';
-  /* stones availability note */
   const isPrecious = MATS[S.matIdx].precious;
   document.getElementById('stones-avail-note').classList.toggle('show', !isPrecious);
 }
@@ -1247,7 +1535,7 @@ function updateProgress() {
 }
 
 /* ════════════════════════════════════════
-   PRICE CALCULATION (from ALL_CARDS.txt)
+   PRICE CALCULATION
 ════════════════════════════════════════ */
 function calcBreakdown() {
   const n = S.teeth.size;
@@ -1257,45 +1545,34 @@ function calcBreakdown() {
   const mat   = MATS[S.matIdx];
   const cplx  = CPLX[S.cplxIdx];
 
-  /* ── BASE: base price × complexity multiplier × teeth count ── */
   const basePer = mat.calcBase();
   const baseTotal = Math.round(basePer * cplx.mult * n);
   rows.push({label:`${mat.nm} × ${n} piece${n>1?'s':''} (${cplx.nm})`, val:baseTotal});
   total += baseTotal;
 
-  /* ── PLATING ── */
   if(S.plate) {
     const pv = PLATES[S.plateIdx].price * n;
     rows.push({label:`${PLATES[S.plateIdx].nm} × ${n}`, val:pv});
     total += pv;
   }
-
-  /* ── ENAMEL ── */
   if(S.enamel) {
     const ev = (ENAMEL_PRICES[S.en] || 200) * n;
     rows.push({label:`Enamel (${S.en}) × ${n}`, val:ev});
     total += ev;
   }
-
-  /* ── LASER ── */
   if(S.laser) {
     const lv = (LASER_PRICES[S.ls] || 200) * n;
     rows.push({label:`Laser Engraving (${S.ls}) × ${n}`, val:lv});
     total += lv;
   }
-
-  /* ── ANODIZE ── */
   if(S.anod) {
     const av = (ANOD_PRICES[S.an] || 300) * n;
     rows.push({label:`Anodize (${S.an}) × ${n}`, val:av});
     total += av;
   }
-
-  /* ── STONES ── */
   if(S.stones && S.sg !== 'None') {
     const isPrecious = mat.precious;
     if(!isPrecious) {
-      /* not available — skip pricing, just note */
       rows.push({label:'⚠️ Stones (not available for this material)', val:0});
     } else if(S.sg === 'Single') {
       const settingFee = (SETTING_PRICE[S.set] || 150) * S.stoneN;
@@ -1321,17 +1598,17 @@ function calcBreakdown() {
 /* ════════════════════════════════════════
    ANIMATED NUMBER
 ════════════════════════════════════════ */
-let _af = null, _lastTotal = 0;
-function animateNum(from, to, el, suffix) {
+let _af = null, _lastTotalEGP = 0;
+function animateNum(fromEGP, toEGP, el) {
   if(_af) cancelAnimationFrame(_af);
   const dur = 380, start = performance.now();
   function step(now) {
     const p = Math.min((now-start)/dur, 1);
     const ease = 1 - Math.pow(1-p, 3);
-    const cur = Math.round(from + (to-from)*ease);
-    el.innerHTML = `${cur.toLocaleString()} <span class="curr">${suffix}</span>`;
+    const cur = Math.round(fromEGP + (toEGP-fromEGP)*ease);
+    el.innerHTML = formatCurrency(cur);
     if(p < 1) _af = requestAnimationFrame(step);
-    else el.innerHTML = `${to.toLocaleString()} <span class="curr">${suffix}</span>`;
+    else el.innerHTML = formatCurrency(toEGP);
   }
   requestAnimationFrame(step);
 }
@@ -1342,22 +1619,30 @@ function animateNum(from, to, el, suffix) {
 function updatePrice() {
   const {rows, total} = calcBreakdown();
 
-  /* price bar */
+  /* price bar main */
   const priceEl = document.getElementById('pb-price');
-  animateNum(_lastTotal, total, priceEl, 'EGP');
+  animateNum(_lastTotalEGP, total, priceEl);
   priceEl.classList.remove('pop'); void priceEl.offsetWidth; priceEl.classList.add('pop');
-  _lastTotal = total;
+
+  /* price bar secondary (shows EGP if non-EGP selected) */
+  const pbSec = document.getElementById('pb-secondary');
+  if(pbSec) pbSec.textContent = total > 0 ? formatSecondary(total) : '';
 
   /* mini bar */
-  document.getElementById('pb-mini-price').innerHTML = `${total.toLocaleString()} <span class="curr">EGP</span>`;
+  document.getElementById('pb-mini-price').innerHTML = formatCurrency(total);
 
-  /* USD */
-  const usd = total > 0 ? `≈ $${Math.round(total*USD_RATE).toLocaleString()} USD` : '';
-  document.getElementById('pb-usd').textContent = usd;
-  document.getElementById('sf-usd').textContent = usd;
+  /* footer big price */
+  const sfEl = document.getElementById('sf-price');
+  if(activeCurrency === 'EGP') {
+    sfEl.innerHTML = `<sup>EGP</sup>${total.toLocaleString()}`;
+  } else {
+    const { amount, symbol } = convertEGP(total);
+    sfEl.innerHTML = `<sup>${symbol}</sup>${amount.toLocaleString()}`;
+  }
+  const sfSec = document.getElementById('sf-secondary');
+  if(sfSec) sfSec.textContent = total > 0 ? formatSecondary(total) : '';
 
-  /* footer */
-  document.getElementById('sf-price').innerHTML = `<sup>EGP</sup>${total.toLocaleString()}`;
+  _lastTotalEGP = total;
 
   /* breakdown btn */
   document.getElementById('breakdown-btn').style.display = total > 0 ? '' : 'none';
@@ -1375,12 +1660,11 @@ function updatePrice() {
   if(S.stones && S.sg !== 'None') tags.push(`Stones: ${S.sg}`);
 
   document.getElementById('sf-config').innerHTML = tags.map(t => `<span class="sf-tag">${t}</span>`).join('');
-  updateShareText(tags, total, usd);
+  updateShareText(tags, total);
 }
 
 /* ════════════════════════════════════════
    SCROLL BEHAVIOR
-   Header hides → price bar slides in from top
 ════════════════════════════════════════ */
 function initScrollBehavior() {
   const header   = document.getElementById('site-header');
@@ -1393,18 +1677,14 @@ function initScrollBehavior() {
     const scrollingDown = y > lastY;
 
     if(y > 80) {
-      /* hide header, show price bar */
       header.classList.add('hidden');
       priceBar.classList.add('pb-visible');
-
-      /* collapse price bar when scrolling down past 250px */
       if(y > 250 && scrollingDown && !pbCollapsed) {
         priceBar.classList.add('pb-collapsed');
         priceBar.classList.remove('pb-expanded');
         pbCollapsed = true;
       }
     } else {
-      /* show header, hide price bar */
       header.classList.remove('hidden');
       priceBar.classList.remove('pb-visible');
       priceBar.classList.remove('pb-collapsed');
@@ -1422,29 +1702,80 @@ function expandPriceBar() {
 }
 
 /* ════════════════════════════════════════
+   SPLINE BG — fade on scroll
+════════════════════════════════════════ */
+function initSplineOpacity() {
+  const splineBg = document.getElementById('spline-bg');
+  const heroH = window.innerHeight;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    const fade = Math.max(0, 1 - (y / (heroH * 0.7)));
+    if(splineBg) splineBg.style.opacity = fade;
+  }, {passive:true});
+}
+
+/* ════════════════════════════════════════
+   SCROLL REVEAL
+════════════════════════════════════════ */
+function initReveal() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+}
+
+/* ════════════════════════════════════════
+   CUSTOM CURSOR
+════════════════════════════════════════ */
+function initCursor() {
+  if(window.matchMedia('(hover:none)').matches) return;
+  const cursor = document.getElementById('cursor');
+  let cx = 0, cy = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+  function tick() {
+    rx += (cx-rx) * 0.14;
+    ry += (cy-ry) * 0.14;
+    cursor.style.transform = `translate(${rx}px,${ry}px)`;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  document.querySelectorAll('button,a,.tooth-btn,.addon-tile,.c-item').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+  });
+}
+
+/* ════════════════════════════════════════
    MODAL
 ════════════════════════════════════════ */
 function openModal() {
   const {rows, total} = calcBreakdown();
   if(!total) return;
-  const usd = Math.round(total * USD_RATE);
+  const { amount: convAmount, symbol } = convertEGP(total);
+  const convStr = activeCurrency !== 'EGP' ? `<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">≈ ${convAmount.toLocaleString()} ${symbol}</div>` : '';
   document.getElementById('modal-body').innerHTML =
     rows.map(r => `<div class="breakdown-row"><span class="br-label">${r.label}</span><span class="br-val">${r.val > 0 ? r.val.toLocaleString()+' EGP' : '—'}</span></div>`).join('') +
     `<div class="breakdown-total"><span>Total Estimate</span><span>${total.toLocaleString()} EGP</span></div>` +
-    `<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">≈ $${usd.toLocaleString()} USD</div>`;
+    convStr;
   document.getElementById('modal-overlay').classList.add('open');
 }
 
 /* ════════════════════════════════════════
    SHARE
 ════════════════════════════════════════ */
-function updateShareText(tags, total, usd) {
+function updateShareText(tags, total) {
+  const { amount, symbol } = convertEGP(total);
+  const priceStr = activeCurrency === 'EGP'
+    ? `${total.toLocaleString()} EGP`
+    : `${amount.toLocaleString()} ${symbol} (${total.toLocaleString()} EGP)`;
   const txt = [
     'EGYGRILLZ — My Custom Estimate',
     '─────────────────────',
     ...tags.map(t => `• ${t}`),
     '─────────────────────',
-    `Total: ${total.toLocaleString()} EGP ${usd}`,
+    `Total: ${priceStr}`,
     '',
     'Estimate only — final price confirmed at studio.',
     'Book: egygrillz.com/booking.html'
