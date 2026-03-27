@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGYGRILLZ — Price Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --void:#030508;
+  --deep:#060c14;
+  --panel:#0a1220;
+  --glass:rgba(10,18,32,0.7);
+  --border:rgba(0,200,255,0.12);
+  --border2:rgba(0,200,255,0.25);
+  --cyan:#00c8ff;
+  --cyan2:#00ffe0;
+  --gold:#f5c842;
+  --gold2:#ffd700;
+  --text:#e8f4ff;
+  --text2:#7aa3c8;
+  --text3:#3a5f7a;
+  --red:#ff3b5c;
+  --glow:0 0 30px rgba(0,200,255,0.2);
+  --glow2:0 0 60px rgba(0,200,255,0.1);
+  --font-display:'Syne',sans-serif;
+  --font-mono:'Space Mono',monospace;
+  --font-body:'DM Sans',sans-serif;
+}
+
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-body);
+  background:var(--void);
+  color:var(--text);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  cursor:none;
+}
+
+/* ── SCANLINES ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+  pointer-events:none;z-index:9999;
+}
+
+/* ── CURSOR ── */
+#cursor{
+  position:fixed;z-index:99999;pointer-events:none;
+  width:12px;height:12px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 20px var(--cyan),0 0 40px rgba(0,200,255,0.4);
+  transition:width .15s,height .15s,background .15s;
+  transform:translate(-50%,-50%);
+}
+#cursor-trail{
+  position:fixed;z-index:99998;pointer-events:none;
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid rgba(0,200,255,0.4);
+  transform:translate(-50%,-50%);
+  transition:left .08s ease,top .08s ease,width .2s,height .2s,opacity .2s;
+}
+body.hovering #cursor{width:20px;height:20px;background:var(--gold);}
+body.hovering #cursor-trail{width:48px;height:48px;border-color:rgba(245,200,66,0.4);}
+@media(hover:none){#cursor,#cursor-trail{display:none;}body{cursor:auto;}}
+
+/* ── GRID BG ── */
+.grid-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  animation:gridDrift 20s linear infinite;
+}
+@keyframes gridDrift{0%{background-position:0 0;}100%{background-position:40px 40px;}}
+
+/* ── AMBIENT BLOBS ── */
+.blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);opacity:0.07;}
+.blob1{width:600px;height:600px;top:-100px;left:-200px;background:radial-gradient(circle,var(--cyan),transparent);}
+.blob2{width:400px;height:400px;bottom:-50px;right:-100px;background:radial-gradient(circle,var(--gold),transparent);}
+.blob3{width:300px;height:300px;top:50%;left:60%;background:radial-gradient(circle,var(--cyan2),transparent);}
+
+/* ── HEADER ── */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  padding:16px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:rgba(3,5,8,0.85);
+  backdrop-filter:blur(20px);
+}
+.logo{
+  font-family:var(--font-display);
+  font-size:20px;font-weight:800;
+  letter-spacing:5px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.header-status{
+  display:flex;align-items:center;gap:20px;
+}
+.status-pill{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--font-mono);font-size:10px;
+  color:var(--text2);letter-spacing:1px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:30px;padding:6px 14px;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,224,0.4);}50%{opacity:0.7;box-shadow:0 0 0 4px rgba(0,255,224,0);}}
+.gold-live{
+  font-family:var(--font-mono);font-size:10px;
+  color:var(--gold);letter-spacing:1px;
+}
+nav{display:flex;align-items:center;gap:24px;}
+nav a{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text3);text-decoration:none;
+  transition:color .2s;
+}
+nav a:hover{color:var(--cyan);}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:120px 32px 60px;
+  text-align:center;position:relative;
+  z-index:1;
+}
+.hero-tag{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:4px;
+  color:var(--cyan);text-transform:uppercase;
+  border:1px solid var(--border2);border-radius:30px;
+  padding:7px 20px;margin-bottom:28px;
+  display:inline-flex;align-items:center;gap:8px;
+  animation:fadeSlide .8s ease both;
+}
+.hero h1{
+  font-family:var(--font-display);
+  font-size:clamp(52px,8vw,110px);
+  font-weight:800;letter-spacing:-2px;line-height:0.92;
+  margin-bottom:24px;
+  animation:fadeSlide .8s ease 0.15s both;
+}
+.hero h1 .line1{
+  display:block;
+  background:linear-gradient(135deg,#e8f4ff 0%,var(--cyan) 50%,var(--cyan2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero h1 .line2{
+  display:block;font-style:italic;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  font-size:15px;color:var(--text2);max-width:440px;line-height:1.8;
+  margin-bottom:36px;
+  animation:fadeSlide .8s ease 0.3s both;
+}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--cyan);color:var(--void);
+  font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:3px;
+  text-transform:uppercase;
+  padding:14px 32px;border-radius:2px;
+  transition:all .25s;text-decoration:none;
+  box-shadow:0 0 30px rgba(0,200,255,0.35);
+  animation:fadeSlide .8s ease 0.45s both;
+}
+.hero-cta:hover{background:var(--cyan2);transform:translateY(-2px);box-shadow:0 0 50px rgba(0,200,255,0.5);}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── FLOATING PRICE BAR ── */
+.price-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:600;
+  background:rgba(6,12,20,0.95);backdrop-filter:blur(24px);
+  border-top:1px solid var(--border2);
+  padding:16px 32px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  transform:translateY(100%);opacity:0;pointer-events:none;
+  transition:transform .4s cubic-bezier(.34,1.2,.64,1),opacity .3s;
+  box-shadow:0 -20px 60px rgba(0,0,0,0.5),0 -1px 0 rgba(0,200,255,0.1);
+}
+.price-bar.show{transform:translateY(0);opacity:1;pointer-events:all;}
+.pb-left{display:flex;flex-direction:column;gap:2px;}
+.pb-est{font-family:var(--font-mono);font-size:8px;letter-spacing:3px;color:var(--text3);}
+.pb-price{
+  font-family:var(--font-display);font-size:40px;font-weight:700;
+  line-height:1;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--text),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.pb-price.flash{animation:priceFlash .35s ease;}
+@keyframes priceFlash{0%{filter:brightness(1);}50%{filter:brightness(1.5);}100%{filter:brightness(1);}}
+.pb-price .curr{font-size:14px;opacity:0.7;}
+.pb-secondary{font-family:var(--font-mono);font-size:10px;color:var(--text3);}
+.pb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.cur-switcher{display:flex;gap:2px;background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.cur-btn{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+  padding:6px 10px;border:none;background:transparent;
+  color:var(--text3);cursor:none;transition:all .2s;
+}
+.cur-btn.active{background:var(--cyan);color:var(--void);font-weight:700;}
+.cur-btn:hover:not(.active){color:var(--cyan);}
+.pb-note{font-family:var(--font-mono);font-size:9px;color:var(--text3);}
+.book-btn{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--void);font-family:var(--font-mono);font-size:9px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:10px 20px;border-radius:2px;text-decoration:none;
+  box-shadow:0 0 20px rgba(245,200,66,0.3);
+  transition:all .2s;white-space:nowrap;
+}
+.book-btn:hover{box-shadow:0 0 40px rgba(245,200,66,0.5);transform:translateY(-1px);}
+.breakdown-btn{
+  background:transparent;border:1px solid var(--border2);
+  color:var(--cyan);font-family:var(--font-mono);font-size:9px;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:10px 16px;border-radius:2px;cursor:none;
+  transition:all .2s;
+}
+.breakdown-btn:hover{background:rgba(0,200,255,0.08);}
+
+/* ── MAIN LAYOUT ── */
+.main-content{
+  position:relative;z-index:2;
+  padding:0 32px 160px;
+  max-width:1200px;margin:0 auto;
+}
+
+/* ── SECTION ── */
+.section{padding:80px 0 40px;border-bottom:1px solid var(--border);}
+.sec-head{margin-bottom:40px;}
+.sec-num{
+  font-family:var(--font-mono);font-size:9px;color:var(--cyan);
+  letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;display:block;
+}
+.sec-title{
+  font-family:var(--font-display);font-size:clamp(26px,3vw,44px);
+  font-weight:700;letter-spacing:-0.5px;color:var(--text);margin-bottom:8px;
+}
+.sec-sub{font-size:13px;color:var(--text2);line-height:1.75;max-width:480px;}
+
+/* ── ODONTOGRAM ── */
+.odon-wrap{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:36px 28px 28px;
+  position:relative;overflow:hidden;
+}
+.odon-wrap::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+}
+.odon-label{
+  text-align:center;
+  font-family:var(--font-mono);font-size:8px;letter-spacing:3px;
+  color:var(--text3);text-transform:uppercase;margin-bottom:28px;
+}
+.jaw-section{margin-bottom:24px;}
+.jaw-title{
+  font-family:var(--font-mono);font-size:8px;letter-spacing:3px;
+  color:var(--text3);text-transform:uppercase;text-align:center;margin-bottom:12px;
+}
+.tooth-row{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;}
+.tooth-btn{
+  width:44px;height:52px;border-radius:8px 8px 14px 14px;
+  border:1px solid var(--border2);background:var(--deep);
+  color:var(--text3);font-family:var(--font-mono);font-size:11px;font-weight:700;
+  cursor:none;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;gap:2px;
+}
+.tooth-btn .tn{font-size:7px;letter-spacing:0.5px;opacity:0.6;}
+.tooth-btn:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,200,255,0.06);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,200,255,0.15);}
+.tooth-btn.on{
+  background:linear-gradient(135deg,rgba(0,200,255,0.2),rgba(0,255,224,0.1));
+  border-color:var(--cyan);color:var(--cyan);
+  box-shadow:0 0 20px rgba(0,200,255,0.25),inset 0 0 10px rgba(0,200,255,0.05);
+}
+.tooth-sep{width:1px;background:var(--border2);margin:0 4px;height:52px;}
+
+.combo-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:24px;}
+.combo-btn{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  padding:6px 16px;border-radius:2px;
+  border:1px solid var(--border);background:transparent;color:var(--text3);cursor:none;
+  transition:all .2s;
+}
+.combo-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.combo-btn.active{background:var(--cyan);color:var(--void);border-color:var(--cyan);font-weight:700;}
+
+.teeth-count{
+  text-align:center;margin-top:28px;
+  font-family:var(--font-display);font-size:72px;font-weight:700;
+  color:var(--cyan);letter-spacing:-3px;line-height:1;
+}
+.teeth-count small{font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-left:8px;font-weight:400;letter-spacing:2px;}
+
+/* ── MATERIAL GRID ── */
+.mat-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+}
+@media(max-width:768px){.mat-grid{grid-template-columns:repeat(2,1fr);}}
+.mat-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:24px 20px;cursor:none;transition:all .3s;
+  position:relative;overflow:hidden;
+}
+.mat-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,200,255,0.05),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.mat-card:hover::before,.mat-card.on::before{opacity:1;}
+.mat-card:hover{border-color:var(--border2);transform:translateY(-3px);}
+.mat-card.on{
+  border-color:var(--cyan);
+  box-shadow:0 0 30px rgba(0,200,255,0.15),inset 0 0 20px rgba(0,200,255,0.03);
+}
+.mat-card.on::after{
+  content:'✓';position:absolute;top:12px;right:14px;
+  font-family:var(--font-mono);font-size:10px;
+  color:var(--cyan);
+}
+.mat-icon{font-size:28px;margin-bottom:12px;}
+.mat-nm{
+  font-family:var(--font-display);font-size:16px;font-weight:700;
+  color:var(--text);margin-bottom:4px;
+}
+.mat-sub{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:10px;}
+.mat-desc{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:12px;}
+.mat-price{font-family:var(--font-mono);font-size:11px;color:var(--cyan);letter-spacing:1px;}
+
+/* ── LEVEL GRID ── */
+.level-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:8px;
+}
+@media(max-width:900px){.level-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:500px){.level-grid{grid-template-columns:repeat(2,1fr);}}
+.level-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:18px 14px;cursor:none;transition:all .25s;
+  position:relative;text-align:center;
+}
+.level-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.level-card.on{
+  border-color:var(--gold);
+  background:linear-gradient(135deg,rgba(245,200,66,0.08),rgba(255,215,0,0.04));
+  box-shadow:0 0 25px rgba(245,200,66,0.15);
+}
+.level-card.on .lv-num{color:var(--gold);}
+.lv-num{
+  font-family:var(--font-display);font-size:32px;font-weight:700;
+  line-height:1;margin-bottom:6px;color:var(--text3);transition:color .2s;
+}
+.lv-nm{font-family:var(--font-mono);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:4px;}
+.lv-mult{font-family:var(--font-mono);font-size:10px;color:var(--cyan);}
+.lv-desc{font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5;}
+
+/* ── ADDONS ── */
+.addon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.addon-tile{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;transition:border-color .2s;
+}
+.addon-tile.open{border-color:var(--border2);}
+.ao-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:20px 22px;cursor:none;
+}
+.ao-left{display:flex;align-items:center;gap:14px;}
+.ao-icon{
+  width:38px;height:38px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--deep);border:1px solid var(--border);font-size:16px;
+  transition:all .2s;
+}
+.addon-tile.open .ao-icon{
+  background:linear-gradient(135deg,rgba(0,200,255,0.15),rgba(0,255,224,0.05));
+  border-color:var(--cyan);
+}
+.ao-title{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--text);}
+.ao-hint{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1px;margin-top:2px;}
+.ao-chev{
+  font-family:var(--font-mono);font-size:12px;color:var(--text3);
+  transition:transform .25s;
+}
+.addon-tile.open .ao-chev{transform:rotate(180deg);color:var(--cyan);}
+.ao-body{
+  max-height:0;overflow:hidden;
+  transition:max-height .4s cubic-bezier(.4,0,.2,1);
+  padding:0 22px;
+}
+.addon-tile.open .ao-body{max-height:800px;padding:0 22px 20px;}
+.ao-sub{
+  font-family:var(--font-mono);font-size:8px;letter-spacing:3px;
+  color:var(--text3);text-transform:uppercase;
+  margin-bottom:10px;margin-top:16px;
+}
+.pills{display:flex;flex-wrap:wrap;gap:6px;}
+.pill{
+  padding:7px 14px;border-radius:3px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:1px;
+  background:var(--deep);color:var(--text2);
+  border:1px solid var(--border);cursor:none;transition:all .18s;
+}
+.pill:hover{border-color:var(--cyan);color:var(--cyan);}
+.pill.on{background:rgba(0,200,255,0.1);color:var(--cyan);border-color:var(--cyan);}
+.stepper{display:flex;align-items:center;gap:16px;margin-top:10px;}
+.stp-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--cyan);font-size:20px;cursor:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;line-height:1;font-family:var(--font-mono);
+}
+.stp-btn:hover{background:rgba(0,200,255,0.1);border-color:var(--cyan);}
+.stp-n{
+  font-family:var(--font-display);font-size:40px;font-weight:700;
+  color:var(--text);letter-spacing:-2px;min-width:44px;text-align:center;
+}
+.avail-warn{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+  color:var(--red);background:rgba(255,59,92,0.08);
+  border:1px solid rgba(255,59,92,0.2);border-radius:4px;
+  padding:8px 12px;margin-bottom:12px;display:none;
+}
+.avail-warn.show{display:block;}
+.ao-sep{height:1px;background:var(--border);margin:12px 0;}
+
+/* ── SUMMARY ── */
+.summary{
+  background:var(--panel);border:1px solid var(--border);border-radius:16px;
+  padding:48px 40px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.summary::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.summary::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(245,200,66,0.05),transparent 70%);
+  pointer-events:none;
+}
+.sum-inner{position:relative;z-index:1;}
+.sum-config{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:32px;}
+.sum-tag{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;
+  color:var(--text3);background:var(--deep);
+  border:1px solid var(--border);border-radius:3px;
+  padding:5px 12px;
+}
+.sum-label{font-family:var(--font-mono);font-size:9px;letter-spacing:4px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;display:block;}
+.sum-price{
+  font-family:var(--font-display);font-size:clamp(60px,10vw,110px);
+  font-weight:700;letter-spacing:-3px;line-height:1;
+  background:linear-gradient(135deg,var(--gold),var(--gold2),#fffbe6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:8px;
+}
+.sum-price sup{font-size:28px;vertical-align:super;letter-spacing:0;}
+.sum-sec{font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-bottom:32px;}
+.sum-note{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;
+  color:var(--text3);
+  background:var(--deep);border:1px solid var(--border);border-radius:3px;
+  padding:10px 20px;display:inline-block;margin-bottom:36px;
+}
+.sum-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}
+.sum-cta{
+  display:inline-block;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--void);font-family:var(--font-mono);font-size:10px;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;
+  padding:14px 36px;border-radius:2px;text-decoration:none;
+  box-shadow:0 0 30px rgba(245,200,66,0.3);transition:all .2s;
+}
+.sum-cta:hover{box-shadow:0 0 50px rgba(245,200,66,0.5);transform:translateY(-2px);}
+.sum-ghost{
+  background:transparent;border:1px solid var(--border2);
+  color:var(--cyan);font-family:var(--font-mono);font-size:10px;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:14px 24px;border-radius:2px;cursor:none;transition:all .2s;
+}
+.sum-ghost:hover{background:rgba(0,200,255,0.08);}
+/* footer currency in summary */
+.sum-cur-wrap{display:flex;justify-content:center;margin-bottom:28px;}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(3,5,8,0.85);backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s;padding:20px;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{
+  background:var(--panel);border:1px solid var(--border2);border-radius:16px;
+  max-width:460px;width:100%;padding:36px;
+  transform:translateY(20px);transition:transform .3s;
+  max-height:80vh;overflow-y:auto;
+  position:relative;
+}
+.modal-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+}
+.modal-overlay.open .modal-box{transform:translateY(0);}
+.modal-title{
+  font-family:var(--font-display);font-size:22px;font-weight:700;
+  margin-bottom:24px;padding-bottom:16px;
+  border-bottom:1px solid var(--border);color:var(--text);
+}
+.br-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border);
+  font-size:12px;
+}
+.br-label{color:var(--text2);}
+.br-val{font-family:var(--font-mono);font-weight:700;color:var(--text);}
+.br-total{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:16px 0 0;margin-top:8px;
+  border-top:1px solid var(--border2);
+  font-family:var(--font-display);font-size:20px;color:var(--text);
+}
+.modal-close{
+  display:block;width:100%;margin-top:20px;
+  background:var(--cyan);color:var(--void);
+  border:none;font-family:var(--font-mono);font-size:10px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;padding:14px;
+  border-radius:3px;cursor:none;transition:opacity .2s;
+}
+.modal-close:hover{opacity:.85;}
+
+/* ── AI CHAT ── */
+#ai-chat{
+  position:fixed;bottom:80px;right:28px;z-index:700;
+}
+.chat-toggle{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  border:none;cursor:none;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 30px rgba(0,200,255,0.4);
+  transition:all .25s;font-size:22px;color:var(--void);
+  position:relative;z-index:1;
+}
+.chat-toggle:hover{transform:scale(1.1);box-shadow:0 0 50px rgba(0,200,255,0.6);}
+.chat-window{
+  position:absolute;bottom:68px;right:0;
+  width:360px;max-height:520px;
+  background:var(--panel);border:1px solid var(--border2);border-radius:16px;
+  display:flex;flex-direction:column;
+  transform:scale(0.9) translateY(20px);transform-origin:bottom right;
+  opacity:0;pointer-events:none;
+  transition:all .3s cubic-bezier(.34,1.2,.64,1);
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(0,200,255,0.05);
+}
+.chat-window.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+.chat-header{
+  padding:16px 18px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(0,200,255,0.06),transparent);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.chat-header-icon{font-size:20px;}
+.chat-header-info{flex:1;}
+.chat-header-title{
+  font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text);
+}
+.chat-header-status{
+  font-family:var(--font-mono);font-size:9px;color:var(--cyan2);
+  display:flex;align-items:center;gap:4px;margin-top:1px;
+}
+.chat-close{
+  background:none;border:none;color:var(--text3);font-size:16px;
+  cursor:none;transition:color .2s;padding:4px;
+}
+.chat-close:hover{color:var(--text);}
+.chat-msgs{
+  flex:1;overflow-y:auto;padding:16px;
+  display:flex;flex-direction:column;gap:10px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+.chat-msgs::-webkit-scrollbar{width:4px;}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.msg{display:flex;flex-direction:column;max-width:88%;}
+.msg.ai{align-self:flex-start;}
+.msg.user{align-self:flex-end;align-items:flex-end;}
+.msg-bubble{
+  padding:10px 14px;border-radius:12px;
+  font-size:12px;line-height:1.65;
+}
+.msg.ai .msg-bubble{
+  background:var(--deep);border:1px solid var(--border);color:var(--text);
+  border-radius:4px 12px 12px 12px;
+}
+.msg.user .msg-bubble{
+  background:linear-gradient(135deg,rgba(0,200,255,0.15),rgba(0,255,224,0.08));
+  border:1px solid var(--border2);color:var(--text);
+  border-radius:12px 4px 12px 12px;
+}
+.msg-time{font-family:var(--font-mono);font-size:8px;color:var(--text3);margin-top:3px;padding:0 4px;}
+.chat-suggestions{
+  padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;
+  border-top:1px solid var(--border);flex-shrink:0;
+}
+.suggest-btn{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.5px;
+  padding:5px 10px;border-radius:20px;
+  border:1px solid var(--border);background:transparent;color:var(--text3);
+  cursor:none;transition:all .18s;
+}
+.suggest-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.chat-input-wrap{
+  padding:12px 14px;
+  border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;flex-shrink:0;
+}
+.chat-input{
+  flex:1;background:var(--deep);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:12px;
+  outline:none;transition:border-color .2s;cursor:text;
+}
+.chat-input::placeholder{color:var(--text3);}
+.chat-input:focus{border-color:var(--border2);}
+.chat-send{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--cyan);border:none;cursor:none;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--void);font-size:14px;font-weight:700;
+  transition:all .2s;flex-shrink:0;
+}
+.chat-send:hover{background:var(--cyan2);transform:scale(1.1);}
+.typing-indicator{
+  display:flex;align-items:center;gap:4px;padding:10px 14px;
+  background:var(--deep);border:1px solid var(--border);
+  border-radius:4px 12px 12px 12px;
+  width:fit-content;
+}
+.typing-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--text3);
+  animation:typingPulse 1.2s infinite;
+}
+.typing-dot:nth-child(2){animation-delay:.2s;}
+.typing-dot:nth-child(3){animation-delay:.4s;}
+@keyframes typingPulse{0%,60%,100%{transform:translateY(0);opacity:0.4;}30%{transform:translateY(-4px);opacity:1;}}
+.unread-badge{
+  position:absolute;top:-4px;right:-4px;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--red);color:#fff;
+  font-family:var(--font-mono);font-size:9px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  animation:badgePop .3s cubic-bezier(.34,1.56,.64,1);
+  display:none;
+}
+.unread-badge.show{display:flex;}
+@keyframes badgePop{from{transform:scale(0);}to{transform:scale(1);}}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease;}
+.reveal.vis{opacity:1;transform:translateY(0);}
+.reveal-d1{transition-delay:.1s;}.reveal-d2{transition-delay:.2s;}.reveal-d3{transition-delay:.3s;}
+
+/* ── SHARE ── */
+.share-panel{
+  background:var(--deep);border:1px solid var(--border);border-radius:12px;
+  padding:20px 24px;margin-top:24px;display:none;
+}
+.share-panel.show{display:block;}
+.share-text{
+  font-family:var(--font-mono);font-size:10px;color:var(--text2);
+  line-height:1.8;background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:14px;margin-bottom:14px;white-space:pre-line;
+}
+.share-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.share-btn{
+  padding:8px 16px;border-radius:3px;border:1px solid var(--border);
+  background:transparent;color:var(--text2);
+  font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+  cursor:none;transition:all .2s;display:flex;align-items:center;gap:6px;
+}
+.share-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* ── WHY / FAQ ── */
+.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+.why-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:28px 22px;transition:all .3s;
+}
+.why-card:hover{border-color:var(--border2);transform:translateY(-3px);}
+.why-icon{font-size:24px;margin-bottom:12px;}
+.why-title{
+  font-family:var(--font-display);font-size:15px;font-weight:700;
+  color:var(--text);margin-bottom:8px;
+}
+.why-desc{font-size:12px;color:var(--text2);line-height:1.7;}
+.faq-item{border-bottom:1px solid var(--border);}
+.faq-q{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 0;cursor:none;
+  font-size:13px;font-weight:600;color:var(--text);
+  gap:16px;transition:color .2s;
+}
+.faq-q:hover{color:var(--cyan);}
+.faq-chev{font-family:var(--font-mono);font-size:10px;color:var(--text3);transition:transform .25s;}
+.faq-item.open .faq-chev{transform:rotate(180deg);color:var(--cyan);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1);}
+.faq-item.open .faq-a{max-height:400px;}
+.faq-a p{font-size:12px;color:var(--text2);line-height:1.8;padding-bottom:16px;}
+
+/* ── CTA BAND ── */
+.cta-band{
+  background:var(--panel);border:1px solid var(--border);border-radius:16px;
+  padding:80px 40px;text-align:center;margin-top:80px;position:relative;overflow:hidden;
+}
+.cta-band::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 100%,rgba(0,200,255,0.07),transparent 70%);
+  pointer-events:none;
+}
+.cta-band .eyebrow{font-family:var(--font-mono);font-size:9px;letter-spacing:5px;color:var(--text3);text-transform:uppercase;margin-bottom:12px;display:block;}
+.cta-band h2{font-family:var(--font-display);font-size:clamp(28px,4vw,48px);font-weight:700;letter-spacing:-1px;margin-bottom:14px;color:var(--text);}
+.cta-band p{font-size:13px;color:var(--text2);max-width:460px;margin:0 auto 40px;line-height:1.8;}
+.cta-btns{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}
+.cta-btn{
+  display:inline-block;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:3px;text-transform:uppercase;
+  border:1px solid var(--border2);padding:14px 36px;color:var(--cyan);
+  text-decoration:none;transition:all .25s;border-radius:2px;
+}
+.cta-btn:hover{background:rgba(0,200,255,0.08);}
+.cta-btn-solid{
+  display:inline-block;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:3px;text-transform:uppercase;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--void);font-weight:700;
+  padding:14px 36px;border-radius:2px;text-decoration:none;
+  box-shadow:0 0 20px rgba(245,200,66,0.3);transition:all .25s;
+}
+.cta-btn-solid:hover{box-shadow:0 0 40px rgba(245,200,66,0.5);}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--deep);border-top:1px solid var(--border);
+  padding:48px 32px 24px;
+  position:relative;z-index:2;
+}
+.footer-main{
+  max-width:1200px;margin:0 auto;
+  display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:40px;
+  padding-bottom:40px;border-bottom:1px solid var(--border);
+}
+.footer-col h4{
+  font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:3px;
+  color:var(--text3);margin-bottom:16px;
+}
+.footer-col p{font-size:12px;color:var(--text3);max-width:280px;line-height:1.7;}
+.footer-col a{display:block;font-size:12px;color:var(--text2);margin-bottom:8px;text-decoration:none;transition:color .2s;}
+.footer-col a:hover{color:var(--cyan);}
+.footer-bottom{
+  max-width:1200px;margin:0 auto;
+  padding-top:24px;display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:16px;
+}
+.footer-logo{
+  font-family:var(--font-display);font-size:18px;font-weight:800;letter-spacing:4px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.legal{font-family:var(--font-mono);font-size:9px;color:var(--text3);}
+.footer-icons a{
+  color:var(--text3);margin-right:16px;font-size:16px;text-decoration:none;transition:color .2s;
+}
+.footer-icons a:hover{color:var(--cyan);}
+@media(max-width:768px){
+  .footer-main{grid-template-columns:1fr;}
+  header .header-status{display:none;}
+}
+@media(max-width:480px){
+  .main-content{padding:0 16px 160px;}
+  header{padding:14px 16px;}
+  .price-bar{padding:12px 16px;}
+  .pb-price{font-size:28px;}
+  .chat-window{width:calc(100vw - 40px);}
+}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- AMBIENT -->
+<div class="grid-bg"></div>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<!-- HEADER -->
+<header>
+  <a href="index.html" class="logo">EGYGRILLZ</a>
+  <div class="header-status">
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      <span>Studio Open</span>
+    </div>
+    <span class="gold-live" id="hdr-gold">18K: — EGP/g</span>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="grillz-gallery.html">Gallery</a>
+    <a href="booking.html">Book</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+</header>
+
+<!-- FLOATING PRICE BAR (bottom) -->
+<div class="price-bar" id="price-bar">
+  <div class="pb-left">
+    <span class="pb-est">// ESTIMATED PRICE</span>
+    <div class="pb-price" id="pb-price">0 <span class="curr">EGP</span></div>
+    <div class="pb-secondary" id="pb-secondary"></div>
+  </div>
+  <div class="pb-right">
+    <div class="cur-switcher">
+      <button class="cur-btn active" data-cur="EGP" onclick="setCurrency('EGP',this)">EGP</button>
+      <button class="cur-btn" data-cur="USD" onclick="setCurrency('USD',this)">USD</button>
+      <button class="cur-btn" data-cur="EUR" onclick="setCurrency('EUR',this)">EUR</button>
+      <button class="cur-btn" data-cur="SAR" onclick="setCurrency('SAR',this)">SAR</button>
+      <button class="cur-btn" data-cur="AED" onclick="setCurrency('AED',this)">AED</button>
+    </div>
+    <span class="pb-note">Final quote at studio</span>
+    <button class="breakdown-btn" id="bd-btn" onclick="openModal()" style="display:none">BREAKDOWN</button>
+    <a href="booking.html" class="book-btn">BOOK NOW</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag"><div class="status-dot"></div> Live Price Builder</div>
+  <h1>
+    <span class="line1">DESIGN YOUR</span>
+    <span class="line2">Perfect Set.</span>
+  </h1>
+  <p class="hero-sub">Configure every detail. Watch your price update in real time. Final quote confirmed at the studio after your impression.</p>
+  <a href="#sec-teeth" class="hero-cta">Start Building ↓</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+<!-- ── STEP 1: TEETH ── -->
+<div class="section" id="sec-teeth">
+  <div class="sec-head reveal">
+    <span class="sec-num">01 / Teeth Selection</span>
+    <h2 class="sec-title">Which Teeth?</h2>
+    <p class="sec-sub">Tap each tooth you want covered. Tap again to deselect. Use quick-select combos below.</p>
+  </div>
+
+  <div class="odon-wrap reveal reveal-d1">
+    <div class="odon-label">// Click or tap to select · Click again to deselect</div>
+
+    <div class="jaw-section">
+      <div class="jaw-title">UPPER JAW</div>
+      <div class="tooth-row" id="upper-row"></div>
+    </div>
+
+    <div class="jaw-section">
+      <div class="jaw-title">LOWER JAW</div>
+      <div class="tooth-row" id="lower-row"></div>
+    </div>
+
+    <div class="combo-bar" id="combo-bar">
+      <button class="combo-btn" onclick="selectCombo('top6')">Top 6</button>
+      <button class="combo-btn" onclick="selectCombo('top8')">Top 8</button>
+      <button class="combo-btn" onclick="selectCombo('bot6')">Bottom 6</button>
+      <button class="combo-btn" onclick="selectCombo('bot8')">Bottom 8</button>
+      <button class="combo-btn" onclick="selectCombo('fangs')">Fangs</button>
+      <button class="combo-btn" onclick="selectCombo('full')">Full Set</button>
+      <button class="combo-btn" onclick="selectCombo('none')">Clear All</button>
+    </div>
+
+    <div class="teeth-count"><span id="tooth-cnt">0</span><small>SELECTED</small></div>
+  </div>
+</div>
+
+<!-- ── STEP 2: MATERIAL ── -->
+<div class="section" id="sec-mat">
+  <div class="sec-head reveal">
+    <span class="sec-num">02 / Material</span>
+    <h2 class="sec-title">Choose Material</h2>
+    <p class="sec-sub">Each material sets the base price per tooth. Gold 18K uses live market rates.</p>
+  </div>
+  <div class="mat-grid reveal reveal-d1" id="mat-grid"></div>
+</div>
+
+<!-- ── STEP 3: DESIGN LEVEL ── -->
+<div class="section" id="sec-cplx">
+  <div class="sec-head reveal">
+    <span class="sec-num">03 / Design Level</span>
+    <h2 class="sec-title">Design Complexity</h2>
+    <p class="sec-sub">From simple solid bars to masterpiece-level sculpting. Higher complexity = higher designer fee.</p>
+  </div>
+  <div class="level-grid reveal reveal-d1" id="level-grid"></div>
+</div>
+
+<!-- ── STEP 4: ADD-ONS ── -->
+<div class="section" id="sec-addons">
+  <div class="sec-head reveal">
+    <span class="sec-num">04 / Add-Ons</span>
+    <h2 class="sec-title">Optional Extras</h2>
+    <p class="sec-sub">All optional. Click any card to expand and configure.</p>
+  </div>
+  <div class="addon-grid reveal reveal-d1">
+
+    <!-- STONES -->
+    <div class="addon-tile" id="ao-stones" onclick="toggleAO('stones',this)">
+      <div class="ao-head">
+        <div class="ao-left">
+          <div class="ao-icon">💎</div>
+          <div>
+            <div class="ao-title">Stones & Diamonds</div>
+            <div class="ao-hint">CZ · Moissanite · Natural Diamond</div>
+          </div>
+        </div>
+        <span class="ao-chev">▼</span>
+      </div>
+      <div class="ao-body" onclick="event.stopPropagation()">
+        <div class="avail-warn" id="stones-avail-note">⚠ Stone setting only available for Silver 925 and Gold 18K.</div>
+        <div class="ao-sub">Stone Style</div>
+        <div class="pills" id="sg-pills">
+          <button class="pill on" data-v="None" onclick="pp(event,this,'sg')">None</button>
+          <button class="pill" data-v="Single" onclick="pp(event,this,'sg')">Single Stone(s)</button>
+          <button class="pill" data-v="Iced" onclick="pp(event,this,'sg')">Iced Out</button>
+        </div>
+        <div id="single-wrap" style="display:none">
+          <div class="ao-sep"></div>
+          <div class="ao-sub">Setting Type</div>
+          <div class="pills" id="set-pills">
+            <button class="pill on" data-v="Flush" onclick="pp(event,this,'set')">Flush +150/stone</button>
+            <button class="pill" data-v="Prong" onclick="pp(event,this,'set')">Prong +200/stone</button>
+            <button class="pill" data-v="Bezel" onclick="pp(event,this,'set')">Bezel +250/stone</button>
+          </div>
+          <div class="ao-sub">Gem Type</div>
+          <div class="pills" id="gem-pills">
+            <button class="pill on" data-v="CZ" onclick="pp(event,this,'gem')">CZ +50/stone</button>
+            <button class="pill" data-v="Moissanite" onclick="pp(event,this,'gem')">Moissanite +360/stone</button>
+            <button class="pill" data-v="Natural" onclick="pp(event,this,'gem')">Natural Diamond</button>
+          </div>
+          <div class="ao-sub">Number of Stones</div>
+          <div class="stepper">
+            <button class="stp-btn" onclick="adjS(event,-1)">−</button>
+            <span class="stp-n" id="stn">1</span>
+            <button class="stp-btn" onclick="adjS(event,1)">+</button>
+          </div>
+        </div>
+        <div id="iced-wrap" style="display:none">
+          <div class="ao-sep"></div>
+          <div class="ao-sub">Iced Out Pattern</div>
+          <div class="pills" id="ios-pills">
+            <button class="pill on" data-v="Pave" onclick="pp(event,this,'ios')">Pavé +1,000/tooth</button>
+            <button class="pill" data-v="Channel" onclick="pp(event,this,'ios')">Channel +1,500/tooth</button>
+          </div>
+          <div class="ao-sub">Gem Type</div>
+          <div class="pills" id="iog-pills">
+            <button class="pill on" data-v="CZ" onclick="pp(event,this,'iog')">CZ (Included)</button>
+            <button class="pill" data-v="Moissanite" onclick="pp(event,this,'iog')">Moissanite</button>
+            <button class="pill" data-v="Natural" onclick="pp(event,this,'iog')">Natural Diamond</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENAMEL -->
+    <div class="addon-tile" onclick="toggleAO('enamel',this)" id="ao-enamel">
+      <div class="ao-head">
+        <div class="ao-left">
+          <div class="ao-icon">🎨</div>
+          <div>
+            <div class="ao-title">Enamel Coloring</div>
+            <div class="ao-hint">Glass-fused permanent color</div>
+          </div>
+        </div>
+        <span class="ao-chev">▼</span>
+      </div>
+      <div class="ao-body" onclick="event.stopPropagation()">
+        <div class="ao-sub">Color Level</div>
+        <div class="pills" id="en-pills">
+          <button class="pill on" data-v="Single Tone" onclick="pp(event,this,'en')">Single Tone — 200 EGP</button>
+          <button class="pill" data-v="Multi-Tone" onclick="pp(event,this,'en')">Multi-Tone — 350 EGP</button>
+          <button class="pill" data-v="Master Color" onclick="pp(event,this,'en')">Master Color — 750 EGP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLATING -->
+    <div class="addon-tile" onclick="toggleAO('plate',this)" id="ao-plate">
+      <div class="ao-head">
+        <div class="ao-left">
+          <div class="ao-icon">✨</div>
+          <div>
+            <div class="ao-title">Surface Plating</div>
+            <div class="ao-hint">Yellow · Rose · White · Black · Silver</div>
+          </div>
+        </div>
+        <span class="ao-chev">▼</span>
+      </div>
+      <div class="ao-body" onclick="event.stopPropagation()">
+        <div class="ao-sub">Finish Color</div>
+        <div class="pills" id="plc-pills">
+          <button class="pill on" data-v="Yellow Gold" onclick="pp(event,this,'plc')">Yellow Gold — 300 EGP</button>
+          <button class="pill" data-v="Rose Gold" onclick="pp(event,this,'plc')">Rose Gold — 300 EGP</button>
+          <button class="pill" data-v="White Gold" onclick="pp(event,this,'plc')">White Gold — 400 EGP</button>
+          <button class="pill" data-v="Black Gold" onclick="pp(event,this,'plc')">Black Gold — 400 EGP</button>
+          <button class="pill" data-v="Silver" onclick="pp(event,this,'plc')">Silver — 200 EGP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LASER -->
+    <div class="addon-tile" onclick="toggleAO('laser',this)" id="ao-laser">
+      <div class="ao-head">
+        <div class="ao-left">
+          <div class="ao-icon">⚡</div>
+          <div>
+            <div class="ao-title">Laser Engraving</div>
+            <div class="ao-hint">Precision etched patterns & text</div>
+          </div>
+        </div>
+        <span class="ao-chev">▼</span>
+      </div>
+      <div class="ao-body" onclick="event.stopPropagation()">
+        <div class="ao-sub">Artwork Size</div>
+        <div class="pills" id="ls-pills">
+          <button class="pill on" data-v="Small" onclick="pp(event,this,'ls')">Small — 200 EGP</button>
+          <button class="pill" data-v="Medium" onclick="pp(event,this,'ls')">Medium — 450 EGP</button>
+          <button class="pill" data-v="Large" onclick="pp(event,this,'ls')">Large — 700 EGP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANODIZE (Ti only) -->
+    <div class="addon-tile" onclick="toggleAO('anod',this)" id="ao-anod" style="display:none">
+      <div class="ao-head">
+        <div class="ao-left">
+          <div class="ao-icon">🌈</div>
+          <div>
+            <div class="ao-title">Anodize Coloring</div>
+            <div class="ao-hint">Titanium exclusive · permanent molecular color</div>
+          </div>
+        </div>
+        <span class="ao-chev">▼</span>
+      </div>
+      <div class="ao-body" onclick="event.stopPropagation()">
+        <div class="ao-sub">Color Count</div>
+        <div class="pills" id="an-pills">
+          <button class="pill on" data-v="Single" onclick="pp(event,this,'an')">Single — 300 EGP</button>
+          <button class="pill" data-v="Dual" onclick="pp(event,this,'an')">Dual Tone — 350 EGP</button>
+          <button class="pill" data-v="Multi" onclick="pp(event,this,'an')">Multi-Color — 450 EGP</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Share -->
+  <div class="share-panel" id="share-panel">
+    <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">// ESTIMATE SUMMARY</div>
+    <div class="share-text" id="share-text"></div>
+    <div class="share-btns">
+      <button class="share-btn" onclick="copyEst()">📋 Copy</button>
+      <button class="share-btn" onclick="shareWA()">💬 Share WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="section">
+  <div class="summary reveal">
+    <div class="sum-inner">
+      <div class="sum-config" id="sf-config"></div>
+      <span class="sum-label">// YOUR ESTIMATED PRICE</span>
+      <div class="sum-price" id="sf-price"><sup>EGP</sup>0</div>
+      <div class="sum-sec" id="sf-sec"></div>
+      <div class="sum-note">Estimate only — final price confirmed at your studio visit after impression</div>
+      <div class="sum-cur-wrap">
+        <div class="cur-switcher">
+          <button class="cur-btn active" data-cur="EGP" onclick="setCurrency('EGP',this)">EGP</button>
+          <button class="cur-btn" data-cur="USD" onclick="setCurrency('USD',this)">USD</button>
+          <button class="cur-btn" data-cur="EUR" onclick="setCurrency('EUR',this)">EUR</button>
+          <button class="cur-btn" data-cur="SAR" onclick="setCurrency('SAR',this)">SAR</button>
+          <button class="cur-btn" data-cur="AED" onclick="setCurrency('AED',this)">AED</button>
+        </div>
+      </div>
+      <div class="sum-actions">
+        <a href="booking.html" class="sum-cta">Book Your Appointment</a>
+        <button class="sum-ghost" onclick="openModal()">View Breakdown</button>
+        <button class="sum-ghost" onclick="toggleShare()">Share Estimate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WHY -->
+<div class="section">
+  <div class="sec-head reveal"><span class="sec-num">Why EGYGRILLZ</span><h2 class="sec-title">Egypt's #1 Studio</h2></div>
+  <div class="why-grid reveal reveal-d1">
+    <div class="why-card"><div class="why-icon">🧬</div><div class="why-title">100% Custom</div><div class="why-desc">Every piece made from an impression of your exact teeth. Unique to your smile, impossible to replicate.</div></div>
+    <div class="why-card"><div class="why-icon">💎</div><div class="why-title">Certified Materials</div><div class="why-desc">Genuine 18K gold, real 925 silver, aerospace titanium, cobalt chrome. GRA-certified diamonds available.</div></div>
+    <div class="why-card"><div class="why-icon">🛡️</div><div class="why-title">Safe & Removable</div><div class="why-desc">No drilling, no permanent attachment. Fully removable, safe for daily wear when kept clean.</div></div>
+    <div class="why-card"><div class="why-icon">⚡</div><div class="why-title">Fast Turnaround</div><div class="why-desc">Chrome & Titanium: 5–7 days. Gold & Silver: 10–14 days. Rush service available on request.</div></div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="section">
+  <div class="sec-head reveal"><span class="sec-num">FAQ</span><h2 class="sec-title">Got Questions?</h2></div>
+  <div id="faq-list" class="reveal reveal-d1"></div>
+</div>
+
+<!-- CTA BAND -->
+<div class="cta-band reveal">
+  <span class="eyebrow">Begin Your Journey</span>
+  <h2>Book Your Appointment</h2>
+  <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
+  <div class="cta-btns">
+    <a href="booking.html" class="cta-btn-solid">Schedule Appointment</a>
+    <a href="contact.html" class="cta-btn">Contact Us</a>
+  </div>
+</div>
+
+</div><!-- /main-content -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-main">
+    <div class="footer-col">
+      <h4>EGYGRILLZ Egypt</h4>
+      <p>Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, Titanium, and VVS Diamonds tailored to your smile.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <a href="about.html">About Us</a>
+      <a href="booking.html">Schedule</a>
+      <a href="contact.html">Contact</a>
+      <a href="grillz-gallery.html">Gallery</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="shipping.html">Care & Shipping</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-icons">
+      <a href="https://instagram.com/egygrillz" target="_blank">📷</a>
+    </div>
+    <span class="footer-logo">EGYGRILLZ</span>
+    <span class="legal">© 2026 EGYGRILLZ · DR Mohamed Mahdy</span>
+  </div>
+</footer>
+
+<!-- AI CHAT -->
+<div id="ai-chat">
+  <div class="chat-window" id="chat-window">
+    <div class="chat-header">
+      <span class="chat-header-icon">🤖</span>
+      <div class="chat-header-info">
+        <div class="chat-header-title">GRILLZ AI</div>
+        <div class="chat-header-status"><div class="status-dot"></div>Online · Knows everything</div>
+      </div>
+      <button class="chat-close" onclick="toggleChat()">✕</button>
+    </div>
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-suggestions" id="chat-suggestions">
+      <button class="suggest-btn" onclick="sendSuggestion(this)">How much is a gold set?</button>
+      <button class="suggest-btn" onclick="sendSuggestion(this)">What's the difference in materials?</button>
+      <button class="suggest-btn" onclick="sendSuggestion(this)">How does payment work?</button>
+      <button class="suggest-btn" onclick="sendSuggestion(this)">Is it safe?</button>
+    </div>
+    <div class="chat-input-wrap">
+      <input class="chat-input" id="chat-input" placeholder="Ask anything about EGYGRILLZ..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chat-send" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+  <button class="chat-toggle" id="chat-toggle-btn" onclick="toggleChat()">🤖</button>
+  <div class="unread-badge" id="unread-badge">1</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="modal-title">// Price Breakdown</div>
+    <div id="modal-body"></div>
+    <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">CLOSE</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
+const _B = 'https://raw.githubusercontent.com/egygrillz/egygriilz/main/';
+
+const CURRENCIES = {
+  EGP:{symbol:'EGP',rate:1,decimals:0},
+  USD:{symbol:'USD',rate:0.021,decimals:0},
+  EUR:{symbol:'EUR',rate:0.019,decimals:0},
+  SAR:{symbol:'SAR',rate:0.079,decimals:0},
+  AED:{symbol:'AED',rate:0.077,decimals:0},
+};
+let activeCurrency='EGP';
+let EGP_TO_USD=0.021;
+
+let SILVER_PER_GRAM=125;
+let GOLD18K_PER_GRAM=6250;
+let goldFetchedAt=0;
+
+const MATS=[
+  {id:'Silver 925',nm:'Silver 925',sub:'Sterling Silver · Lost-Wax Cast',
+   desc:'The brilliant, affordable classic. Perfect for intricate cutwork and iced-out designs. Hypoallergenic and easy to polish.',
+   icon:'🥈',precious:true,
+   calcBase:()=>Math.round((200+37.5+46+2.3*SILVER_PER_GRAM)*2.8)},
+  {id:'Gold 18K',nm:'Gold 18K',sub:'Solid 18K Gold · Lost-Wax Cast',
+   desc:'The pinnacle of grillz. Hypoallergenic, tarnish-free, holds its value. Karat purity certified at point of sale.',
+   icon:'🥇',precious:true,
+   calcBase:()=>Math.round((200+60+50+1.15*GOLD18K_PER_GRAM)*2.8)},
+  {id:'Cobalt Chrome',nm:'Cobalt Chrome',sub:'Gunmetal Alloy · 3D Printed (DMLS)',
+   desc:'Ultra-durable, scratch-resistant. Distinctive dark silver appearance. Fixed production cost — no metal market fluctuation.',
+   icon:'⚙️',precious:false,
+   calcBase:()=>1000},
+  {id:'Titanium',nm:'Titanium',sub:'Aerospace Grade · 3D Printed (DMLS)',
+   desc:'Lightest material, fully biocompatible (used in dental implants). Stronger than steel. Anodize-ready for permanent vivid colors.',
+   icon:'🚀',precious:false,
+   calcBase:()=>2000},
+];
+
+const CPLX=[
+  {id:'L1',nm:'The Bar',        label:'L1',mult:1.00,pct:'0%',   desc:'Simple solid bar — no cuts, no detail.'},
+  {id:'L2',nm:'Solid Cap',      label:'L2',mult:1.05,pct:'+5%',  desc:'Seamless polished plain cap.'},
+  {id:'L3',nm:'Medium',         label:'L3',mult:1.10,pct:'+10%', desc:'Texture work or shaped framing.'},
+  {id:'L4',nm:'Hard',           label:'L4',mult:1.15,pct:'+15%', desc:'Intricate manual detail.'},
+  {id:'L5',nm:'Complex',        label:'L5',mult:1.25,pct:'+25%', desc:'Advanced layering, multi-step.'},
+  {id:'L6',nm:'Master',         label:'L6',mult:1.40,pct:'+40%', desc:'Full artistic sculpting.'},
+  {id:'L7',nm:'Masterpiece',    label:'L7',mult:1.60,pct:'+60%', desc:'One-of-a-kind commission.'},
+];
+
+const PLATES={
+  'Yellow Gold':300,'Rose Gold':300,
+  'White Gold':400,'Black Gold':400,'Silver':200
+};
+const ENAMEL_PRICES={'Single Tone':200,'Multi-Tone':350,'Master Color':750};
+const LASER_PRICES={'Small':200,'Medium':450,'Large':700};
+const ANOD_PRICES={'Single':300,'Dual':350,'Multi':450};
+const SETTING_PRICE={Flush:150,Prong:200,Bezel:250};
+const GEM_SINGLE={CZ:50,Moissanite:360,Natural:0};
+const ICED_SETTING={Pave:1000,Channel:1500};
+const ICED_GEM_EXTRA={CZ:0,Moissanite:1800,Natural:5000};
+
+const FAQ_DATA=[
+  {q:'How much does it cost?',a:'Prices depend on material, teeth count, and design level. Cobalt Chrome starts at 1,000 EGP/tooth, Titanium at 2,000 EGP/tooth at Level 1. Silver 925 and Gold 18K are calculated from live metal rates. Use the builder above for your exact estimate.'},
+  {q:'How does payment work?',a:'A 50% deposit is required to confirm your order and begin production. The remaining 50% is due before the finished piece is released or shipped. We accept cash, bank transfer, and Vodafone Cash. All deposits are 100% non-refundable.'},
+  {q:'Is my price locked after a quote?',a:'Price quotations are valid for 7 calendar days. Gold 18K prices fluctuate with the live gold market. Your price is only locked once you pay the deposit.'},
+  {q:'What is your refund policy?',a:'All products are custom-made to your exact dental measurements and are strictly non-refundable and non-exchangeable. The only exception is if EGYGRILLZ cancels your order — in that case a full deposit refund is issued.'},
+  {q:'Are diamonds available on all materials?',a:'No. Diamond setting is only available for precious metals — Silver 925 and Gold 18K. We offer CZ (AAAAA cubic zirconia), Moissanite (GRA-certified VVS1/D color), and Natural Diamonds (SI or VS grade).'},
+  {q:'How do I care for my grillz?',a:'Rinse with cold water after every wear. Use a soft toothbrush only. Do not use whitening or abrasive toothpaste on plated pieces. Pat dry and store in the provided EGYGRILLZ case. Avoid all chemicals.'},
+  {q:'Does it hurt to get fitted?',a:'Not at all. The impression takes 3–5 minutes with dental-grade material. No discomfort. Grillz rest over your teeth with no adhesive, no drilling, no permanent alteration.'},
+  {q:'How long does it take?',a:'Chrome & Titanium: 5–7 days. Silver 925 & Gold 18K: 10–14 days. Rush service available on request.'},
+];
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+const S={
+  teeth:new Set(),
+  matIdx:0,cplxIdx:0,
+  enamel:false,plate:false,laser:false,anod:false,stones:false,
+  plc:'Yellow Gold',en:'Single Tone',ls:'Small',an:'Single',
+  sg:'None',set:'Flush',gem:'CZ',stoneN:1,
+  ios:'Pave',iog:'CZ',
+};
+
+/* ═══════════════════════════════════════
+   CURRENCY
+═══════════════════════════════════════ */
+function setCurrency(cur,btn){
+  activeCurrency=cur;
+  document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.dataset.cur===cur));
+  updatePrice();
+}
+function convertEGP(egp){
+  let rate=CURRENCIES[activeCurrency].rate;
+  if(activeCurrency==='USD') rate=EGP_TO_USD;
+  if(activeCurrency==='EUR') rate=EGP_TO_USD*0.92;
+  if(activeCurrency==='SAR') rate=EGP_TO_USD*3.75;
+  if(activeCurrency==='AED') rate=EGP_TO_USD*3.67;
+  return{amount:Math.round(egp*rate),symbol:CURRENCIES[activeCurrency].symbol};
+}
+function fmtCur(egp){
+  if(!egp) return `0 <span class="curr">EGP</span>`;
+  const{amount,symbol}=convertEGP(egp);
+  return `${amount.toLocaleString()} <span class="curr">${symbol}</span>`;
+}
+
+/* ═══════════════════════════════════════
+   LIVE GOLD
+═══════════════════════════════════════ */
+async function fetchGold(){
+  try{
+    const r=await fetch('https://data-asg.goldprice.org/dbXRates/EGP',{cache:'no-store',signal:AbortSignal.timeout(6000)});
+    if(!r.ok) throw 0;
+    const d=await r.json();
+    if(d&&d.items&&d.items[0]&&d.items[0].xauPrice){
+      const ozEGP=d.items[0].xauPrice;
+      GOLD18K_PER_GRAM=Math.round((ozEGP/31.1035)*0.75);
+      const usdOz=3300;
+      EGP_TO_USD=Math.max(0.015,Math.min(0.03,usdOz/ozEGP));
+      goldFetchedAt=Date.now();
+      updateGoldUI();
+      updatePrice();
+      return;
+    }
+  }catch(e){}
+  try{
+    const r=await fetch('https://api.gold-api.com/price/XAU',{cache:'no-store',signal:AbortSignal.timeout(6000)});
+    if(!r.ok) throw 0;
+    const d=await r.json();
+    if(d&&d.price){
+      const ozEGP=d.price/EGP_TO_USD;
+      GOLD18K_PER_GRAM=Math.round((ozEGP/31.1035)*0.75);
+      goldFetchedAt=Date.now();
+      updateGoldUI();
+      updatePrice();
+    }
+  }catch(e){}
+}
+function updateGoldUI(){
+  const txt=`18K: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g`;
+  const hdr=document.getElementById('hdr-gold');
+  if(hdr) hdr.textContent=txt;
+  // Update gold mat card price label
+  buildMatGrid();
+}
+setInterval(()=>{if(Date.now()-goldFetchedAt>3600000)fetchGold();},60000);
+
+/* ═══════════════════════════════════════
+   BUILD UI
+═══════════════════════════════════════ */
+function buildTeeth(){
+  buildJaw('upper-row','U');
+  buildJaw('lower-row','L');
+}
+function buildJaw(id,pre){
+  const row=document.getElementById(id);
+  row.innerHTML='';
+  // Right side: R8..R1
+  for(let i=8;i>=1;i--){
+    const tid=`${pre}R${i}`;
+    row.appendChild(makeToothBtn(tid,i,pre));
+  }
+  const sep=document.createElement('div');
+  sep.className='tooth-sep';
+  row.appendChild(sep);
+  // Left side: L1..L8
+  for(let i=1;i<=8;i++){
+    const tid=`${pre}L${i}`;
+    row.appendChild(makeToothBtn(tid,i,pre));
+  }
+}
+function makeToothBtn(id,num,pre){
+  const btn=document.createElement('button');
+  btn.className='tooth-btn'+(S.teeth.has(id)?' on':'');
+  btn.innerHTML=`${num}<span class="tn">${id}</span>`;
+  let lastT=0;
+  btn.addEventListener('touchend',e=>{
+    e.preventDefault();
+    const n=Date.now();
+    if(n-lastT<300)return;
+    lastT=n;
+    toggleTooth(id,btn);
+  },{passive:false});
+  btn.addEventListener('click',e=>{
+    const n=Date.now();
+    if(n-lastT<400)return;
+    toggleTooth(id,btn);
+  });
+  return btn;
+}
+function toggleTooth(id,btn){
+  S.teeth.has(id)?S.teeth.delete(id):S.teeth.add(id);
+  btn.classList.toggle('on',S.teeth.has(id));
+  document.getElementById('tooth-cnt').textContent=S.teeth.size;
+  updatePrice();
+}
+
+function buildMatGrid(){
+  const grid=document.getElementById('mat-grid');
+  if(!grid)return;
+  grid.innerHTML=MATS.map((m,i)=>`
+    <div class="mat-card${S.matIdx===i?' on':''}" onclick="selectMat(${i})">
+      <div class="mat-icon">${m.icon}</div>
+      <div class="mat-nm">${m.nm}</div>
+      <div class="mat-sub">${m.sub}</div>
+      <div class="mat-desc">${m.desc}</div>
+      <div class="mat-price">${m.id==='Gold 18K'?`Live: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g`:m.id==='Silver 925'?`${SILVER_PER_GRAM} EGP/g`:'Fixed price'}</div>
+    </div>
+  `).join('');
+}
+function selectMat(i){
+  S.matIdx=i;
+  buildMatGrid();
+  onMatChange();
+  updatePrice();
+}
+function onMatChange(){
+  document.getElementById('ao-anod').style.display=MATS[S.matIdx].id==='Titanium'?'':'none';
+  const prec=MATS[S.matIdx].precious;
+  document.getElementById('stones-avail-note').classList.toggle('show',!prec);
+}
+
+function buildLevelGrid(){
+  const grid=document.getElementById('level-grid');
+  if(!grid)return;
+  grid.innerHTML=CPLX.map((c,i)=>`
+    <div class="level-card${S.cplxIdx===i?' on':''}" onclick="selectLevel(${i})">
+      <div class="lv-num">${i+1}</div>
+      <div class="lv-nm">${c.nm}</div>
+      <div class="lv-mult">${c.pct}</div>
+      <div class="lv-desc">${c.desc}</div>
+    </div>
+  `).join('');
+}
+function selectLevel(i){
+  S.cplxIdx=i;
+  buildLevelGrid();
+  updatePrice();
+}
+
+function buildFAQ(){
+  document.getElementById('faq-list').innerHTML=FAQ_DATA.map((f,i)=>`
+    <div class="faq-item" id="faq_${i}">
+      <div class="faq-q" onclick="document.getElementById('faq_${i}').classList.toggle('open')">
+        <span>${f.q}</span><span class="faq-chev">▼</span>
+      </div>
+      <div class="faq-a"><p>${f.a}</p></div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════
+   COMBOS
+═══════════════════════════════════════ */
+function selectCombo(type){
+  const allU=Array.from({length:8},(_,i)=>[`UR${i+1}`,`UL${i+1}`]).flat();
+  const allL=Array.from({length:8},(_,i)=>[`LR${i+1}`,`LL${i+1}`]).flat();
+  const top6=['UR3','UR2','UR1','UL1','UL2','UL3'];
+  const top8=[...top6,'UR4','UL4'];
+  const bot6=['LR3','LR2','LR1','LL1','LL2','LL3'];
+  const bot8=[...bot6,'LR4','LL4'];
+  const fangs=['UR3','UL3','LR3','LL3'];
+  const combos={
+    top6,top8,bot6,bot8,fangs,
+    full:[...allU,...allL],none:[]
+  };
+  const set=combos[type]||[];
+  S.teeth=new Set(set);
+  // Update all buttons
+  document.querySelectorAll('.tooth-btn').forEach(btn=>{
+    const id=btn.querySelector('.tn')?.textContent;
+    if(id) btn.classList.toggle('on',S.teeth.has(id));
+  });
+  document.getElementById('tooth-cnt').textContent=S.teeth.size;
+  // Update combo button active state
+  document.querySelectorAll('.combo-btn').forEach(b=>b.classList.remove('active'));
+  const map={top6:0,top8:1,bot6:2,bot8:3,fangs:4,full:5,none:6};
+  const idx=map[type];
+  if(idx!==undefined){
+    document.querySelectorAll('.combo-btn')[idx]?.classList.add('active');
+  }
+  updatePrice();
+}
+
+/* ═══════════════════════════════════════
+   ADDONS
+═══════════════════════════════════════ */
+function toggleAO(key,el){
+  S[key]=!S[key];
+  el.classList.toggle('open',S[key]);
+  updatePrice();
+}
+function pp(e,btn,group){
+  e.stopPropagation();
+  btn.closest('.pills').querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  S[group]=btn.dataset.v;
+  if(group==='sg'){
+    document.getElementById('single-wrap').style.display=S.sg==='Single'?'block':'none';
+    document.getElementById('iced-wrap').style.display=S.sg==='Iced'?'block':'none';
+  }
+  updatePrice();
+}
+function adjS(e,dir){
+  e.stopPropagation();
+  S.stoneN=Math.max(1,Math.min(20,S.stoneN+dir));
+  document.getElementById('stn').textContent=S.stoneN;
+  updatePrice();
+}
+
+/* ═══════════════════════════════════════
+   PRICE CALCULATION (same logic as original)
+═══════════════════════════════════════ */
+function calcBreakdown(){
+  const n=S.teeth.size;
+  if(!n)return{rows:[],total:0};
+  const rows=[];let total=0;
+  const mat=MATS[S.matIdx];
+  const cplx=CPLX[S.cplxIdx];
+  const basePer=mat.calcBase();
+  const baseTotal=Math.round(basePer*cplx.mult*n);
+  rows.push({label:`${mat.nm} × ${n} piece${n>1?'s':''} (${cplx.nm})`,val:baseTotal});
+  total+=baseTotal;
+  if(S.plate){
+    const pv=(PLATES[S.plc]||300)*n;
+    rows.push({label:`${S.plc} Plating × ${n}`,val:pv});
+    total+=pv;
+  }
+  if(S.enamel){
+    const ev=(ENAMEL_PRICES[S.en]||200)*n;
+    rows.push({label:`Enamel (${S.en}) × ${n}`,val:ev});
+    total+=ev;
+  }
+  if(S.laser){
+    const lv=(LASER_PRICES[S.ls]||200)*n;
+    rows.push({label:`Laser Engraving (${S.ls}) × ${n}`,val:lv});
+    total+=lv;
+  }
+  if(S.anod){
+    const av=(ANOD_PRICES[S.an]||300)*n;
+    rows.push({label:`Anodize (${S.an}) × ${n}`,val:av});
+    total+=av;
+  }
+  if(S.stones&&S.sg!=='None'){
+    if(!mat.precious){
+      rows.push({label:'⚠ Stones (not available for this material)',val:0});
+    } else if(S.sg==='Single'){
+      const sf=(SETTING_PRICE[S.set]||150)*S.stoneN;
+      const gf=S.gem==='Natural'?0:(GEM_SINGLE[S.gem]||0)*S.stoneN;
+      const sv=sf+gf;
+      const lbl=S.gem==='Natural'
+        ?`${S.stoneN}× Natural Diamond (${S.set}) — contact for stone price`
+        :`${S.stoneN}× ${S.gem} (${S.set} setting)`;
+      rows.push({label:lbl,val:sv});
+      total+=sv;
+    } else if(S.sg==='Iced'){
+      const sf=(ICED_SETTING[S.ios]||1000)*n;
+      const gx=S.iog==='CZ'?0:(ICED_GEM_EXTRA[S.iog]||0)*n;
+      const iv=sf+gx;
+      rows.push({label:`Iced Out — ${S.ios} (${S.iog}) × ${n}`,val:iv});
+      total+=iv;
+    }
+  }
+  return{rows,total:Math.round(total)};
+}
+
+/* ═══════════════════════════════════════
+   ANIMATED COUNTER
+═══════════════════════════════════════ */
+let _af=null,_last=0;
+function animateNum(from,to,el){
+  if(_af)cancelAnimationFrame(_af);
+  const dur=380,start=performance.now();
+  function step(now){
+    const p=Math.min((now-start)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    const cur=Math.round(from+(to-from)*ease);
+    el.innerHTML=fmtCur(cur);
+    if(p<1)_af=requestAnimationFrame(step);
+    else el.innerHTML=fmtCur(to);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ═══════════════════════════════════════
+   UPDATE UI
+═══════════════════════════════════════ */
+function updatePrice(){
+  const{rows,total}=calcBreakdown();
+  const pEl=document.getElementById('pb-price');
+  animateNum(_last,total,pEl);
+  pEl.classList.remove('flash');void pEl.offsetWidth;pEl.classList.add('flash');
+  const pbSec=document.getElementById('pb-secondary');
+  if(pbSec)pbSec.textContent=total>0&&activeCurrency!=='EGP'?`≈ ${total.toLocaleString()} EGP`:'';
+  document.getElementById('pb-mini-price')&&(document.getElementById('pb-mini-price').innerHTML=fmtCur(total));
+  const sfEl=document.getElementById('sf-price');
+  if(activeCurrency==='EGP'){
+    sfEl.innerHTML=`<sup>EGP</sup>${total.toLocaleString()}`;
+  }else{
+    const{amount,symbol}=convertEGP(total);
+    sfEl.innerHTML=`<sup>${symbol}</sup>${amount.toLocaleString()}`;
+  }
+  const sfSec=document.getElementById('sf-sec');
+  if(sfSec)sfSec.textContent=total>0&&activeCurrency!=='EGP'?`≈ ${total.toLocaleString()} EGP`:'';
+  _last=total;
+  document.getElementById('bd-btn').style.display=total>0?'':'none';
+  const tags=[
+    `${S.teeth.size} teeth`,MATS[S.matIdx].nm,CPLX[S.cplxIdx].nm,
+    ...(S.plate?[`${S.plc} Plating`]:[]),
+    ...(S.enamel?[`Enamel (${S.en})`]:[]),
+    ...(S.laser?[`Laser (${S.ls})`]:[]),
+    ...(S.anod?[`Anodize (${S.an})`]:[]),
+    ...(S.stones&&S.sg!=='None'?[`Stones: ${S.sg}`]:[]),
+  ];
+  document.getElementById('sf-config').innerHTML=tags.map(t=>`<span class="sum-tag">${t}</span>`).join('');
+  updateShareText(tags,total);
+  // show price bar
+  if(total>0)document.getElementById('price-bar').classList.add('show');
+}
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+function openModal(){
+  const{rows,total}=calcBreakdown();
+  if(!total)return;
+  const{amount,symbol}=convertEGP(total);
+  const convStr=activeCurrency!=='EGP'?`<div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-align:center;margin-top:8px;">≈ ${amount.toLocaleString()} ${symbol}</div>`:'';
+  document.getElementById('modal-body').innerHTML=
+    rows.map(r=>`<div class="br-row"><span class="br-label">${r.label}</span><span class="br-val">${r.val>0?r.val.toLocaleString()+' EGP':'—'}</span></div>`).join('')+
+    `<div class="br-total"><span>Total Estimate</span><span>${total.toLocaleString()} EGP</span></div>`+
+    convStr;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+/* ═══════════════════════════════════════
+   SHARE
+═══════════════════════════════════════ */
+function updateShareText(tags,total){
+  const{amount,symbol}=convertEGP(total);
+  const ps=activeCurrency==='EGP'?`${total.toLocaleString()} EGP`:`${amount.toLocaleString()} ${symbol} (${total.toLocaleString()} EGP)`;
+  const txt=['EGYGRILLZ — My Custom Estimate','─────────────────────',...tags.map(t=>`• ${t}`),'─────────────────────',`Total: ${ps}`,'','Estimate only — final price confirmed at studio.','Book: egygrillz.com/booking.html'].join('\n');
+  const el=document.getElementById('share-text');
+  if(el)el.textContent=txt;
+}
+function toggleShare(){document.getElementById('share-panel').classList.toggle('show');}
+function copyEst(){
+  navigator.clipboard.writeText(document.getElementById('share-text').textContent).then(()=>{
+    const btn=event.target.closest('.share-btn');
+    const o=btn.innerHTML;btn.innerHTML='✓ Copied!';setTimeout(()=>btn.innerHTML=o,2000);
+  });
+}
+function shareWA(){window.open(`https://wa.me/?text=${encodeURIComponent(document.getElementById('share-text').textContent)}`);}
+
+/* ═══════════════════════════════════════
+   SCROLL REVEAL
+═══════════════════════════════════════ */
+function initReveal(){
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target);}});
+  },{threshold:0.1});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+}
+
+/* ═══════════════════════════════════════
+   CURSOR
+═══════════════════════════════════════ */
+function initCursor(){
+  if(window.matchMedia('(hover:none)').matches)return;
+  const c=document.getElementById('cursor');
+  const t=document.getElementById('cursor-trail');
+  let cx=0,cy=0,tx=0,ty=0;
+  document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;c.style.left=cx+'px';c.style.top=cy+'px';});
+  function tick(){tx+=(cx-tx)*.12;ty+=(cy-ty)*.12;t.style.left=tx+'px';t.style.top=ty+'px';requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+  document.querySelectorAll('button,a,.tooth-btn,.mat-card,.level-card,.addon-tile,.combo-btn,.pill,.faq-q,.suggest-btn').forEach(el=>{
+    el.addEventListener('mouseenter',()=>document.body.classList.add('hovering'));
+    el.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
+  });
+}
+
+/* ═══════════════════════════════════════
+   AI CHAT
+═══════════════════════════════════════ */
+let chatOpen=false;
+let chatHistory=[];
+const CHAT_CONTEXT=`You are GRILLZ AI, the official AI assistant for EGYGRILLZ — Egypt's #1 custom dental jewelry studio. You are embedded in the price estimator page. Be helpful, friendly, concise, and knowledgeable. Answer in the same language the user writes in.
+
+ABOUT EGYGRILLZ:
+- Custom dental jewelry (grillz) studio in Egypt, founded by Dr. Mohamed Mahdy
+- Serves clients across Egypt and ships worldwide via FedEx
+- Instagram: @egygrillz | Email: egygrillz@gmail.com
+
+MATERIALS:
+1. Silver 925 (Sterling Silver, Lost-Wax Cast): Hypoallergenic, brilliant, affordable. Price tied to live silver rate (~125 EGP/g). Good for intricate cutwork and iced-out designs.
+2. Gold 18K (Solid 18K Gold, Lost-Wax Cast): Hypoallergenic, tarnish-free, highest value. Price calculated from live 18K gold market rate (~6,250 EGP/g). Karat purity certified.
+3. Cobalt Chrome (3D Printed DMLS): Ultra-durable, scratch-resistant, dark silver gunmetal look. Fixed price: 1,000 EGP per tooth at Level 1. No metal market fluctuation.
+4. Titanium (Aerospace Grade, 3D Printed DMLS): Lightest, fully biocompatible (used in dental implants), stronger than steel. Fixed price: 2,000 EGP per tooth at Level 1. Anodize-ready.
+
+DESIGN LEVELS (multiplier applied to base per-tooth price):
+- Level 1 — The Bar: 0% premium (×1.00). Simple solid bar, no cuts or detail.
+- Level 2 — Solid Cap: +5% (×1.05). Seamless polished plain cap.
+- Level 3 — Medium: +10% (×1.10). Texture work or shaped framing (e.g., drip, flame).
+- Level 4 — Hard: +15% (×1.15). Intricate manual detail (e.g., flower).
+- Level 5 — Complex: +25% (×1.25). Advanced layering or multi-step (e.g., snake, scorpion).
+- Level 6 — Master: +40% (×1.40). Full artistic sculpting, expert-level modeling (e.g., mermaid).
+- Level 7 — Masterpiece: +60% (×1.60). Maximum complexity, one-of-a-kind commission.
+
+ADD-ONS:
+- Enamel Coloring: Single Tone 200 EGP/tooth | Multi-Tone 350 EGP/tooth | Master Color 750 EGP/tooth
+- Surface Plating: Yellow Gold/Rose Gold 300 EGP/tooth | White Gold/Black Gold 400 EGP/tooth | Silver 200 EGP/tooth
+- Laser Engraving: Small 200 EGP | Medium 450 EGP | Large 700 EGP
+- Anodize Coloring (Titanium only): Single Color 300 EGP | Dual Tone 350 EGP | Multi-Color 450 EGP
+
+STONES & DIAMONDS (only available on Silver 925 and Gold 18K):
+- Single Stone styles: Flush +150/stone | Prong +200/stone | Bezel +250/stone
+- Gem types: CZ (AAAAA cubic zirconia) +50/stone | Moissanite (GRA-certified VVS1/D) +360/stone | Natural Diamond (SI or VS) — price on consultation
+- Iced Out (full coverage): Pavé +1,000/tooth | Channel +1,500/tooth
+- Iced Out gem upgrade: CZ included | Moissanite +1,800/tooth | Natural Diamond +5,000/tooth
+
+COMMON COMBOS:
+- Top 6: Upper jaw, R3 through L3 (6 teeth front)
+- Top 8: Upper jaw, R4 through L4 (8 teeth)
+- Bottom 6/8: Same for lower jaw
+- Fangs: Canines only (4 teeth: UR3, UL3, LR3, LL3)
+- Full Set: All available teeth
+
+PRICING EXAMPLE:
+- 6 teeth Silver 925, Level 2 = 6 × (200+37.5+46+2.3×125) × 2.8 × 1.05 ≈ rough estimate
+- 1 tooth Cobalt Chrome Level 1 = 1,000 EGP
+- 1 tooth Titanium Level 1 = 2,000 EGP
+
+PAYMENT:
+- 50% deposit to start production, 100% non-refundable
+- Remaining 50% paid before release/shipment
+- Accepts: cash, bank transfer, Vodafone Cash
+- Quote valid for 7 days only
+
+TURNAROUND:
+- Cobalt Chrome / Titanium: 5–7 days
+- Silver 925 / Gold 18K: 10–14 days
+- Rush service available
+
+CARE INSTRUCTIONS:
+- Rinse with cold water after every wear
+- Soft-bristle toothbrush only
+- No whitening or abrasive toothpaste on plated pieces
+- Pat dry with microfiber cloth, store in EGYGRILLZ case
+- Avoid chemicals: bleach, chlorine, perfume, hairspray
+- Remove before eating, drinking (except plain water), smoking, sleeping
+
+FIT & SAFETY:
+- Impression takes 3–5 minutes using dental-grade material
+- No pain, no drilling, no permanent alteration
+- Fit issues must be reported within 48 hours with photo/video evidence
+- All products are custom — strictly non-refundable and non-exchangeable
+
+SHIPPING:
+- Official carrier: FedEx with full tracking
+- Domestic Egypt: 2–4 business days
+- In-person collection by appointment only (ID required for high-value orders)
+
+REFUND POLICY: Custom-made to your exact dental measurements. Non-refundable and non-exchangeable in all circumstances except if EGYGRILLZ cancels the order.
+
+Respond concisely. If asked about a specific price with a configuration, calculate it. Use Egyptian Arabic informally if user writes in Arabic. Always be warm and professional.`;
+
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chat-window').classList.toggle('open',chatOpen);
+  if(chatOpen){
+    document.getElementById('unread-badge').classList.remove('show');
+    if(chatHistory.length===0) addAIMsg("مرحباً! 👋 I'm GRILLZ AI — ask me anything about materials, pricing, design levels, or care. I can also help you understand your estimate!");
+  }
+}
+
+function addMsg(text,role){
+  const msgs=document.getElementById('chat-msgs');
+  const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  div.innerHTML=`<div class="msg-bubble">${text}</div><span class="msg-time">${now}</span>`;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addAIMsg(text){addMsg(text,'ai');}
+function addUserMsg(text){addMsg(text,'user');}
+
+function showTyping(){
+  const msgs=document.getElementById('chat-msgs');
+  const div=document.createElement('div');
+  div.className='msg ai';div.id='typing-indicator';
+  div.innerHTML='<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function removeTyping(){
+  const t=document.getElementById('typing-indicator');
+  if(t)t.remove();
+}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text)return;
+  input.value='';
+  addUserMsg(text);
+  chatHistory.push({role:'user',content:text});
+  showTyping();
+  // Build context-aware message including current config
+  const{rows,total}=calcBreakdown();
+  const configNote=total>0?`\n\n[User's current estimate config: ${MATS[S.matIdx].nm}, ${CPLX[S.cplxIdx].nm}, ${S.teeth.size} teeth, Total: ${total.toLocaleString()} EGP]`:'';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:400,
+        system:CHAT_CONTEXT+configNote,
+        messages:chatHistory,
+      })
+    });
+    const data=await res.json();
+    removeTyping();
+    const reply=data.content?.find(b=>b.type==='text')?.text||'Sorry, I couldn\'t process that. Please try again.';
+    addAIMsg(reply);
+    chatHistory.push({role:'assistant',content:reply});
+    if(chatHistory.length>20)chatHistory=chatHistory.slice(-20);
+  }catch(e){
+    removeTyping();
+    addAIMsg('Connection issue — please try again or contact us on Instagram @egygrillz');
+  }
+}
+
+function sendSuggestion(btn){
+  document.getElementById('chat-input').value=btn.textContent;
+  sendChat();
+  document.getElementById('chat-suggestions').style.display='none';
+}
+
+// Show unread badge after delay
+setTimeout(()=>{
+  if(!chatOpen){
+    document.getElementById('unread-badge').classList.add('show');
+  }
+},4000);
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+function init(){
+  buildTeeth();
+  buildMatGrid();
+  buildLevelGrid();
+  buildFAQ();
+  updatePrice();
+  initReveal();
+  initCursor();
+  fetchGold();
+}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
