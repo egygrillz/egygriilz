@@ -4,36 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EGYGRILLZ – Egypt's First Custom Grillz</title>
+
+  <!-- CRITICAL: Resource hints -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preload" as="image" href="assets/images/hero-grillz.jpg" fetchpriority="high">
+
+  <!-- Favicons -->
   <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-title" content="EGYGRILLZ" />
   <link rel="manifest" href="site.webmanifest" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- Fonts with display=swap to prevent render blocking -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome loaded non-blocking -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior:smooth; }
-
-    /* ── CHANGED: body bg from #fff to #FAFAF9 ── */
     body { font-family:'Arimo',sans-serif; background:#FAFAF9; color:#000; line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
     body.menu-open { overflow:hidden; }
     img { display:block; max-width:100%; }
     a { text-decoration:none; color:inherit; }
 
-    /* ══════════════════════════════
-       HEADER — matched to golds.html
-    ══════════════════════════════ */
-    header {
-      position:fixed; top:0; left:0; right:0; height:60px;
-      /* CHANGED: background from #fff to #FAFAF9, border matches golds */
-      background:#FAFAF9;
-      border-bottom:1px solid rgba(0,0,0,0.08);
-      z-index:1000; display:flex; align-items:center;
-      justify-content:space-between; padding:0 5%;
-      transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
-    }
+    /* HEADER */
+    header { position:fixed; top:0; left:0; right:0; height:60px; background:#FAFAF9; border-bottom:1px solid rgba(0,0,0,0.08); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
     header.hidden { transform:translateY(-100%); }
     .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; color:#000; }
     .main-nav { display:flex; gap:20px; }
@@ -44,48 +46,33 @@
     .menu-toggle span { width:25px; height:1.5px; background:#000; display:block; }
     @media(max-width:980px) {
       .menu-toggle { display:flex; }
-      /* CHANGED: mobile nav bg from #fff to #FAFAF9 */
-      .main-nav {
-        position:fixed; top:60px; right:-100%; width:100%;
-        background:#FAFAF9;
-        flex-direction:column; padding:10px 5%;
-        transition:0.4s cubic-bezier(0.4,0,0.2,1);
-        box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100;
-      }
+      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:#FAFAF9; flex-direction:column; padding:10px 5%; transition:0.4s cubic-bezier(0.4,0,0.2,1); box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
       .main-nav.active { right:0; }
       .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,0.06); width:100%; }
     }
 
-    /* ══════════════════════════════
-       FLOATING LOGO
-    ══════════════════════════════ */
+    /* FLOATING LOGO */
     .floating-logo { position:fixed; top:20px; left:0; right:0; display:flex; align-items:center; justify-content:center; z-index:999; pointer-events:none; opacity:0; transform:translateY(-10px); transition:opacity 0.4s ease,transform 0.4s ease; }
     .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
-    .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; background:none; border:none; box-shadow:none; padding:0; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
+    .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
 
-    /* ══════════════════════════════
-       HERO
-    ══════════════════════════════ */
+    /* HERO */
     .hero { position:relative; width:100%; height:100vh; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center; }
-    .hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.7; transform:scale(1.05); animation:heroZoom 10s infinite alternate linear; }
+    .hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.7; will-change:transform; animation:heroZoom 10s infinite alternate linear; }
     @keyframes heroZoom { from { transform:scale(1); } to { transform:scale(1.1); } }
     .hero-content { position:absolute; z-index:10; bottom:60px; left:0; right:0; text-align:center; color:#fff; }
     .hero-content h1 { font-family:'Playfair Display',serif; font-size:clamp(30px,7vw,60px); text-transform:uppercase; letter-spacing:3px; margin-bottom:20px; }
     .hero-schedule-btn { color:#fff; text-decoration:underline; text-underline-offset:5px; text-transform:uppercase; font-weight:700; font-size:11px; letter-spacing:2px; transition:0.3s ease; }
     .hero-schedule-btn:hover { opacity:0.8; letter-spacing:3px; }
 
-    /* ══════════════════════════════
-       SECTION INTRO
-    ══════════════════════════════ */
+    /* SECTION INTRO */
     .lv-section-intro { text-align:center; padding:120px 20px 60px; }
     .lv-section-intro .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:12px; }
     .lv-section-intro h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,3vw,34px); letter-spacing:3px; text-transform:uppercase; }
     .lv-section-intro .rule { width:32px; height:1px; background:#000; margin:18px auto 0; }
 
-    /* ══════════════════════════════
-       CATEGORY HERO CARDS
-    ══════════════════════════════ */
-    .lv-cat-card { position:relative; overflow:hidden; cursor:pointer; background:#f5f5f5; width:100%; aspect-ratio:16/7; display:block; }
+    /* CATEGORY HERO CARDS */
+    .lv-cat-card { position:relative; overflow:hidden; cursor:pointer; background:#f5f5f5; width:100%; aspect-ratio:16/7; display:block; content-visibility:auto; contain-intrinsic-size:100vw 700px; }
     @media(max-width:680px) { .lv-cat-card { aspect-ratio:4/5; } }
     @media(max-width:420px) { .lv-cat-card { aspect-ratio:3/4; } }
     .lv-cat-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1s ease,transform 0.7s ease; }
@@ -102,13 +89,10 @@
     .lv-cat-link:hover { border-color:#fff; letter-spacing:3.5px; }
     @media(max-width:480px) { .lv-cat-info { padding:20px 20px 28px; } }
 
-    /* ══════════════════════════════
-       CATEGORY PRODUCT ROWS
-    ══════════════════════════════ */
-    .cat-row-section { padding:100px 0; border-bottom:1px solid #f0f0f0; }
+    /* PRODUCT ROWS */
+    .cat-row-section { padding:100px 0; border-bottom:1px solid #f0f0f0; content-visibility:auto; contain-intrinsic-size:100vw 600px; }
     .cat-row-section:last-of-type { border-bottom:none; }
     .cat-row-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 28px; }
-    .cat-row-header-left {}
     .cat-row-header-eyebrow { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:4px; }
     .cat-row-header h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; color:#000; }
     .cat-row-header-right { display:flex; align-items:center; gap:6px; }
@@ -120,15 +104,10 @@
     .cat-row-strip:active { cursor:grabbing; }
     .cat-row-strip::-webkit-scrollbar { display:none; }
     .lv-prod-card { flex:0 0 220px; cursor:pointer; position:relative; background:transparent; }
-    .lv-prod-card:first-child { flex:0 0 220px; }
     .lv-prod-img { position:relative; width:100%; aspect-ratio:3/4; background:#f5f5f5; overflow:hidden; margin-bottom:12px; }
     .lv-prod-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease,transform 0.5s ease; pointer-events:none; -webkit-user-drag:none; }
     .lv-prod-img img.active { opacity:1; }
     .lv-prod-card:hover .lv-prod-img img.active { transform:scale(1.05); }
-    .lv-prod-overlay { display:none; }
-    .lv-prod-discover { display:none; }
-    .lv-prod-img-dots { display:none; }
-    .lv-prod-body { padding:0; background:transparent; }
     .lv-prod-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:4px; }
     .lv-prod-name { font-size:13px; color:#000; margin-bottom:3px; line-height:1.35; }
     .lv-prod-price { font-size:12px; font-weight:700; color:#000; }
@@ -136,12 +115,19 @@
       .cat-row-header { padding:0 20px 20px; }
       .cat-row-strip { padding:0 20px 20px; }
       .lv-prod-card { flex:0 0 150px; }
-      .lv-prod-card:first-child { flex:0 0 150px; }
     }
 
-    /* ══════════════════════════════
-       LATEST DESIGNS STRIP
-    ══════════════════════════════ */
+    /* Skeleton loader */
+    .skeleton { background:linear-gradient(90deg,#f0f0f0 0%,#e8e8e8 50%,#f0f0f0 100%); background-size:200% 100%; animation:skel 1.4s infinite; }
+    @keyframes skel { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+    .skel-card { flex:0 0 220px; }
+    .skel-img { width:100%; aspect-ratio:3/4; margin-bottom:12px; }
+    .skel-line { height:10px; margin-bottom:6px; }
+    .skel-line.short { width:40%; }
+    .skel-line.med { width:70%; }
+    @media(max-width:480px) { .skel-card { flex:0 0 150px; } }
+
+    /* LATEST STRIP */
     .lv-strip-section { padding:120px 0 0; }
     .lv-new-strip-wrap { padding:0 0 0 80px; overflow:hidden; }
     .lv-new-strip-header { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 22px 0; }
@@ -165,10 +151,8 @@
       .lv-new-card { flex:0 0 150px; }
     }
 
-    /* ══════════════════════════════
-       GALLERY SECTION
-    ══════════════════════════════ */
-    .lv-gallery-section { background:#f0f0f0; margin-top:120px; padding:80px 0 100px; }
+    /* GALLERY */
+    .lv-gallery-section { background:#f0f0f0; margin-top:120px; padding:80px 0 100px; content-visibility:auto; contain-intrinsic-size:100vw 700px; }
     .lv-gallery-head { display:flex; align-items:flex-end; justify-content:space-between; padding:0 80px 36px; }
     .lv-gallery-head-left .eyebrow-dark { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:8px; }
     .lv-gallery-head-left h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(20px,2.8vw,32px); letter-spacing:3px; text-transform:uppercase; color:#000; }
@@ -186,14 +170,11 @@
     .gc-name { font-family:'Playfair Display',serif; font-size:16px; font-weight:400; letter-spacing:1px; text-transform:uppercase; color:#000; margin-bottom:8px; }
     .gc-desc { font-size:12px; letter-spacing:0.3px; color:#666; line-height:1.5; margin-bottom:8px; }
     .gc-price { font-size:13px; font-weight:700; letter-spacing:1px; color:#000; }
-    .lv-gal-overlay { display:none; }
     .lv-gallery-rule { width:32px; height:1px; background:#ccc; margin:40px 80px 0; }
     @media(max-width:480px) { .lv-gallery-head { padding:0 20px 28px; } .lv-gal-scroll { padding:0 20px; } .lv-gallery-rule { margin-left:20px; } }
 
-    /* ══════════════════════════════
-       INSTAGRAM POST SECTION
-    ══════════════════════════════ */
-    .ig-section { padding:100px 0 0; }
+    /* INSTAGRAM */
+    .ig-section { padding:100px 0 0; content-visibility:auto; contain-intrinsic-size:100vw 800px; }
     .ig-header { text-align:center; margin-bottom:40px; padding:0 5%; }
     .ig-header .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:10px; }
     .ig-header h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.4vw,28px); letter-spacing:3px; text-transform:uppercase; margin-bottom:6px; }
@@ -210,7 +191,7 @@
     .ig-post-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s ease; }
     .ig-post-img-wrap:hover img { transform:scale(1.02); }
     .ig-post-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.15); z-index:2; pointer-events:none; }
-    .ig-heart-anim { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); z-index:10; font-size:80px; color:#fff; opacity:0; pointer-events:none; filter:drop-shadow(0 2px 12px rgba(0,0,0,0.3)); transition:none; }
+    .ig-heart-anim { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); z-index:10; font-size:80px; color:#fff; opacity:0; pointer-events:none; filter:drop-shadow(0 2px 12px rgba(0,0,0,0.3)); }
     .ig-heart-anim.pop { animation:igHeartPop 0.9s ease forwards; }
     @keyframes igHeartPop { 0%{transform:translate(-50%,-50%) scale(0);opacity:0;} 15%{transform:translate(-50%,-50%) scale(1.3);opacity:1;} 30%{transform:translate(-50%,-50%) scale(1);opacity:1;} 70%{transform:translate(-50%,-50%) scale(1);opacity:1;} 100%{transform:translate(-50%,-50%) scale(1);opacity:0;} }
     .ig-post-actions { display:flex; align-items:center; justify-content:space-between; padding:10px 14px 6px; }
@@ -231,14 +212,11 @@
     .ig-post-follow-btn i { font-size:16px; }
     @media(max-width:580px) { .ig-post { margin:0 16px; border-radius:6px; } }
 
-    /* ══════════════════════════════
-       STORY BLOCK
-    ══════════════════════════════ */
-    .lv-story { display:grid; grid-template-columns:1fr 1fr; min-height:520px; margin-top:100px; }
+    /* STORY */
+    .lv-story { display:grid; grid-template-columns:1fr 1fr; min-height:520px; margin-top:100px; content-visibility:auto; contain-intrinsic-size:100vw 520px; }
     .lv-story-img { position:relative; overflow:hidden; background:#f0f0f0; min-height:400px; }
     .lv-story-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.7s ease; }
     .lv-story:hover .lv-story-img img { transform:scale(1.03); }
-    /* CHANGED: story text bg from #fff — stays #fff, fine as is */
     .lv-story-text { display:flex; flex-direction:column; justify-content:center; padding:64px 72px; background:#fff; }
     .lv-story-text .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#999; margin-bottom:16px; }
     .lv-story-text h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3vw,38px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:20px; }
@@ -247,67 +225,45 @@
     .lv-story-text a:hover { background:#000; color:#fff; }
     @media(max-width:768px) { .lv-story { grid-template-columns:1fr; } .lv-story-text { padding:40px 24px; } .lv-story-text p { max-width:100%; } .lv-story-img { min-height:280px; } }
 
-    /* ══════════════════════════════
-       CTA BAND
-    ══════════════════════════════ */
+    /* CTA */
     .lv-cta-band { background:#fff; color:#000; text-align:center; padding:90px 5%; margin-top:100px; }
-.lv-cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#aaa; margin-bottom:12px; }
-.lv-cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; color:#000; }
-.lv-cta-band p { font-size:13px; color:#999; max-width:480px; margin:0 auto 40px; line-height:1.75; }
-.lv-cta-btns { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
-.lv-cta-btn-white { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #aaa; padding:15px 38px; color:#666; transition:background 0.25s,color 0.25s,border-color 0.25s; }
-.lv-cta-btn-white:hover { background:#666; color:#fff; border-color:#666; }
-.lv-cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #ddd; padding:15px 38px; color:#aaa; transition:border-color 0.25s,color 0.25s; }
-.lv-cta-btn-outline:hover { border-color:#aaa; color:#666; }
-    /* ══════════════════════════════
-       FOOTER — matched to golds.html
-    ══════════════════════════════ */
-    footer {
-      /* CHANGED: background from #000 to #fff, color from #fff to #000 */
-      background:#fff;
-      color:#000;
-      padding:50px 5% 20px;
-    }
-    .footer-main {
-      display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px;
-      padding-bottom:40px;
-      /* CHANGED: border from #222 to #eee */
-      border-bottom:1px solid #eee;
-    }
+    .lv-cta-band .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#aaa; margin-bottom:12px; }
+    .lv-cta-band h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3.5vw,42px); letter-spacing:3px; text-transform:uppercase; line-height:1.2; margin-bottom:14px; color:#000; }
+    .lv-cta-band p { font-size:13px; color:#999; max-width:480px; margin:0 auto 40px; line-height:1.75; }
+    .lv-cta-btns { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
+    .lv-cta-btn-white { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #aaa; padding:15px 38px; color:#666; transition:background 0.25s,color 0.25s,border-color 0.25s; }
+    .lv-cta-btn-white:hover { background:#666; color:#fff; border-color:#666; }
+    .lv-cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #ddd; padding:15px 38px; color:#aaa; transition:border-color 0.25s,color 0.25s; }
+    .lv-cta-btn-outline:hover { border-color:#aaa; color:#666; }
+
+    /* FOOTER */
+    footer { background:#fff; color:#000; padding:50px 5% 20px; }
+    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #eee; }
     .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
     .footer-col p { font-size:13px; color:#888; max-width:300px; line-height:1.6; }
-    /* CHANGED: footer links from #fff to #333, hover from #888 to #000 */
     .footer-col a { display:block; color:#333; font-size:12px; margin-bottom:8px; transition:0.3s; }
     .footer-col a:hover { color:#000; }
     .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
-    /* CHANGED: logo filter from invert(1) white to brightness(0) black */
     .footer-logo-img { height:10px; filter:brightness(0); }
     .ceo-wrap { display:flex; align-items:center; gap:8px; }
     .ceo-label { font-size:7px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
     .ceo-name { font-family:'Alex Brush'; font-size:12px; color:#666; }
     .legal-text { font-size:9px; color:#aaa; text-transform:uppercase; }
-    /* CHANGED: footer icons from #fff to #333, hover from #888 to #000 */
     .footer-icons a { color:#333; margin-right:14px; font-size:16px; transition:0.3s; }
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
 
-    /* ══════════════════════════════
-       SCROLL REVEAL
-    ══════════════════════════════ */
+    /* REVEAL */
     .reveal { opacity:0; transform:translateY(28px); transition:opacity 0.85s ease,transform 0.85s ease; }
     .reveal.visible { opacity:1; transform:translateY(0); }
-    .reveal-d1 { transition-delay:0.12s; }
-    .reveal-d2 { transition-delay:0.24s; }
   </style>
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- FLOATING LOGO -->
   <div class="floating-logo" id="floating-logo">
     <a href="index.html">EGYGRILLZ</a>
   </div>
 
-  <!-- HEADER -->
   <header id="site-header">
     <a href="index.html" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -324,35 +280,34 @@
     </nav>
   </header>
 
-  <!-- ① HERO -->
+  <!-- HERO -->
   <section class="hero">
-    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ">
+    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ" fetchpriority="high" decoding="async">
     <div class="hero-content">
       <h1>BEYOND JEWELRY</h1>
       <a href="booking.html" class="hero-schedule-btn">SCHEDULE NOW</a>
     </div>
   </section>
 
-  <!-- LATEST DESIGNS STRIP -->
+  <!-- LATEST -->
   <div class="lv-strip-section">
     <div class="lv-new-strip-wrap reveal">
       <div class="lv-new-strip-header">
         <h2>Latest Designs</h2>
         <a href="latest-designs.html">View All</a>
       </div>
-      <div class="lv-new-strip" id="lv-new-strip"></div>
+      <div class="lv-new-strip" id="lv-new-strip" data-lazy="latest"></div>
     </div>
   </div>
 
-  <!-- ② COLLECTIONS INTRO -->
   <div class="lv-section-intro reveal">
     <div class="eyebrow">The Collections</div>
     <h2>Crafted for Your Smile</h2>
     <div class="rule"></div>
   </div>
 
-  <!-- ③ GOLDS hero card -->
-  <div class="lv-cat-card reveal" id="golds-card" onclick="window.location='golds.html'">
+  <!-- GOLDS -->
+  <div class="lv-cat-card reveal" id="golds-card" data-lazy="cat-golds" onclick="window.location='golds.html'">
     <div id="golds-card-slides"></div>
     <div class="lv-cat-info">
       <span class="tag">Gold Collection</span>
@@ -362,7 +317,6 @@
     </div>
   </div>
 
-  <!-- ④ GOLDS product row -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
       <div class="cat-row-header-left">
@@ -376,11 +330,11 @@
         </a>
       </div>
     </div>
-    <div class="cat-row-strip" id="golds-row"></div>
+    <div class="cat-row-strip" id="golds-row" data-lazy="row-golds"></div>
   </div>
 
-  <!-- ⑤ SILVERS hero card -->
-  <div class="lv-cat-card reveal" id="silvers-card" onclick="window.location='silvers.html'">
+  <!-- SILVERS -->
+  <div class="lv-cat-card reveal" id="silvers-card" data-lazy="cat-silvers" onclick="window.location='silvers.html'">
     <div id="silvers-card-slides"></div>
     <div class="lv-cat-info">
       <span class="tag">Silver Collection</span>
@@ -390,7 +344,6 @@
     </div>
   </div>
 
-  <!-- ⑥ SILVERS product row -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
       <div class="cat-row-header-left">
@@ -404,11 +357,11 @@
         </a>
       </div>
     </div>
-    <div class="cat-row-strip" id="silvers-row"></div>
+    <div class="cat-row-strip" id="silvers-row" data-lazy="row-silvers"></div>
   </div>
 
-  <!-- ⑦ DIAMONDS hero card -->
-  <div class="lv-cat-card reveal" id="diamonds-card" onclick="window.location='diamonds.html'">
+  <!-- DIAMONDS -->
+  <div class="lv-cat-card reveal" id="diamonds-card" data-lazy="cat-diamonds" onclick="window.location='diamonds.html'">
     <div id="diamonds-card-slides"></div>
     <div class="lv-cat-info">
       <span class="tag">Diamond Collection</span>
@@ -418,7 +371,6 @@
     </div>
   </div>
 
-  <!-- ⑧ DIAMONDS product row -->
   <div class="cat-row-section reveal">
     <div class="cat-row-header">
       <div class="cat-row-header-left">
@@ -432,10 +384,10 @@
         </a>
       </div>
     </div>
-    <div class="cat-row-strip" id="diamonds-row"></div>
+    <div class="cat-row-strip" id="diamonds-row" data-lazy="row-diamonds"></div>
   </div>
 
-  <!-- GALLERY SECTION -->
+  <!-- GALLERY -->
   <div class="lv-gallery-section reveal">
     <div class="lv-gallery-head">
       <div class="lv-gallery-head-left">
@@ -444,11 +396,11 @@
       </div>
       <a href="grillz-gallery.html">View Full Gallery</a>
     </div>
-    <div class="lv-gal-scroll" id="lv-gallery-scroll"></div>
+    <div class="lv-gal-scroll" id="lv-gallery-scroll" data-lazy="gallery"></div>
     <div class="lv-gallery-rule"></div>
   </div>
 
-  <!-- INSTAGRAM POST SECTION -->
+  <!-- IG -->
   <div class="ig-section reveal">
     <div class="ig-header">
       <div class="eyebrow">Follow Us</div>
@@ -459,7 +411,7 @@
         <div class="ig-post-user">
           <div class="ig-post-avatar">
             <div class="ig-post-avatar-inner">
-              <img src="logo/logo_black.png" alt="EGYGRILLZ">
+              <img src="logo/logo_black.png" alt="EGYGRILLZ" loading="lazy" decoding="async">
             </div>
           </div>
           <div>
@@ -469,7 +421,7 @@
         <button class="ig-post-more"><i class="fas fa-ellipsis"></i></button>
       </div>
       <div class="ig-post-img-wrap" id="ig-post-img-wrap">
-        <img src="assets/images/IMG_3749.jpg" alt="EGYGRILLZ Custom Grillz">
+        <img src="assets/images/IMG_3749.jpg" alt="EGYGRILLZ Custom Grillz" loading="lazy" decoding="async">
         <div class="ig-post-overlay"></div>
         <i class="fas fa-heart ig-heart-anim" id="ig-heart-anim"></i>
       </div>
@@ -493,10 +445,10 @@
     </div>
   </div>
 
-  <!-- STORY / ABOUT -->
+  <!-- STORY -->
   <div class="lv-story reveal">
     <div class="lv-story-img">
-      <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ Story" loading="lazy">
+      <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ Story" loading="lazy" decoding="async">
     </div>
     <div class="lv-story-text">
       <span class="eyebrow">Our Craft</span>
@@ -506,7 +458,6 @@
     </div>
   </div>
 
-  <!-- CTA BAND -->
   <div class="lv-cta-band reveal">
     <div class="eyebrow">Begin Your Journey</div>
     <h2>Book Your Appointment</h2>
@@ -517,7 +468,6 @@
     </div>
   </div>
 
-  <!-- FOOTER — matched to golds.html -->
   <footer>
     <div class="footer-main">
       <div class="footer-col">
@@ -542,8 +492,7 @@
         <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
         <a href="#"><i class="fas fa-location-dot"></i></a>
       </div>
-      <!-- CHANGED: using logo_white.png with brightness(0) filter = shows black logo on white footer -->
-      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy">
       <div class="ceo-wrap">
         <span class="ceo-label">Founder</span>
         <span class="ceo-name">DR Mohamed Mahdy</span>
@@ -553,223 +502,331 @@
   </footer>
 
   <script>
-    /* ── Header hide + floating logo ── */
-    (function(){
-      const header=document.getElementById('site-header');
-      const floatLogo=document.getElementById('floating-logo');
-      let lastY=window.scrollY;
-      window.addEventListener('scroll',()=>{
-        const y=window.scrollY, hiding=y>lastY&&y>80;
-        header.classList.toggle('hidden',hiding);
-        floatLogo.classList.toggle('visible',hiding);
-        lastY=y;
-      },{passive:true});
-    })();
+  (function(){
+    'use strict';
 
-    /* ── Mobile nav ── */
-    document.querySelector('.menu-toggle').addEventListener('click',()=>{
+    /* ─── Session cache to avoid refetching on nav ─── */
+    const CACHE_VER = 'v1';
+    const memCache = new Map();
+
+    async function cachedFetch(url, type = 'text') {
+      if (memCache.has(url)) return memCache.get(url);
+      try {
+        const ssKey = CACHE_VER + ':' + url;
+        const ss = sessionStorage.getItem(ssKey);
+        if (ss) { memCache.set(url, ss); return ss; }
+      } catch(e){}
+      const res = await fetch(url, { cache: 'force-cache' });
+      const data = type === 'json' ? await res.json() : await res.text();
+      const store = type === 'json' ? JSON.stringify(data) : data;
+      memCache.set(url, type === 'json' ? store : data);
+      try { sessionStorage.setItem(CACHE_VER + ':' + url, type === 'json' ? store : data); } catch(e){}
+      return type === 'json' ? data : data;
+    }
+
+    async function getJSON(url){
+      if (memCache.has('json:'+url)) return memCache.get('json:'+url);
+      try {
+        const ssKey = CACHE_VER + ':json:' + url;
+        const ss = sessionStorage.getItem(ssKey);
+        if (ss) { const p = JSON.parse(ss); memCache.set('json:'+url, p); return p; }
+      } catch(e){}
+      const res = await fetch(url, { cache: 'force-cache' });
+      const data = await res.json();
+      memCache.set('json:'+url, data);
+      try { sessionStorage.setItem(CACHE_VER + ':json:' + url, JSON.stringify(data)); } catch(e){}
+      return data;
+    }
+
+    async function getText(url){
+      if (memCache.has('txt:'+url)) return memCache.get('txt:'+url);
+      try {
+        const ssKey = CACHE_VER + ':txt:' + url;
+        const ss = sessionStorage.getItem(ssKey);
+        if (ss) { memCache.set('txt:'+url, ss); return ss; }
+      } catch(e){}
+      const res = await fetch(url, { cache: 'force-cache' });
+      const data = await res.text();
+      memCache.set('txt:'+url, data);
+      try { sessionStorage.setItem(CACHE_VER + ':txt:' + url, data); } catch(e){}
+      return data;
+    }
+
+    /* ─── Parse info.txt ─── */
+    function parseInfo(text){
+      const info = { name:'', price:'', desc:'', images:[] };
+      const lines = text.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const ci = line.indexOf(':');
+        if (ci === -1) continue;
+        const k = line.slice(0, ci).trim().toLowerCase();
+        const v = line.slice(ci+1).trim();
+        if (k === 'name' || k === 'title') info.name = v;
+        else if (k === 'price') info.price = v;
+        else if (k === 'description' || k === 'desc') info.desc = v;
+        else if (k === 'images') info.images = v.split(',').map(s=>s.trim()).filter(Boolean);
+      }
+      return info;
+    }
+
+    /* ─── Skeleton builder ─── */
+    function buildSkeleton(container, count = 4) {
+      let html = '';
+      for (let i = 0; i < count; i++) {
+        html += '<div class="skel-card"><div class="skel-img skeleton"></div><div class="skel-line short skeleton"></div><div class="skel-line med skeleton"></div><div class="skel-line short skeleton"></div></div>';
+      }
+      container.innerHTML = html;
+    }
+
+    /* ─── Header hide + floating logo (throttled) ─── */
+    const header = document.getElementById('site-header');
+    const floatLogo = document.getElementById('floating-logo');
+    let lastY = window.scrollY, ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const y = window.scrollY, hiding = y > lastY && y > 80;
+          header.classList.toggle('hidden', hiding);
+          floatLogo.classList.toggle('visible', hiding);
+          lastY = y;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+
+    /* ─── Mobile nav ─── */
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
 
-    /* ── Scroll reveal ── */
-    const revealObs=new IntersectionObserver(entries=>{
-      entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');revealObs.unobserve(e.target);}});
-    },{threshold:0.07});
-    document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
+    /* ─── Scroll reveal ─── */
+    const revealObs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); } });
+    }, { threshold: 0.07, rootMargin: '50px' });
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
-    /* ── Parse info.txt ── */
-    function parseInfo(text){
-      const info={name:'',price:'',desc:'',images:[]};
-      text.split('\n').forEach(line=>{
-        const ci=line.indexOf(':'); if(ci===-1)return;
-        const k=line.slice(0,ci).trim().toLowerCase(), v=line.slice(ci+1).trim();
-        if(k==='name'||k==='title') info.name=v;
-        else if(k==='price') info.price=v;
-        else if(k==='description'||k==='desc') info.desc=v;
-        else if(k==='images') info.images=v.split(',').map(s=>s.trim()).filter(Boolean);
-      });
-      return info;
-    }
-
-    /* ── Drag scroll helper ── */
+    /* ─── Drag scroll ─── */
     function makeDraggable(el){
-      let drag=false,startX,sl;
-      el.addEventListener('mousedown',e=>{drag=true;startX=e.pageX-el.offsetLeft;sl=el.scrollLeft;el.style.userSelect='none';});
-      el.addEventListener('mouseleave',()=>drag=false);
-      el.addEventListener('mouseup',()=>{drag=false;el.style.userSelect='';});
-      el.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();el.scrollLeft=sl-(e.pageX-el.offsetLeft-startX);});
+      let drag=false, startX, sl;
+      el.addEventListener('mousedown', e => { drag=true; startX=e.pageX-el.offsetLeft; sl=el.scrollLeft; el.style.userSelect='none'; });
+      el.addEventListener('mouseleave', () => drag=false);
+      el.addEventListener('mouseup', () => { drag=false; el.style.userSelect=''; });
+      el.addEventListener('mousemove', e => { if(!drag)return; e.preventDefault(); el.scrollLeft=sl-(e.pageX-el.offsetLeft-startX); });
     }
 
-    /* ── Category card slideshow ── */
-    function makeCardSlideshow(container,paths){
-      container.innerHTML='';
-      paths.forEach((src,i)=>{
-        const img=document.createElement('img');
-        img.src=src; img.alt=''; img.draggable=false; img.loading=i===0?'eager':'lazy';
-        if(i===0) img.classList.add('active');
-        container.appendChild(img);
+    /* ─── Category card slideshow ─── */
+    const slideshowIntervals = new WeakMap();
+    function makeCardSlideshow(container, paths){
+      container.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      paths.forEach((src, i) => {
+        const img = document.createElement('img');
+        img.src = src; img.alt = ''; img.draggable = false;
+        img.loading = 'lazy'; img.decoding = 'async';
+        if (i === 0) { img.classList.add('active'); img.loading = 'eager'; }
+        frag.appendChild(img);
       });
-      if(paths.length>1){
-        let cur=0;
-        setInterval(()=>{
-          const imgs=container.querySelectorAll('img');
-          imgs[cur].classList.remove('active'); cur=(cur+1)%imgs.length; imgs[cur].classList.add('active');
-        },4500);
+      container.appendChild(frag);
+      if (paths.length > 1){
+        let cur = 0;
+        const id = setInterval(() => {
+          const imgs = container.querySelectorAll('img');
+          imgs[cur].classList.remove('active');
+          cur = (cur+1) % imgs.length;
+          imgs[cur].classList.add('active');
+        }, 4500);
+        slideshowIntervals.set(container, id);
       }
     }
 
-    /* ── Load category hero card ── */
-    async function loadCategoryCard(cat,slidesId,nameId,descId,heroTitleHtml,heroHref){
-      try{
-        const list=await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
-        if(!list.length)return;
-        const txt=await fetch(`assets/images/${cat}/${list[0]}/info.txt`).then(r=>r.text());
-        const d=parseInfo(txt);
-        if(d.name) document.getElementById(nameId).textContent=d.name;
-        if(d.desc) document.getElementById(descId).textContent=d.desc;
-        const paths=d.images.map(img=>`assets/images/${cat}/${list[0]}/${img}`);
-        makeCardSlideshow(document.getElementById(slidesId),paths);
-      }catch(e){console.warn(cat,e);}
+    /* ─── Load category hero card ─── */
+    async function loadCategoryCard(cat, slidesId, nameId, descId){
+      try {
+        const list = await getJSON(`assets/images/${cat}/${cat}.json`);
+        if (!list.length) return;
+        const txt = await getText(`assets/images/${cat}/${list[0]}/info.txt`);
+        const d = parseInfo(txt);
+        if (d.name) document.getElementById(nameId).textContent = d.name;
+        if (d.desc) document.getElementById(descId).textContent = d.desc;
+        const paths = d.images.map(img => `assets/images/${cat}/${list[0]}/${img}`);
+        makeCardSlideshow(document.getElementById(slidesId), paths);
+      } catch(e){ console.warn(cat, e); }
     }
 
-    /* ── Load category product row ── */
-    async function loadCategoryRow(cat,stripId,href,catLabel){
-      try{
-        const list=await fetch(`assets/images/${cat}/${cat}.json`).then(r=>r.json());
-        const strip=document.getElementById(stripId);
-        for(const folder of list.slice(0,12)){
-          const txt=await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
-          const d=parseInfo(txt);
-          if(!d.images[0]) continue;
-          const card=document.createElement('div');
-          card.className='lv-prod-card';
+    /* ─── Load product row (PARALLEL) ─── */
+    async function loadCategoryRow(cat, stripId, href, catLabel){
+      const strip = document.getElementById(stripId);
+      buildSkeleton(strip, 5);
+      try {
+        const list = await getJSON(`assets/images/${cat}/${cat}.json`);
+        const slice = list.slice(0, 12);
+
+        // PARALLEL fetch — all info.txt at once instead of sequential
+        const infoPromises = slice.map(folder =>
+          getText(`assets/images/${cat}/${folder}/info.txt`)
+            .then(txt => ({ folder, data: parseInfo(txt) }))
+            .catch(() => null)
+        );
+        const results = await Promise.all(infoPromises);
+
+        const frag = document.createDocumentFragment();
+        for (const r of results) {
+          if (!r || !r.data.images[0]) continue;
+          const { folder, data: d } = r;
+          const card = document.createElement('div');
+          card.className = 'lv-prod-card';
           card.setAttribute('role','article');
-          const imgWrap=document.createElement('div');
-          imgWrap.className='lv-prod-img';
-          d.images.forEach((img,i)=>{
-            const el=document.createElement('img');
-            el.src=`assets/images/${cat}/${folder}/${img}`;
-            el.alt=d.name||folder;
-            el.draggable=false;
-            el.loading=i===0?'eager':'lazy';
-            if(i===0) el.classList.add('active');
+
+          const imgWrap = document.createElement('div');
+          imgWrap.className = 'lv-prod-img';
+          d.images.forEach((img, i) => {
+            const el = document.createElement('img');
+            el.src = `assets/images/${cat}/${folder}/${img}`;
+            el.alt = d.name || folder;
+            el.draggable = false;
+            el.loading = 'lazy';
+            el.decoding = 'async';
+            if (i === 0) el.classList.add('active');
             imgWrap.appendChild(el);
           });
-          const dotsEl=document.createElement('div');
-          dotsEl.className='lv-prod-img-dots';
-          if(d.images.length>1){
-            d.images.forEach((_,i)=>{
-              const dot=document.createElement('div');
-              dot.className='lv-prod-img-dot'+(i===0?' active':'');
-              dotsEl.appendChild(dot);
-            });
-          }
-          imgWrap.appendChild(dotsEl);
-          const overlay=document.createElement('div');
-          overlay.className='lv-prod-overlay';
-          overlay.innerHTML=`<a href="${href}" class="lv-prod-discover" onclick="event.stopPropagation()">Discover<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg></a>`;
-          imgWrap.appendChild(overlay);
           card.appendChild(imgWrap);
-          const body=document.createElement('div');
-          body.className='lv-prod-body';
-          body.innerHTML=`<div class="lv-prod-label">${catLabel}</div><div class="lv-prod-name">${d.name||folder}</div><div class="lv-prod-price">${d.price||''}</div>`;
+
+          const body = document.createElement('div');
+          body.className = 'lv-prod-body';
+          body.innerHTML = `<div class="lv-prod-label">${catLabel}</div><div class="lv-prod-name">${d.name||folder}</div><div class="lv-prod-price">${d.price||''}</div>`;
           card.appendChild(body);
-          let c=0;
-          const imgs=imgWrap.querySelectorAll('img');
-          const dots=dotsEl.querySelectorAll('.lv-prod-img-dot');
-          if(imgs.length>1){
-            setInterval(()=>{
-              imgs[c].classList.remove('active'); if(dots[c]) dots[c].classList.remove('active');
-              c=(c+1)%imgs.length;
-              imgs[c].classList.add('active'); if(dots[c]) dots[c].classList.add('active');
-            },3500+Math.random()*1000);
+
+          // Slideshow
+          if (d.images.length > 1) {
+            let c = 0;
+            const imgs = imgWrap.querySelectorAll('img');
+            setInterval(() => {
+              imgs[c].classList.remove('active');
+              c = (c+1) % imgs.length;
+              imgs[c].classList.add('active');
+            }, 3500 + Math.random()*1000);
           }
-          card.addEventListener('click',()=>window.location=href);
-          strip.appendChild(card);
+          card.addEventListener('click', () => window.location = href);
+          frag.appendChild(card);
         }
+        strip.innerHTML = '';
+        strip.appendChild(frag);
         makeDraggable(strip);
-      }catch(e){console.warn(cat,e);}
+      } catch(e){ console.warn(cat, e); strip.innerHTML = ''; }
     }
 
-    /* ── Load latest strip ── */
+    /* ─── Latest strip (PARALLEL) ─── */
     async function loadLatestStrip(){
-      try{
-        const list=await fetch('assets/images/latest-designs/designs.json').then(r=>r.json());
-        const strip=document.getElementById('lv-new-strip');
-        for(const folder of list.slice(0,10)){
-          const txt=await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r=>r.text());
-          const d=parseInfo(txt);
-          const src=d.images[0]?`assets/images/latest-designs/${folder}/${d.images[0]}`:'';
-          if(!src)continue;
-          const card=document.createElement('div'); card.className='lv-new-card';
-          card.innerHTML=`<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
-          card.addEventListener('click',()=>window.location='latest-designs.html');
-          strip.appendChild(card);
+      const strip = document.getElementById('lv-new-strip');
+      buildSkeleton(strip, 5);
+      try {
+        const list = await getJSON('assets/images/latest-designs/designs.json');
+        const slice = list.slice(0, 10);
+        const results = await Promise.all(slice.map(folder =>
+          getText(`assets/images/latest-designs/${folder}/info.txt`)
+            .then(txt => ({ folder, data: parseInfo(txt) }))
+            .catch(() => null)
+        ));
+        const frag = document.createDocumentFragment();
+        for (const r of results) {
+          if (!r) continue;
+          const { folder, data: d } = r;
+          const src = d.images[0] ? `assets/images/latest-designs/${folder}/${d.images[0]}` : '';
+          if (!src) continue;
+          const card = document.createElement('div');
+          card.className = 'lv-new-card';
+          card.innerHTML = `<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
+          card.addEventListener('click', () => window.location = 'latest-designs.html');
+          frag.appendChild(card);
         }
+        strip.innerHTML = '';
+        strip.appendChild(frag);
         makeDraggable(strip);
-      }catch(e){console.warn('latest',e);}
+      } catch(e){ console.warn('latest', e); strip.innerHTML = ''; }
     }
 
-    /* ── Load gallery ── */
+    /* ─── Gallery (PARALLEL) ─── */
     async function loadGallery(){
-      try{
-        const scrollEl=document.getElementById('lv-gallery-scroll');
-        const list=await fetch('assets/images/sets/sets.json').then(r=>r.json());
-        for(const folder of list.slice(0,10)){
-          const txt=await fetch(`assets/images/sets/${folder}/info.txt`).then(r=>r.text());
-          const d=parseInfo(txt);
-          const src=d.images[0]?`assets/images/sets/${folder}/${d.images[0]}`:'';
-          if(!src)continue;
-          const card=document.createElement('div'); card.className='lv-gal-card';
-          card.innerHTML=`<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
-          card.addEventListener('click',()=>window.location='grillz-gallery.html');
-          scrollEl.appendChild(card);
+      const scrollEl = document.getElementById('lv-gallery-scroll');
+      try {
+        const list = await getJSON('assets/images/sets/sets.json');
+        const slice = list.slice(0, 10);
+        const results = await Promise.all(slice.map(folder =>
+          getText(`assets/images/sets/${folder}/info.txt`)
+            .then(txt => ({ folder, data: parseInfo(txt) }))
+            .catch(() => null)
+        ));
+        const frag = document.createDocumentFragment();
+        for (const r of results) {
+          if (!r) continue;
+          const { folder, data: d } = r;
+          const src = d.images[0] ? `assets/images/sets/${folder}/${d.images[0]}` : '';
+          if (!src) continue;
+          const card = document.createElement('div');
+          card.className = 'lv-gal-card';
+          card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
+          card.addEventListener('click', () => window.location = 'grillz-gallery.html');
+          frag.appendChild(card);
         }
+        scrollEl.appendChild(frag);
         makeDraggable(scrollEl);
-      }catch(e){console.warn('gallery',e);}
+      } catch(e){ console.warn('gallery', e); }
     }
 
-    /* ── Instagram Post Interactions ── */
-    (function(){
-      let liked=false, saved=false, likes=2847;
-      const likeBtn=document.getElementById('ig-like-btn');
-      const saveBtn=document.getElementById('ig-save-btn');
-      const commentBtn=document.getElementById('ig-comment-btn');
-      const shareBtn=document.getElementById('ig-share-btn');
-      const likesCount=document.getElementById('ig-likes-count');
-      const heartAnim=document.getElementById('ig-heart-anim');
-      const imgWrap=document.getElementById('ig-post-img-wrap');
-      function updateLikes(){ likesCount.textContent=likes.toLocaleString()+' likes'; }
-      if(likeBtn) likeBtn.addEventListener('click',function(){
-        liked=!liked; this.classList.toggle('liked',liked);
-        likes+=liked?1:-1; updateLikes(); if(liked) triggerHeart();
+    /* ─── Lazy loader for below-fold sections ─── */
+    const lazyLoaders = {
+      'latest': loadLatestStrip,
+      'cat-golds': () => loadCategoryCard('golds','golds-card-slides','golds-card-name','golds-card-desc'),
+      'cat-silvers': () => loadCategoryCard('silvers','silvers-card-slides','silvers-card-name','silvers-card-desc'),
+      'cat-diamonds': () => loadCategoryCard('diamonds','diamonds-card-slides','diamonds-card-name','diamonds-card-desc'),
+      'row-golds': () => loadCategoryRow('golds','golds-row','golds.html','Gold'),
+      'row-silvers': () => loadCategoryRow('silvers','silvers-row','silvers.html','Silver'),
+      'row-diamonds': () => loadCategoryRow('diamonds','diamonds-row','diamonds.html','Diamond'),
+      'gallery': loadGallery
+    };
+    const loadedKeys = new Set();
+    const lazyObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const key = e.target.dataset.lazy;
+          if (key && !loadedKeys.has(key)) {
+            loadedKeys.add(key);
+            lazyLoaders[key]?.();
+          }
+          lazyObs.unobserve(e.target);
+        }
       });
-      let lastTap=0;
-      if(imgWrap) imgWrap.addEventListener('click',function(){
-        const now=Date.now();
-        if(now-lastTap<350){ if(!liked){ liked=true; likeBtn.classList.add('liked'); likes+=1; updateLikes(); } triggerHeart(); }
-        lastTap=now;
-      });
-      function triggerHeart(){ if(!heartAnim)return; heartAnim.classList.remove('pop'); void heartAnim.offsetWidth; heartAnim.classList.add('pop'); }
-      if(saveBtn) saveBtn.addEventListener('click',function(){ saved=!saved; this.classList.toggle('saved',saved); });
-      if(commentBtn) commentBtn.addEventListener('click',()=>window.open('https://instagram.com/egygrillz','_blank'));
-      if(shareBtn) shareBtn.addEventListener('click',()=>window.open('https://instagram.com/egygrillz','_blank'));
-    })();
+    }, { rootMargin: '500px 0px' }); // start loading 500px before visible
+    document.querySelectorAll('[data-lazy]').forEach(el => lazyObs.observe(el));
 
-    /* ── INIT ── */
-    async function init(){
-      await loadCategoryCard('golds','golds-card-slides','golds-card-name','golds-card-desc','The Gold<br>Collection','golds.html');
-      await loadCategoryCard('silvers','silvers-card-slides','silvers-card-name','silvers-card-desc','The Silver<br>Collection','silvers.html');
-      await loadCategoryCard('diamonds','diamonds-card-slides','diamonds-card-name','diamonds-card-desc','The Diamond<br>Collection','diamonds.html');
-      loadCategoryRow('golds','golds-row','golds.html','Gold');
-      loadCategoryRow('silvers','silvers-row','silvers.html','Silver');
-      loadCategoryRow('diamonds','diamonds-row','diamonds.html','Diamond');
-      loadLatestStrip();
-      loadGallery();
-    }
-    init();
+    /* ─── IG Interactions ─── */
+    let liked=false, saved=false, likes=2847;
+    const likeBtn = document.getElementById('ig-like-btn');
+    const saveBtn = document.getElementById('ig-save-btn');
+    const commentBtn = document.getElementById('ig-comment-btn');
+    const shareBtn = document.getElementById('ig-share-btn');
+    const likesCount = document.getElementById('ig-likes-count');
+    const heartAnim = document.getElementById('ig-heart-anim');
+    const imgWrap = document.getElementById('ig-post-img-wrap');
+    function updateLikes(){ likesCount.textContent = likes.toLocaleString() + ' likes'; }
+    function triggerHeart(){ if(!heartAnim)return; heartAnim.classList.remove('pop'); void heartAnim.offsetWidth; heartAnim.classList.add('pop'); }
+    likeBtn?.addEventListener('click', function(){
+      liked = !liked; this.classList.toggle('liked', liked);
+      likes += liked ? 1 : -1; updateLikes(); if (liked) triggerHeart();
+    });
+    let lastTap = 0;
+    imgWrap?.addEventListener('click', function(){
+      const now = Date.now();
+      if (now - lastTap < 350){ if (!liked){ liked=true; likeBtn.classList.add('liked'); likes++; updateLikes(); } triggerHeart(); }
+      lastTap = now;
+    });
+    saveBtn?.addEventListener('click', function(){ saved=!saved; this.classList.toggle('saved', saved); });
+    commentBtn?.addEventListener('click', () => window.open('https://instagram.com/egygrillz','_blank'));
+    shareBtn?.addEventListener('click', () => window.open('https://instagram.com/egygrillz','_blank'));
+  })();
   </script>
 </body>
 </html>
-
