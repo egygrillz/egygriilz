@@ -1,0 +1,1416 @@
+html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teeth Abnormalities — Oral Pathology | Ain Shams University</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #c8923a;
+    --accent2: #e8b86d;
+    --correct: #2ecc71;
+    --wrong: #e74c3c;
+    --hint: #3b82f6;
+    --text: #e8e0d4;
+    --muted: #7a8499;
+    --white: #f5f0e8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Sans 3', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(200,146,58,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(59,130,246,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 2rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11,15,26,0.9);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--white);
+    letter-spacing: -0.02em;
+  }
+
+  .header-left h1 span {
+    color: var(--accent);
+  }
+
+  .header-left p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .score-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+
+  .score-badge span { color: var(--accent); font-weight: 500; }
+
+  /* ===== NAV TABS ===== */
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 0.9rem 1.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ===== MAIN ===== */
+  main {
+    position: relative;
+    z-index: 5;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ===== MCQ ===== */
+  .mcq-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .mcq-meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .mcq-meta strong { color: var(--accent); font-size: 1rem; }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    animation: slideIn 0.35s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-number {
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .topic-tag {
+    display: inline-block;
+    background: rgba(200,146,58,0.12);
+    border: 1px solid rgba(200,146,58,0.25);
+    color: var(--accent2);
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .question-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--white);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .choice {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .choice:hover:not(.disabled) {
+    border-color: rgba(200,146,58,0.5);
+    background: rgba(200,146,58,0.07);
+    transform: translateX(4px);
+  }
+
+  .choice-letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .choice.correct {
+    border-color: var(--correct);
+    background: rgba(46,204,113,0.1);
+  }
+
+  .choice.correct .choice-letter {
+    background: var(--correct);
+    color: #fff;
+  }
+
+  .choice.wrong {
+    border-color: var(--wrong);
+    background: rgba(231,76,60,0.08);
+  }
+
+  .choice.wrong .choice-letter {
+    background: var(--wrong);
+    color: #fff;
+  }
+
+  .choice.disabled { cursor: default; }
+
+  /* Feedback area */
+  .feedback {
+    display: none;
+    margin-top: 1.25rem;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .feedback.correct-fb {
+    background: rgba(46,204,113,0.08);
+    border: 1px solid rgba(46,204,113,0.3);
+    display: block;
+  }
+
+  .feedback.wrong-fb {
+    background: rgba(231,76,60,0.08);
+    border: 1px solid rgba(231,76,60,0.2);
+    display: block;
+  }
+
+  .feedback-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .feedback.correct-fb .feedback-title { color: var(--correct); }
+  .feedback.wrong-fb .feedback-title { color: var(--wrong); }
+
+  .feedback p {
+    font-size: 0.87rem;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .reference {
+    margin-top: 0.75rem;
+    font-size: 0.78rem;
+    color: var(--hint);
+    font-style: italic;
+    border-left: 2px solid var(--hint);
+    padding-left: 0.6rem;
+  }
+
+  /* Hint */
+  .hint-section {
+    margin-top: 1rem;
+  }
+
+  .hint-btn {
+    background: none;
+    border: 1px solid rgba(59,130,246,0.4);
+    color: var(--hint);
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Source Sans 3', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .hint-btn:hover { background: rgba(59,130,246,0.1); }
+
+  .hint-text {
+    display: none;
+    margin-top: 0.6rem;
+    background: rgba(59,130,246,0.07);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+    color: #93c5fd;
+    line-height: 1.5;
+  }
+
+  .hint-text.visible { display: block; animation: fadeIn 0.2s ease; }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Source Sans 3', sans-serif;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0b0f1a;
+  }
+
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Filter */
+  .filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .filter-chip {
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .filter-chip:hover, .filter-chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,146,58,0.08);
+  }
+
+  /* Results screen */
+  .result-screen {
+    text-align: center;
+    padding: 3rem 2rem;
+    display: none;
+  }
+
+  .result-screen.active { display: block; animation: slideIn 0.4s ease; }
+
+  .result-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .result-label {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .result-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    text-align: center;
+  }
+
+  .stat-box .stat-n {
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .stat-box .stat-l { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+
+  .grade-msg {
+    font-size: 1rem;
+    color: var(--text);
+    max-width: 400px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* ===== FLASHCARDS ===== */
+  .flashcard-area {
+    perspective: 1200px;
+    margin-bottom: 1.5rem;
+  }
+
+  .flashcard {
+    position: relative;
+    width: 100%;
+    min-height: 260px;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .flashcard.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute;
+    width: 100%;
+    min-height: 260px;
+    backface-visibility: hidden;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2.5rem;
+  }
+
+  .card-front {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #1a2235 0%, #162030 100%);
+    border: 1px solid rgba(200,146,58,0.3);
+    transform: rotateY(180deg);
+  }
+
+  .card-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 1rem;
+  }
+
+  .card-front .card-label { color: var(--accent); }
+  .card-back .card-label { color: #7dd3fc; }
+
+  .card-content {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--white);
+    line-height: 1.7;
+  }
+
+  .card-back .card-content { font-size: 1rem; font-family: 'Source Sans 3', sans-serif; }
+
+  .card-hint {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .flip-icon {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .fc-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .fc-counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--muted);
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* ===== SUMMARY TABLE ===== */
+  .summary-section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+
+  .summary-section p { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+  .summary-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+
+  .summary-block-header {
+    background: var(--surface2);
+    padding: 0.9rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+  }
+
+  .summary-block-header:hover { background: rgba(200,146,58,0.06); }
+
+  .summary-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(200,146,58,0.15);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .summary-block-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--white);
+    flex: 1;
+  }
+
+  .summary-toggle {
+    color: var(--muted);
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+  }
+
+  .summary-block-body {
+    padding: 1.25rem;
+    display: none;
+  }
+
+  .summary-block-body.open { display: block; }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 0.5rem 1rem;
+    font-size: 0.87rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .summary-row:last-child { border-bottom: none; }
+
+  .summary-key {
+    color: var(--accent2);
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+  }
+
+  .diff-table th {
+    background: rgba(200,146,58,0.1);
+    color: var(--accent2);
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .diff-table td {
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .diff-table tr:last-child td { border-bottom: none; }
+
+  /* ===== TIPS / DR MODE ===== */
+  .tips-section .dr-banner {
+    background: linear-gradient(135deg, #1a2235, #0f1c2e);
+    border: 1px solid rgba(200,146,58,0.35);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .dr-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #8b4513);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .dr-text h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+
+  .dr-text p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .tip-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid var(--accent);
+  }
+
+  .tip-card.blue-tip { border-left-color: var(--hint); }
+  .tip-card.green-tip { border-left-color: var(--correct); }
+  .tip-card.red-tip { border-left-color: var(--wrong); }
+
+  .tip-card h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent2);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tip-card.blue-tip h4 { color: #93c5fd; }
+  .tip-card.green-tip h4 { color: #6ee7b7; }
+  .tip-card.red-tip h4 { color: #fca5a5; }
+
+  .tip-card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .tip-card ul li {
+    font-size: 0.87rem;
+    color: var(--text);
+    padding: 0.25rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .tip-card ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.75rem;
+  }
+
+  .tip-card.blue-tip ul li::before { color: #93c5fd; }
+  .tip-card.green-tip ul li::before { color: #6ee7b7; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    header { padding: 1.2rem; }
+    .header-left h1 { font-size: 1.2rem; }
+    main { padding: 1.5rem 1rem; }
+    .question-card { padding: 1.25rem; }
+    .question-text { font-size: 1rem; }
+    .summary-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Teeth <span>Abnormalities</span></h1>
+    <p>Oral Pathology · Ain Shams University · Chapter 1</p>
+  </div>
+  <div class="header-right">
+    <div class="score-badge">Score: <span id="headerScore">0/0</span></div>
+  </div>
+</header>
+
+<nav>
+  <button class="tab active" onclick="showSection('mcq')">📝 MCQ Practice</button>
+  <button class="tab" onclick="showSection('flash')">🃏 Flashcards</button>
+  <button class="tab" onclick="showSection('summary')">📋 Quick Summary</button>
+  <button class="tab" onclick="showSection('tips')">👨‍⚕️ Dr's Tips</button>
+</nav>
+
+<main>
+
+<!-- ===== MCQ SECTION ===== -->
+<div id="mcq" class="section active">
+
+  <div class="filter-bar" id="filterBar">
+    <span class="filter-chip active" data-topic="all" onclick="setFilter(this,'all')">All Topics</span>
+    <span class="filter-chip" data-topic="number" onclick="setFilter(this,'number')">Number</span>
+    <span class="filter-chip" data-topic="size" onclick="setFilter(this,'size')">Size</span>
+    <span class="filter-chip" data-topic="shape" onclick="setFilter(this,'shape')">Shape</span>
+    <span class="filter-chip" data-topic="structure" onclick="setFilter(this,'structure')">Structure</span>
+    <span class="filter-chip" data-topic="color" onclick="setFilter(this,'color')">Color</span>
+    <span class="filter-chip" data-topic="eruption" onclick="setFilter(this,'eruption')">Eruption</span>
+    <span class="filter-chip" data-topic="resorption" onclick="setFilter(this,'resorption')">Resorption</span>
+    <span class="filter-chip" data-topic="systemic" onclick="setFilter(this,'systemic')">Systemic</span>
+  </div>
+
+  <div class="mcq-header">
+    <div class="mcq-meta">Question <strong id="qNum">1</strong> of <strong id="qTotal">0</strong></div>
+    <div class="mcq-meta" id="sessionStats">✅ 0 &nbsp; ❌ 0</div>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div id="questionContainer"></div>
+
+  <div class="result-screen" id="resultScreen">
+    <div class="result-score" id="resultPct">0%</div>
+    <div class="result-label">Final Score</div>
+    <div class="result-stats">
+      <div class="stat-box"><div class="stat-n" id="rCorrect" style="color:var(--correct)">0</div><div class="stat-l">Correct</div></div>
+      <div class="stat-box"><div class="stat-n" id="rWrong" style="color:var(--wrong)">0</div><div class="stat-l">Wrong</div></div>
+      <div class="stat-box"><div class="stat-n" id="rTotal">0</div><div class="stat-l">Questions</div></div>
+    </div>
+    <p class="grade-msg" id="gradeMsg"></p>
+    <button class="btn btn-primary" onclick="restartQuiz()">🔄 Restart Quiz</button>
+  </div>
+
+  <div class="controls" id="controls">
+    <button class="btn btn-outline" onclick="skipQuestion()">Skip →</button>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Next Question →</button>
+  </div>
+</div>
+
+<!-- ===== FLASHCARDS ===== -->
+<div id="flash" class="section">
+  <div class="mcq-header">
+    <div>
+      <h2 style="font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--white)">Key Concept Cards</h2>
+      <p style="color:var(--muted);font-size:0.82rem;margin-top:0.2rem">Click card to reveal answer</p>
+    </div>
+    <div class="mcq-meta" id="fcProgress">Card 1 of 30</div>
+  </div>
+
+  <div class="flip-icon">👆 Click card to flip</div>
+
+  <div class="flashcard-area">
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="card-face card-front">
+        <div class="card-label">❓ Question</div>
+        <div class="card-content" id="fcFront">Loading...</div>
+        <div class="card-hint">💡 Click to reveal answer</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-label">✅ Answer</div>
+        <div class="card-content" id="fcBack">...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fc-nav">
+    <button class="btn btn-outline" onclick="fcPrev()">← Prev</button>
+    <div class="fc-counter" id="fcCounter">1 / 30</div>
+    <button class="btn btn-primary" onclick="fcNext()">Next →</button>
+  </div>
+</div>
+
+<!-- ===== SUMMARY ===== -->
+<div id="summary" class="section summary-section">
+  <h2>Chapter Summary</h2>
+  <p>High-yield condensed notes for rapid review before exams.</p>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">🔢</div>
+      <div class="summary-block-title">Abnormalities in Number</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body open">
+      <div class="summary-row"><div class="summary-key">Hypodontia</div><div>Absence of 1+ teeth (excluding impacted/extracted)</div></div>
+      <div class="summary-row"><div class="summary-key">Oligodontia</div><div>Absence of 6+ teeth (excl. 3rd molars) — subtype of hypodontia</div></div>
+      <div class="summary-row"><div class="summary-key">Anodontia</div><div>Total absence; rare; almost always with hypohidrotic ectodermal dysplasia</div></div>
+      <div class="summary-row"><div class="summary-key">Most common missing permanent teeth</div><div>3rd molars > 2nd premolars > lateral incisors</div></div>
+      <div class="summary-row"><div class="summary-key">Hyperdontia</div><div>Supernumerary teeth — defective initiation (excess)</div></div>
+      <div class="summary-row"><div class="summary-key">Mesiodens</div><div>Supernumerary in maxillary anterior incisor region (most common single site)</div></div>
+      <div class="summary-row"><div class="summary-key">Distomolar</div><div>Accessory 4th molar</div></div>
+      <div class="summary-row"><div class="summary-key">Supplemental</div><div>Normal size & shape supernumerary</div></div>
+      <div class="summary-row"><div class="summary-key">Syndromic hyperdontia</div><div>Cleidocranial dysplasia, Gardner syndrome</div></div>
+    </div>
+  </div>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">📏</div>
+      <div class="summary-block-title">Abnormalities in Size</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body">
+      <div class="summary-row"><div class="summary-key">Microdontia — isolated</div><div>Maxillary lateral incisors (peg-shaped) & 3rd molars most common</div></div>
+      <div class="summary-row"><div class="summary-key">Diffuse true microdontia</div><div>Down syndrome, pituitary dwarfism</div></div>
+      <div class="summary-row"><div class="summary-key">Macrodontia (diffuse)</div><div>Pituitary gigantism</div></div>
+      <div class="summary-row"><div class="summary-key">Unilateral macrodontia</div><div>Hemifacial hyperplasia + unilateral premature eruption</div></div>
+      <div class="summary-row"><div class="summary-key">Cause</div><div>Defective proliferation (size abnormalities)</div></div>
+    </div>
+  </div>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">🔷</div>
+      <div class="summary-block-title">Abnormalities in Shape</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body">
+      <div class="summary-row"><div class="summary-key">Gemination</div><div>Partial division of ONE enamel organ → 1 tooth looks like 2; NORMAL tooth count; single root canal</div></div>
+      <div class="summary-row"><div class="summary-key">Fusion</div><div>Union of TWO adjacent enamel organs → involves dentin; REDUCED tooth count by 1; usually 2 root canals</div></div>
+      <div class="summary-row"><div class="summary-key">Concrescence</div><div>Post-developmental; 2 teeth joined by cementum; trauma/crowding; complication: both extracted together</div></div>
+      <div class="summary-row"><div class="summary-key">Dilaceration</div><div>Sharp bend in long axis; usually trauma during development; most common = max central incisors</div></div>
+      <div class="summary-row"><div class="summary-key">Taurodontism</div><div>Enlarged pulp chamber; failure of Hertwig sheath; 3rd molars most, 1st molars least</div></div>
+      <div class="summary-row"><div class="summary-key">Dens invaginatus types</div><div>I: crown confined; II: below CEJ, blind sac; III: perforates root (most dangerous)</div></div>
+      <div class="summary-row"><div class="summary-key">Cusp of Carabelli</div><div>Palatal surface of mesiolingual cusp of upper 1st molar</div></div>
+      <div class="summary-row"><div class="summary-key">Talon cusp</div><div>Extra cusp on lingual cingulum of anterior tooth; upper permanent teeth; has pulp extension</div></div>
+      <div class="summary-row"><div class="summary-key">Dens evaginatus</div><div>Central groove of premolars; mandibular teeth; enamel + dentin + pulp extension</div></div>
+    </div>
+  </div>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">🧱</div>
+      <div class="summary-block-title">Amelogenesis Imperfecta — Comparison</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body">
+      <table class="diff-table">
+        <thead><tr><th>Feature</th><th>Hypoplastic</th><th>Hypocalcified</th><th>Hypomaturation</th></tr></thead>
+        <tbody>
+          <tr><td>Nature</td><td>Quantitative</td><td>Qualitative</td><td>Qualitative</td></tr>
+          <tr><td>Thickness</td><td>Thin</td><td>Normal</td><td>Normal</td></tr>
+          <tr><td>Hardness</td><td>Hard</td><td>Very soft</td><td>Soft</td></tr>
+          <tr><td>Radiolucency</td><td>Normal</td><td>More than dentin</td><td>Same as dentin</td></tr>
+          <tr><td>Microscopy</td><td>Twisted enamel rods</td><td>Defective calcification</td><td>Poor maturation</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">🦴</div>
+      <div class="summary-block-title">Dentinogenesis Imperfecta vs Dentin Dysplasia</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body">
+      <table class="diff-table">
+        <thead><tr><th>Feature</th><th>DGI</th><th>DD Type II</th><th>DD Type I</th></tr></thead>
+        <tbody>
+          <tr><td>Gene</td><td>DSPP</td><td>DSPP</td><td>Unknown</td></tr>
+          <tr><td>Dentitions</td><td>Both</td><td>Both (diff appearance)</td><td>Both</td></tr>
+          <tr><td>Color</td><td>Blue-brown, translucent</td><td>Primary: blue-brown; Permanent: normal</td><td>Normal</td></tr>
+          <tr><td>Radiograph</td><td>Bulbous crowns, cervical constriction, obliterated canals</td><td>Permanent: thistle-tube/flame-shaped enlarged pulps</td><td>Short/absent roots, crescent pulp</td></tr>
+          <tr><td>Nickname</td><td>Opalescent teeth</td><td>Coronal dentin dysplasia</td><td>Rootless teeth</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">🌡️</div>
+      <div class="summary-block-title">Color Abnormalities — Quick Reference</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body">
+      <div class="summary-row"><div class="summary-key">Tetracycline</div><div>Yellow→brown/grey; fluorescent yellow under UV; permanent; avoid in pregnancy &lt;12yr</div></div>
+      <div class="summary-row"><div class="summary-key">Porphyria</div><div>Pink/lavender "pink tooth"; fluorescent RED under UV</div></div>
+      <div class="summary-row"><div class="summary-key">Erythroblastosis fetalis</div><div>Green or bluish teeth</div></div>
+      <div class="summary-row"><div class="summary-key">Fluorosis</div><div>Yellow-brown; endemic where water >1.5ppm; more resistant to caries</div></div>
+      <div class="summary-row"><div class="summary-key">DGI</div><div>Blue-to-brown, translucent</div></div>
+    </div>
+  </div>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">🏥</div>
+      <div class="summary-block-title">Systemic Syndromes Affecting Teeth</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body">
+      <div class="summary-row"><div class="summary-key">Cleidocranial dysplasia</div><div>CBFAl gene chr 6p21; absent clavicles; many supernumerary/unerupted teeth; dentigerous cysts; absent cementum</div></div>
+      <div class="summary-row"><div class="summary-key">Gardner syndrome</div><div>APC gene; colon polyps → malignant; osteomata; multiple supernumerary teeth</div></div>
+      <div class="summary-row"><div class="summary-key">Down syndrome (Trisomy 21)</div><div>Microdontia; enamel hypoplasia; ↓caries; ↑periodontal disease; macroglossia; taurodontism</div></div>
+      <div class="summary-row"><div class="summary-key">Congenital syphilis</div><div>Hutchinson's triad (incisors + keratitis + deafness); Mulberry molars; caused by Treponema pallidum</div></div>
+      <div class="summary-row"><div class="summary-key">Ectodermal dysplasia (X-linked)</div><div>Anhidrosis, hypotrichosis; anodontia/peg teeth; most common form; males > females</div></div>
+    </div>
+  </div>
+
+  <div class="summary-block">
+    <div class="summary-block-header" onclick="toggleBlock(this)">
+      <div class="summary-icon">↩️</div>
+      <div class="summary-block-title">Tooth Resorption</div>
+      <div class="summary-toggle">▼</div>
+    </div>
+    <div class="summary-block-body">
+      <div class="summary-row"><div class="summary-key">Internal resorption</div><div>Dentin resorbed from within pulp; unknown cause; "pink spot" in crown; rounded radiolucency</div></div>
+      <div class="summary-row"><div class="summary-key">External resorption</div><div>More common; cells in PDL; "moth-eaten" X-ray; causes: periapical disease, cysts, orthodontics, impaction, trauma</div></div>
+      <div class="summary-row"><div class="summary-key">Most resistant tissue</div><div>Enamel (most resistant); cementum (least resistant) to resorption</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== TIPS ===== -->
+<div id="tips" class="section tips-section">
+  <div class="dr-banner">
+    <div class="dr-avatar">👨‍⚕️</div>
+    <div class="dr-text">
+      <h3>Dr. Rehab Fouad — Oral Pathology, Ain Shams</h3>
+      <p>Welcome! These are high-yield exam pearls and mnemonics I use to help students ace this chapter. Pay special attention to the comparison tables — they're the most tested.</p>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <h4>🔑 The Golden Rule: Gemination vs Fusion</h4>
+    <ul>
+      <li>Gemination: ONE tooth tries to divide → tooth COUNT is NORMAL → single root canal</li>
+      <li>Fusion: TWO teeth join → tooth COUNT is REDUCED by 1 → two root canals</li>
+      <li>Memory trick: "Fusion = Few teeth"; "Gemination = G for Greater count"</li>
+      <li>Both involve dentin, both usually affect incisors, both in deciduous or permanent dentition</li>
+    </ul>
+  </div>
+
+  <div class="tip-card blue-tip">
+    <h4>💡 AI (Amelogenesis Imperfecta) — Exam Favorite</h4>
+    <ul>
+      <li>Hypoplastic = THIN but HARD enamel (matrix defect = quantitative)</li>
+      <li>Hypocalcified = SOFT, enamel MORE radiolucent than dentin</li>
+      <li>Hypomaturation = SOFT, enamel SAME radiolucency as dentin</li>
+      <li>X-linked dominant hypoplastic: females show "lyonization" (alternating bands) → classic MCQ trap</li>
+      <li>All affect BOTH dentitions (hereditary) → key differentiator from acquired defects</li>
+    </ul>
+  </div>
+
+  <div class="tip-card green-tip">
+    <h4>✅ Fluorosis — Critical Numbers to Memorize</h4>
+    <ul>
+      <li>Disease starts at ≥1.5 ppm</li>
+      <li>2-6 ppm: calcification defect (mottled enamel) — matrix normal</li>
+      <li>>6 ppm: matrix formation starts to fail (pitted enamel)</li>
+      <li>>8 ppm: deciduous teeth affected + skeletal sclerosis</li>
+      <li>Deciduous teeth usually spared because fluoride is sequestered by maternal skeleton</li>
+      <li>Mottled teeth are MORE resistant to caries (calcium fluoroapatite)</li>
+    </ul>
+  </div>
+
+  <div class="tip-card red-tip">
+    <h4>⚠️ High-Yield Comparisons for MCQs</h4>
+    <ul>
+      <li>Hereditary defects → affect ONE dental tissue (enamel OR dentin), BOTH dentitions, ALL teeth</li>
+      <li>Acquired defects → affect BOTH enamel AND dentin, ONE dentition (usually permanent), SINGLE/GROUP of teeth</li>
+      <li>Hereditary defects → vertical/random pits; Acquired → HORIZONTAL pits (chronological)</li>
+      <li>DGI vs DD-II: DGI affects both dentitions equally; DD-II has primary teeth like DGI but permanent teeth show thistle-tube pulps</li>
+    </ul>
+  </div>
+
+  <div class="tip-card">
+    <h4>🧠 UV Fluorescence — Easy 2 Marks</h4>
+    <ul>
+      <li>Tetracycline → YELLOW fluorescence under UV</li>
+      <li>Porphyria → RED fluorescence under UV</li>
+      <li>This is a classic exam question — never confuse these two!</li>
+    </ul>
+  </div>
+
+  <div class="tip-card blue-tip">
+    <h4>💡 Hutchinson's Triad for Congenital Syphilis</h4>
+    <ul>
+      <li>1. Hutchinson's incisors (barrel-shaped, notched — "screwdriver")</li>
+      <li>2. Ocular interstitial keratitis</li>
+      <li>3. Eighth nerve deafness</li>
+      <li>Plus: Moon's molars (dome-shaped), Mulberry molars (irregular tubercles)</li>
+      <li>Caused by Treponema pallidum; teeth affected = upper permanent incisors + first molars</li>
+    </ul>
+  </div>
+
+  <div class="tip-card green-tip">
+    <h4>✅ Taurodontism — Quick Notes</h4>
+    <ul>
+      <li>From Greek: "taurus" = bull + "odonto" = tooth</li>
+      <li>Enlarged pulp at expense of roots</li>
+      <li>3rd molars MOST affected; 1st molars LEAST affected</li>
+      <li>Pathogenesis: Hertwig root sheath fails to invaginate at proper level</li>
+      <li>Radiograph: rectangular tooth outline; reduced/absent cervical constriction</li>
+      <li>Associated with Klinefelter syndrome and amelogenesis imperfecta types IVA/IVB</li>
+    </ul>
+  </div>
+
+  <div class="tip-card red-tip">
+    <h4>⚠️ Don't Confuse — Common MCQ Traps</h4>
+    <ul>
+      <li>Dens invaginatus ≠ Dens evaginatus: invaginatus = folded IN; evaginatus = cusp popping OUT</li>
+      <li>Anodontia ≠ Oligodontia: anodontia = ALL missing; oligodontia = 6+ missing</li>
+      <li>Mesiodens = maxillary anterior (not mandibular)</li>
+      <li>Concrescence = cementum joining; Fusion = dentin joining (must involve dentin)</li>
+      <li>Turner's tooth = ONE or TWO teeth (acquired localized hypoplasia from local trauma/infection)</li>
+    </ul>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+// ===== DATA =====
+const allQuestions = [
+  // NUMBER
+  {topic:'number', q:'What is the term for absence of 6 or more teeth (excluding third molars)?', choices:['Anodontia','Hypodontia','Oligodontia','Hyperdontia'], correct:2, explanation:'Oligodontia is a subdivision of hypodontia indicating lack of development of 6 or more teeth, excluding third molars.', hint:'Think "oligo" = few (6+)', ref:'Abnormalities in Number of Teeth, p.4'},
+  {topic:'number', q:'Anodontia (total absence of teeth) is most commonly associated with which condition?', choices:['Down syndrome','Gardner syndrome','Hereditary hypohidrotic ectodermal dysplasia','Cleidocranial dysplasia'], correct:2, explanation:'Anodontia is rare and most cases occur in hereditary hypohidrotic ectodermal dysplasia.', hint:'Think ectodermal = teeth, sweat glands, hair', ref:'Anodontia/Oligodontia/Hypodontia, p.4'},
+  {topic:'number', q:'In the permanent dentition, which teeth are MOST commonly affected by hypodontia?', choices:['Central incisors','Lateral incisors','Third molars','First premolars'], correct:2, explanation:'Third molars are most commonly absent, followed by second premolars and lateral incisors.', hint:'Wisdom teeth are evolutionarily disappearing', ref:'Hypodontia, p.5'},
+  {topic:'number', q:'A supernumerary tooth located in the maxillary anterior incisor region is called?', choices:['Paramolar','Distomolar','Mesiodens','Distomesiodens'], correct:2, explanation:'Mesiodens specifically refers to a supernumerary tooth in the maxillary anterior incisor region.', hint:'Mesio = middle, anterior region', ref:'Hyperdontia types by location, p.5'},
+  {topic:'number', q:'Syndromic multiple hyperdontia is associated with which TWO syndromes?', choices:['Down syndrome and Turner syndrome','Cleidocranial dysplasia and Gardner syndrome','Ectodermal dysplasia and Paget disease','Apert syndrome and Marfan syndrome'], correct:1, explanation:'Syndromic multiple hyperdontia is classically associated with cleidocranial dysplasia and Gardner syndrome.', hint:'Both have skeletal + dental involvement', ref:'Hyperdontia types, p.5'},
+  {topic:'number', q:'Abnormalities in number of teeth are primarily due to defects in which developmental phase?', choices:['Apposition','Histodifferentiation','Initiation','Morphodifferentiation'], correct:2, explanation:'Abnormalities in number of teeth are usually due to defective initiation of tooth development.', hint:'The very first step of tooth development', ref:'Pathogenesis of Developmental Abnormalities, p.4'},
+  {topic:'number', q:'Neonatal teeth are defined as those erupting within the first:', choices:['7 days of life','15 days of life','30 days of life','60 days of life'], correct:2, explanation:'Neonatal teeth are those arising within the first 30 days of life, as opposed to natal teeth which are present at birth.', hint:'Neo = new; first month', ref:'Types by eruption time, p.6'},
+  // SIZE
+  {topic:'size', q:'Diffuse true microdontia is seen in all EXCEPT:', choices:['Down syndrome','Pituitary dwarfism','Pituitary gigantism','Hereditary disorders with multiple dental abnormalities'], correct:2, explanation:'Pituitary gigantism is associated with diffuse macrodontia (enlarged teeth), not microdontia. Microdontia is seen in Down syndrome and pituitary dwarfism.', hint:'Gigantism = big, not small', ref:'Microdontia types, p.6'},
+  {topic:'size', q:'Isolated microdontia most commonly affects which teeth?', choices:['Maxillary central incisors and canines','Maxillary lateral incisors and third molars','Mandibular premolars','Mandibular incisors'], correct:1, explanation:'Isolated microdontia most commonly affects maxillary lateral incisors (peg-shaped) and third molars.', hint:'Peg laterals are a classic dental finding', ref:'Isolated microdontia, p.6'},
+  {topic:'size', q:'Abnormalities in size of teeth are usually caused by defective:', choices:['Initiation','Proliferation','Morphodifferentiation','Apposition'], correct:1, explanation:'Size abnormalities (microdontia and macrodontia) result from defective proliferation during tooth development.', hint:'Size = amount of cell growth', ref:'Abnormalities in Size of Teeth, p.6'},
+  {topic:'size', q:'Unilateral macrodontia is usually associated with:', choices:['Down syndrome','Pituitary dwarfism','Hemifacial hyperplasia with premature eruption','Turner syndrome'], correct:2, explanation:'Unilateral macrodontia usually occurs in hemifacial hyperplasia with unilateral premature eruption.', hint:'Hemi = one side of the face', ref:'Macrodontia types, p.7'},
+  // SHAPE
+  {topic:'shape', q:'A patient has what appears to be two fused teeth, but the tooth count is NORMAL. The most likely diagnosis is:', choices:['Fusion','Concrescence','Gemination','Taurodontism'], correct:2, explanation:'In gemination, one enamel organ partially divides, appearing as two teeth but with a normal tooth count. Fusion reduces the count by one.', hint:'Normal count = one tooth trying to split', ref:'Gemination, p.8'},
+  {topic:'shape', q:'Fusion of two teeth MUST involve which tissue?', choices:['Enamel','Dentin','Cementum','Pulp'], correct:1, explanation:'By definition, fusion must involve dentin. Concrescence involves only cementum.', hint:'The key word in the definition', ref:'Fusion, p.8'},
+  {topic:'shape', q:'What is the main difference between concrescence and fusion?', choices:['Location of the teeth involved','The tissue joining the teeth (cementum vs dentin)','Number of root canals','The dentition affected'], correct:1, explanation:'Concrescence: two teeth joined by cementum (post-developmental). Fusion: two teeth joined involving dentin (developmental).', hint:'Concrete-escence = cemented together', ref:'Concrescence vs Fusion, p.8'},
+  {topic:'shape', q:'Taurodontism is derived from the Latin word "taurus" meaning:', choices:['Tooth','Root','Bull','Crown'], correct:2, explanation:'Taurodontism comes from Greek "taurus" (bull) + "odonto" (tooth), describing the bull-like shape of the enlarged pulp chamber at the expense of roots.', hint:'Think of a bull with a large body', ref:'Taurodontism definition, p.9'},
+  {topic:'shape', q:'In taurodontism, which teeth are MOST and LEAST commonly affected?', choices:['Most: 1st molars; Least: 3rd molars','Most: 3rd molars; Least: 1st molars','Most: premolars; Least: incisors','Most: canines; Least: molars'], correct:1, explanation:'Third molars are most commonly affected and first molars are the least affected in taurodontism.', hint:'The "last" teeth in = most affected', ref:'Taurodontism clinically, p.10'},
+  {topic:'shape', q:'The pathogenesis of taurodontism involves failure of:', choices:['Enamel organ to proliferate','Epithelial root sheath of Hertwig to invaginate at proper level','Odontoblasts to produce dentin','Cementoblasts to deposit cementum'], correct:1, explanation:'Taurodontism results from failure of the epithelial root sheath of Hertwig to invaginate at the proper level to form the furcation area.', hint:'Hertwig sheath determines root length', ref:'Taurodontism pathogenesis, p.10'},
+  {topic:'shape', q:'Dens invaginatus Type III is most dangerous because:', choices:['It is confined to the crown','It perforates the root creating a direct pathway from oral cavity to periradicular tissues','It causes pulpal necrosis after apex closure','It only affects deciduous teeth'], correct:1, explanation:'Type III extends through the root and perforates apically/laterally, providing direct oral-to-periradicular communication, causing periapical inflammation even with vital pulp.', hint:'Type III = perforation = direct pathway for bacteria', ref:'Dens invaginatus Type III, p.11'},
+  {topic:'shape', q:'Cusp of Carabelli is located on the:', choices:['Buccal surface of maxillary first molar','Palatal surface of mesiolingual cusp of maxillary first molar','Lingual surface of mandibular first molar','Occlusal surface of maxillary premolar'], correct:1, explanation:'The cusp of Carabelli is an accessory cusp on the palatal surface of the mesiolingual cusp of a maxillary first molar.', hint:'Think palatally on the mesiolin-GUAL cusp of upper first molar', ref:'Cusp of Carabelli, p.13'},
+  {topic:'shape', q:'Dens evaginatus (Occlusal Pearl) MOST commonly affects which teeth?', choices:['Maxillary incisors','Maxillary premolars','Mandibular premolars','Mandibular molars'], correct:2, explanation:'Dens evaginatus is a cusp-like elevation in the central groove or lingual ridge of buccal cusp of premolars, usually affecting mandibular teeth.', hint:'Evaginatus = popping out; lower premolars', ref:'Dens evaginatus, p.13'},
+  // STRUCTURE
+  {topic:'structure', q:'The KEY difference between hereditary and acquired structural tooth defects is:', choices:['Hereditary affects more teeth','Hereditary affects both dentitions while acquired affects one dentition','Acquired affects only enamel','Acquired causes more severe changes'], correct:1, explanation:'Hereditary defects affect both dentitions (enamel OR dentin), all teeth, with vertical/random pits. Acquired affects one dentition (usually permanent), single/group of teeth, with horizontal pits.', hint:'Hereditary = throughout development = both dentitions', ref:'Table 1-1, p.14'},
+  {topic:'structure', q:'Turner\'s tooth (acquired localized enamel hypoplasia) results from:', choices:['Hereditary gene mutation','Localized trauma or infection of a deciduous tooth affecting the permanent successor','Systemic fluoride toxicity','Tetracycline administration during pregnancy'], correct:1, explanation:'Turner\'s tooth results from localized trauma or infection of a deciduous tooth which disturbs the developing underlying permanent tooth.', hint:'Local = affects only 1-2 teeth', ref:'Turner\'s tooth, p.15'},
+  {topic:'structure', q:'At what fluoride concentration (ppm) does dental fluorosis begin?', choices:['0.5 ppm','1.0 ppm','1.5 ppm','2.0 ppm'], correct:2, explanation:'Dental fluorosis begins when fluoride level reaches 1.5 ppm or more in drinking water. The disease is endemic where water supply is ≥1.5 ppm.', hint:'1.5 = the threshold for endemic disease', ref:'Dental Fluorosis, p.15'},
+  {topic:'structure', q:'In severe dental fluorosis (>6ppm), the radiographic appearance of enamel shows:', choices:['Normal radiopacity','Increased radiopacity','Decreased radiopacity (radiolucent)','No change'], correct:2, explanation:'At 2-6 ppm: calcification defect (radiolucent). At >6 ppm: matrix defect starts (pitted). Fluorotic enamel is generally more radiolucent due to defective calcification.', hint:'Defective calcification = less mineral = more radiolucent', ref:'Fluorosis etiopathogenesis, p.15-16'},
+  {topic:'structure', q:'In hypocalcified amelogenesis imperfecta, the radiographic appearance of enamel is:', choices:['Same radiopacity as dentin','More radiolucent than dentin','More radiopaque than dentin','Normal radiopacity'], correct:1, explanation:'In hypocalcified AI, enamel is more radiolucent than dentin because the matrix is present but very poorly calcified.', hint:'Poorly calcified = very radiolucent', ref:'Hypocalcified AI radiograph, p.18'},
+  {topic:'structure', q:'In hypomaturation amelogenesis imperfecta, the enamel radiopacity is:', choices:['Normal','Same as dentin','More than dentin','Less than dentin but more than hypocalcified type'], correct:1, explanation:'In hypomaturation AI, enamel shows the same degree of radiopacity as dentin (less mineralized than normal but more than hypocalcified).', hint:'Between normal and hypocalcified', ref:'Hypomaturation AI radiograph, p.19'},
+  {topic:'structure', q:'Dentinogenesis imperfecta (DGI) is caused by mutations in which gene?', choices:['AMELX','ENAM','DSPP','COL1A1'], correct:2, explanation:'DGI is a hereditary developmental disturbance of dentin associated with mutations of the DSPP (Dentin Sialophosphoprotein) gene.', hint:'DSPP = Dentin Sialophosphoprotein', ref:'DGI definition, p.21'},
+  {topic:'structure', q:'The classic radiographic appearance of dentinogenesis imperfecta includes all EXCEPT:', choices:['Bulbous crowns','Cervical constriction','Enlarged pulp chambers (thistle-tube)','Early obliteration of root canals'], correct:2, explanation:'Enlarged thistle-tube or flame-shaped pulp chambers are the classic finding in Dentin Dysplasia Type II (permanent teeth), NOT DGI. DGI shows early obliteration/constriction.', hint:'DGI obliterates canals; DD-II enlarges them', ref:'DGI radiograph vs DD-II, p.21-23'},
+  {topic:'structure', q:'Dentin Dysplasia Type I is called "rootless teeth" because:', choices:['Roots never form at all','Loss of root dentin organization leads to severely shortened root length','Roots are absorbed at birth','Roots are replaced by cementum'], correct:1, explanation:'DD Type I — radicular dentin loses all organization and the root length is shortened dramatically, hence the nickname "rootless teeth."', hint:'Organization is lost → roots shorten', ref:'Dentin Dysplasia Type I, p.23'},
+  // COLOR
+  {topic:'color', q:'Tetracycline staining of teeth fluoresces under ultraviolet light as:', choices:['Bright red','Bright yellow','Blue-white','Green'], correct:1, explanation:'Tetracycline-stained bone or tooth substance fluoresces bright yellow under ultraviolet light, later turning dirty brown or grey clinically.', hint:'Tetracycline = YELLOW fluorescence', ref:'Tetracycline pigmentation, p.27'},
+  {topic:'color', q:'Porphyria gives teeth which appearance under ultraviolet light?', choices:['Yellow','Blue-white','Bright red','Green'], correct:2, explanation:'In porphyria, affected teeth fluoresce bright RED under ultraviolet light (pink/lavender appearance in normal light).', hint:'Porphyria = RED fluorescence (opposite of tetracycline)', ref:'Porphyria, p.27'},
+  {topic:'color', q:'In erythroblastosis fetalis, the teeth appear:', choices:['Yellow-brown','Blue or green','Pink or lavender','Grey-black'], correct:1, explanation:'In erythroblastosis fetalis, teeth are green or bluish in color due to hemolysis byproducts incorporated into developing tooth structure.', hint:'Hemolysis → green breakdown products', ref:'Erythroblastosis fetalis, p.27'},
+  {topic:'color', q:'Tetracycline should NOT be prescribed to pregnant women or children younger than:', choices:['6 years','8 years','12 years','16 years'], correct:2, explanation:'Tetracycline should not be prescribed to pregnant women or children less than 12 years of age to prevent staining of developing teeth.', hint:'12 years = end of most permanent tooth development', ref:'Tetracycline, p.27'},
+  // ERUPTION
+  {topic:'eruption', q:'Which of the following is a SYSTEMIC cause of delayed tooth eruption?', choices:['Retained deciduous teeth','Supernumerary teeth','Cleidocranial dysostosis','Dentigerous cyst'], correct:2, explanation:'Cleidocranial dysostosis is a systemic cause of delayed eruption. The others are local causes.', hint:'Systemic = whole-body disease causing delayed eruption', ref:'Delayed eruption etiology, p.28'},
+  {topic:'eruption', q:'Pericoronitis is a complication of:', choices:['Gemination','Early eruption','Delayed eruption/impacted teeth','Anodontia'], correct:2, explanation:'Pericoronitis (infection around the crown of a partially erupted tooth) is a complication of delayed eruption and impacted teeth.', hint:'Peri = around; coronitis = crown inflammation', ref:'Complications of delayed eruption, p.28'},
+  // RESORPTION
+  {topic:'resorption', q:'Internal tooth resorption in the crown appears clinically as:', choices:['A yellow spot on the crown','A pink-hued area showing through the tooth substance','A dark grey discoloration','White chalky areas on the surface'], correct:1, explanation:'Internal resorption in the crown appears as a pink-hued area representing the hyperplastic vascular pulp tissue showing through the overlying tooth substance — classic "pink spot."', hint:'Vascular = pink; showing through enamel', ref:'Internal resorption clinically, p.29'},
+  {topic:'resorption', q:'Which tissue is MOST resistant to external resorption?', choices:['Cementum','Dentin','Enamel','Pulp'], correct:2, explanation:'Enamel is the most resistant tissue to resorption, while cementum is the most susceptible. Hence when an impacted tooth resorbs an adjacent root, the crown remains intact.', hint:'The hardest tissue is the most resistant', ref:'Resorption of roots of adjacent teeth, p.31'},
+  {topic:'resorption', q:'The most common cyst causing root resorption is:', choices:['Dentigerous cyst','Radicular (periodontal) cyst','Odontogenic keratocyst','Eruption cyst'], correct:1, explanation:'The periodontal (radicular) cyst is the most common cyst causing root resorption through pressure stimulating osteoclast differentiation.', hint:'Most common periapical cyst = most common to cause resorption', ref:'External resorption: tumors/cysts, p.30'},
+  {topic:'resorption', q:'Radiographically, external resorption typically appears as:', choices:['A well-defined rounded radiolucency','A "moth-eaten" ill-defined radiolucency with density variations','A thin radiolucent line at the apex','A localized widening of the PDL space'], correct:1, explanation:'External resorption appears as a "moth-eaten" loss of tooth structure with less well-defined, variable-density radiolucency, unlike the well-defined rounded appearance of internal resorption.', hint:'External = irregular; Internal = well-defined rounded', ref:'External resorption radiograph, p.31'},
+  // SYSTEMIC
+  {topic:'systemic', q:'Cleidocranial dysplasia is caused by mutations in which gene?', choices:['APC','DSPP','CBFAl (RUNX2)','AMELX'], correct:2, explanation:'Cleidocranial dysplasia is caused by defects in the CBFAl (RUNX2) gene on chromosome 6p21, which guides osteoblastic differentiation and bone formation.', hint:'CBFA1 = bone formation master gene; chr 6p21', ref:'Cleidocranial dysplasia etiology, p.32'},
+  {topic:'systemic', q:'The Hutchinson Triad of congenital syphilis includes all EXCEPT:', choices:['Hutchinson\'s incisors','Ocular interstitial keratitis','8th nerve deafness','Mulberry molars'], correct:3, explanation:'The classic Hutchinson Triad is: Hutchinson\'s incisors + ocular interstitial keratitis + 8th nerve deafness. Mulberry molars are an additional finding but NOT part of the triad.', hint:'The TRIAD is exactly 3 features — molars are extra', ref:'Hutchinson triad, p.35'},
+  {topic:'systemic', q:'Down syndrome (Trisomy 21) is characterized by which ORAL finding?', choices:['Increased caries incidence','Macrodontia','Decreased caries but increased periodontal disease','Fusion of central incisors'], correct:2, explanation:'Down syndrome shows DECREASED caries (probably from increased salivation) but INCREASED periodontal disease (impaired immune response). Microdontia (not macrodontia) is found.', hint:'↑saliva = ↓caries; ↑immune problems = ↑periodontitis', ref:'Down syndrome oral manifestations, p.37'},
+  {topic:'systemic', q:'Gardner syndrome involves mutations in which tumor suppressor gene?', choices:['BRCA1','TP53','APC','RB1'], correct:2, explanation:'Gardner syndrome is caused by mutations of the tumor suppressor APC (Adenomatous Polyposis Coli) gene, leading to colonic polyps with malignant transformation potential.', hint:'APC = Adenomatous Polyposis Coli gene', ref:'Gardner syndrome etiology, p.33'},
+  {topic:'systemic', q:'X-linked anhidrotic ectodermal dysplasia (Christ-Siemens-Touraine syndrome) is characterized by:', choices:['Normal sweat glands, absent hair','Absent sweat glands (anhidrosis), hypotrichosis, peg-shaped teeth','Normal teeth, absent nails','Absent nails only, normal teeth and sweat glands'], correct:1, explanation:'The X-linked form (most common type) shows the classic triad: absent sweat glands (anhidrosis), sparse hair (hypotrichosis), and absent/peg-shaped teeth (partial anodontia). Males show full expression.', hint:'Ectodermal = 3 things: teeth, hair, sweat glands', ref:'X-linked EDA, p.34'},
+  {topic:'systemic', q:'In congenital syphilis, which teeth are MOST consistently affected?', choices:['Lower incisors and canines','Upper first permanent incisors and first molars (upper and lower)','All premolars','Deciduous molars only'], correct:1, explanation:'Teeth almost consistently affected in congenital syphilis are the upper first permanent incisors (Hutchinson\'s incisors) and the first molars (both upper and lower — Moon\'s/Mulberry molars).', hint:'First teeth in the permanent dentition = first affected', ref:'Dental manifestations of congenital syphilis, p.36'},
+  {topic:'systemic', q:'Regional odontodysplasia (Ghost teeth) is best described as:', choices:['Hereditary defect of enamel only','Localized non-hereditary developmental abnormality affecting enamel, dentin, and pulp','Systemic defect of all permanent teeth','Hereditary disorder of cementum formation'], correct:1, explanation:'Regional odontodysplasia is a localized, NON-hereditary developmental abnormality with severe abnormalities of enamel, dentin, and pulp. Etiology is unknown (possibly local circulatory disturbance).', hint:'Ghost teeth = localized, non-hereditary, all three tissues', ref:'Regional Odontodysplasia, p.25'},
+];
+
+// ===== STATE =====
+let currentTopic = 'all';
+let filteredQ = [];
+let currentIdx = 0;
+let answered = false;
+let correct = 0;
+let wrong = 0;
+let fcIdx = 0;
+let fcFlipped = false;
+
+// ===== FLASHCARD DATA =====
+const flashcards = [
+  {q:'What is the definition of oligodontia?', a:'Lack of development of 6 or more teeth, excluding third molars. It is a subdivision of hypodontia.'},
+  {q:'What is the pathogenesis of gemination vs fusion?', a:'Gemination: partial division of ONE enamel organ (normal count). Fusion: union of TWO adjacent enamel organs (reduced count by 1, must involve dentin).'},
+  {q:'What tissues does concrescence involve? What is its etiology?', a:'Two teeth joined by cementum only (post-developmental). Caused by trauma or crowding.'},
+  {q:'Name the three types of amelogenesis imperfecta and their key defect.', a:'1. Hypoplastic: matrix quantity defect (thin, hard enamel). 2. Hypocalcified: matrix quality (calcification) defect. 3. Hypomaturation: maturation defect.'},
+  {q:'What is the radiographic appearance of DGI vs Dentin Dysplasia Type II permanent teeth?', a:'DGI: bulbous crowns, cervical constriction, obliterated pulp chambers. DD-II permanent teeth: enlarged "thistle-tube" or "flame-shaped" pulp chambers with pulp stones.'},
+  {q:'At what PPM does dental fluorosis begin? What is the critical threshold for pitting?', a:'Begins at ≥1.5 ppm. Pitting starts at >6 ppm (matrix formation defect). At 2-6 ppm: only calcification defect (mottled enamel).'},
+  {q:'What is the Hutchinson Triad?', a:'1. Hutchinson\'s incisors (barrel-shaped, notched/screwdriver appearance). 2. Ocular interstitial keratitis. 3. Eighth nerve deafness.'},
+  {q:'What is the UV fluorescence color for tetracycline vs porphyria?', a:'Tetracycline → YELLOW fluorescence under UV. Porphyria → BRIGHT RED fluorescence under UV.'},
+  {q:'Name the gene and chromosome locus for cleidocranial dysplasia.', a:'CBFAl (RUNX2) gene on chromosome 6p21. 40% represent spontaneous mutation. Autosomal dominant.'},
+  {q:'What is the clinical appearance of internal vs external resorption on X-ray?', a:'Internal: well-defined ROUNDED radiolucency. External: "moth-eaten" ill-defined radiolucency with density variations.'},
+  {q:'What are the three types of taurodontism?', a:'1. Hypotaurodont (mild). 2. Mesotaurodont (moderate). 3. Hypertaurodont (severe — pulpal floor near apex).'},
+  {q:'Which teeth are most and least affected in taurodontism?', a:'Most affected: third molars. Least affected: first molars.'},
+  {q:'What is the difference between hereditary and acquired enamel defects in orientation of pits?', a:'Hereditary: vertical or randomly oriented pits. Acquired: horizontally oriented pits/lines (chronological, following incremental lines).'},
+  {q:'What is the pathogenesis of taurodontism?', a:'Failure of the epithelial root sheath of Hertwig to invaginate at the proper level to form the furcation area, resulting in apical displacement of the pulp floor.'},
+  {q:'Name the three types of dens invaginatus and their key features.', a:'Type I: confined to crown. Type II: extends below CEJ, ends in blind sac. Type III: perforates root — direct oral-to-periradicular communication (most dangerous).'},
+  {q:'In Down syndrome, why is caries decreased but periodontal disease increased?', a:'↓Caries: probably due to increased salivation (dilution + buffering). ↑Periodontal disease: probably due to impaired immune response (defective PMN function).'},
+  {q:'What gene is mutated in Gardner syndrome and what are the dental features?', a:'APC tumor suppressor gene mutation. Dental: multiple supernumerary teeth (many impacted). Also: osteomata, fibromata, colon polyps → carcinoma.'},
+  {q:'What color are teeth in erythroblastosis fetalis vs porphyria?', a:'Erythroblastosis fetalis: green or bluish. Porphyria: pink or lavender ("pink tooth").'},
+  {q:'What is the most common cyst causing root resorption?', a:'Periodontal (radicular/periapical) cyst — most common cyst causing root resorption by pressure stimulating osteoclast differentiation.'},
+  {q:'What distinguishes DGI-II from DGI-III (Brandywine isolate)?', a:'Both are DSPP-associated. DGI-II (hereditary opalescent teeth) vs DGI-III (Brandywine isolate — some teeth show shell teeth/enlarged pulps). Modern classification considers them a spectrum.'},
+  {q:'What are the dental manifestations of cleidocranial dysplasia?', a:'Delayed shedding of deciduous teeth, delayed eruption of permanent teeth, many unerupted supernumerary teeth with hooked roots, enamel hypoplasia, conical teeth, multiple dentigerous cysts, absent cementum.'},
+  {q:'What is the most common type of hereditary ectodermal dysplasia?', a:'X-linked anhidrotic (hypohidrotic) ectodermal dysplasia (Christ-Siemens-Touraine syndrome). Males show full syndrome; females are carriers or show mild lyonization effects.'},
+  {q:'What is the "pink spot" sign in teeth?', a:'It is the clinical appearance of internal resorption in the crown — hyperplastic vascular pulp tissue showing through the overlying tooth substance as a pink hue.'},
+  {q:'What is a teratogen? Name examples that cause dental defects.', a:'A teratogen is an agent that causes congenital abnormalities when exposure occurs during sensitive embryonic stages. Examples: tetracycline (staining), fluoride (fluorosis), syphilis (Hutchinson\'s teeth), exanthematous fevers (hypoplasia).'},
+  {q:'How does Turner\'s tooth differ from generalized enamel hypoplasia?', a:'Turner\'s tooth = acquired LOCALIZED hypoplasia of 1-2 teeth from local trauma/infection of deciduous tooth. Generalized = affects a group of teeth from a systemic insult.'},
+  {q:'What is the radiographic appearance of ghost teeth (regional odontodysplasia)?', a:'Teeth appear as radiolucent "shells" with thin enamel and dentin and excessively large pulp chambers — hence "ghost teeth."'},
+  {q:'Name 4 systemic causes of delayed eruption.', a:'Rickets, cretinism, cherubism, cleidocranial dysostosis, hereditary gingival fibromatosis, irradiation.'},
+  {q:'What is lyonization in X-linked dominant amelogenesis imperfecta?', a:'In affected females, random inactivation of one X chromosome causes alternating zones of healthy and defective enamel (pitted, ridged, or grooved), creating a striped pattern.'},
+  {q:'What is the mode of inheritance and penetrance of DGI?', a:'Autosomal dominant (or recessive) trait with 100% penetrance but variable expressivity.'},
+  {q:'What is mulberry molar and what condition causes it?', a:'Mulberry molar: rough, pitted occlusal surface of permanent molars with multiple irregular tubercles replacing normal cuspal pattern. Caused by congenital syphilis (Treponema pallidum infection of tooth germ).'},
+];
+
+// ===== INIT =====
+function init() {
+  setFilter(document.querySelector('[data-topic="all"]'), 'all');
+}
+
+function setFilter(el, topic) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentTopic = topic;
+  filteredQ = topic === 'all' ? [...allQuestions] : allQuestions.filter(q => q.topic === topic);
+  shuffle(filteredQ);
+  currentIdx = 0;
+  correct = 0;
+  wrong = 0;
+  answered = false;
+  document.getElementById('resultScreen').classList.remove('active');
+  document.getElementById('questionContainer').style.display = '';
+  document.getElementById('controls').style.display = '';
+  updateStats();
+  renderQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function renderQuestion() {
+  if (currentIdx >= filteredQ.length) { showResults(); return; }
+  answered = false;
+  const q = filteredQ[currentIdx];
+  const letters = ['A', 'B', 'C', 'D'];
+  document.getElementById('qNum').textContent = currentIdx + 1;
+  document.getElementById('qTotal').textContent = filteredQ.length;
+  const pct = (currentIdx / filteredQ.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  const choicesHTML = q.choices.map((c, i) => `
+    <div class="choice" id="choice${i}" onclick="selectAnswer(${i})">
+      <div class="choice-letter">${letters[i]}</div>
+      <div>${c}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('questionContainer').innerHTML = `
+    <div class="question-card">
+      <div class="question-number">Question ${currentIdx + 1} / ${filteredQ.length}</div>
+      <div class="topic-tag">📍 ${q.topic.charAt(0).toUpperCase() + q.topic.slice(1)}</div>
+      <div class="question-text">${q.q}</div>
+      <div class="choices">${choicesHTML}</div>
+      <div class="hint-section">
+        <button class="hint-btn" onclick="toggleHint()">💡 Show Hint</button>
+        <div class="hint-text" id="hintText">${q.hint}</div>
+      </div>
+      <div class="feedback" id="feedbackArea"></div>
+    </div>
+  `;
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+function toggleHint() {
+  const ht = document.getElementById('hintText');
+  ht.classList.toggle('visible');
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = filteredQ[currentIdx];
+  const letters = ['A', 'B', 'C', 'D'];
+
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('choice' + i);
+    el.classList.add('disabled');
+    if (i === q.correct) el.classList.add('correct');
+    else if (i === idx && i !== q.correct) el.classList.add('wrong');
+  }
+
+  const fb = document.getElementById('feedbackArea');
+  if (idx === q.correct) {
+    correct++;
+    fb.className = 'feedback correct-fb';
+    fb.innerHTML = `<div class="feedback-title">✅ Correct!</div><p>${q.explanation}</p><div class="reference">📚 Reference: ${q.ref}</div>`;
+  } else {
+    wrong++;
+    fb.className = 'feedback wrong-fb';
+    fb.innerHTML = `<div class="feedback-title">❌ Incorrect — Answer is ${letters[q.correct]}</div><p>${q.explanation}</p><div class="reference">📚 Reference: ${q.ref}</div>`;
+  }
+
+  document.getElementById('nextBtn').style.display = 'inline-block';
+  updateStats();
+}
+
+function nextQuestion() {
+  currentIdx++;
+  renderQuestion();
+}
+
+function skipQuestion() {
+  if (answered) { nextQuestion(); return; }
+  filteredQ.push(filteredQ.splice(currentIdx, 1)[0]);
+  renderQuestion();
+}
+
+function updateStats() {
+  const done = correct + wrong;
+  document.getElementById('sessionStats').textContent = `✅ ${correct}  ❌ ${wrong}`;
+  document.getElementById('headerScore').textContent = `${correct}/${done}`;
+}
+
+function showResults() {
+  const total = correct + wrong;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+  document.getElementById('resultScreen').classList.add('active');
+  document.getElementById('questionContainer').style.display = 'none';
+  document.getElementById('controls').style.display = 'none';
+  document.getElementById('resultPct').textContent = pct + '%';
+  document.getElementById('rCorrect').textContent = correct;
+  document.getElementById('rWrong').textContent = wrong;
+  document.getElementById('rTotal').textContent = total;
+  document.getElementById('progressFill').style.width = '100%';
+
+  let msg = '';
+  if (pct >= 90) msg = '"Excellent work, Doctor! You clearly know this chapter inside out. Keep it up!" — Dr. Rehab Fouad';
+  else if (pct >= 75) msg = '"Good performance! Review the areas you missed and you\'ll be fully exam-ready." — Dr. Rehab Fouad';
+  else if (pct >= 60) msg = '"You\'re on the right track. Focus on the comparison tables — they\'re heavily tested in finals." — Dr. Rehab Fouad';
+  else msg = '"Don\'t be discouraged. Revisit the chapter summary and Dr\'s Tips, then try again." — Dr. Rehab Fouad';
+  document.getElementById('gradeMsg').textContent = msg;
+}
+
+function restartQuiz() {
+  setFilter(document.querySelector(`[data-topic="${currentTopic}"]`), currentTopic);
+  document.getElementById('resultScreen').classList.remove('active');
+  document.getElementById('questionContainer').style.display = '';
+  document.getElementById('controls').style.display = '';
+}
+
+// ===== FLASHCARDS =====
+function renderFlashcard() {
+  const fc = flashcards[fcIdx];
+  document.getElementById('fcFront').textContent = fc.q;
+  document.getElementById('fcBack').textContent = fc.a;
+  document.getElementById('fcProgress').textContent = `Card ${fcIdx+1} of ${flashcards.length}`;
+  document.getElementById('fcCounter').textContent = `${fcIdx+1} / ${flashcards.length}`;
+  document.getElementById('flashcard').classList.remove('flipped');
+  fcFlipped = false;
+}
+
+function flipCard() {
+  fcFlipped = !fcFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', fcFlipped);
+}
+
+function fcNext() {
+  fcIdx = (fcIdx + 1) % flashcards.length;
+  renderFlashcard();
+}
+
+function fcPrev() {
+  fcIdx = (fcIdx - 1 + flashcards.length) % flashcards.length;
+  renderFlashcard();
+}
+
+// ===== SUMMARY =====
+function toggleBlock(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.summary-toggle');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+// ===== TABS =====
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'flash') renderFlashcard();
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>
