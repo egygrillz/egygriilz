@@ -1,0 +1,137 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://egygrillz.com/#business",
+      "name": "EGYGRILLZ",
+      "alternateName": "EgyGrillz",
+      "description": "Egypt's first and only custom dental jewelry studio. Handcrafted gold, silver, and VVS diamond grillz tailored to your smile.",
+      "url": "https://egygrillz.com",
+      "logo": "https://egygrillz.com/logo/logo_black.png",
+      "image": "https://egygrillz.com/assets/images/hero-grillz.jpg",
+      "foundingDate": "2021",
+      "founder": {
+        "@type": "Person",
+        "name": "Dr. Mohamed Mahdy"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Abou Bakr El-Sedeek",
+        "addressLocality": "Cairo",
+        "addressCountry": "EG"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 30.0444,
+        "longitude": 31.2357
+      },
+      "telephone": "+201067044228",
+      "email": "egygrillz@gmail.com",
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+          "opens": "16:00",
+          "closes": "22:00"
+        }
+      ],
+      "sameAs": [
+        "https://instagram.com/egygrillz",
+        "https://www.facebook.com/egygrillz",
+        "https://www.tiktok.com/@egygrillz"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "EGYGRILLZ Collections",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "Gold Grillz",
+              "description": "Premium 18K and 21K solid gold grillz, handcrafted to perfection.",
+              "url": "https://egygrillz.com/golds.html",
+              "material": "18K Gold, 21K Gold"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "Silver Grillz",
+              "description": "Solid 925 sterling silver grillz, bold and brilliantly finished.",
+              "url": "https://egygrillz.com/silvers.html",
+              "material": "925 Sterling Silver"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "Diamond Grillz",
+              "description": "VVS-grade iced-out diamond grillz for those who demand only the finest.",
+              "url": "https://egygrillz.com/diamonds.html",
+              "material": "VVS Diamonds, Gold"
+            }
+          }
+        ]
+      },
+      "priceRange": "$$$",
+      "areaServed": [
+        "Cairo", "Egypt", "Dubai", "Jeddah", "London", "New York", "Paris", "Berlin"
+      ],
+      "keywords": "grillz Egypt, custom grillz Cairo, gold grillz Egypt, diamond grillz Egypt, dental jewelry Egypt, custom dental jewelry"
+    },
+    {
+      "@type": "Service",
+      "@id": "https://egygrillz.com/booking.html#impression",
+      "name": "Dental Impression",
+      "provider": { "@id": "https://egygrillz.com/#business" },
+      "description": "Precise mold of your teeth — the essential first step to crafting your custom grillz.",
+      "offers": {
+        "@type": "Offer",
+        "price": "200",
+        "priceCurrency": "EGP",
+        "unitText": "per arch"
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://egygrillz.com/booking.html#consultation",
+      "name": "Design Consultation",
+      "provider": { "@id": "https://egygrillz.com/#business" },
+      "description": "Design your perfect set with our specialist — style, metal choice, stones, and fit all planned together.",
+      "offers": {
+        "@type": "Offer",
+        "price": "1000",
+        "priceCurrency": "EGP",
+        "unitText": "per hour"
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://egygrillz.com/booking.html#gems",
+      "name": "Tooth Gem Application",
+      "provider": { "@id": "https://egygrillz.com/#business" },
+      "description": "A single crystal or diamond bonded directly to your tooth — subtle, elegant, and completely painless.",
+      "offers": {
+        "@type": "Offer",
+        "price": "500",
+        "priceCurrency": "EGP",
+        "eligibleTransactionVolume": {
+          "@type": "PriceSpecification",
+          "description": "Starting from"
+        }
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://egygrillz.com/#website",
+      "url": "https://egygrillz.com",
+      "name": "EGYGRILLZ",
+      "description": "Egypt's First Custom Grillz — Gold, Silver & Diamond dental jewelry handcrafted in Cairo.",
+      "publisher": { "@id": "https://egygrillz.com/#business" }
+    }
+  ]
+}
