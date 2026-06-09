@@ -1,0 +1,39 @@
+/* TEAM */
+
+Founder & Creative Director: Dr. Mohamed Mahdy
+Role: Founder, Designer, Craftsman, Dental Professional
+Location: Cairo, Egypt
+Studio: Inside Smart Smile Clinics, 38 Abou Bakr El-Sedeek, Heliopolis
+Contact: egygrillz@gmail.com
+Instagram: @egygrillz
+
+/* BRAND */
+
+Name: EGYGRILLZ
+Established: 2021
+Specialty: Custom dental jewelry — gold, silver, and diamond grillz
+Distinction: Egypt's first and only custom grillz studio
+Notable clients: Marwan Pablo, Maged El Kedwany, Abou El Anwar
+
+/* THANKS */
+
+To every client who trusted us with their smile.
+To Egypt's creative community for embracing something new.
+To Marwan Pablo, Maged El Kedwany, and Abou El Anwar
+for wearing EGYGRILLZ before it was a movement.
+
+/* SITE */
+
+Last update: 2026/06/10
+Language: English
+Doctype: HTML5
+Hosted: GitHub Pages
+Domain: egygrillz.com
+
+/* STANDARDS */
+
+HTML5, CSS3, Vanilla JavaScript
+Sitemap: https://egygrillz.com/sitemap.xml
+LLM info: https://egygrillz.com/llms.txt
+
+humanstxt.org

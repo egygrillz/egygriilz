@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- ══ HOMEPAGE ══════════════════════════════════════════ -->
+  <url>
+    <loc>https://egygrillz.com/</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://egygrillz.com/assets/images/hero-grillz.jpg</image:loc>
+      <image:title>EGYGRILLZ — Egypt's First Custom Grillz</image:title>
+      <image:caption>Custom gold, silver, and diamond grillz handcrafted in Cairo, Egypt</image:caption>
+    </image:image>
+  </url>
+
+  <!-- ══ BOOKING — highest conversion page ════════════════ -->
+  <url>
+    <loc>https://egygrillz.com/booking.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- ══ COLLECTIONS ═══════════════════════════════════════ -->
+  <url>
+    <loc>https://egygrillz.com/golds.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://egygrillz.com/assets/images/hero-grillz.jpg</image:loc>
+      <image:title>Gold Grillz — EGYGRILLZ</image:title>
+      <image:caption>Premium 18K and 21K solid gold grillz handcrafted in Cairo</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/silvers.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://egygrillz.com/assets/images/hero-grillz.jpg</image:loc>
+      <image:title>Silver Grillz — EGYGRILLZ</image:title>
+      <image:caption>Solid 925 sterling silver grillz handcrafted in Cairo</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/diamonds.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://egygrillz.com/assets/images/hero-grillz.jpg</image:loc>
+      <image:title>Diamond Grillz — EGYGRILLZ</image:title>
+      <image:caption>VVS-grade iced-out diamond grillz handcrafted in Cairo</image:caption>
+    </image:image>
+  </url>
+
+  <!-- ══ CONTENT PAGES ═════════════════════════════════════ -->
+  <url>
+    <loc>https://egygrillz.com/latest-designs.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/grillz-gallery.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/about.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/contact.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/atelier.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <!-- ══ LEGAL / SUPPORT ═══════════════════════════════════ -->
+  <url>
+    <loc>https://egygrillz.com/shipping.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/terms.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://egygrillz.com/privacy.html</loc>
+    <lastmod>2026-06-10</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+</urlset>

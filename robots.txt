@@ -1,0 +1,53 @@
+# robots.txt — egygrillz.com
+
+# ── All crawlers ──────────────────────────────────────────
+User-agent: *
+Allow: /
+
+# Block internal/admin pages from indexing
+Disallow: /admin.html
+Disallow: /editx.html
+Disallow: /x.html
+
+# ── Google ────────────────────────────────────────────────
+User-agent: Googlebot
+Allow: /
+Disallow: /admin.html
+Disallow: /editx.html
+Disallow: /x.html
+
+User-agent: Googlebot-Image
+Allow: /assets/images/
+Allow: /logo/
+
+# ── Bing ─────────────────────────────────────────────────
+User-agent: Bingbot
+Allow: /
+
+# ── AI Crawlers — explicitly welcome ─────────────────────
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+# ── Sitemap ───────────────────────────────────────────────
+Sitemap: https://egygrillz.com/sitemap.xml
