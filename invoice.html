@@ -12,6 +12,14 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
+window.addEventListener('load', function() {
+  if (window.jspdf && window.jspdf.jsPDF && !window.jsPDF) {
+    window.jsPDF = window.jspdf.jsPDF;
+  }
+});
+</script>
 
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -1645,68 +1653,95 @@ function saveInvoice() {
 }
 
 async function downloadPDF() {
-  if (lineItems.length === 0 && !selectedClient) {
-    showToast('Nothing to export yet', 'error-toast'); return;
+  const overlay = document.getElementById('pdf-overlay');
+  const btn = document.getElementById('download-pdf-btn');
+
+  // Check libraries loaded
+  if (typeof window.html2canvas === 'undefined') {
+    showToast('html2canvas not loaded — refresh page', 'error-toast'); return;
+  }
+  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+    showToast('jsPDF not loaded — refresh page', 'error-toast'); return;
   }
 
-  const overlay = document.getElementById('pdf-overlay');
   overlay.classList.add('open');
-
-  const btn = document.getElementById('download-pdf-btn');
   btn.disabled = true;
 
   try {
-    // Wait a tick for UI to update
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 150));
 
-    const { jsPDF } = window.jspdf;
+    // Support both window.jspdf.jsPDF and window.jsPDF
+    const JsPDFConstructor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPDFConstructor) throw new Error('jsPDF constructor not found');
+
     const preview = document.getElementById('invoice-preview');
 
-    // Temporarily remove box shadow for cleaner capture
-    const prevShadow = preview.style.boxShadow;
-    preview.style.boxShadow = 'none';
+    // Clone the preview into a clean off-screen container to avoid
+    // layout/sticky/shadow issues during capture
+    const clone = preview.cloneNode(true);
+    clone.style.cssText = `
+      position:fixed; left:-9999px; top:0;
+      width:${preview.offsetWidth}px;
+      background:#fff; padding:40px 36px;
+      font-family:Arimo,sans-serif;
+      box-shadow:none; border:none;
+    `;
+    document.body.appendChild(clone);
 
-    const canvas = await html2canvas(preview, {
-      scale: 3,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      allowTaint: false
-    });
+    let canvas;
+    try {
+      canvas = await window.html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true,
+        width: clone.offsetWidth,
+        height: clone.scrollHeight
+      });
+    } finally {
+      document.body.removeChild(clone);
+    }
 
-    preview.style.boxShadow = prevShadow;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const pdf = new JsPDFConstructor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();   // 210mm
+    const pageH = pdf.internal.pageSize.getHeight();  // 297mm
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgRatio = canvas.height / canvas.width;
-    const imgH = pageW * imgRatio;
+    const pxPerMm = canvas.width / pageW;
+    const contentHeightMm = canvas.height / pxPerMm;
 
-    if (imgH <= pageH) {
-      pdf.addImage(imgData, 'PNG', 0, 0, pageW, imgH);
+    if (contentHeightMm <= pageH) {
+      // Fits on one page
+      pdf.addImage(imgData, 'JPEG', 0, 0, pageW, contentHeightMm);
     } else {
-      // Multi-page if invoice is long
-      let yPos = 0;
-      let remaining = imgH;
+      // Slice into pages
+      const pageHeightPx = pageH * pxPerMm;
+      let offsetPx = 0;
       let pageNum = 0;
-      while (remaining > 0) {
+      while (offsetPx < canvas.height) {
         if (pageNum > 0) pdf.addPage();
-        const sliceH = Math.min(pageH, remaining);
-        pdf.addImage(imgData, 'PNG', 0, -yPos, pageW, imgH);
-        yPos += pageH;
-        remaining -= pageH;
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = Math.min(pageHeightPx, canvas.height - offsetPx);
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, offsetPx, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.95);
+        const sliceHeightMm = (sliceCanvas.height / pxPerMm);
+        pdf.addImage(sliceData, 'JPEG', 0, 0, pageW, sliceHeightMm);
+        offsetPx += pageHeightPx;
         pageNum++;
       }
     }
 
-    const num = document.getElementById('inv-number').value || 'invoice';
-    const clientName = selectedClient?.name?.replace(/\s+/g,'-') || 'client';
+    const num = (document.getElementById('inv-number').value || 'invoice').replace(/[^a-zA-Z0-9\-]/g,'');
+    const clientName = (selectedClient?.name || 'client').replace(/\s+/g,'-').replace(/[^a-zA-Z0-9\-]/g,'');
     pdf.save(`EGYGRILLZ-${num}-${clientName}.pdf`);
     showToast('PDF downloaded!', 'success');
+
   } catch(e) {
     console.error('PDF error:', e);
-    showToast('PDF export failed — try again', 'error-toast');
+    showToast('PDF failed: ' + e.message, 'error-toast');
   } finally {
     overlay.classList.remove('open');
     btn.disabled = false;
