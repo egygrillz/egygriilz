@@ -113,14 +113,13 @@ header.hidden { transform:translateY(-100%); }
 /* ══ SECTION HEADERS ══ */
 .section-eyebrow { font-size:9px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:6px; }
 .section-title { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(18px,2.2vw,26px); letter-spacing:2px; text-transform:uppercase; margin-bottom:30px; }
-.section-rule { width:32px; height:1px; background:#000; margin-bottom:30px; }
 
 /* ══ TAB PANELS ══ */
 .tab-panel { display:none; }
 .tab-panel.active { display:block; }
 
 /* ══ INVOICE BUILDER ══ */
-.invoice-grid { display:grid; grid-template-columns:1fr 400px; gap:40px; align-items:start; }
+.invoice-grid { display:grid; grid-template-columns:1fr 420px; gap:40px; align-items:start; }
 @media(max-width:900px){ .invoice-grid { grid-template-columns:1fr; } }
 
 /* Client selector */
@@ -135,7 +134,31 @@ header.hidden { transform:translateY(-100%); }
 .field-input:focus, .field-select:focus, .field-textarea:focus { border-color:#000; }
 .field-select { cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; padding-right:24px; }
 .field-textarea { resize:vertical; min-height:80px; border:1px solid #ddd; padding:10px; font-size:13px; }
-.field-hint { font-size:10px; color:#bbb; margin-top:4px; }
+
+/* ── CLIENT SEARCH (autocomplete) ── */
+.client-search-wrap { position:relative; }
+.client-search-input {
+  width:100%; border:none; border-bottom:1px solid #ddd; background:transparent;
+  font-family:'Arimo',sans-serif; font-size:14px; padding:10px 32px 10px 0;
+  outline:none; color:#000; transition:border-color 0.2s;
+}
+.client-search-input:focus { border-color:#000; }
+.client-search-icon { position:absolute; right:0; top:50%; transform:translateY(-50%); color:#bbb; font-size:13px; pointer-events:none; }
+.client-dropdown {
+  position:absolute; top:100%; left:0; right:0; background:#fff;
+  border:1px solid #eee; box-shadow:0 8px 24px rgba(0,0,0,0.1);
+  z-index:500; max-height:240px; overflow-y:auto; display:none;
+}
+.client-dropdown.open { display:block; }
+.client-option {
+  padding:12px 16px; cursor:pointer; border-bottom:1px solid #f5f5f5;
+  transition:background 0.15s;
+}
+.client-option:last-child { border-bottom:none; }
+.client-option:hover, .client-option.highlighted { background:#f8f8f8; }
+.client-option-name { font-size:13px; font-weight:700; }
+.client-option-sub { font-size:11px; color:#999; margin-top:2px; }
+.client-option-empty { padding:16px; text-align:center; color:#bbb; font-size:11px; letter-spacing:1px; }
 
 .client-card {
   background:#f8f8f8; padding:16px 20px; margin-top:12px;
@@ -145,6 +168,10 @@ header.hidden { transform:translateY(-100%); }
 .client-card-name { font-family:'Playfair Display',serif; font-size:16px; letter-spacing:1px; margin-bottom:4px; }
 .client-card-info { font-size:12px; color:#666; }
 .client-card-badge { display:inline-block; font-size:8px; letter-spacing:2px; text-transform:uppercase; border:1px solid #ddd; padding:3px 8px; margin-top:6px; color:#999; }
+.client-clear-btn {
+  font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#c0392b;
+  background:none; border:none; cursor:pointer; margin-top:8px; display:block; font-family:'Arimo',sans-serif;
+}
 
 /* Items section */
 .items-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
@@ -156,15 +183,48 @@ header.hidden { transform:translateY(-100%); }
 .add-btn:hover { background:#000; color:#fff; }
 .add-btn i { font-size:10px; }
 
+/* Item search bar */
+.item-search-wrap { position:relative; margin-bottom:14px; }
+.item-search-input {
+  width:100%; border:none; border-bottom:1px solid #ddd; background:transparent;
+  font-family:'Arimo',sans-serif; font-size:13px; padding:9px 32px 9px 0;
+  outline:none; color:#000; transition:border-color 0.2s;
+}
+.item-search-input:focus { border-bottom-color:#000; }
+.item-search-icon { position:absolute; right:0; top:50%; transform:translateY(-50%); color:#bbb; font-size:12px; pointer-events:none; }
+.item-search-dropdown {
+  position:absolute; top:100%; left:0; right:0; background:#fff;
+  border:1px solid #eee; box-shadow:0 8px 24px rgba(0,0,0,0.1);
+  z-index:500; max-height:260px; overflow-y:auto; display:none;
+}
+.item-search-dropdown.open { display:block; }
+.item-search-option {
+  display:flex; align-items:center; gap:12px; padding:10px 14px;
+  cursor:pointer; border-bottom:1px solid #f5f5f5; transition:background 0.15s;
+}
+.item-search-option:last-child { border-bottom:none; }
+.item-search-option:hover { background:#f8f8f8; }
+.item-search-option img { width:40px; height:50px; object-fit:cover; flex-shrink:0; background:#f0f0f0; }
+.item-search-option-info { flex:1; }
+.item-search-option-name { font-size:12px; font-weight:700; }
+.item-search-option-meta { font-size:10px; color:#999; margin-top:2px; }
+.item-search-option-price { font-size:12px; font-weight:700; color:#000; }
+.item-search-empty { padding:16px; text-align:center; color:#bbb; font-size:11px; letter-spacing:1px; }
+
 .item-row {
-  display:grid; grid-template-columns:1fr 80px 100px 36px;
+  display:grid; grid-template-columns:1fr 70px 110px 36px;
   gap:10px; align-items:end; padding:14px 0; border-bottom:1px solid #f0f0f0;
+  position:relative;
 }
 .item-row:last-child { border-bottom:none; }
 .item-field { border:none; border-bottom:1px solid #eee; background:transparent; font-family:'Arimo',sans-serif; font-size:13px; padding:6px 0; width:100%; outline:none; color:#000; }
 .item-field:focus { border-color:#000; }
-.item-remove { background:none; border:none; cursor:pointer; color:#ccc; font-size:14px; padding:6px; transition:color 0.2s; }
-.item-remove:hover { color:#c0392b; }
+.item-remove {
+  background:none; border:none; cursor:pointer; color:#ccc; font-size:14px; padding:6px;
+  transition:color 0.2s, transform 0.15s; display:flex; align-items:center; justify-content:center;
+}
+.item-remove:hover { color:#c0392b; transform:scale(1.2); }
+.item-col-label { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:4px; }
 
 .items-empty { text-align:center; padding:40px; color:#ccc; font-size:12px; letter-spacing:1px; text-transform:uppercase; border:1px dashed #eee; }
 
@@ -175,12 +235,9 @@ header.hidden { transform:translateY(-100%); }
   padding-bottom:2px; transition:color 0.2s; font-family:'Arimo',sans-serif;
 }
 .design-picker-toggle:hover { color:#000; border-color:#000; }
-
-.design-picker {
-  display:none; margin-top:20px; padding:20px; background:#f8f8f8; border:1px solid #eee;
-}
+.design-picker { display:none; margin-top:20px; padding:20px; background:#f8f8f8; border:1px solid #eee; }
 .design-picker.open { display:block; }
-.design-picker-tabs { display:flex; gap:4px; margin-bottom:16px; }
+.design-picker-tabs { display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
 .dpick-tab {
   font-size:9px; letter-spacing:2px; text-transform:uppercase; border:1px solid #ddd;
   background:#fff; padding:8px 16px; cursor:pointer; transition:background 0.2s, color 0.2s;
@@ -189,10 +246,10 @@ header.hidden { transform:translateY(-100%); }
 .dpick-tab.active { background:#000; color:#fff; border-color:#000; }
 .design-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; max-height:280px; overflow-y:auto; }
 .design-thumb {
-  cursor:pointer; border:1px solid #eee; background:#fff; overflow:hidden;
-  transition:border-color 0.2s; position:relative;
+  cursor:pointer; border:2px solid transparent; background:#fff; overflow:hidden;
+  transition:border-color 0.2s, transform 0.15s; position:relative;
 }
-.design-thumb:hover { border-color:#000; }
+.design-thumb:hover { border-color:#000; transform:translateY(-2px); }
 .design-thumb img { width:100%; aspect-ratio:3/4; object-fit:cover; }
 .design-thumb-name { font-size:9px; padding:6px; text-align:center; letter-spacing:0.5px; }
 .design-thumb-price { font-size:9px; font-weight:700; padding:0 6px 6px; text-align:center; color:#666; }
@@ -241,13 +298,13 @@ header.hidden { transform:translateY(-100%); }
 .inv-table th { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:#bbb; padding:8px 0; border-bottom:1px solid #f0f0f0; text-align:left; }
 .inv-table th:last-child, .inv-table td:last-child { text-align:right; }
 .inv-table td { font-size:12px; padding:10px 0; border-bottom:1px solid #f8f8f8; vertical-align:top; }
-.inv-table td.item-desc { font-size:11px; color:#666; padding-top:2px; }
 .inv-table tr:last-child td { border-bottom:none; }
 
 .inv-totals { border-top:1px solid #eee; padding-top:16px; }
 .inv-total-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#666; }
 .inv-total-row.grand { font-size:14px; font-weight:700; color:#000; border-top:1px solid #000; margin-top:8px; padding-top:10px; }
 .inv-total-row.usd { font-size:10px; color:#bbb; }
+.inv-total-row.tax-free-row { font-size:9px; color:#bbb; letter-spacing:1px; }
 .inv-payment-info { margin-top:20px; padding-top:16px; border-top:1px solid #f0f0f0; }
 .inv-payment-label { font-size:8px; letter-spacing:3px; text-transform:uppercase; color:#bbb; margin-bottom:8px; }
 .inv-payment-detail { font-size:11px; color:#666; }
@@ -264,12 +321,13 @@ header.hidden { transform:translateY(-100%); }
   flex:1; font-family:'Arimo',sans-serif; font-size:9px; letter-spacing:2px;
   text-transform:uppercase; border:1px solid #000; background:#000; color:#fff;
   padding:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
-  gap:8px; transition:background 0.2s, color 0.2s; min-width:120px;
+  gap:8px; transition:background 0.2s, color 0.2s; min-width:100px;
 }
 .action-btn.outline { background:#fff; color:#000; }
 .action-btn:hover { background:#333; color:#fff; }
 .action-btn.outline:hover { background:#f5f5f5; }
 .action-btn i { font-size:12px; }
+.action-btn:disabled { opacity:0.4; cursor:not-allowed; }
 
 /* ══ CLIENTS TAB ══ */
 .clients-toolbar { display:flex; gap:12px; margin-bottom:30px; flex-wrap:wrap; align-items:center; }
@@ -308,7 +366,6 @@ header.hidden { transform:translateY(-100%); }
 .stat-card .s-lbl { font-size:8px; letter-spacing:3px; text-transform:uppercase; color:#bbb; }
 .stat-card .s-sub { font-size:11px; color:#999; margin-top:4px; }
 
-.invoices-list { }
 .inv-list-row {
   display:flex; align-items:center; justify-content:space-between;
   padding:18px 0; border-bottom:1px solid #f0f0f0; gap:16px; flex-wrap:wrap;
@@ -332,8 +389,23 @@ header.hidden { transform:translateY(-100%); }
 }
 .inv-mini-btn:hover { border-color:#000; color:#000; }
 .inv-mini-btn.danger:hover { border-color:#c0392b; color:#c0392b; }
-
 .no-invoices { text-align:center; padding:60px; color:#ccc; font-size:11px; letter-spacing:2px; }
+
+/* Accounting search + filter */
+.acc-toolbar { display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap; align-items:center; }
+.acc-search-wrap { position:relative; flex:1; min-width:200px; }
+.acc-search-icon { position:absolute; left:0; top:50%; transform:translateY(-50%); color:#bbb; font-size:12px; }
+.acc-search-input {
+  width:100%; border:none; border-bottom:1px solid #ddd; background:transparent;
+  font-family:'Arimo',sans-serif; font-size:13px; padding:8px 0 8px 22px; outline:none;
+}
+.acc-search-input:focus { border-bottom-color:#000; }
+.acc-filter-btn {
+  font-size:9px; letter-spacing:2px; text-transform:uppercase; border:1px solid #ddd;
+  background:#fff; padding:8px 16px; cursor:pointer; transition:all 0.2s;
+  font-family:'Arimo',sans-serif; color:#999;
+}
+.acc-filter-btn.active { background:#000; color:#fff; border-color:#000; }
 
 /* ══ TOAST ══ */
 .toast {
@@ -343,6 +415,8 @@ header.hidden { transform:translateY(-100%); }
   transition:opacity 0.3s, transform 0.3s; pointer-events:none;
 }
 .toast.show { opacity:1; transform:translateY(0); }
+.toast.success { background:#27ae60; }
+.toast.error-toast { background:#c0392b; }
 
 /* ══ MODAL ══ */
 .modal-overlay {
@@ -361,6 +435,27 @@ header.hidden { transform:translateY(-100%); }
   padding:13px; cursor:pointer;
 }
 .modal-btn.outline { background:#fff; color:#000; }
+.modal-btn:hover { background:#333; }
+.modal-btn.outline:hover { background:#f5f5f5; }
+
+/* Confirm modal */
+.confirm-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9500;
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.confirm-modal-overlay.open { display:flex; }
+.confirm-box { background:#fff; max-width:360px; width:100%; padding:36px; }
+.confirm-title { font-family:'Playfair Display',serif; font-size:18px; letter-spacing:1px; margin-bottom:12px; }
+.confirm-msg { font-size:13px; color:#666; margin-bottom:28px; line-height:1.6; }
+.confirm-actions { display:flex; gap:10px; }
+.confirm-btn {
+  flex:1; font-family:'Arimo',sans-serif; font-size:9px; letter-spacing:2px;
+  text-transform:uppercase; border:1px solid; padding:13px; cursor:pointer;
+}
+.confirm-btn-cancel { background:#fff; color:#000; border-color:#000; }
+.confirm-btn-cancel:hover { background:#f5f5f5; }
+.confirm-btn-danger { background:#c0392b; color:#fff; border-color:#c0392b; }
+.confirm-btn-danger:hover { background:#a93226; }
 
 /* ══ FOOTER ══ */
 footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
@@ -383,10 +478,16 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
 .reveal { opacity:0; transform:translateY(24px); transition:opacity 0.7s ease, transform 0.7s ease; }
 .reveal.visible { opacity:1; transform:translateY(0); }
 
-/* currency toggle */
-.egp-label { font-size:9px; color:#999; margin-left:4px; }
+/* currency toggle + rate banner */
+.rate-banner {
+  background:#f8f8f8; border-left:2px solid #000; padding:10px 16px;
+  font-size:11px; color:#666; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+}
+.rate-banner input[type=number] {
+  border:none; border-bottom:1px solid #ccc; background:transparent;
+  font-family:'Arimo',sans-serif; font-size:12px; width:70px; outline:none; text-align:center;
+}
 
-/* add client modal */
 .add-client-btn {
   font-family:'Arimo',sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase;
   border:1px solid #ddd; background:#fff; padding:10px 20px; cursor:pointer;
@@ -394,15 +495,25 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
 }
 .add-client-btn:hover { border-color:#000; }
 
-/* EGP/USD rate banner */
-.rate-banner {
-  background:#f8f8f8; border-left:2px solid #000; padding:10px 16px;
-  font-size:11px; color:#666; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;
+/* Items column headers */
+.item-cols-header {
+  display:grid; grid-template-columns:1fr 70px 110px 36px;
+  gap:10px; padding:6px 0; border-bottom:1px solid #f0f0f0; margin-bottom:4px;
 }
-.rate-banner input[type=number] {
-  border:none; border-bottom:1px solid #ccc; background:transparent;
-  font-family:'Arimo',sans-serif; font-size:12px; width:70px; outline:none; text-align:center;
+.item-col-head { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:#bbb; }
+
+/* Loading spinner */
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* PDF loading overlay */
+#pdf-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9800;
+  display:none; align-items:center; justify-content:center; flex-direction:column; gap:20px;
 }
+#pdf-overlay.open { display:flex; }
+#pdf-overlay .pdf-msg { color:#fff; font-size:11px; letter-spacing:3px; text-transform:uppercase; }
+#pdf-overlay .pdf-spinner { width:36px; height:36px; border:3px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; }
 </style>
 </head>
 <body>
@@ -449,22 +560,10 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
       <h1>Invoice<br>Studio</h1>
     </div>
     <div class="studio-hero-right">
-      <div class="hero-stat">
-        <span class="val" id="stat-invoices">0</span>
-        <span class="lbl">Invoices</span>
-      </div>
-      <div class="hero-stat">
-        <span class="val" id="stat-revenue">0</span>
-        <span class="lbl">Revenue EGP</span>
-      </div>
-      <div class="hero-stat">
-        <span class="val" id="stat-clients">0</span>
-        <span class="lbl">Clients</span>
-      </div>
-      <div class="hero-stat">
-        <span class="val" id="stat-pending">0</span>
-        <span class="lbl">Outstanding</span>
-      </div>
+      <div class="hero-stat"><span class="val" id="stat-invoices">0</span><span class="lbl">Invoices</span></div>
+      <div class="hero-stat"><span class="val" id="stat-revenue">0</span><span class="lbl">Revenue EGP</span></div>
+      <div class="hero-stat"><span class="val" id="stat-clients">0</span><span class="lbl">Clients</span></div>
+      <div class="hero-stat"><span class="val" id="stat-pending">0</span><span class="lbl">Outstanding</span></div>
     </div>
   </div>
 
@@ -482,20 +581,24 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
 
         <!-- LEFT: Form -->
         <div>
-          <!-- Client -->
+
+          <!-- Step 1: Client -->
           <div class="reveal">
             <div class="section-eyebrow">Step 1</div>
             <div class="section-title">Select Client</div>
             <div class="field-group">
-              <label class="field-label">Search or Select Client</label>
-              <select class="field-select" id="client-select">
-                <option value="">— Loading clients... —</option>
-              </select>
+              <label class="field-label">Search by name or phone</label>
+              <div class="client-search-wrap">
+                <input type="text" class="client-search-input" id="client-search-input" placeholder="Type to search clients...">
+                <i class="fas fa-search client-search-icon"></i>
+                <div class="client-dropdown" id="client-dropdown"></div>
+              </div>
             </div>
             <div class="client-card" id="client-card">
               <div class="client-card-name" id="cc-name"></div>
               <div class="client-card-info" id="cc-info"></div>
               <div><span class="client-card-badge" id="cc-badge"></span></div>
+              <button class="client-clear-btn" id="client-clear-btn"><i class="fas fa-times" style="font-size:9px;margin-right:4px"></i>Clear selection</button>
             </div>
             <div style="margin-top:16px">
               <button class="add-client-btn" id="open-add-client-btn">
@@ -504,14 +607,14 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
             </div>
           </div>
 
-          <!-- Invoice Details -->
+          <!-- Step 2: Invoice Details -->
           <div class="reveal" style="margin-top:40px">
             <div class="section-eyebrow">Step 2</div>
             <div class="section-title">Invoice Details</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
               <div class="field-group">
                 <label class="field-label">Invoice Number</label>
-                <input type="text" class="field-input" id="inv-number" value="">
+                <input type="text" class="field-input" id="inv-number">
               </div>
               <div class="field-group">
                 <label class="field-label">Issue Date</label>
@@ -536,7 +639,7 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
             </div>
           </div>
 
-          <!-- Items -->
+          <!-- Step 3: Items -->
           <div class="reveal" style="margin-top:40px">
             <div class="section-eyebrow">Step 3</div>
             <div class="section-title">Items</div>
@@ -544,13 +647,23 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
             <div class="rate-banner">
               <span>EGP / USD rate: 1 USD =</span>
               <input type="number" id="usd-rate" value="50" min="1" step="0.5"> EGP
-              <span style="color:#bbb;font-size:10px">(for USD display only)</span>
+              <span style="color:#bbb;font-size:10px;letter-spacing:1px">for USD display only</span>
+            </div>
+
+            <!-- Item Search -->
+            <div class="field-group">
+              <label class="field-label">Search designs to add</label>
+              <div class="item-search-wrap">
+                <input type="text" class="item-search-input" id="item-search-input" placeholder="Search by design name, category...">
+                <i class="fas fa-search item-search-icon"></i>
+                <div class="item-search-dropdown" id="item-search-dropdown"></div>
+              </div>
             </div>
 
             <div class="items-header">
               <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
                 <button class="add-btn" id="add-item-btn"><i class="fas fa-plus"></i> Custom Item</button>
-                <button class="design-picker-toggle" id="toggle-picker-btn">+ Pick from Designs</button>
+                <button class="design-picker-toggle" id="toggle-picker-btn">+ Browse Designs</button>
               </div>
             </div>
 
@@ -567,14 +680,16 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
               </div>
             </div>
 
+            <!-- Items List -->
             <div id="items-list" style="margin-top:20px">
               <div class="items-empty" id="items-empty">No items added yet</div>
             </div>
 
             <!-- Totals -->
-            <div class="inv-totals" style="margin-top:20px" id="totals-section">
+            <div class="inv-totals" style="margin-top:20px">
               <div class="inv-total-row"><span>Subtotal</span><span id="tot-subtotal">0 EGP</span></div>
-              <div class="inv-total-row"><span>Discount</span>
+              <div class="inv-total-row">
+                <span>Discount</span>
                 <span style="display:flex;align-items:center;gap:8px">
                   <input type="number" id="discount-val" value="0" min="0" style="width:60px;border:none;border-bottom:1px solid #eee;text-align:right;font-size:12px;outline:none;font-family:Arimo,sans-serif">
                   <select id="discount-type" style="border:none;border-bottom:1px solid #eee;font-size:11px;outline:none;font-family:Arimo,sans-serif;background:transparent">
@@ -588,7 +703,7 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
             </div>
           </div>
 
-          <!-- Payment -->
+          <!-- Step 4: Payment -->
           <div class="reveal" style="margin-top:40px">
             <div class="section-eyebrow">Step 4</div>
             <div class="section-title">Payment</div>
@@ -608,6 +723,7 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
               </div>
             </div>
           </div>
+
         </div>
 
         <!-- RIGHT: Preview -->
@@ -655,6 +771,7 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
               <div class="inv-total-row" id="prev-discount-row" style="display:none"><span>Discount</span><span id="prev-discount">0 EGP</span></div>
               <div class="inv-total-row grand"><span>Total</span><span id="prev-total">0 EGP</span></div>
               <div class="inv-total-row usd"><span></span><span id="prev-usd">≈ $0.00</span></div>
+              <div class="inv-total-row tax-free-row"><span></span><span>✓ Tax Free · No VAT Applied</span></div>
             </div>
             <div class="inv-payment-info" id="prev-payment-section">
               <div class="inv-payment-label">Payment</div>
@@ -683,6 +800,12 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
               <i class="fas fa-envelope"></i> Email
             </button>
           </div>
+
+          <div style="margin-top:10px">
+            <button class="action-btn outline" id="reset-invoice-btn" style="width:100%;justify-content:center;border-color:#ddd;color:#999">
+              <i class="fas fa-rotate-left"></i> Reset Form
+            </button>
+          </div>
         </div>
 
       </div>
@@ -696,37 +819,34 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
         <div class="section-eyebrow">Overview</div>
         <div class="section-title">Revenue Summary</div>
         <div class="stats-grid">
-          <div class="stat-card">
-            <span class="s-val" id="acc-total-rev">0</span>
-            <span class="s-lbl">Total Revenue</span>
-            <div class="s-sub">EGP collected</div>
-          </div>
-          <div class="stat-card">
-            <span class="s-val" id="acc-outstanding">0</span>
-            <span class="s-lbl">Outstanding</span>
-            <div class="s-sub">EGP pending</div>
-          </div>
-          <div class="stat-card">
-            <span class="s-val" id="acc-count">0</span>
-            <span class="s-lbl">Total Invoices</span>
-            <div class="s-sub">all time</div>
-          </div>
-          <div class="stat-card">
-            <span class="s-val" id="acc-avg">0</span>
-            <span class="s-lbl">Average Invoice</span>
-            <div class="s-sub">EGP per order</div>
-          </div>
+          <div class="stat-card"><span class="s-val" id="acc-total-rev">0</span><span class="s-lbl">Total Revenue</span><div class="s-sub">EGP collected</div></div>
+          <div class="stat-card"><span class="s-val" id="acc-outstanding">0</span><span class="s-lbl">Outstanding</span><div class="s-sub">EGP pending</div></div>
+          <div class="stat-card"><span class="s-val" id="acc-count">0</span><span class="s-lbl">Total Invoices</span><div class="s-sub">all time</div></div>
+          <div class="stat-card"><span class="s-val" id="acc-avg">0</span><span class="s-lbl">Average Invoice</span><div class="s-sub">EGP per order</div></div>
         </div>
       </div>
 
       <div class="reveal" style="margin-top:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
           <div>
             <div class="section-eyebrow">History</div>
             <div class="section-title" style="margin-bottom:0">All Invoices</div>
           </div>
           <button class="add-btn" id="new-invoice-btn"><i class="fas fa-plus"></i> New Invoice</button>
         </div>
+
+        <!-- Search + filter bar -->
+        <div class="acc-toolbar">
+          <div class="acc-search-wrap">
+            <i class="fas fa-search acc-search-icon"></i>
+            <input type="text" class="acc-search-input" id="acc-search-input" placeholder="Search by number, client name...">
+          </div>
+          <button class="acc-filter-btn active" data-filter="all">All</button>
+          <button class="acc-filter-btn" data-filter="pending">Pending</button>
+          <button class="acc-filter-btn" data-filter="partial">Partial</button>
+          <button class="acc-filter-btn" data-filter="paid">Paid</button>
+        </div>
+
         <div id="invoices-list-wrap">
           <div class="no-invoices" id="no-invoices">No invoices yet — create your first one!</div>
         </div>
@@ -788,6 +908,24 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
   </div>
 </div>
 
+<!-- ══ CONFIRM MODAL ══ -->
+<div class="confirm-modal-overlay" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Confirm</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="confirm-btn confirm-btn-cancel" id="confirm-cancel">Cancel</button>
+      <button class="confirm-btn confirm-btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF Loading Overlay -->
+<div id="pdf-overlay">
+  <div class="pdf-spinner"></div>
+  <div class="pdf-msg">Generating PDF...</div>
+</div>
+
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="footer-main">
@@ -828,7 +966,7 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, setDoc, addDoc, serverTimestamp }
+import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* ══════════════════════════════════════════════════
@@ -862,17 +1000,15 @@ function checkPassword() {
   } else {
     attempts++;
     const inp = document.getElementById('lock-input');
-    const err = document.getElementById('lock-error');
-    const att = document.getElementById('lock-attempts');
     inp.classList.add('error');
-    err.textContent = 'Incorrect password.';
+    document.getElementById('lock-error').textContent = 'Incorrect password.';
     inp.value = '';
     setTimeout(() => inp.classList.remove('error'), 500);
     if (attempts >= MAX_ATTEMPTS) {
       document.getElementById('lock-btn').disabled = true;
-      att.textContent = 'Too many attempts. Refresh the page.';
+      document.getElementById('lock-attempts').textContent = 'Too many attempts. Refresh the page.';
     } else {
-      att.textContent = `${MAX_ATTEMPTS - attempts} attempt(s) remaining`;
+      document.getElementById('lock-attempts').textContent = `${MAX_ATTEMPTS - attempts} attempt(s) remaining`;
     }
   }
 }
@@ -888,13 +1024,18 @@ document.getElementById('lock-input').addEventListener('keydown', e => { if(e.ke
 /* ══════════════════════════════════════════════════
    UTILITIES
 ══════════════════════════════════════════════════ */
-function showToast(msg, dur=2800) {
+let toastTimer;
+function showToast(msg, type='', dur=2800) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), dur);
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', dur);
 }
+
 function fmt(n) { return Math.round(n).toLocaleString('en-EG'); }
 function todayStr() { return new Date().toISOString().slice(0,10); }
+
 function genInvNum() {
   const invs = getInvoices();
   const n = invs.length + 1;
@@ -906,6 +1047,30 @@ function getInvoices() {
 function saveInvoices(arr) { localStorage.setItem('egy_invoices', JSON.stringify(arr)); }
 
 /* ══════════════════════════════════════════════════
+   CONFIRM DIALOG (replaces window.confirm)
+══════════════════════════════════════════════════ */
+function confirm(title, msg) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('confirm-modal');
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent = msg;
+    overlay.classList.add('open');
+    const ok = document.getElementById('confirm-ok');
+    const cancel = document.getElementById('confirm-cancel');
+    function cleanup(val) {
+      overlay.classList.remove('open');
+      ok.removeEventListener('click', onOk);
+      cancel.removeEventListener('click', onCancel);
+      resolve(val);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    ok.addEventListener('click', onOk);
+    cancel.addEventListener('click', onCancel);
+  });
+}
+
+/* ══════════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════════ */
 let clients = [];
@@ -914,7 +1079,9 @@ let selectedClient = null;
 let paymentMethod = 'Cash';
 let currentCategory = 'golds';
 let designCache = {};
+let allDesigns = []; // flat list for item search
 let editingInvoiceId = null;
+let accStatusFilter = 'all';
 
 /* ══════════════════════════════════════════════════
    INIT
@@ -928,7 +1095,11 @@ async function initApp() {
   setupPaymentMethods();
   setupSaveEmail();
   setupAddClientModal();
-  setupSearch();
+  setupClientsTabSearch();
+  setupAccSearch();
+  setupResetBtn();
+  setupClientSearchAutocomplete();
+  setupItemSearchAutocomplete();
   await loadClients();
   loadAccountingTab();
   setDefaultDates();
@@ -982,33 +1153,143 @@ function setupReveal() {
 }
 
 /* ══════════════════════════════════════════════════
+   CLIENT AUTOCOMPLETE SEARCH
+══════════════════════════════════════════════════ */
+function setupClientSearchAutocomplete() {
+  const input = document.getElementById('client-search-input');
+  const dropdown = document.getElementById('client-dropdown');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { dropdown.classList.remove('open'); return; }
+    const matches = clients.filter(c =>
+      (c.name||'').toLowerCase().includes(q) ||
+      (c.id||'').includes(q) ||
+      (c.email||'').toLowerCase().includes(q)
+    ).slice(0, 8);
+    renderClientDropdown(matches);
+  });
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim()) input.dispatchEvent(new Event('input'));
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.client-search-wrap')) dropdown.classList.remove('open');
+  });
+
+  document.getElementById('client-clear-btn').addEventListener('click', () => {
+    selectedClient = null;
+    input.value = '';
+    document.getElementById('client-card').classList.remove('visible');
+    dropdown.classList.remove('open');
+    updatePreview();
+  });
+}
+
+function renderClientDropdown(matches) {
+  const dropdown = document.getElementById('client-dropdown');
+  if (!matches.length) {
+    dropdown.innerHTML = '<div class="client-option-empty">No clients found</div>';
+    dropdown.classList.add('open');
+    return;
+  }
+  dropdown.innerHTML = matches.map(c => `
+    <div class="client-option" data-id="${c.id}">
+      <div class="client-option-name">${c.name || c.id}</div>
+      <div class="client-option-sub">${c.id}${c.email ? ' · ' + c.email : ''}</div>
+    </div>
+  `).join('');
+  dropdown.classList.add('open');
+  dropdown.querySelectorAll('.client-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const id = opt.dataset.id;
+      selectClient(clients.find(c => c.id === id));
+      dropdown.classList.remove('open');
+    });
+  });
+}
+
+function selectClient(c) {
+  if (!c) return;
+  selectedClient = c;
+  document.getElementById('client-search-input').value = c.name || c.id;
+  const card = document.getElementById('client-card');
+  card.classList.add('visible');
+  document.getElementById('cc-name').textContent = c.name || c.id;
+  document.getElementById('cc-info').textContent =
+    [c.phone, c.email].filter(Boolean).join(' · ');
+  document.getElementById('cc-badge').textContent = `${c.totalAppointments || 0} visits`;
+  updatePreview();
+}
+
+/* ══════════════════════════════════════════════════
+   ITEM SEARCH AUTOCOMPLETE (across designs)
+══════════════════════════════════════════════════ */
+function setupItemSearchAutocomplete() {
+  const input = document.getElementById('item-search-input');
+  const dropdown = document.getElementById('item-search-dropdown');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { dropdown.classList.remove('open'); return; }
+    const matches = allDesigns.filter(d =>
+      (d.name||'').toLowerCase().includes(q) ||
+      (d.cat||'').toLowerCase().includes(q)
+    ).slice(0, 10);
+    renderItemSearchDropdown(matches, q);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.item-search-wrap')) dropdown.classList.remove('open');
+  });
+}
+
+function renderItemSearchDropdown(matches, q) {
+  const dropdown = document.getElementById('item-search-dropdown');
+  if (!matches.length) {
+    dropdown.innerHTML = '<div class="item-search-empty">No designs found for "' + q + '"</div>';
+    dropdown.classList.add('open');
+    return;
+  }
+  dropdown.innerHTML = matches.map(d => {
+    const imgSrc = d.images && d.images[0] ? `assets/images/${d.cat}/${d.folder}/${d.images[0]}` : '';
+    return `
+      <div class="item-search-option" data-name="${d.name||d.folder}" data-price="${d.priceNum||0}">
+        ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" onerror="this.style.display='none'">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
+        <div class="item-search-option-info">
+          <div class="item-search-option-name">${d.name||d.folder}</div>
+          <div class="item-search-option-meta">${d.cat} · ${d.folder}</div>
+        </div>
+        <div class="item-search-option-price">${d.price||'—'}</div>
+      </div>
+    `;
+  }).join('');
+  dropdown.classList.add('open');
+  dropdown.querySelectorAll('.item-search-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      addCustomItem({ name: opt.dataset.name, qty: 1, price: +opt.dataset.price });
+      showToast('Added: ' + opt.dataset.name, 'success');
+      document.getElementById('item-search-input').value = '';
+      dropdown.classList.remove('open');
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════
    LOAD CLIENTS FROM FIREBASE
 ══════════════════════════════════════════════════ */
 async function loadClients() {
   try {
     const snap = await getDocs(collection(db, 'clients'));
     clients = [];
-    snap.forEach(docSnap => {
-      clients.push({ id: docSnap.id, ...docSnap.data() });
-    });
+    snap.forEach(docSnap => { clients.push({ id: docSnap.id, ...docSnap.data() }); });
     clients.sort((a,b) => (a.name||'').localeCompare(b.name||''));
-    populateClientSelect();
     updateHeroStats();
   } catch(e) {
     console.error('Firebase error:', e);
-    showToast('Firebase connection error');
+    showToast('Firebase connection error', 'error-toast');
   }
-}
-
-function populateClientSelect() {
-  const sel = document.getElementById('client-select');
-  sel.innerHTML = '<option value="">— Select client —</option>';
-  clients.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = `${c.name || '?'} · ${c.id}`;
-    sel.appendChild(opt);
-  });
 }
 
 function updateHeroStats() {
@@ -1017,28 +1298,22 @@ function updateHeroStats() {
   document.getElementById('stat-invoices').textContent = invs.length;
   const totalRev = invs.filter(i=>i.status==='paid').reduce((s,i)=>s+i.total,0);
   const outstanding = invs.filter(i=>i.status!=='paid').reduce((s,i)=>{
-    const dep = i.deposit || 0;
-    return s + (i.total - dep);
+    return s + Math.max(0, i.total - (i.deposit||0));
   },0);
   document.getElementById('stat-revenue').textContent = fmt(totalRev);
   document.getElementById('stat-pending').textContent = fmt(outstanding);
 }
 
 /* ══════════════════════════════════════════════════
-   INVOICE FORM
+   INVOICE FORM SETUP
 ══════════════════════════════════════════════════ */
 function setupInvoiceForm() {
-  document.getElementById('client-select').addEventListener('change', onClientChange);
-  document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
-  document.getElementById('inv-number').addEventListener('input', updatePreview);
-  document.getElementById('inv-date').addEventListener('input', updatePreview);
-  document.getElementById('inv-due').addEventListener('input', updatePreview);
-  document.getElementById('inv-status').addEventListener('change', updatePreview);
-  document.getElementById('inv-notes').addEventListener('input', updatePreview);
-  document.getElementById('discount-val').addEventListener('input', updatePreview);
-  document.getElementById('discount-type').addEventListener('change', updatePreview);
-  document.getElementById('deposit-val').addEventListener('input', updatePreview);
-  document.getElementById('usd-rate').addEventListener('input', updatePreview);
+  ['inv-number','inv-date','inv-due','inv-status','inv-notes',
+   'discount-val','discount-type','deposit-val','usd-rate'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+    document.getElementById(id).addEventListener('change', updatePreview);
+  });
+  document.getElementById('add-item-btn').addEventListener('click', () => addCustomItem());
 }
 
 function setDefaultDates() {
@@ -1049,21 +1324,39 @@ function setDefaultDates() {
   document.getElementById('inv-number').value = genInvNum();
 }
 
-function onClientChange() {
-  const id = document.getElementById('client-select').value;
-  selectedClient = clients.find(c => c.id === id) || null;
-  const card = document.getElementById('client-card');
-  if (selectedClient) {
-    card.classList.add('visible');
-    document.getElementById('cc-name').textContent = selectedClient.name || id;
-    document.getElementById('cc-info').textContent =
-      [selectedClient.phone, selectedClient.email].filter(Boolean).join(' · ');
-    document.getElementById('cc-badge').textContent =
-      `${selectedClient.totalAppointments || 0} visits`;
-  } else {
-    card.classList.remove('visible');
-  }
+/* ══════════════════════════════════════════════════
+   RESET FORM
+══════════════════════════════════════════════════ */
+function setupResetBtn() {
+  document.getElementById('reset-invoice-btn').addEventListener('click', async () => {
+    const ok = await confirm('Reset Form', 'Clear all items and start a new invoice?');
+    if (!ok) return;
+    resetForm();
+  });
+}
+
+function resetForm() {
+  editingInvoiceId = null;
+  selectedClient = null;
+  lineItems = [];
+  paymentMethod = 'Cash';
+
+  document.getElementById('client-search-input').value = '';
+  document.getElementById('client-card').classList.remove('visible');
+  document.getElementById('inv-notes').value = '';
+  document.getElementById('discount-val').value = '0';
+  document.getElementById('discount-type').value = 'egp';
+  document.getElementById('deposit-val').value = '0';
+  document.getElementById('inv-status').value = 'pending';
+
+  document.querySelectorAll('.pmeth-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.method === 'Cash');
+  });
+
+  setDefaultDates();
+  renderItems();
   updatePreview();
+  showToast('Form reset', 'success');
 }
 
 /* ══════════════════════════════════════════════════
@@ -1071,7 +1364,7 @@ function onClientChange() {
 ══════════════════════════════════════════════════ */
 function addCustomItem(prefill={}) {
   const item = {
-    id: Date.now(),
+    id: Date.now() + Math.random(),
     name: prefill.name || '',
     qty: prefill.qty || 1,
     price: prefill.price || 0
@@ -1085,44 +1378,55 @@ function removeItem(id) {
   lineItems = lineItems.filter(i => i.id !== id);
   renderItems();
   updatePreview();
+  showToast('Item removed');
 }
 
 function renderItems() {
   const wrap = document.getElementById('items-list');
-  const empty = document.getElementById('items-empty');
   if (lineItems.length === 0) {
-    wrap.innerHTML = '';
-    wrap.appendChild(empty);
-    empty.style.display = 'block';
+    wrap.innerHTML = '<div class="items-empty" id="items-empty">No items added yet</div>';
     return;
   }
-  empty.style.display = 'none';
-  wrap.innerHTML = '';
+
+  // Column headers
+  let html = `<div class="item-cols-header">
+    <div class="item-col-head">Description</div>
+    <div class="item-col-head">Qty</div>
+    <div class="item-col-head">Price EGP</div>
+    <div class="item-col-head"></div>
+  </div>`;
+
   lineItems.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'item-row';
-    row.innerHTML = `
-      <input class="item-field" placeholder="Item name / description" value="${item.name}" data-id="${item.id}" data-field="name">
-      <input class="item-field" type="number" min="1" value="${item.qty}" data-id="${item.id}" data-field="qty" style="text-align:center">
-      <input class="item-field" type="number" min="0" value="${item.price}" data-id="${item.id}" data-field="price" placeholder="EGP">
-      <button class="item-remove" data-id="${item.id}"><i class="fas fa-times"></i></button>
+    html += `
+      <div class="item-row" data-item-id="${item.id}">
+        <input class="item-field" placeholder="Item name / description" value="${escHtml(item.name)}" data-id="${item.id}" data-field="name">
+        <input class="item-field" type="number" min="1" value="${item.qty}" data-id="${item.id}" data-field="qty" style="text-align:center">
+        <input class="item-field" type="number" min="0" step="0.01" value="${item.price}" data-id="${item.id}" data-field="price">
+        <button class="item-remove" data-remove="${item.id}" title="Remove item"><i class="fas fa-times"></i></button>
+      </div>
     `;
-    wrap.appendChild(row);
-    // events
-    row.querySelectorAll('.item-field').forEach(inp => {
-      inp.addEventListener('input', () => {
-        const id = +inp.dataset.id;
-        const field = inp.dataset.field;
-        const it = lineItems.find(i=>i.id===id);
-        if (!it) return;
-        it[field] = field==='name' ? inp.value : +inp.value;
-        updatePreview();
-      });
-    });
-    row.querySelector('.item-remove').addEventListener('click', () => {
-      removeItem(+row.querySelector('.item-remove').dataset.id);
+  });
+
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.item-field').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const id = +inp.dataset.id;
+      const field = inp.dataset.field;
+      const it = lineItems.find(i => i.id == id);
+      if (!it) return;
+      it[field] = field === 'name' ? inp.value : Math.max(0, +inp.value || 0);
+      updatePreview();
     });
   });
+
+  wrap.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', () => removeItem(+btn.dataset.remove));
+  });
+}
+
+function escHtml(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 /* ══════════════════════════════════════════════════
@@ -1136,7 +1440,7 @@ function setupDesignPicker() {
   });
   document.querySelectorAll('.dpick-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.dpick-tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.dpick-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentCategory = btn.dataset.cat;
       loadDesigns(currentCategory);
@@ -1149,17 +1453,20 @@ async function loadDesigns(cat) {
   document.getElementById('design-grid').innerHTML = '<div class="design-picker-loading">Loading...</div>';
   try {
     const jsonFile = cat === 'latest-designs' ? 'designs.json' : `${cat}.json`;
-    const list = await fetch(`assets/images/${cat}/${jsonFile}`).then(r=>r.json());
+    const list = await fetch(`assets/images/${cat}/${jsonFile}`).then(r => r.json());
     const designs = [];
     for (const folder of list.slice(0,20)) {
       try {
-        const txt = await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r=>r.text());
+        const txt = await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r => r.text());
         const d = parseInfo(txt);
         d.folder = folder; d.cat = cat;
+        d.priceNum = parseFloat((d.price||'').replace(/[^0-9.]/g,'')) || 0;
         designs.push(d);
       } catch{}
     }
     designCache[cat] = designs;
+    // add to flat list for item search
+    designs.forEach(d => { if (!allDesigns.find(x => x.folder===d.folder && x.cat===d.cat)) allDesigns.push(d); });
     renderDesignGrid(designs);
   } catch(e) {
     document.getElementById('design-grid').innerHTML = '<div class="design-picker-loading">No designs found</div>';
@@ -1168,20 +1475,20 @@ async function loadDesigns(cat) {
 
 function renderDesignGrid(designs) {
   const grid = document.getElementById('design-grid');
+  if (!designs.length) { grid.innerHTML = '<div class="design-picker-loading">No designs found</div>'; return; }
   grid.innerHTML = '';
   designs.forEach(d => {
     const thumb = document.createElement('div');
     thumb.className = 'design-thumb';
     const imgSrc = d.images && d.images[0] ? `assets/images/${d.cat}/${d.folder}/${d.images[0]}` : '';
     thumb.innerHTML = `
-      ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" loading="lazy">` : '<div style="aspect-ratio:3/4;background:#f0f0f0"></div>'}
+      ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" loading="lazy" onerror="this.parentElement.querySelector('.design-thumb-name').textContent+=' (no img)'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
       <div class="design-thumb-name">${d.name || d.folder}</div>
       <div class="design-thumb-price">${d.price || ''}</div>
     `;
     thumb.addEventListener('click', () => {
-      const priceNum = parseFloat((d.price||'').replace(/[^0-9.]/g,'')) || 0;
-      addCustomItem({ name: d.name || d.folder, qty: 1, price: priceNum });
-      showToast('Added: ' + (d.name || d.folder));
+      addCustomItem({ name: d.name || d.folder, qty: 1, price: d.priceNum });
+      showToast('Added: ' + (d.name || d.folder), 'success');
     });
     grid.appendChild(thumb);
   });
@@ -1207,7 +1514,7 @@ function parseInfo(text) {
 function setupPaymentMethods() {
   document.querySelectorAll('.pmeth-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.pmeth-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.pmeth-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       paymentMethod = btn.dataset.method;
       updatePreview();
@@ -1239,31 +1546,30 @@ function updatePreview() {
   const { subtotal, discount, total, usd, deposit, remaining } = calcTotals();
 
   document.getElementById('prev-num').textContent = num;
-  document.getElementById('prev-date').textContent = date ? new Date(date).toLocaleDateString('en-EG',{year:'numeric',month:'long',day:'numeric'}) : '';
+  document.getElementById('prev-date').textContent = date
+    ? new Date(date + 'T00:00:00').toLocaleDateString('en-EG',{year:'numeric',month:'long',day:'numeric'})
+    : '';
 
-  // Status badge
   const badge = document.getElementById('prev-status');
   badge.textContent = status==='paid'?'Paid':status==='partial'?'Partial Payment':'Pending';
   badge.className = 'inv-status-badge ' + status;
 
-  // Client
   if (selectedClient) {
     document.getElementById('prev-client-name').textContent = selectedClient.name || selectedClient.id;
     document.getElementById('prev-client-detail').innerHTML =
       [selectedClient.phone, selectedClient.email].filter(Boolean).join('<br>');
   } else {
     document.getElementById('prev-client-name').textContent = '—';
-    document.getElementById('prev-client-detail').textContent = '—';
+    document.getElementById('prev-client-detail').textContent = 'No client selected';
   }
 
-  // Items table
   const tbody = document.getElementById('prev-items');
   if (lineItems.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#ccc;font-size:11px;padding:20px 0">No items yet</td></tr>';
   } else {
     tbody.innerHTML = lineItems.map(i => `
       <tr>
-        <td>${i.name || '—'}</td>
+        <td>${escHtml(i.name) || '—'}</td>
         <td style="text-align:right">${i.qty}</td>
         <td style="text-align:right">${fmt(i.price)} EGP</td>
         <td style="text-align:right">${fmt(i.qty * i.price)} EGP</td>
@@ -1271,7 +1577,6 @@ function updatePreview() {
     `).join('');
   }
 
-  // Totals
   document.getElementById('prev-subtotal').textContent = fmt(subtotal) + ' EGP';
   const discRow = document.getElementById('prev-discount-row');
   if (discount > 0) {
@@ -1281,28 +1586,20 @@ function updatePreview() {
   document.getElementById('prev-total').textContent = fmt(total) + ' EGP';
   document.getElementById('prev-usd').textContent = '≈ $' + usd.toFixed(2);
 
-  // Also update builder totals
   document.getElementById('tot-subtotal').textContent = fmt(subtotal) + ' EGP';
   document.getElementById('tot-total').textContent = fmt(total) + ' EGP';
   document.getElementById('tot-usd').textContent = '≈ $' + usd.toFixed(2);
 
-  // Payment
   document.getElementById('prev-payment-method').textContent = paymentMethod;
   const depRow = document.getElementById('prev-deposit-row');
   const remRow = document.getElementById('prev-remaining-row');
   if (deposit > 0) {
-    depRow.style.display = 'flex';
-    remRow.style.display = 'flex';
+    depRow.style.display = 'flex'; remRow.style.display = 'flex';
     document.getElementById('prev-deposit').textContent = fmt(deposit) + ' EGP';
     document.getElementById('prev-remaining').textContent = fmt(remaining) + ' EGP';
-  } else {
-    depRow.style.display = 'none';
-    remRow.style.display = 'none';
-  }
+  } else { depRow.style.display = 'none'; remRow.style.display = 'none'; }
 
-  // Notes
-  const notesEl = document.getElementById('prev-notes');
-  notesEl.textContent = notes || '';
+  document.getElementById('prev-notes').textContent = notes || '';
 }
 
 /* ══════════════════════════════════════════════════
@@ -1327,7 +1624,7 @@ function buildInvoiceData() {
     clientName: selectedClient?.name || '—',
     clientEmail: selectedClient?.email || '',
     clientPhone: selectedClient?.phone || '',
-    items: [...lineItems],
+    items: lineItems.map(i => ({...i})),
     subtotal, discount, total, deposit, remaining,
     paymentMethod,
     createdAt: new Date().toISOString()
@@ -1335,53 +1632,98 @@ function buildInvoiceData() {
 }
 
 function saveInvoice() {
-  if (!selectedClient) { showToast('Please select a client first'); return; }
-  if (lineItems.length === 0) { showToast('Please add at least one item'); return; }
+  if (!selectedClient) { showToast('Select a client first', 'error-toast'); return; }
+  if (lineItems.length === 0) { showToast('Add at least one item', 'error-toast'); return; }
   const data = buildInvoiceData();
   const invs = getInvoices();
   const idx = invs.findIndex(i => i.id === data.id);
   if (idx >= 0) invs[idx] = data; else invs.push(data);
   saveInvoices(invs);
   updateHeroStats();
-  showToast('Invoice saved · ' + data.number);
-
-  // Reset for next
-  editingInvoiceId = null;
-  document.getElementById('inv-number').value = genInvNum();
+  showToast('Invoice saved · ' + data.number, 'success');
+  editingInvoiceId = data.id; // stay in edit mode
 }
 
 async function downloadPDF() {
-  showToast('Generating PDF...');
-  const { jsPDF } = window.jspdf;
-  const preview = document.getElementById('invoice-preview');
+  if (lineItems.length === 0 && !selectedClient) {
+    showToast('Nothing to export yet', 'error-toast'); return;
+  }
+
+  const overlay = document.getElementById('pdf-overlay');
+  overlay.classList.add('open');
+
+  const btn = document.getElementById('download-pdf-btn');
+  btn.disabled = true;
 
   try {
-    const canvas = await html2canvas(preview, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    // Wait a tick for UI to update
+    await new Promise(r => setTimeout(r, 100));
+
+    const { jsPDF } = window.jspdf;
+    const preview = document.getElementById('invoice-preview');
+
+    // Temporarily remove box shadow for cleaner capture
+    const prevShadow = preview.style.boxShadow;
+    preview.style.boxShadow = 'none';
+
+    const canvas = await html2canvas(preview, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      allowTaint: false
+    });
+
+    preview.style.boxShadow = prevShadow;
+
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const w = pdf.internal.pageSize.getWidth();
-    const h = (canvas.height * w) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, w, Math.min(h, 297));
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgRatio = canvas.height / canvas.width;
+    const imgH = pageW * imgRatio;
+
+    if (imgH <= pageH) {
+      pdf.addImage(imgData, 'PNG', 0, 0, pageW, imgH);
+    } else {
+      // Multi-page if invoice is long
+      let yPos = 0;
+      let remaining = imgH;
+      let pageNum = 0;
+      while (remaining > 0) {
+        if (pageNum > 0) pdf.addPage();
+        const sliceH = Math.min(pageH, remaining);
+        pdf.addImage(imgData, 'PNG', 0, -yPos, pageW, imgH);
+        yPos += pageH;
+        remaining -= pageH;
+        pageNum++;
+      }
+    }
+
     const num = document.getElementById('inv-number').value || 'invoice';
-    pdf.save(`EGYGRILLZ-${num}.pdf`);
-    showToast('PDF downloaded!');
+    const clientName = selectedClient?.name?.replace(/\s+/g,'-') || 'client';
+    pdf.save(`EGYGRILLZ-${num}-${clientName}.pdf`);
+    showToast('PDF downloaded!', 'success');
   } catch(e) {
-    showToast('PDF error — try again');
+    console.error('PDF error:', e);
+    showToast('PDF export failed — try again', 'error-toast');
+  } finally {
+    overlay.classList.remove('open');
+    btn.disabled = false;
   }
 }
 
 function emailInvoice() {
   if (!selectedClient?.email) {
-    showToast('Client has no email address');
-    return;
+    showToast('Client has no email address', 'error-toast'); return;
   }
   const num = document.getElementById('inv-number').value;
   const { total, deposit, remaining } = calcTotals();
   const status = document.getElementById('inv-status').value;
   const notes = document.getElementById('inv-notes').value;
+  const itemLines = lineItems.map(i => `  - ${i.name} (x${i.qty}): ${fmt(i.qty*i.price)} EGP`).join('\n');
 
   const subject = encodeURIComponent(`EGYGRILLZ Invoice ${num}`);
-  const itemLines = lineItems.map(i => `  - ${i.name} (x${i.qty}): ${fmt(i.qty*i.price)} EGP`).join('\n');
   const body = encodeURIComponent(
 `Dear ${selectedClient.name},
 
@@ -1395,13 +1737,15 @@ Status: ${status.toUpperCase()}
 ITEMS:
 ${itemLines}
 ──────────────────────
+Subtotal: ${fmt(lineItems.reduce((s,i)=>s+i.qty*i.price,0))} EGP
 Total: ${fmt(total)} EGP${deposit > 0 ? `
 Deposit Paid: ${fmt(deposit)} EGP
 Balance Due: ${fmt(remaining)} EGP` : ''}
 Payment Method: ${paymentMethod}
+Tax: Free · No VAT Applied
 ──────────────────────
 ${notes ? `Notes: ${notes}\n` : ''}
-For any questions, please contact us via Instagram @egygrillz or reply to this email.
+For any questions, contact us via Instagram @egygrillz or reply to this email.
 
 With care,
 DR Mohamed Mahdy
@@ -1409,16 +1753,28 @@ EGYGRILLZ Studio · Smart Smile Dental Clinic, Heliopolis, Cairo`
   );
 
   window.location.href = `mailto:${selectedClient.email}?subject=${subject}&body=${body}`;
-  showToast('Opening email client...');
+  showToast('Opening email client...', 'success');
 }
 
 /* ══════════════════════════════════════════════════
    ACCOUNTING TAB
 ══════════════════════════════════════════════════ */
+function setupAccSearch() {
+  document.getElementById('acc-search-input').addEventListener('input', () => renderInvoicesList());
+  document.querySelectorAll('.acc-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.acc-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      accStatusFilter = btn.dataset.filter;
+      renderInvoicesList();
+    });
+  });
+}
+
 function loadAccountingTab() {
-  const invs = getInvoices().sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+  const invs = getInvoices();
   const totalRev = invs.filter(i=>i.status==='paid').reduce((s,i)=>s+i.total,0);
-  const outstanding = invs.filter(i=>i.status!=='paid').reduce((s,i)=>s+(i.total-(i.deposit||0)),0);
+  const outstanding = invs.filter(i=>i.status!=='paid').reduce((s,i)=>s+Math.max(0,i.total-(i.deposit||0)),0);
   const avg = invs.length ? invs.reduce((s,i)=>s+i.total,0)/invs.length : 0;
 
   document.getElementById('acc-total-rev').textContent = fmt(totalRev);
@@ -1426,11 +1782,26 @@ function loadAccountingTab() {
   document.getElementById('acc-count').textContent = invs.length;
   document.getElementById('acc-avg').textContent = fmt(avg);
 
+  renderInvoicesList();
+}
+
+function renderInvoicesList() {
+  const q = (document.getElementById('acc-search-input')?.value || '').toLowerCase();
+  let invs = getInvoices().sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+
+  if (accStatusFilter !== 'all') invs = invs.filter(i => i.status === accStatusFilter);
+  if (q) invs = invs.filter(i =>
+    (i.number||'').toLowerCase().includes(q) ||
+    (i.clientName||'').toLowerCase().includes(q) ||
+    (i.clientPhone||'').includes(q)
+  );
+
   const wrap = document.getElementById('invoices-list-wrap');
-  if (invs.length === 0) {
-    wrap.innerHTML = '<div class="no-invoices">No invoices yet — create your first one!</div>';
+  if (!invs.length) {
+    wrap.innerHTML = '<div class="no-invoices">No invoices match your search</div>';
     return;
   }
+
   wrap.innerHTML = invs.map(inv => `
     <div class="inv-list-row">
       <div class="inv-list-num">${inv.number || '—'}</div>
@@ -1443,15 +1814,16 @@ function loadAccountingTab() {
       </div>
       <div class="inv-list-actions">
         <button class="inv-mini-btn" data-edit="${inv.id}">Edit</button>
-        <button class="inv-mini-btn" data-email="${inv.id}">Email</button>
+        <button class="inv-mini-btn" data-email="${inv.id}" ${!inv.clientEmail?'disabled title="No email"':''}>Email</button>
         <button class="inv-mini-btn danger" data-del="${inv.id}">Delete</button>
       </div>
     </div>
   `).join('');
 
   wrap.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!confirm('Delete this invoice?')) return;
+    btn.addEventListener('click', async () => {
+      const ok = await confirm('Delete Invoice', `Delete invoice ${btn.dataset.del}? This cannot be undone.`);
+      if (!ok) return;
       const arr = getInvoices().filter(i => i.id != btn.dataset.del);
       saveInvoices(arr);
       loadAccountingTab();
@@ -1473,10 +1845,12 @@ function loadAccountingTab() {
   wrap.querySelectorAll('[data-email]').forEach(btn => {
     btn.addEventListener('click', () => {
       const inv = getInvoices().find(i => i.id == btn.dataset.email);
-      if (!inv || !inv.clientEmail) { showToast('No email for this client'); return; }
-      const subject = encodeURIComponent(`EGYGRILLZ Invoice ${inv.number}`);
+      if (!inv || !inv.clientEmail) { showToast('No email for this client', 'error-toast'); return; }
       const itemLines = (inv.items||[]).map(i=>`  - ${i.name} (x${i.qty}): ${fmt(i.qty*i.price)} EGP`).join('\n');
-      const body = encodeURIComponent(`Dear ${inv.clientName},\n\nInvoice: ${inv.number}\nTotal: ${fmt(inv.total)} EGP\n\n${itemLines}\n\nThank you,\nEGYGRILLZ Studio`);
+      const subject = encodeURIComponent(`EGYGRILLZ Invoice ${inv.number}`);
+      const body = encodeURIComponent(
+`Dear ${inv.clientName},\n\nInvoice: ${inv.number}\nTotal: ${fmt(inv.total)} EGP\nTax: Free · No VAT Applied\n\n${itemLines}\n\nThank you,\nEGYGRILLZ Studio · DR Mohamed Mahdy`
+      );
       window.location.href = `mailto:${inv.clientEmail}?subject=${subject}&body=${body}`;
     });
   });
@@ -1491,23 +1865,27 @@ function loadInvoiceIntoBuilder(inv) {
   document.getElementById('inv-notes').value = inv.notes || '';
   document.getElementById('deposit-val').value = inv.deposit || 0;
 
-  // Select client
-  const sel = document.getElementById('client-select');
-  sel.value = inv.clientId || '';
-  onClientChange();
+  // Restore client
+  if (inv.clientId) {
+    const c = clients.find(x => x.id === inv.clientId);
+    if (c) selectClient(c);
+    else {
+      // Fake client from invoice data
+      selectedClient = { id: inv.clientId, name: inv.clientName, email: inv.clientEmail, phone: inv.clientPhone };
+      document.getElementById('client-search-input').value = inv.clientName || inv.clientId;
+    }
+  }
 
-  // Items
   lineItems = (inv.items || []).map(i => ({...i, id: Date.now() + Math.random()}));
   renderItems();
 
-  // Payment method
   paymentMethod = inv.paymentMethod || 'Cash';
   document.querySelectorAll('.pmeth-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.method === paymentMethod);
   });
 
   updatePreview();
-  showToast('Invoice loaded for editing');
+  showToast('Invoice loaded for editing · ' + inv.number, 'success');
 }
 
 /* ══════════════════════════════════════════════════
@@ -1516,19 +1894,13 @@ function loadInvoiceIntoBuilder(inv) {
 function renderClientsTable(list) {
   const wrap = document.getElementById('clients-table-wrap');
   if (!list.length) {
-    wrap.innerHTML = '<div class="clients-empty">No clients found</div>';
-    return;
+    wrap.innerHTML = '<div class="clients-empty">No clients found</div>'; return;
   }
   wrap.innerHTML = `
     <table class="clients-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>Visits</th>
-          <th>Last Visit</th>
-          <th></th>
+          <th>Name</th><th>Phone</th><th>Email</th><th>Visits</th><th>Last Visit</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -1539,7 +1911,9 @@ function renderClientsTable(list) {
             <td class="client-email-cell">${c.email || '—'}</td>
             <td class="client-visits-cell">${c.totalAppointments || 0} visits</td>
             <td class="client-visits-cell">${c.lastVisit || '—'}</td>
-            <td><button class="client-action-btn" data-client="${c.id}">Invoice</button></td>
+            <td>
+              <button class="client-action-btn" data-client="${c.id}">Invoice</button>
+            </td>
           </tr>
         `).join('')}
       </tbody>
@@ -1547,25 +1921,23 @@ function renderClientsTable(list) {
   `;
   wrap.querySelectorAll('[data-client]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = btn.dataset.client;
-      document.getElementById('client-select').value = id;
-      onClientChange();
+      const c = clients.find(x => x.id === btn.dataset.client);
+      if (c) selectClient(c);
       document.querySelectorAll('.tab-btn')[0].click();
       window.scrollTo({top:0, behavior:'smooth'});
-      showToast('Client selected — add items to invoice');
+      showToast('Client selected — add items to invoice', 'success');
     });
   });
 }
 
-function setupSearch() {
+function setupClientsTabSearch() {
   document.getElementById('client-search').addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
-    const filtered = clients.filter(c =>
+    renderClientsTable(clients.filter(c =>
       (c.name||'').toLowerCase().includes(q) ||
       (c.id||'').includes(q) ||
       (c.email||'').toLowerCase().includes(q)
-    );
-    renderClientsTable(filtered);
+    ));
   });
 }
 
@@ -1589,28 +1961,27 @@ function setupAddClientModal() {
     const email = document.getElementById('nc-email').value.trim();
     const notes = document.getElementById('nc-notes').value.trim();
 
-    if (!name || !phone) { showToast('Name and phone are required'); return; }
+    if (!name || !phone) { showToast('Name and phone are required', 'error-toast'); return; }
+
+    const btn = document.getElementById('save-new-client');
+    btn.textContent = 'Saving...'; btn.disabled = true;
 
     try {
       await setDoc(doc(db, 'clients', phone), {
         name, phone, email, notes,
         createdAt: serverTimestamp(),
-        firstVisit: todayStr(),
-        lastVisit: todayStr(),
-        totalAppointments: 0,
-        totalNoShows: 0,
-        services: []
+        firstVisit: todayStr(), lastVisit: todayStr(),
+        totalAppointments: 0, totalNoShows: 0, services: []
       });
-      showToast('Client saved to Firebase!');
+      showToast('Client saved!', 'success');
       close();
-      document.getElementById('nc-name').value = '';
-      document.getElementById('nc-phone').value = '';
-      document.getElementById('nc-email').value = '';
-      document.getElementById('nc-notes').value = '';
+      ['nc-name','nc-phone','nc-email','nc-notes'].forEach(id => document.getElementById(id).value = '');
       await loadClients();
       renderClientsTable(clients);
     } catch(e) {
-      showToast('Error saving client: ' + e.message);
+      showToast('Error: ' + e.message, 'error-toast');
+    } finally {
+      btn.textContent = 'Save Client'; btn.disabled = false;
     }
   });
 }
