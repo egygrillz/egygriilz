@@ -45,15 +45,20 @@ h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
 
 <div class="config">
   <label>GitHub Token</label>
-  <input type="password" id="gh-token" value="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">
+  <input type="password" id="gh-token" placeholder="Paste your ghp_ token here">
+  
   <label>GitHub Owner</label>
   <input type="text" id="gh-owner" value="egygrillz">
+  
   <label>GitHub Repo</label>
-  <input type="text" id="gh-repo" value="egygriilz">
+  <input type="text" id="gh-repo" value="egygrillz">
+  
   <label>Cloudinary Cloud Name</label>
   <input type="text" id="cl-cloud" value="dav6j6cgi">
+  
   <label>Cloudinary Upload Preset</label>
   <input type="text" id="cl-preset" value="egygrillz_upload">
+  
   <div style="display:flex;gap:10px;margin-top:6px;">
     <button class="btn" id="start-btn" onclick="startMigration()">▶ Start Migration</button>
     <button class="btn" id="stop-btn" onclick="stopMigration()" disabled>■ Stop</button>
@@ -293,14 +298,14 @@ async function startMigration() {
   for (const cat of CATEGORIES) {
     const jsonRes = await ghGet(`assets/images/${cat.folder}/${cat.json}`, cfg);
     if (!jsonRes) {
-      log(`⚠️  Skipping ${cat.folder} — JSON not found`, 'warn');
+      log('⚠️  Skipping ' + cat.folder + ' — JSON not found', 'warn');
       continue;
     }
     let list;
     try {
       list = JSON.parse(decodeURIComponent(escape(atob(jsonRes.content.replace(/\n/g, '')))));
     } catch(e) {
-      log(`⚠️  Could not parse JSON for ${cat.folder}`, 'warn');
+      log('⚠️  Could not parse JSON for ' + cat.folder, 'warn');
       continue;
     }
     log(`📁 ${cat.folder}: ${list.length} items found`, 'info');
