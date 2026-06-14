@@ -16,7 +16,6 @@ h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
 .btn { background:#fff; color:#000; border:none; padding:12px 28px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:2px; cursor:pointer; border-radius:3px; transition:0.2s; }
 .btn:hover { background:#e0e0e0; }
 .btn:disabled { background:#333; color:#666; cursor:not-allowed; }
-.btn-danger { background:#c0392b; color:#fff; }
 .log-wrap { margin-top:20px; background:#0d0d0d; border:1px solid #222; border-radius:6px; overflow:hidden; max-width:900px; }
 .log-header { background:#111; padding:10px 16px; font-size:11px; color:#666; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center; }
 .log { padding:16px; height:500px; overflow-y:auto; font-size:12px; line-height:1.8; }
@@ -46,7 +45,7 @@ h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
 
 <div class="config">
   <label>GitHub Token</label>
-  <input type="password" id="gh-token" value="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" placeholder="github_pat_...">
+  <input type="password" id="gh-token" value="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">
   <label>GitHub Owner</label>
   <input type="text" id="gh-owner" value="egygrillz">
   <label>GitHub Repo</label>
@@ -119,11 +118,10 @@ function setProgress(cur, total) {
 
 function stopMigration() {
   stopped = true;
-  log('⏹ Stop requested — will finish current item...', 'warn');
+  log('⏹ Stop requested...', 'warn');
   document.getElementById('stop-btn').disabled = true;
 }
 
-// GitHub helpers
 function getConfig() {
   return {
     token:  document.getElementById('gh-token').value.trim(),
@@ -137,9 +135,16 @@ function getConfig() {
 async function ghGet(path, cfg) {
   const res = await fetch(
     `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`,
-    { headers: { 'Authorization': 'token ' + cfg.token, 'Accept': 'application/vnd.github.v3+json' } }
+    { headers: {
+      'Authorization': 'Bearer ' + cfg.token,
+      'Accept': 'application/vnd.github.v3+json'
+    }}
   );
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const err = await res.text();
+    log(`  ⚠️ ghGet failed (${res.status}): ${path} — ${err.slice(0,100)}`, 'warn');
+    return null;
+  }
   return res.json();
 }
 
@@ -154,7 +159,7 @@ async function ghPut(path, content, sha, cfg) {
     {
       method: 'PUT',
       headers: {
-        'Authorization': 'token ' + cfg.token,
+        'Authorization': 'Bearer ' + cfg.token,
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json'
       },
@@ -163,7 +168,7 @@ async function ghPut(path, content, sha, cfg) {
   );
   if (!res.ok) {
     const err = await res.text();
-    throw new Error('ghPut failed: ' + err);
+    throw new Error('ghPut failed (' + res.status + '): ' + err.slice(0, 120));
   }
   return res.json();
 }
@@ -201,7 +206,7 @@ async function uploadToCloudinary(imageUrl, folder, cfg) {
   );
   if (!res.ok) {
     const err = await res.text();
-    throw new Error('Cloudinary: ' + err.slice(0, 120));
+    throw new Error('Cloudinary error: ' + err.slice(0, 120));
   }
   const data = await res.json();
   if (data.error) throw new Error('Cloudinary: ' + data.error.message);
@@ -217,7 +222,15 @@ async function migrateItem(catFolder, itemFolder, cfg) {
     return;
   }
 
-  const infoText = decodeURIComponent(escape(atob(infoRes.content.replace(/\n/g, ''))));
+  let infoText;
+  try {
+    infoText = decodeURIComponent(escape(atob(infoRes.content.replace(/\n/g, ''))));
+  } catch(e) {
+    log(`  ✗ Could not decode info.txt for ${itemFolder}`, 'err');
+    stats.err++;
+    return;
+  }
+
   const info = parseInfo(infoText);
 
   // Already fully migrated?
@@ -275,40 +288,53 @@ async function startMigration() {
   log(`   GitHub: ${cfg.owner}/${cfg.repo}`, 'dim');
   log(`   Cloudinary: ${cfg.cloud}`, 'dim');
 
-  // Count total items first
+  // Collect all items
   let allItems = [];
   for (const cat of CATEGORIES) {
     const jsonRes = await ghGet(`assets/images/${cat.folder}/${cat.json}`, cfg);
-    if (!jsonRes) { log(`⚠️  No JSON for ${cat.folder}`, 'warn'); continue; }
-    const list = JSON.parse(decodeURIComponent(escape(atob(jsonRes.content.replace(/\n/g, '')))));
+    if (!jsonRes) {
+      log(`⚠️  Skipping ${cat.folder} — JSON not found`, 'warn');
+      continue;
+    }
+    let list;
+    try {
+      list = JSON.parse(decodeURIComponent(escape(atob(jsonRes.content.replace(/\n/g, '')))));
+    } catch(e) {
+      log(`⚠️  Could not parse JSON for ${cat.folder}`, 'warn');
+      continue;
+    }
+    log(`📁 ${cat.folder}: ${list.length} items found`, 'info');
     list.forEach(item => allItems.push({ cat, item }));
   }
 
   stats.total = allItems.length;
   updateStats();
-  log(`\n📊 Found ${allItems.length} total items across all categories\n`, 'info');
+  log(`\n📊 Total: ${allItems.length} items\n`, 'info');
+
+  if (allItems.length === 0) {
+    log('❌ No items found. Check your token and repo settings.', 'err');
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('stop-btn').disabled = true;
+    return;
+  }
 
   let processed = 0;
+  let lastCat = '';
   for (const { cat, item } of allItems) {
     if (stopped) { log('\n⏹ Stopped by user.', 'warn'); break; }
-
-    // Print category header when it changes
-    if (processed === 0 || allItems[processed-1]?.cat.folder !== cat.folder) {
+    if (cat.folder !== lastCat) {
       log(`\n📁 ${cat.folder.toUpperCase()}`, 'info');
+      lastCat = cat.folder;
     }
-
     await migrateItem(cat.folder, item, cfg);
     processed++;
     setProgress(processed, allItems.length);
     updateStats();
-
-    // Small delay to avoid rate limiting
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 300));
   }
 
   log('\n══════════════════════════════', 'dim');
-  log(`✅ Migration complete!`, 'ok');
-  log(`   Migrated: ${stats.done}  |  Skipped: ${stats.skip}  |  Errors: ${stats.err}`, stats.err > 0 ? 'warn' : 'ok');
+  log(`✅ Done! Migrated: ${stats.done} | Skipped: ${stats.skip} | Errors: ${stats.err}`, stats.err > 0 ? 'warn' : 'ok');
 
   document.getElementById('start-btn').disabled = false;
   document.getElementById('stop-btn').disabled = true;
