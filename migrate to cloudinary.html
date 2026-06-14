@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGYGRILLZ — Cloudinary Migration</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Courier New', monospace; background:#0a0a0a; color:#e0e0e0; min-height:100vh; padding:30px; }
+h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
+.sub { font-size:12px; color:#666; margin-bottom:30px; }
+.config { background:#111; border:1px solid #222; padding:20px; border-radius:6px; margin-bottom:20px; max-width:700px; }
+.config label { font-size:11px; color:#888; display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; }
+.config input { width:100%; background:#1a1a1a; border:1px solid #333; color:#e0e0e0; padding:8px 12px; font-family:'Courier New',monospace; font-size:13px; border-radius:3px; margin-bottom:14px; outline:none; }
+.config input:focus { border-color:#555; }
+.btn { background:#fff; color:#000; border:none; padding:12px 28px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:2px; cursor:pointer; border-radius:3px; transition:0.2s; }
+.btn:hover { background:#e0e0e0; }
+.btn:disabled { background:#333; color:#666; cursor:not-allowed; }
+.btn-danger { background:#c0392b; color:#fff; }
+.log-wrap { margin-top:20px; background:#0d0d0d; border:1px solid #222; border-radius:6px; overflow:hidden; max-width:900px; }
+.log-header { background:#111; padding:10px 16px; font-size:11px; color:#666; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center; }
+.log { padding:16px; height:500px; overflow-y:auto; font-size:12px; line-height:1.8; }
+.log-line { margin-bottom:2px; }
+.ok   { color:#27ae60; }
+.err  { color:#e74c3c; }
+.warn { color:#f39c12; }
+.info { color:#3498db; }
+.dim  { color:#555; }
+.progress-wrap { max-width:700px; margin-top:16px; display:none; }
+.progress-label { font-size:11px; color:#888; margin-bottom:6px; }
+.progress-bar { background:#222; border-radius:3px; height:6px; overflow:hidden; }
+.progress-fill { background:#27ae60; height:100%; transition:width 0.3s; width:0%; }
+.stat-row { display:flex; gap:20px; margin-top:16px; max-width:700px; }
+.stat { background:#111; border:1px solid #222; padding:14px 18px; border-radius:4px; flex:1; text-align:center; }
+.stat-val { font-size:28px; font-weight:700; color:#fff; display:block; }
+.stat-lbl { font-size:10px; color:#666; text-transform:uppercase; letter-spacing:1px; margin-top:4px; display:block; }
+.stat-val.ok-color { color:#27ae60; }
+.stat-val.err-color { color:#e74c3c; }
+.stat-val.skip-color { color:#f39c12; }
+</style>
+</head>
+<body>
+
+<h1>EGYGRILLZ — Cloudinary Migration</h1>
+<p class="sub">Migrates all existing GitHub images to Cloudinary with auto-optimization</p>
+
+<div class="config">
+  <label>GitHub Token</label>
+  <input type="password" id="gh-token" value="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" placeholder="github_pat_...">
+  <label>GitHub Owner</label>
+  <input type="text" id="gh-owner" value="egygrillz">
+  <label>GitHub Repo</label>
+  <input type="text" id="gh-repo" value="egygriilz">
+  <label>Cloudinary Cloud Name</label>
+  <input type="text" id="cl-cloud" value="dav6j6cgi">
+  <label>Cloudinary Upload Preset</label>
+  <input type="text" id="cl-preset" value="egygrillz_upload">
+  <div style="display:flex;gap:10px;margin-top:6px;">
+    <button class="btn" id="start-btn" onclick="startMigration()">▶ Start Migration</button>
+    <button class="btn" id="stop-btn" onclick="stopMigration()" disabled>■ Stop</button>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat"><span class="stat-val" id="s-total">0</span><span class="stat-lbl">Total Items</span></div>
+  <div class="stat"><span class="stat-val ok-color" id="s-done">0</span><span class="stat-lbl">Migrated</span></div>
+  <div class="stat"><span class="stat-val skip-color" id="s-skip">0</span><span class="stat-lbl">Already Done</span></div>
+  <div class="stat"><span class="stat-val err-color" id="s-err">0</span><span class="stat-lbl">Errors</span></div>
+</div>
+
+<div class="progress-wrap" id="progress-wrap">
+  <div class="progress-label" id="progress-label">0 / 0</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+</div>
+
+<div class="log-wrap">
+  <div class="log-header">
+    <span>Migration Log</span>
+    <button onclick="clearLog()" style="background:none;border:none;color:#555;cursor:pointer;font-size:11px;">Clear</button>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+let stopped = false;
+let stats = { total:0, done:0, skip:0, err:0 };
+
+const CATEGORIES = [
+  { folder:'golds',          json:'golds.json' },
+  { folder:'silvers',        json:'silvers.json' },
+  { folder:'diamonds',       json:'diamonds.json' },
+  { folder:'latest-designs', json:'designs.json' },
+  { folder:'sets',           json:'sets.json' },
+];
+
+function log(msg, cls='') {
+  const el = document.createElement('div');
+  el.className = 'log-line ' + cls;
+  el.textContent = msg;
+  const logEl = document.getElementById('log');
+  logEl.appendChild(el);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+function updateStats() {
+  document.getElementById('s-total').textContent = stats.total;
+  document.getElementById('s-done').textContent  = stats.done;
+  document.getElementById('s-skip').textContent  = stats.skip;
+  document.getElementById('s-err').textContent   = stats.err;
+}
+
+function setProgress(cur, total) {
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('progress-label').textContent = cur + ' / ' + total;
+  document.getElementById('progress-fill').style.width = (total ? (cur/total*100) : 0) + '%';
+}
+
+function stopMigration() {
+  stopped = true;
+  log('⏹ Stop requested — will finish current item...', 'warn');
+  document.getElementById('stop-btn').disabled = true;
+}
+
+// GitHub helpers
+function getConfig() {
+  return {
+    token:  document.getElementById('gh-token').value.trim(),
+    owner:  document.getElementById('gh-owner').value.trim(),
+    repo:   document.getElementById('gh-repo').value.trim(),
+    cloud:  document.getElementById('cl-cloud').value.trim(),
+    preset: document.getElementById('cl-preset').value.trim(),
+  };
+}
+
+async function ghGet(path, cfg) {
+  const res = await fetch(
+    `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`,
+    { headers: { 'Authorization': 'token ' + cfg.token, 'Accept': 'application/vnd.github.v3+json' } }
+  );
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function ghPut(path, content, sha, cfg) {
+  const body = {
+    message: 'migrate: ' + path + ' → Cloudinary',
+    content: btoa(unescape(encodeURIComponent(content))),
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(
+    `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + cfg.token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify(body)
+    }
+  );
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('ghPut failed: ' + err);
+  }
+  return res.json();
+}
+
+function parseInfo(text) {
+  const info = { name:'', price:'', desc:'', images:[], tags:[] };
+  text.split('\n').forEach(line => {
+    const ci = line.indexOf(':');
+    if (ci === -1) return;
+    const k = line.slice(0, ci).trim().toLowerCase();
+    const v = line.slice(ci + 1).trim();
+    if (k === 'name' || k === 'title') info.name = v;
+    else if (k === 'price') info.price = v;
+    else if (k === 'desc' || k === 'description') info.desc = v;
+    else if (k === 'images') info.images = v.split(',').map(s => s.trim()).filter(Boolean);
+    else if (k === 'tags') info.tags = v.split(',').map(s => s.trim()).filter(Boolean);
+  });
+  return info;
+}
+
+function buildInfoTxt(info) {
+  let txt = `name: ${info.name}\nprice: ${info.price}\ndesc: ${info.desc}\nimages: ${info.images.join(',')}`;
+  if (info.tags && info.tags.length) txt += `\ntags: ${info.tags.join(',')}`;
+  return txt;
+}
+
+async function uploadToCloudinary(imageUrl, folder, cfg) {
+  const fd = new FormData();
+  fd.append('file', imageUrl);
+  fd.append('upload_preset', cfg.preset);
+  fd.append('folder', 'egygrillz/' + folder);
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${cfg.cloud}/image/upload`,
+    { method: 'POST', body: fd }
+  );
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Cloudinary: ' + err.slice(0, 120));
+  }
+  const data = await res.json();
+  if (data.error) throw new Error('Cloudinary: ' + data.error.message);
+  return `https://res.cloudinary.com/${cfg.cloud}/image/upload/f_auto,q_auto,w_1200/${data.public_id}`;
+}
+
+async function migrateItem(catFolder, itemFolder, cfg) {
+  const infoPath = `assets/images/${catFolder}/${itemFolder}/info.txt`;
+  const infoRes = await ghGet(infoPath, cfg);
+  if (!infoRes) {
+    log(`  ⚠️  No info.txt: ${itemFolder}`, 'warn');
+    stats.err++;
+    return;
+  }
+
+  const infoText = decodeURIComponent(escape(atob(infoRes.content.replace(/\n/g, ''))));
+  const info = parseInfo(infoText);
+
+  // Already fully migrated?
+  const allCloud = info.images.length > 0 && info.images.every(img => img.startsWith('http'));
+  if (allCloud) {
+    log(`  ✅ Skip (already Cloudinary): ${itemFolder}`, 'dim');
+    stats.skip++;
+    return;
+  }
+
+  log(`  📤 Migrating: ${itemFolder} — ${info.images.length} image(s)`, 'info');
+
+  const newUrls = [];
+  for (const imgName of info.images) {
+    if (imgName.startsWith('http')) {
+      newUrls.push(imgName);
+      continue;
+    }
+    const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/assets/images/${catFolder}/${itemFolder}/${imgName}`;
+    try {
+      const cloudUrl = await uploadToCloudinary(rawUrl, `${catFolder}/${itemFolder}`, cfg);
+      log(`     ✓ ${imgName}`, 'ok');
+      newUrls.push(cloudUrl);
+    } catch(e) {
+      log(`     ✗ ${imgName}: ${e.message}`, 'err');
+      newUrls.push(`assets/images/${catFolder}/${itemFolder}/${imgName}`);
+      stats.err++;
+    }
+  }
+
+  info.images = newUrls;
+  try {
+    await ghPut(infoPath, buildInfoTxt(info), infoRes.sha, cfg);
+    log(`  💾 Saved: ${itemFolder}`, 'ok');
+    stats.done++;
+  } catch(e) {
+    log(`  ✗ Save failed: ${e.message}`, 'err');
+    stats.err++;
+  }
+}
+
+async function startMigration() {
+  stopped = false;
+  stats = { total:0, done:0, skip:0, err:0 };
+  updateStats();
+  clearLog();
+
+  const cfg = getConfig();
+  if (!cfg.token) { log('❌ GitHub token is required', 'err'); return; }
+
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('stop-btn').disabled = false;
+
+  log('🚀 Starting migration...', 'info');
+  log(`   GitHub: ${cfg.owner}/${cfg.repo}`, 'dim');
+  log(`   Cloudinary: ${cfg.cloud}`, 'dim');
+
+  // Count total items first
+  let allItems = [];
+  for (const cat of CATEGORIES) {
+    const jsonRes = await ghGet(`assets/images/${cat.folder}/${cat.json}`, cfg);
+    if (!jsonRes) { log(`⚠️  No JSON for ${cat.folder}`, 'warn'); continue; }
+    const list = JSON.parse(decodeURIComponent(escape(atob(jsonRes.content.replace(/\n/g, '')))));
+    list.forEach(item => allItems.push({ cat, item }));
+  }
+
+  stats.total = allItems.length;
+  updateStats();
+  log(`\n📊 Found ${allItems.length} total items across all categories\n`, 'info');
+
+  let processed = 0;
+  for (const { cat, item } of allItems) {
+    if (stopped) { log('\n⏹ Stopped by user.', 'warn'); break; }
+
+    // Print category header when it changes
+    if (processed === 0 || allItems[processed-1]?.cat.folder !== cat.folder) {
+      log(`\n📁 ${cat.folder.toUpperCase()}`, 'info');
+    }
+
+    await migrateItem(cat.folder, item, cfg);
+    processed++;
+    setProgress(processed, allItems.length);
+    updateStats();
+
+    // Small delay to avoid rate limiting
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  log('\n══════════════════════════════', 'dim');
+  log(`✅ Migration complete!`, 'ok');
+  log(`   Migrated: ${stats.done}  |  Skipped: ${stats.skip}  |  Errors: ${stats.err}`, stats.err > 0 ? 'warn' : 'ok');
+
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('stop-btn').disabled = true;
+}
+</script>
+</body>
+</html>
