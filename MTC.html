@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EGYGRILLZ — Cloudinary Migration</title>
+<title>EGYGRILLZ — Smart Cloudinary Migration</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: 'Courier New', monospace; background:#0a0a0a; color:#e0e0e0; min-height:100vh; padding:30px; }
@@ -40,18 +40,18 @@ h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
 </head>
 <body>
 
-<h1>EGYGRILLZ — Cloudinary Migration</h1>
-<p class="sub">Migrates all existing GitHub images to Cloudinary with auto-optimization</p>
+<h1>EGYGRILLZ — Smart Cloudinary Migration</h1>
+<p class="sub">Dynamic branch & path finder migration tool</p>
 
 <div class="config">
   <label>GitHub Token</label>
-  <input type="password" id="gh-token" placeholder="Paste your ghp_ token here">
+  <input type="password" id="gh-token" placeholder="Paste your fresh ghp_ token here">
   
   <label>GitHub Owner</label>
   <input type="text" id="gh-owner" value="egygrillz">
   
   <label>GitHub Repo</label>
-  <input type="text" id="gh-repo" value="egygrillz">
+  <input type="text" id="gh-repo" value="egygriilz">
   
   <label>Cloudinary Cloud Name</label>
   <input type="text" id="cl-cloud" value="dav6j6cgi">
@@ -96,6 +96,19 @@ const CATEGORIES = [
   { folder:'latest-designs', json:'designs.json' },
   { folder:'sets',           json:'sets.json' },
 ];
+
+function utf8_to_b64(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+    return String.fromCharCode('0x' + p1);
+  }));
+}
+
+function b64_to_utf8(str) {
+  const cleanStr = str.replace(/\s/g, '');
+  return decodeURIComponent(atob(cleanStr).split('').map(function(c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+}
 
 function log(msg, cls='') {
   const el = document.createElement('div');
@@ -145,18 +158,43 @@ async function ghGet(path, cfg) {
       'Accept': 'application/vnd.github.v3+json'
     }}
   );
-  if (!res.ok) {
-    const err = await res.text();
-    log(`  ⚠️ ghGet failed (${res.status}): ${path} — ${err.slice(0,100)}`, 'warn');
-    return null;
-  }
+  if (!res.ok) return null;
   return res.json();
+}
+
+// 🔍 Smart Scanner: scans the directory structure inside the item folder dynamically
+async function findImageInFolder(catFolder, itemFolder, filename, cfg) {
+  const basePath = `assets/images/${catFolder}/${itemFolder}`;
+  
+  // Try direct path first
+  const directCheck = await fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/${basePath}/${filename}`, { method: 'HEAD' });
+  if (directCheck.ok) return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/${basePath}/${filename}`;
+  
+  const directMasterCheck = await fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/master/${basePath}/${filename}`, { method: 'HEAD' });
+  if (directMasterCheck.ok) return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/master/${basePath}/${filename}`;
+
+  // If direct fails, list folder contents to see if there is an "images/" subfolder dynamically
+  const contents = await ghGet(basePath, cfg);
+  if (contents && Array.isArray(contents)) {
+    // Look inside any subfolders (like itemFolder/images/)
+    for (const file of contents) {
+      if (file.type === 'dir') {
+        const deepCheck = await fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/${basePath}/${file.name}/${filename}`, { method: 'HEAD' });
+        if (deepCheck.ok) return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/${basePath}/${file.name}/${filename}`;
+        
+        const deepMasterCheck = await fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/master/${basePath}/${file.name}/${filename}`, { method: 'HEAD' });
+        if (deepMasterCheck.ok) return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/master/${basePath}/${file.name}/${filename}`;
+      }
+    }
+  }
+  // Return fallback default path if everything else fails
+  return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/${basePath}/${filename}`;
 }
 
 async function ghPut(path, content, sha, cfg) {
   const body = {
     message: 'migrate: ' + path + ' → Cloudinary',
-    content: btoa(unescape(encodeURIComponent(content))),
+    content: utf8_to_b64(content),
   };
   if (sha) body.sha = sha;
   const res = await fetch(
@@ -173,7 +211,7 @@ async function ghPut(path, content, sha, cfg) {
   );
   if (!res.ok) {
     const err = await res.text();
-    throw new Error('ghPut failed (' + res.status + '): ' + err.slice(0, 120));
+    throw new Error('ghPut failed: ' + err.slice(0, 120));
   }
   return res.json();
 }
@@ -222,14 +260,14 @@ async function migrateItem(catFolder, itemFolder, cfg) {
   const infoPath = `assets/images/${catFolder}/${itemFolder}/info.txt`;
   const infoRes = await ghGet(infoPath, cfg);
   if (!infoRes) {
-    log(`  ⚠️  No info.txt: ${itemFolder}`, 'warn');
+    log(`  ⚠️  No info.txt in: ${itemFolder} (Skipping item)`, 'warn');
     stats.err++;
     return;
   }
 
   let infoText;
   try {
-    infoText = decodeURIComponent(escape(atob(infoRes.content.replace(/\n/g, ''))));
+    infoText = b64_to_utf8(infoRes.content);
   } catch(e) {
     log(`  ✗ Could not decode info.txt for ${itemFolder}`, 'err');
     stats.err++;
@@ -237,8 +275,6 @@ async function migrateItem(catFolder, itemFolder, cfg) {
   }
 
   const info = parseInfo(infoText);
-
-  // Already fully migrated?
   const allCloud = info.images.length > 0 && info.images.every(img => img.startsWith('http'));
   if (allCloud) {
     log(`  ✅ Skip (already Cloudinary): ${itemFolder}`, 'dim');
@@ -254,9 +290,12 @@ async function migrateItem(catFolder, itemFolder, cfg) {
       newUrls.push(imgName);
       continue;
     }
-    const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/assets/images/${catFolder}/${itemFolder}/${imgName}`;
+    
+    // 🔍 Find image location live across potential structural variations
+    const verifiedRawUrl = await findImageInFolder(catFolder, itemFolder, imgName, cfg);
+    
     try {
-      const cloudUrl = await uploadToCloudinary(rawUrl, `${catFolder}/${itemFolder}`, cfg);
+      const cloudUrl = await uploadToCloudinary(verifiedRawUrl, `${catFolder}/${itemFolder}`, cfg);
       log(`     ✓ ${imgName}`, 'ok');
       newUrls.push(cloudUrl);
     } catch(e) {
@@ -289,35 +328,32 @@ async function startMigration() {
   document.getElementById('start-btn').disabled = true;
   document.getElementById('stop-btn').disabled = false;
 
-  log('🚀 Starting migration...', 'info');
-  log(`   GitHub: ${cfg.owner}/${cfg.repo}`, 'dim');
-  log(`   Cloudinary: ${cfg.cloud}`, 'dim');
+  log('🚀 Starting smart discovery migration...', 'info');
 
-  // Collect all items
   let allItems = [];
   for (const cat of CATEGORIES) {
     const jsonRes = await ghGet(`assets/images/${cat.folder}/${cat.json}`, cfg);
     if (!jsonRes) {
-      log('⚠️  Skipping ' + cat.folder + ' — JSON not found', 'warn');
+      log(`⚠️  Skipping ${cat.folder} — JSON list index file not found`, 'warn');
       continue;
     }
     let list;
     try {
-      list = JSON.parse(decodeURIComponent(escape(atob(jsonRes.content.replace(/\n/g, '')))));
+      list = JSON.parse(b64_to_utf8(jsonRes.content));
     } catch(e) {
-      log('⚠️  Could not parse JSON for ' + cat.folder, 'warn');
+      log('⚠️  Could not parse JSON index for ' + cat.folder, 'warn');
       continue;
     }
-    log(`📁 ${cat.folder}: ${list.length} items found`, 'info');
+    log(`📁 ${cat.folder}: ${list.length} products found`, 'info');
     list.forEach(item => allItems.push({ cat, item }));
   }
 
   stats.total = allItems.length;
   updateStats();
-  log(`\n📊 Total: ${allItems.length} items\n`, 'info');
+  log(`\n📊 Total items queued: ${allItems.length}\n`, 'info');
 
   if (allItems.length === 0) {
-    log('❌ No items found. Check your token and repo settings.', 'err');
+    log('❌ No migration targets discovered. Verify token and repository configs.', 'err');
     document.getElementById('start-btn').disabled = false;
     document.getElementById('stop-btn').disabled = true;
     return;
@@ -328,18 +364,18 @@ async function startMigration() {
   for (const { cat, item } of allItems) {
     if (stopped) { log('\n⏹ Stopped by user.', 'warn'); break; }
     if (cat.folder !== lastCat) {
-      log(`\n📁 ${cat.folder.toUpperCase()}`, 'info');
+      log(`\n📁 Category: ${cat.folder.toUpperCase()}`, 'info');
       lastCat = cat.folder;
     }
     await migrateItem(cat.folder, item, cfg);
     processed++;
     setProgress(processed, allItems.length);
     updateStats();
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 250));
   }
 
   log('\n══════════════════════════════', 'dim');
-  log(`✅ Done! Migrated: ${stats.done} | Skipped: ${stats.skip} | Errors: ${stats.err}`, stats.err > 0 ? 'warn' : 'ok');
+  log(`✅ Processing Finished! Migrated: ${stats.done} | Skipped: ${stats.skip} | Errors: ${stats.err}`, stats.err > 0 ? 'warn' : 'ok');
 
   document.getElementById('start-btn').disabled = false;
   document.getElementById('stop-btn').disabled = true;
