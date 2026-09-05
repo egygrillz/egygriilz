@@ -118,8 +118,19 @@
                         </button>
                     </div>
                     <div class="mt-2 flex items-center justify-between">
-                        <span id="providerBadge" class="text-[10px] text-gray-400 font-medium"></span>
-                        <span class="text-[10px] text-gray-300">Shift+Enter for new line</span>
+                        <div class="flex items-center space-x-2">
+                            <span id="providerBadge" class="text-[10px] text-gray-400 font-medium"></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-[10px] text-gray-400">AI:</label>
+                            <select id="providerSelect" class="text-[10px] border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:border-gray-400">
+                                <option value="">Auto (fallback)</option>
+                                <option value="gemini">Gemini</option>
+                                <option value="groq">Groq</option>
+                                <option value="cerebras">Cerebras</option>
+                            </select>
+                            <span class="text-[10px] text-gray-300">Shift+Enter for new line</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -208,6 +219,15 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             class="shrink-0 h-[52px] px-4 bg-black text-white rounded-lg hover:bg-gray-800 active:scale-95 transition-all text-[10px] font-medium uppercase tracking-wider">
                             Send
                         </button>
+                    </div>
+                    <div class="mt-2 flex items-center justify-end space-x-2">
+                        <label class="text-[10px] text-gray-400">AI:</label>
+                        <select id="staffProviderSelect" class="text-[10px] border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:border-gray-400">
+                            <option value="">Auto (fallback)</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="groq">Groq</option>
+                            <option value="cerebras">Cerebras</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -365,14 +385,15 @@ Response Structure Constraints:
         }
 
         // ==================== AI CALL (via Worker) ====================
-        async function getAIResponse(userMessage, customSystemPrompt) {
+        async function getAIResponse(userMessage, customSystemPrompt, forceProvider) {
             setStatus("generating", "Generating...");
             const res = await fetch(WORKER_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     systemPrompt: customSystemPrompt || buildSystemPrompt(),
-                    userMessage
+                    userMessage,
+                    provider: forceProvider || undefined
                 })
             });
 
@@ -447,7 +468,8 @@ Response Structure Constraints:
                 document.getElementById("clientMsg").value = "";
 
                 // Get AI response (through the Worker, keys stay server-side)
-                const result = await getAIResponse(clientMsg);
+                const chosenProvider = document.getElementById("providerSelect").value;
+                const result = await getAIResponse(clientMsg, null, chosenProvider);
                 logUsage(result.provider, result.tokens);
 
                 // Save AI response
@@ -780,7 +802,7 @@ ${currentSettings.additional ? `\nAdditional Information:\n${currentSettings.add
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                const result = await getAIResponse(msg, buildStaffSystemPrompt());
+                const result = await getAIResponse(msg, buildStaffSystemPrompt(), document.getElementById("staffProviderSelect").value);
                 logUsage(result.provider, result.tokens);
 
                 await db.collection("staff_chat").doc("thread").collection("messages").add({
