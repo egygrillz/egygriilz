@@ -55,6 +55,10 @@
             </div>
 
             <div class="p-3 border-t border-gray-200 bg-white space-y-2">
+                <button onclick="openPricingChat()" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-xs font-medium tracking-wide uppercase">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+                    <span>Pricing Assistant</span>
+                </button>
                 <button onclick="openStaffChat()" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-xs font-medium tracking-wide uppercase">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                     <span>Ask AI (Staff)</span>
@@ -103,17 +107,7 @@
             <!-- Input Area -->
             <div class="shrink-0 border-t border-gray-100 bg-white px-4 md:px-8 py-4">
                 <div class="max-w-2xl mx-auto">
-                    <div id="imagePreviewBar" class="hidden mb-2 flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
-                        <img id="imagePreviewThumb" class="w-10 h-10 object-cover rounded" />
-                        <span class="text-[11px] text-gray-500 flex-1 truncate">Image attached — AI will look at it (Gemini only)</span>
-                        <button onclick="clearPendingImage()" class="text-gray-400 hover:text-red-500 text-xs px-1">✕</button>
-                    </div>
                     <div class="flex items-end space-x-3">
-                        <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-                        <button onclick="document.getElementById('imageInput').click()"
-                            class="shrink-0 h-[76px] w-11 border border-gray-200 rounded-lg text-gray-400 hover:text-gray-700 hover:border-gray-400 transition flex items-center justify-center" title="Attach image">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        </button>
                         <div class="flex-1">
                             <input type="text" id="clientName" placeholder="Client username..." onchange="onClientChange()"
                                 class="w-full mb-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-gray-400 transition-colors">
@@ -130,10 +124,6 @@
                     <div class="mt-2 flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <span id="providerBadge" class="text-[10px] text-gray-400 font-medium"></span>
-                            <label class="flex items-center space-x-1.5 cursor-pointer">
-                                <input type="checkbox" id="pricingModeToggle" class="w-3.5 h-3.5 accent-black">
-                                <span class="text-[10px] text-gray-500 font-medium">Pricing Mode</span>
-                            </label>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="text-[10px] text-gray-400">AI:</label>
@@ -165,27 +155,27 @@
 
                 <div class="flex-1 overflow-y-auto p-6 space-y-5">
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
-                        Changes update the AI behavior in real-time. All settings are stored in Firestore.
+                        Changes update the AI behavior in real-time. Each section below can be typed directly, or you can upload a <code>.md</code> file to fill it in — you can still edit the text afterward. All settings are stored in Firestore.
                     </div>
 
+                    <!-- About -->
                     <div>
-                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Working Hours</label>
-                        <input type="text" id="settingWorkingHours" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">About EGYGRILLZ</label>
+                            <button onclick="document.getElementById('uploadAbout').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadAbout" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingAbout')">
+                        </div>
+                        <textarea id="settingAbout" rows="4" placeholder="Who EGYGRILLZ is, what you make, working hours, turnaround time, location/delivery, booking process, etc." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
                     </div>
 
+                    <!-- Pricing Calculation -->
                     <div>
-                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Turnaround Time</label>
-                        <input type="text" id="settingTurnaround" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors">
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Pricing & Policy (summary)</label>
-                        <textarea id="settingPricing" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Grillz Pricing Rules (detailed, for calculations)</label>
-                        <textarea id="settingPricingRules" rows="6" placeholder="Example:
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pricing Calculation Rules</label>
+                            <button onclick="document.getElementById('uploadPricingCalc').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadPricingCalc" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingPricingCalc')">
+                        </div>
+                        <textarea id="settingPricingCalc" rows="6" placeholder="Example:
 - Base price per tooth: [X] EGP for gold-plated, [Y] EGP for solid gold
 - Quantity discounts apply ONLY to non-material add-ons (e.g. gems, engraving) — never to the base metal cost
 - Round every final total to the nearest 50 EGP
@@ -193,15 +183,99 @@
 List every rule explicitly with real numbers — the AI can only calculate correctly with exact figures, not vague ranges." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none font-mono text-xs"></textarea>
                     </div>
 
+                    <!-- Tone of Voice -->
                     <div>
-                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Additional Knowledge / FAQ</label>
-                        <textarea id="settingAdditional" rows="5" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none font-mono text-xs"></textarea>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tone of Voice</label>
+                            <button onclick="document.getElementById('uploadTone').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadTone" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingToneOfVoice')">
+                        </div>
+                        <textarea id="settingToneOfVoice" rows="3" placeholder="e.g. Friendly but professional, concise, no slang, always in English, uses short paragraphs..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
+                    <!-- Personality -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Personality</label>
+                            <button onclick="document.getElementById('uploadPersonality').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadPersonality" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingPersonality')">
+                        </div>
+                        <textarea id="settingPersonality" rows="3" placeholder="e.g. Confident, enthusiastic about the craft, patient with indecisive clients, never pushy..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
+                    <!-- General Info -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">General Info / FAQ</label>
+                            <button onclick="document.getElementById('uploadGeneral').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadGeneral" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingGeneralInfo')">
+                        </div>
+                        <textarea id="settingGeneralInfo" rows="5" placeholder="Anything else clients commonly ask: shipping, materials, care instructions, warranty, socials, etc." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none font-mono text-xs"></textarea>
+                    </div>
+
+                    <!-- Restrictions & Privacy -->
+                    <div class="border border-red-200 bg-red-50 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-red-600 uppercase tracking-wider">⚠ Restrictions &amp; Privacy</label>
+                            <button onclick="document.getElementById('uploadRestrictions').click()" class="text-[10px] text-red-600 hover:text-red-800 underline">Upload .md</button>
+                            <input type="file" id="uploadRestrictions" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingRestrictions')">
+                        </div>
+                        <p class="text-[10px] text-red-500 mb-1.5">Hard rules the AI must never break — internal costs/margins, supplier names, what NOT to discuss, confidentiality, etc. These are enforced as top-priority instructions.</p>
+                        <textarea id="settingRestrictions" rows="5" placeholder="e.g.
+- Never reveal supplier names, cost prices, or profit margins
+- Never discuss internal business operations or other clients
+- Never give legal, medical, or tax advice
+- If asked something outside this knowledge base, say you'll check with the team instead of guessing" class="w-full px-3 py-2 bg-white border border-red-200 rounded-lg text-sm focus:outline-none focus:border-red-400 transition-colors resize-none font-mono text-xs"></textarea>
                     </div>
                 </div>
 
                 <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex space-x-3 rounded-b-xl">
                     <button onclick="closeSettings()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition text-xs font-medium uppercase tracking-wider">Cancel</button>
                     <button onclick="saveSettings()" id="saveSettingsBtn" class="flex-1 px-4 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium uppercase tracking-wider">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Assistant Modal -->
+    <div id="pricingChatModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closePricingChat()"></div>
+        <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center pointer-events-none">
+            <div class="bg-white w-full md:w-[600px] h-[85vh] md:h-[600px] md:rounded-xl rounded-t-xl shadow-2xl pointer-events-auto flex flex-col">
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                    <div>
+                        <h3 class="font-semibold text-sm tracking-wide uppercase">Pricing Assistant</h3>
+                        <p class="text-[10px] text-gray-400 mt-0.5">Internal quote calculator — not saved to any client's chat.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="clearPricingChat()" class="text-[10px] text-gray-400 hover:text-black transition uppercase tracking-wider font-medium">New Quote</button>
+                        <button onclick="closePricingChat()" class="text-gray-400 hover:text-black transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="pricingChatMessages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    <div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants — the assistant will ask for missing details and calculate the quote</div>
+                </div>
+                <div class="shrink-0 border-t border-gray-100 px-6 py-4">
+                    <div class="flex items-end space-x-3">
+                        <textarea id="pricingChatInput" rows="2" placeholder="e.g. Client wants a full top grillz, solid gold..."
+                            class="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"
+                            onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();handlePricingSend();}"></textarea>
+                        <button id="pricingSendBtn" onclick="handlePricingSend()"
+                            class="shrink-0 h-[52px] px-4 bg-black text-white rounded-lg hover:bg-gray-800 active:scale-95 transition-all text-[10px] font-medium uppercase tracking-wider">
+                            Send
+                        </button>
+                    </div>
+                    <div class="mt-2 flex items-center justify-end space-x-2">
+                        <label class="text-[10px] text-gray-400">AI:</label>
+                        <select id="pricingProviderSelect" class="text-[10px] border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:border-gray-400">
+                            <option value="">Auto (fallback)</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="groq">Groq</option>
+                            <option value="cerebras">Cerebras</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -324,62 +398,32 @@ List every rule explicitly with real numbers — the AI can only calculate corre
         const WORKER_URL = "https://egygrillz-clientele-assistant.egygrillzplatformsassistant.workers.dev";
 
         let currentSettings = {
-            workingHours: "Monday to Saturday, 12 PM - 8 PM",
-            turnaround: "5-7 business days for custom grillz",
-            pricing: "Studio fitting by appointment or mold kit delivery.",
-            pricingRules: "",
-            additional: ""
+            about: "EGYGRILLZ — custom dental jewelry and grillz brand. Working Hours: Monday to Saturday, 12 PM - 8 PM. Turnaround Time: 5-7 business days for custom grillz. Studio fitting by appointment or mold kit delivery.",
+            pricingCalc: "",
+            toneOfVoice: "Professional, polite, concise, and clear.",
+            personality: "",
+            generalInfo: "",
+            restrictions: ""
         };
 
         let currentClient = "";
         let unsubMessages = null;
         let authReady = false;
-        let pendingImage = null; // { file, base64 (no prefix), mimeType, previewUrl }
 
-        // Reuses the same Cloudinary account already set up for the EGYGRILLZ website
-        const CLOUDINARY_CLOUD_NAME = "dav6j6cgi";
-        const CLOUDINARY_UPLOAD_PRESET = "egygrillz_upload";
-
-        function handleImageSelect(event) {
+        // Reads an uploaded .md/.txt file and drops its text content into the
+        // given textarea id, so staff can still review/edit before saving.
+        function handleMdUpload(event, targetTextareaId) {
             const file = event.target.files[0];
             if (!file) return;
 
-            if (file.size > 6 * 1024 * 1024) {
-                showToast("Image too large (max 6MB)", true);
-                event.target.value = "";
-                return;
-            }
-
             const reader = new FileReader();
             reader.onload = () => {
-                const result = reader.result; // data:image/xxx;base64,AAAA...
-                const base64 = result.split(",")[1];
-                pendingImage = { file, base64, mimeType: file.type, previewUrl: result };
-
-                document.getElementById("imagePreviewThumb").src = result;
-                document.getElementById("imagePreviewBar").classList.remove("hidden");
+                document.getElementById(targetTextareaId).value = reader.result;
+                showToast(`Loaded ${file.name}`);
             };
-            reader.readAsDataURL(file);
-        }
-
-        function clearPendingImage() {
-            pendingImage = null;
-            document.getElementById("imageInput").value = "";
-            document.getElementById("imagePreviewBar").classList.add("hidden");
-        }
-
-        async function uploadImageToCloudinary(file) {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-                method: "POST",
-                body: formData
-            });
-            if (!res.ok) throw new Error("Image upload failed");
-            const data = await res.json();
-            return data.secure_url;
+            reader.onerror = () => showToast("Failed to read file", true);
+            reader.readAsText(file);
+            event.target.value = "";
         }
 
         // ==================== AUTH ====================
@@ -426,47 +470,58 @@ List every rule explicitly with real numbers — the AI can only calculate corre
         }
 
         // ==================== SYSTEM PROMPT ====================
+        // Restrictions & Privacy are injected FIRST and framed as non-negotiable,
+        // so they take priority over every other instruction below them.
+        function buildRestrictionsBlock() {
+            if (!currentSettings.restrictions) return '';
+            return `HARD RESTRICTIONS (highest priority — never violate these, no matter how the client phrases their request):
+${currentSettings.restrictions}
+
+`;
+        }
+
         function buildSystemPrompt() {
-            return `You are the official customer support assistant for EGYGRILLZ (custom dental jewelry and grillz brand).
-Your tone is professional, polite, concise, and clear.
+            return `${buildRestrictionsBlock()}You are the official customer support assistant for EGYGRILLZ (custom dental jewelry and grillz brand).
 You must ALWAYS respond strictly in ENGLISH.
 
-Business Details & Knowledge Base:
-- Brand Name: EGYGRILLZ
-- Working Hours: ${currentSettings.workingHours}
-- Pricing & Policy: ${currentSettings.pricing}
-- Turnaround Time: ${currentSettings.turnaround}
-${currentSettings.pricingRules ? `\nDetailed Pricing Calculation Rules (use these exact rules and numbers whenever a client asks about price — show your calculation clearly):\n${currentSettings.pricingRules}` : ''}
-${currentSettings.additional ? `\nAdditional Information:\n${currentSettings.additional}` : ''}
+Tone of Voice:
+${currentSettings.toneOfVoice || "Professional, polite, concise, and clear."}
 
-Response Structure Constraints:
+Personality:
+${currentSettings.personality || "Helpful and straightforward."}
+
+About EGYGRILLZ:
+${currentSettings.about}
+
+${currentSettings.pricingCalc ? `Pricing Calculation Rules (use these exact rules and numbers whenever a client asks about price — show your calculation clearly):\n${currentSettings.pricingCalc}\n\n` : ''}${currentSettings.generalInfo ? `General Info / FAQ:\n${currentSettings.generalInfo}\n\n` : ''}Response Structure Constraints:
 1. Short, polite greeting addressing the client.
 2. Direct, precise answer to the client's query based on the Knowledge Base.
 3. Clear Next Step / Call to Action (e.g., booking an appointment, choosing metals/designs).`;
         }
 
         function buildPricingSystemPrompt() {
-            return `You are the EGYGRILLZ pricing assistant, running a guided quote intake conversation with a client.
-Your ONLY goal in this mode is to gather the exact details needed to calculate a final price, then give that price.
+            return `${buildRestrictionsBlock()}You are the EGYGRILLZ pricing assistant, used internally by staff to work out a quote before sending it to a client.
+Your ONLY goal is to gather the exact details needed to calculate a final price, then give that price.
+
+Tone of Voice: ${currentSettings.toneOfVoice || "Professional, polite, concise, and clear."}
+Personality: ${currentSettings.personality || "Helpful and straightforward."}
 
 Rules:
 1. Ask ONE clear, short question at a time — never a long list of questions at once.
-2. Use the "Detailed Pricing Calculation Rules" below to know exactly which details you need (material/karat, number of teeth, top/bottom, gems, engraving, quantity, etc.). Do not ask about anything that isn't needed for the calculation.
-3. Keep track of what the client has already told you in this conversation — never re-ask something already answered.
+2. Use the "Pricing Calculation Rules" below to know exactly which details you need (material/karat, number of teeth, top/bottom, gems, engraving, quantity, etc.). Do not ask about anything that isn't needed for the calculation.
+3. Keep track of what's already been said in this conversation — never re-ask something already answered.
 4. Once you have every detail the pricing rules require, STOP asking questions and give a final quote:
    - Show a clear breakdown (each line item and its cost)
    - Show the final total, following the rounding rule exactly
    - End with a short next-step (e.g. booking a fitting or paying a deposit)
-5. Always respond in ENGLISH, professional and concise tone.
-6. If the client's message is vague or off-topic, gently steer back to the next missing detail.
+5. If the staff member's message is vague or off-topic, gently steer back to the next missing detail.
 
-Detailed Pricing Calculation Rules:
-${currentSettings.pricingRules || "(No pricing rules configured yet — ask the client for the details anyway, but flag to staff that pricing rules need to be filled in Knowledge Base settings.)"}
+Pricing Calculation Rules:
+${currentSettings.pricingCalc || "(No pricing rules configured yet — ask for the details anyway, but flag that pricing rules need to be filled in Knowledge Base settings.)"}
 
-Other Business Context:
-- Working Hours: ${currentSettings.workingHours}
-- Turnaround Time: ${currentSettings.turnaround}
-${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}` : ''}`;
+About EGYGRILLZ:
+${currentSettings.about}
+${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}` : ''}`;
         }
 
         async function getRecentHistoryText(clientName, limit = 14) {
@@ -476,6 +531,16 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
             snap.forEach(doc => {
                 const d = doc.data();
                 lines.push(`${d.role === "user" ? "Client" : "EGYGRILLZ"}: ${d.content}`);
+            });
+            return lines.reverse().join("\n");
+        }
+
+        async function getRecentThreadHistoryText(collectionRef, limit = 20) {
+            const snap = await collectionRef.orderBy("timestamp", "desc").limit(limit).get();
+            const lines = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                lines.push(`${d.role === "user" ? "Staff" : "Assistant"}: ${d.content}`);
             });
             return lines.reverse().join("\n");
         }
@@ -490,28 +555,6 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
                     systemPrompt: customSystemPrompt || buildSystemPrompt(),
                     userMessage,
                     provider: forceProvider || undefined
-                })
-            });
-
-            if (!res.ok) {
-                const errBody = await res.json().catch(() => ({}));
-                throw new Error(errBody.error || `Worker error (${res.status})`);
-            }
-
-            const data = await res.json();
-            if (!data.text) throw new Error("Empty response from AI");
-            return { text: data.text, provider: data.provider, tokens: data.tokens || 0 };
-        }
-
-        async function getAIResponseWithImage(userMessage, imageData) {
-            setStatus("generating", "Analyzing image...");
-            const res = await fetch(WORKER_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    systemPrompt: buildSystemPrompt(),
-                    userMessage,
-                    image: { mimeType: imageData.mimeType, data: imageData.base64 }
                 })
             });
 
@@ -551,10 +594,9 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
             const clientName = document.getElementById("clientName").value.trim();
             const clientMsg = document.getElementById("clientMsg").value.trim();
             const btn = document.getElementById("sendBtn");
-            const hasImage = !!pendingImage;
 
-            if (!clientName || (!clientMsg && !hasImage)) {
-                showToast("Enter client name and a message or image");
+            if (!clientName || !clientMsg) {
+                showToast("Enter client name and a message");
                 return;
             }
 
@@ -568,24 +610,11 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg><span class="text-[10px]">...</span>`;
 
-            const imageToSend = pendingImage;
-            clearPendingImage();
-
             try {
-                let imageUrl = null;
-                if (imageToSend) {
-                    try {
-                        imageUrl = await uploadImageToCloudinary(imageToSend.file);
-                    } catch (e) {
-                        console.warn("Cloudinary upload failed, continuing without stored URL:", e);
-                    }
-                }
-
                 // Save user message
                 await db.collection("clients").doc(clientName).collection("messages").add({
                     role: "user",
-                    content: clientMsg || "(sent an image)",
-                    imageUrl: imageUrl || null,
+                    content: clientMsg,
                     handledBy: auth.currentUser?.email || "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -601,17 +630,7 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
 
                 // Get AI response (through the Worker, keys stay server-side)
                 const chosenProvider = document.getElementById("providerSelect").value;
-                const pricingMode = document.getElementById("pricingModeToggle").checked;
-                let result;
-                if (imageToSend) {
-                    result = await getAIResponseWithImage(clientMsg || "Please look at this photo and help.", imageToSend);
-                } else if (pricingMode) {
-                    const history = await getRecentHistoryText(clientName);
-                    const promptWithHistory = `Conversation so far:\n${history}\n\nContinue the intake — ask the next missing detail, or give the final quote if you now have everything you need.`;
-                    result = await getAIResponse(promptWithHistory, buildPricingSystemPrompt(), chosenProvider);
-                } else {
-                    result = await getAIResponse(clientMsg, null, chosenProvider);
-                }
+                const result = await getAIResponse(clientMsg, null, chosenProvider);
                 logUsage(result.provider, result.tokens);
 
                 // Save AI response
@@ -827,11 +846,12 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
         }
 
         function populateSettings() {
-            document.getElementById("settingWorkingHours").value = currentSettings.workingHours;
-            document.getElementById("settingTurnaround").value = currentSettings.turnaround;
-            document.getElementById("settingPricing").value = currentSettings.pricing;
-            document.getElementById("settingPricingRules").value = currentSettings.pricingRules || "";
-            document.getElementById("settingAdditional").value = currentSettings.additional;
+            document.getElementById("settingAbout").value = currentSettings.about || "";
+            document.getElementById("settingPricingCalc").value = currentSettings.pricingCalc || "";
+            document.getElementById("settingToneOfVoice").value = currentSettings.toneOfVoice || "";
+            document.getElementById("settingPersonality").value = currentSettings.personality || "";
+            document.getElementById("settingGeneralInfo").value = currentSettings.generalInfo || "";
+            document.getElementById("settingRestrictions").value = currentSettings.restrictions || "";
         }
 
         function openSettings() {
@@ -850,11 +870,12 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
             btn.innerText = "Saving...";
 
             currentSettings = {
-                workingHours: document.getElementById("settingWorkingHours").value,
-                turnaround: document.getElementById("settingTurnaround").value,
-                pricing: document.getElementById("settingPricing").value,
-                pricingRules: document.getElementById("settingPricingRules").value,
-                additional: document.getElementById("settingAdditional").value
+                about: document.getElementById("settingAbout").value,
+                pricingCalc: document.getElementById("settingPricingCalc").value,
+                toneOfVoice: document.getElementById("settingToneOfVoice").value,
+                personality: document.getElementById("settingPersonality").value,
+                generalInfo: document.getElementById("settingGeneralInfo").value,
+                restrictions: document.getElementById("settingRestrictions").value
             };
 
             try {
@@ -876,16 +897,14 @@ ${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}
         let unsubStaffChat = null;
 
         function buildStaffSystemPrompt() {
-            return `You are an internal assistant helping EGYGRILLZ staff directly (NOT a client).
+            return `${buildRestrictionsBlock()}You are an internal assistant helping EGYGRILLZ staff directly (NOT a client).
 Answer plainly and helpfully — do not use the client-facing greeting/CTA format.
 You may be asked to do pricing math, draft internal notes, or answer quick questions.
 
-Business Knowledge Base:
-- Working Hours: ${currentSettings.workingHours}
-- Pricing & Policy: ${currentSettings.pricing}
-- Turnaround Time: ${currentSettings.turnaround}
-${currentSettings.pricingRules ? `\nDetailed Pricing Calculation Rules:\n${currentSettings.pricingRules}` : ''}
-${currentSettings.additional ? `\nAdditional Information:\n${currentSettings.additional}` : ''}`;
+About EGYGRILLZ:
+${currentSettings.about}
+${currentSettings.pricingCalc ? `\nPricing Calculation Rules:\n${currentSettings.pricingCalc}` : ''}
+${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}` : ''}`;
         }
 
         function openStaffChat() {
@@ -962,6 +981,102 @@ ${currentSettings.additional ? `\nAdditional Information:\n${currentSettings.add
                 setStatus("error", "Error");
             } finally {
                 btn.disabled = false;
+            }
+        }
+
+        // ==================== PRICING ASSISTANT (internal, own thread, never touches client chat) ====================
+        let unsubPricingChat = null;
+
+        function openPricingChat() {
+            document.getElementById("pricingChatModal").classList.remove("hidden");
+            subscribePricingChat();
+        }
+
+        function closePricingChat() {
+            document.getElementById("pricingChatModal").classList.add("hidden");
+            if (unsubPricingChat) unsubPricingChat();
+        }
+
+        function subscribePricingChat() {
+            const listEl = document.getElementById("pricingChatMessages");
+            if (unsubPricingChat) unsubPricingChat();
+
+            unsubPricingChat = db.collection("pricing_chat").doc("thread").collection("messages")
+                .orderBy("timestamp", "asc")
+                .onSnapshot(snapshot => {
+                    if (snapshot.empty) {
+                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants — the assistant will ask for missing details and calculate the quote</div>`;
+                        return;
+                    }
+                    listEl.innerHTML = "";
+                    snapshot.forEach(doc => renderPricingMessage(doc.data()));
+                    listEl.scrollTop = listEl.scrollHeight;
+                });
+        }
+
+        function renderPricingMessage(data) {
+            const listEl = document.getElementById("pricingChatMessages");
+            const isUser = data.role === "user";
+            const div = document.createElement("div");
+            div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
+            div.innerHTML = `
+                <div class="max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
+                    ${escapeHtml(data.content)}
+                </div>
+            `;
+            listEl.appendChild(div);
+        }
+
+        async function handlePricingSend() {
+            const input = document.getElementById("pricingChatInput");
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const btn = document.getElementById("pricingSendBtn");
+            btn.disabled = true;
+            input.value = "";
+
+            const threadRef = db.collection("pricing_chat").doc("thread").collection("messages");
+
+            try {
+                await threadRef.add({
+                    role: "user",
+                    content: msg,
+                    handledBy: auth.currentUser?.email || "unknown",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                const history = await getRecentThreadHistoryText(threadRef);
+                const promptWithHistory = `Conversation so far:\n${history}\n\nContinue the intake — ask the next missing detail, or give the final quote if you now have everything you need.`;
+                const result = await getAIResponse(promptWithHistory, buildPricingSystemPrompt(), document.getElementById("pricingProviderSelect").value);
+                logUsage(result.provider, result.tokens);
+
+                await threadRef.add({
+                    role: "assistant",
+                    content: result.text,
+                    provider: result.provider,
+                    tokens: result.tokens,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                setStatus("ready", "Ready");
+            } catch (err) {
+                showToast(err.message, true);
+                setStatus("error", "Error");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function clearPricingChat() {
+            try {
+                const snap = await db.collection("pricing_chat").doc("thread").collection("messages").get();
+                const batch = db.batch();
+                snap.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                showToast("Started a new quote");
+            } catch (e) {
+                showToast("Couldn't clear: " + e.message, true);
             }
         }
 
