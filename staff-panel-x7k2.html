@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EGYGRILLZ - Support Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .msg-in { animation: slideIn 0.25s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .sidebar-mask { transition: opacity 0.2s; }
+        .sidebar-panel { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    </style>
+</head>
+<body class="bg-white text-gray-900 h-screen overflow-hidden">
+
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel fixed md:static inset-y-0 left-0 z-40 w-72 bg-gray-50 border-r border-gray-200 flex flex-col transform -translate-x-full md:translate-x-0">
+            <div class="h-16 flex items-center px-5 border-b border-gray-200 bg-white">
+                <svg class="w-7 h-7 mr-3" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6">
+                    <path d="M50 5 L90 25 L90 65 L50 95 L10 65 L10 25 Z"/>
+                    <path d="M50 5 L50 50 M50 50 L90 25 M50 50 L10 25"/>
+                </svg>
+                <div>
+                    <h1 class="font-bold text-sm tracking-widest uppercase">EGYGRILLZ</h1>
+                    <p class="text-[10px] text-gray-400 tracking-wider uppercase">Support Panel</p>
+                </div>
+                <button onclick="toggleSidebar()" class="md:hidden ml-auto text-gray-400 hover:text-black">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="p-3 border-b border-gray-200">
+                <div class="relative">
+                    <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="clientSearch" placeholder="Search clients..." oninput="filterClients()"
+                        class="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-gray-400 transition-colors">
+                </div>
+            </div>
+
+            <div id="clientList" class="flex-1 overflow-y-auto">
+                <div class="text-center py-10 text-gray-400 text-xs">
+                    <p>Loading clients...</p>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-gray-200 bg-white">
+                <button onclick="openSettings()" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium tracking-wide uppercase">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Knowledge Base</span>
+                </button>
+            </div>
+        </aside>
+
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/20 z-30 hidden md:hidden backdrop-blur-sm sidebar-mask"></div>
+
+        <!-- Main -->
+        <main class="flex-1 flex flex-col h-full min-w-0 bg-white">
+            <!-- Header -->
+            <header class="h-16 flex items-center justify-between px-5 border-b border-gray-100 bg-white shrink-0">
+                <div class="flex items-center min-w-0">
+                    <button onclick="toggleSidebar()" class="md:hidden mr-3 p-1.5 -ml-1.5 text-gray-500 hover:bg-gray-100 rounded-md">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    <div class="min-w-0">
+                        <h2 id="currentClientName" class="font-semibold text-sm truncate">New Conversation</h2>
+                        <p id="currentClientStatus" class="text-[11px] text-gray-400 truncate">Enter a client name to begin</p>
+                    </div>
+                </div>
+                <div id="connectionStatus" class="flex items-center space-x-1.5 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-full">
+                    <span class="w-1.5 h-1.5 bg-gray-400 rounded-full" id="statusDot"></span>
+                    <span class="text-[10px] text-gray-500 font-medium uppercase tracking-wider" id="statusText">Ready</span>
+                </div>
+            </header>
+
+            <!-- Chat Area -->
+            <div id="chatArea" class="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-5">
+                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-300">
+                    <svg class="w-12 h-12 mb-4 opacity-30" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    <p class="text-xs tracking-wide uppercase">Select or enter a client to view conversation</p>
+                </div>
+                <div id="messagesList" class="hidden max-w-2xl mx-auto space-y-5 pb-4"></div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="shrink-0 border-t border-gray-100 bg-white px-4 md:px-8 py-4">
+                <div class="max-w-2xl mx-auto">
+                    <div class="flex items-end space-x-3">
+                        <div class="flex-1">
+                            <input type="text" id="clientName" placeholder="Client username..." onchange="onClientChange()"
+                                class="w-full mb-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-gray-400 transition-colors">
+                            <textarea id="clientMsg" rows="2" placeholder="Type the client's message here..."
+                                class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"
+                                onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();handleSend();}"></textarea>
+                        </div>
+                        <button id="sendBtn" onclick="handleSend()"
+                            class="shrink-0 h-[76px] px-5 bg-black text-white rounded-lg hover:bg-gray-800 active:scale-95 transition-all flex flex-col items-center justify-center space-y-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                            <span class="text-[10px] font-medium uppercase tracking-wider">Send</span>
+                        </button>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between">
+                        <span id="providerBadge" class="text-[10px] text-gray-400 font-medium"></span>
+                        <span class="text-[10px] text-gray-300">Shift+Enter for new line</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeSettings()"></div>
+        <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center pointer-events-none">
+            <div class="bg-white w-full md:w-[560px] md:max-h-[80vh] md:rounded-xl rounded-t-xl shadow-2xl pointer-events-auto flex flex-col max-h-[90vh]">
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <h3 class="font-semibold text-sm tracking-wide uppercase">Knowledge Base Settings</h3>
+                    <button onclick="closeSettings()" class="text-gray-400 hover:text-black transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-5">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
+                        Changes update the AI behavior in real-time. All settings are stored in Firestore.
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Working Hours</label>
+                        <input type="text" id="settingWorkingHours" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Turnaround Time</label>
+                        <input type="text" id="settingTurnaround" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Pricing & Policy</label>
+                        <textarea id="settingPricing" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Additional Knowledge / FAQ</label>
+                        <textarea id="settingAdditional" rows="5" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none font-mono text-xs"></textarea>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex space-x-3 rounded-b-xl">
+                    <button onclick="closeSettings()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition text-xs font-medium uppercase tracking-wider">Cancel</button>
+                    <button onclick="saveSettings()" id="saveSettingsBtn" class="flex-1 px-4 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium uppercase tracking-wider">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+        <div class="bg-black text-white px-5 py-3 rounded-lg shadow-2xl flex items-center space-x-3">
+            <span id="toastMessage" class="text-xs font-medium"></span>
+        </div>
+    </div>
+
+    <!-- Login Gate -->
+    <div id="loginGate" class="fixed inset-0 z-[60] bg-white flex items-center justify-center px-6">
+        <div class="w-full max-w-xs">
+            <div class="text-center mb-8">
+                <svg class="w-9 h-9 mx-auto mb-3" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6">
+                    <path d="M50 5 L90 25 L90 65 L50 95 L10 65 L10 25 Z"/>
+                    <path d="M50 5 L50 50 M50 50 L90 25 M50 50 L10 25"/>
+                </svg>
+                <h1 class="font-bold text-sm tracking-widest uppercase">EGYGRILLZ</h1>
+                <p class="text-[10px] text-gray-400 tracking-wider uppercase mt-1">Staff Sign In</p>
+            </div>
+            <div class="space-y-3">
+                <input type="email" id="loginEmail" placeholder="Email" autocomplete="username"
+                    class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors">
+                <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password"
+                    onkeydown="if(event.key==='Enter'){handleLogin();}"
+                    class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors">
+                <button id="loginBtn" onclick="handleLogin()"
+                    class="w-full px-4 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium uppercase tracking-wider">
+                    Sign In
+                </button>
+                <p id="loginError" class="text-[11px] text-red-500 text-center hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIG ====================
+        // Firebase web config is safe to expose publicly — it is NOT a secret,
+        // it just identifies which Firebase project to talk to. Real access
+        // control is enforced by Firestore Security Rules (see firestore.rules).
+        const firebaseConfig = {
+            apiKey: "AIzaSyAaVO_yopB7ETksobgSFz1ow3yBhVjTc4M",
+            authDomain: "egygrillz-clientele-assistant.firebaseapp.com",
+            projectId: "egygrillz-clientele-assistant",
+            storageBucket: "egygrillz-clientele-assistant.firebasestorage.app",
+            messagingSenderId: "257135963013",
+            appId: "1:257135963013:web:2b479dbeff079a5d0372ec"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // The Cloudflare Worker URL that proxies Gemini/Groq. The Gemini and
+        // Groq API keys live ONLY in the Worker's environment now — never here.
+        const WORKER_URL = "https://egygrillz-clientele-assistant.egygrillzplatformsassistant.workers.dev";
+
+        let currentSettings = {
+            workingHours: "Monday to Saturday, 12 PM - 8 PM",
+            turnaround: "5-7 business days for custom grillz",
+            pricing: "Studio fitting by appointment or mold kit delivery.",
+            additional: ""
+        };
+
+        let currentClient = "";
+        let unsubMessages = null;
+        let authReady = false;
+
+        // ==================== AUTH ====================
+        // Real email/password login — only accounts you create manually in
+        // Firebase Console (Authentication -> Users -> Add user) can sign in.
+        // There is no public sign-up, so a random visitor with the URL cannot get in.
+        auth.onAuthStateChanged(user => {
+            authReady = !!user;
+            const gate = document.getElementById("loginGate");
+            if (authReady) {
+                gate.classList.add("hidden");
+                loadAllClients();
+                loadSettings();
+            } else {
+                gate.classList.remove("hidden");
+            }
+        });
+
+        function handleLogin() {
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document.getElementById("loginPassword").value;
+            const btn = document.getElementById("loginBtn");
+            const errEl = document.getElementById("loginError");
+            errEl.classList.add("hidden");
+
+            if (!email || !password) {
+                errEl.innerText = "Enter email and password";
+                errEl.classList.remove("hidden");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Signing in...";
+
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(err => {
+                    errEl.innerText = "Sign in failed — check email/password";
+                    errEl.classList.remove("hidden");
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerText = "Sign In";
+                });
+        }
+
+        // ==================== SYSTEM PROMPT ====================
+        function buildSystemPrompt() {
+            return `You are the official customer support assistant for EGYGRILLZ (custom dental jewelry and grillz brand).
+Your tone is professional, polite, concise, and clear.
+You must ALWAYS respond strictly in ENGLISH.
+
+Business Details & Knowledge Base:
+- Brand Name: EGYGRILLZ
+- Working Hours: ${currentSettings.workingHours}
+- Pricing & Policy: ${currentSettings.pricing}
+- Turnaround Time: ${currentSettings.turnaround}
+${currentSettings.additional ? `\nAdditional Information:\n${currentSettings.additional}` : ''}
+
+Response Structure Constraints:
+1. Short, polite greeting addressing the client.
+2. Direct, precise answer to the client's query based on the Knowledge Base.
+3. Clear Next Step / Call to Action (e.g., booking an appointment, choosing metals/designs).`;
+        }
+
+        // ==================== AI CALL (via Worker) ====================
+        async function getAIResponse(userMessage) {
+            setStatus("generating", "Generating...");
+            const res = await fetch(WORKER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    systemPrompt: buildSystemPrompt(),
+                    userMessage
+                })
+            });
+
+            if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                throw new Error(errBody.error || `Worker error (${res.status})`);
+            }
+
+            const data = await res.json();
+            if (!data.text) throw new Error("Empty response from AI");
+            return { text: data.text, provider: data.provider };
+        }
+
+        // ==================== CHAT LOGIC ====================
+        async function handleSend() {
+            if (!authReady) {
+                showToast("Still connecting, try again in a second");
+                return;
+            }
+
+            const clientName = document.getElementById("clientName").value.trim();
+            const clientMsg = document.getElementById("clientMsg").value.trim();
+            const btn = document.getElementById("sendBtn");
+
+            if (!clientName || !clientMsg) {
+                showToast("Enter client name and message");
+                return;
+            }
+
+            if (clientName !== currentClient) {
+                currentClient = clientName;
+                subscribeToMessages(clientName);
+                updateHeader(clientName);
+            }
+
+            btn.disabled = true;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg><span class="text-[10px]">...</span>`;
+
+            try {
+                // Save user message
+                await db.collection("clients").doc(clientName).collection("messages").add({
+                    role: "user",
+                    content: clientMsg,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Update client metadata
+                await db.collection("clients").doc(clientName).set({
+                    client_name: clientName,
+                    last_updated: firebase.firestore.FieldValue.serverTimestamp(),
+                    created_at: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                document.getElementById("clientMsg").value = "";
+
+                // Get AI response (through the Worker, keys stay server-side)
+                const result = await getAIResponse(clientMsg);
+
+                // Save AI response
+                await db.collection("clients").doc(clientName).collection("messages").add({
+                    role: "assistant",
+                    content: result.text,
+                    provider: result.provider,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                document.getElementById("providerBadge").innerText = `Generated via ${result.provider}`;
+                setStatus("ready", "Ready");
+                loadAllClients();
+
+            } catch (err) {
+                showToast(err.message, true);
+                setStatus("error", "Error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        function onClientChange() {
+            const name = document.getElementById("clientName").value.trim();
+            if (name && name !== currentClient) {
+                currentClient = name;
+                subscribeToMessages(name);
+                updateHeader(name);
+            }
+        }
+
+        function subscribeToMessages(clientName) {
+            if (unsubMessages) unsubMessages();
+
+            const listEl = document.getElementById("messagesList");
+            const emptyEl = document.getElementById("emptyState");
+
+            emptyEl.classList.add("hidden");
+            listEl.classList.remove("hidden");
+            listEl.innerHTML = "";
+
+            unsubMessages = db.collection("clients").doc(clientName).collection("messages")
+                .orderBy("timestamp", "asc")
+                .onSnapshot(snapshot => {
+                    listEl.innerHTML = "";
+                    if (snapshot.empty) {
+                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">No messages yet. Send the first one.</div>`;
+                        return;
+                    }
+                    snapshot.forEach(doc => renderMessage(doc.data()));
+                    scrollToBottom();
+                }, err => {
+                    console.error(err);
+                    showToast("Failed to load messages", true);
+                });
+        }
+
+        function renderMessage(data) {
+            const listEl = document.getElementById("messagesList");
+            const isUser = data.role === "user";
+            const time = data.timestamp?.toDate ? formatTime(data.timestamp.toDate()) : "";
+
+            const div = document.createElement("div");
+            div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
+
+            if (isUser) {
+                div.innerHTML = `
+                    <div class="max-w-[85%] md:max-w-[70%]">
+                        <div class="bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed">
+                            ${escapeHtml(data.content)}
+                        </div>
+                        <div class="text-right mt-1 mr-1">
+                            <span class="text-[10px] text-gray-400">Client &middot; ${time}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="max-w-[85%] md:max-w-[70%]">
+                        <div class="bg-black text-white px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed">
+                            ${escapeHtml(data.content)}
+                        </div>
+                        <div class="mt-1 ml-1 flex items-center space-x-2">
+                            <span class="text-[10px] text-gray-400">EGYGRILLZ AI &middot; ${time}</span>
+                            ${data.provider ? `<span class="text-[10px] text-gray-300 bg-gray-100 px-1.5 py-0.5 rounded">${data.provider}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            listEl.appendChild(div);
+        }
+
+        function scrollToBottom() {
+            const area = document.getElementById("chatArea");
+            area.scrollTop = area.scrollHeight;
+        }
+
+        // ==================== SIDEBAR ====================
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("sidebarOverlay");
+            const isOpen = !sidebar.classList.contains("-translate-x-full");
+            if (isOpen) {
+                sidebar.classList.add("-translate-x-full");
+                overlay.classList.add("hidden");
+            } else {
+                sidebar.classList.remove("-translate-x-full");
+                overlay.classList.remove("hidden");
+            }
+        }
+
+        async function loadAllClients() {
+            try {
+                const snap = await db.collection("clients").orderBy("last_updated", "desc").limit(50).get();
+                const listEl = document.getElementById("clientList");
+
+                if (snap.empty) {
+                    listEl.innerHTML = `<div class="text-center py-10 text-gray-400 text-xs"><p>No clients yet</p></div>`;
+                    return;
+                }
+
+                listEl.innerHTML = "";
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const name = doc.id;
+                    const updated = data.last_updated?.toDate ? data.last_updated.toDate() : new Date();
+
+                    const item = document.createElement("div");
+                    item.className = `group flex items-center space-x-3 px-4 py-3 cursor-pointer transition border-l-2 ${name === currentClient ? "bg-gray-100 border-black" : "border-transparent hover:bg-gray-100 hover:border-gray-300"}`;
+                    item.onclick = () => selectClient(name);
+
+                    item.innerHTML = `
+                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs shrink-0">
+                            ${name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-xs text-gray-900 truncate">${name}</p>
+                            <p class="text-[10px] text-gray-400">${timeAgo(updated)}</p>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function filterClients() {
+            const q = document.getElementById("clientSearch").value.toLowerCase();
+            const items = document.getElementById("clientList").children;
+            Array.from(items).forEach(item => {
+                const name = item.querySelector("p")?.innerText.toLowerCase() || "";
+                item.style.display = name.includes(q) ? "flex" : "none";
+            });
+        }
+
+        function selectClient(name) {
+            document.getElementById("clientName").value = name;
+            currentClient = name;
+            updateHeader(name);
+            subscribeToMessages(name);
+            loadAllClients();
+            if (window.innerWidth < 768) toggleSidebar();
+        }
+
+        function updateHeader(name) {
+            document.getElementById("currentClientName").innerText = name;
+            document.getElementById("currentClientStatus").innerText = "Active conversation";
+        }
+
+        // ==================== SETTINGS ====================
+        async function loadSettings() {
+            try {
+                const doc = await db.collection("settings").doc("knowledge_base").get();
+                if (doc.exists) currentSettings = { ...currentSettings, ...doc.data() };
+            } catch (e) { console.error(e); }
+            populateSettings();
+        }
+
+        function populateSettings() {
+            document.getElementById("settingWorkingHours").value = currentSettings.workingHours;
+            document.getElementById("settingTurnaround").value = currentSettings.turnaround;
+            document.getElementById("settingPricing").value = currentSettings.pricing;
+            document.getElementById("settingAdditional").value = currentSettings.additional;
+        }
+
+        function openSettings() {
+            populateSettings();
+            document.getElementById("settingsModal").classList.remove("hidden");
+        }
+
+        function closeSettings() {
+            document.getElementById("settingsModal").classList.add("hidden");
+        }
+
+        async function saveSettings() {
+            const btn = document.getElementById("saveSettingsBtn");
+            const original = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            currentSettings = {
+                workingHours: document.getElementById("settingWorkingHours").value,
+                turnaround: document.getElementById("settingTurnaround").value,
+                pricing: document.getElementById("settingPricing").value,
+                additional: document.getElementById("settingAdditional").value
+            };
+
+            try {
+                await db.collection("settings").doc("knowledge_base").set({
+                    ...currentSettings,
+                    updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast("Settings saved");
+                closeSettings();
+            } catch (e) {
+                showToast("Save failed: " + e.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = original;
+            }
+        }
+
+        // ==================== UTILITIES ====================
+        function showToast(msg, isError) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toastMessage").innerText = msg;
+            toast.querySelector("div").className = isError
+                ? "bg-gray-800 text-white px-5 py-3 rounded-lg shadow-2xl flex items-center space-x-3"
+                : "bg-black text-white px-5 py-3 rounded-lg shadow-2xl flex items-center space-x-3";
+            toast.classList.remove("translate-y-20", "opacity-0");
+            setTimeout(() => toast.classList.add("translate-y-20", "opacity-0"), 2500);
+        }
+
+        function setStatus(type, text) {
+            const dot = document.getElementById("statusDot");
+            const txt = document.getElementById("statusText");
+            txt.innerText = text;
+            dot.className = `w-1.5 h-1.5 rounded-full ${type === "ready" ? "bg-gray-400" : type === "generating" ? "bg-black animate-pulse" : "bg-gray-600"}`;
+        }
+
+        function escapeHtml(text) {
+            const d = document.createElement("div");
+            d.innerText = text;
+            return d.innerHTML;
+        }
+
+        function formatTime(d) {
+            return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+
+        function timeAgo(d) {
+            const s = Math.floor((new Date() - d) / 1000);
+            if (s < 60) return "Just now";
+            const m = Math.floor(s / 60);
+            if (m < 60) return `${m}m ago`;
+            const h = Math.floor(m / 60);
+            if (h < 24) return `${h}h ago`;
+            return `${Math.floor(h / 24)}d ago`;
+        }
+
+        // ==================== INIT ====================
+        // loadAllClients() and loadSettings() now fire from onAuthStateChanged above,
+        // once anonymous sign-in completes, so Firestore reads never race auth.
+        document.addEventListener("DOMContentLoaded", () => {
+            setStatus("ready", "Ready");
+        });
+    </script>
+</body>
+</html>
