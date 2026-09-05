@@ -103,7 +103,17 @@
             <!-- Input Area -->
             <div class="shrink-0 border-t border-gray-100 bg-white px-4 md:px-8 py-4">
                 <div class="max-w-2xl mx-auto">
+                    <div id="imagePreviewBar" class="hidden mb-2 flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                        <img id="imagePreviewThumb" class="w-10 h-10 object-cover rounded" />
+                        <span class="text-[11px] text-gray-500 flex-1 truncate">Image attached — AI will look at it (Gemini only)</span>
+                        <button onclick="clearPendingImage()" class="text-gray-400 hover:text-red-500 text-xs px-1">✕</button>
+                    </div>
                     <div class="flex items-end space-x-3">
+                        <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                        <button onclick="document.getElementById('imageInput').click()"
+                            class="shrink-0 h-[76px] w-11 border border-gray-200 rounded-lg text-gray-400 hover:text-gray-700 hover:border-gray-400 transition flex items-center justify-center" title="Attach image">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </button>
                         <div class="flex-1">
                             <input type="text" id="clientName" placeholder="Client username..." onchange="onClientChange()"
                                 class="w-full mb-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-gray-400 transition-colors">
@@ -118,8 +128,12 @@
                         </button>
                     </div>
                     <div class="mt-2 flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-3">
                             <span id="providerBadge" class="text-[10px] text-gray-400 font-medium"></span>
+                            <label class="flex items-center space-x-1.5 cursor-pointer">
+                                <input type="checkbox" id="pricingModeToggle" class="w-3.5 h-3.5 accent-black">
+                                <span class="text-[10px] text-gray-500 font-medium">Pricing Mode</span>
+                            </label>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="text-[10px] text-gray-400">AI:</label>
@@ -320,6 +334,53 @@ List every rule explicitly with real numbers — the AI can only calculate corre
         let currentClient = "";
         let unsubMessages = null;
         let authReady = false;
+        let pendingImage = null; // { file, base64 (no prefix), mimeType, previewUrl }
+
+        // Reuses the same Cloudinary account already set up for the EGYGRILLZ website
+        const CLOUDINARY_CLOUD_NAME = "dav6j6cgi";
+        const CLOUDINARY_UPLOAD_PRESET = "egygrillz_upload";
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 6 * 1024 * 1024) {
+                showToast("Image too large (max 6MB)", true);
+                event.target.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = reader.result; // data:image/xxx;base64,AAAA...
+                const base64 = result.split(",")[1];
+                pendingImage = { file, base64, mimeType: file.type, previewUrl: result };
+
+                document.getElementById("imagePreviewThumb").src = result;
+                document.getElementById("imagePreviewBar").classList.remove("hidden");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearPendingImage() {
+            pendingImage = null;
+            document.getElementById("imageInput").value = "";
+            document.getElementById("imagePreviewBar").classList.add("hidden");
+        }
+
+        async function uploadImageToCloudinary(file) {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: "POST",
+                body: formData
+            });
+            if (!res.ok) throw new Error("Image upload failed");
+            const data = await res.json();
+            return data.secure_url;
+        }
 
         // ==================== AUTH ====================
         // Real email/password login — only accounts you create manually in
@@ -384,6 +445,41 @@ Response Structure Constraints:
 3. Clear Next Step / Call to Action (e.g., booking an appointment, choosing metals/designs).`;
         }
 
+        function buildPricingSystemPrompt() {
+            return `You are the EGYGRILLZ pricing assistant, running a guided quote intake conversation with a client.
+Your ONLY goal in this mode is to gather the exact details needed to calculate a final price, then give that price.
+
+Rules:
+1. Ask ONE clear, short question at a time — never a long list of questions at once.
+2. Use the "Detailed Pricing Calculation Rules" below to know exactly which details you need (material/karat, number of teeth, top/bottom, gems, engraving, quantity, etc.). Do not ask about anything that isn't needed for the calculation.
+3. Keep track of what the client has already told you in this conversation — never re-ask something already answered.
+4. Once you have every detail the pricing rules require, STOP asking questions and give a final quote:
+   - Show a clear breakdown (each line item and its cost)
+   - Show the final total, following the rounding rule exactly
+   - End with a short next-step (e.g. booking a fitting or paying a deposit)
+5. Always respond in ENGLISH, professional and concise tone.
+6. If the client's message is vague or off-topic, gently steer back to the next missing detail.
+
+Detailed Pricing Calculation Rules:
+${currentSettings.pricingRules || "(No pricing rules configured yet — ask the client for the details anyway, but flag to staff that pricing rules need to be filled in Knowledge Base settings.)"}
+
+Other Business Context:
+- Working Hours: ${currentSettings.workingHours}
+- Turnaround Time: ${currentSettings.turnaround}
+${currentSettings.additional ? `- Additional Info: ${currentSettings.additional}` : ''}`;
+        }
+
+        async function getRecentHistoryText(clientName, limit = 14) {
+            const snap = await db.collection("clients").doc(clientName).collection("messages")
+                .orderBy("timestamp", "desc").limit(limit).get();
+            const lines = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                lines.push(`${d.role === "user" ? "Client" : "EGYGRILLZ"}: ${d.content}`);
+            });
+            return lines.reverse().join("\n");
+        }
+
         // ==================== AI CALL (via Worker) ====================
         async function getAIResponse(userMessage, customSystemPrompt, forceProvider) {
             setStatus("generating", "Generating...");
@@ -394,6 +490,28 @@ Response Structure Constraints:
                     systemPrompt: customSystemPrompt || buildSystemPrompt(),
                     userMessage,
                     provider: forceProvider || undefined
+                })
+            });
+
+            if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                throw new Error(errBody.error || `Worker error (${res.status})`);
+            }
+
+            const data = await res.json();
+            if (!data.text) throw new Error("Empty response from AI");
+            return { text: data.text, provider: data.provider, tokens: data.tokens || 0 };
+        }
+
+        async function getAIResponseWithImage(userMessage, imageData) {
+            setStatus("generating", "Analyzing image...");
+            const res = await fetch(WORKER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    systemPrompt: buildSystemPrompt(),
+                    userMessage,
+                    image: { mimeType: imageData.mimeType, data: imageData.base64 }
                 })
             });
 
@@ -433,9 +551,10 @@ Response Structure Constraints:
             const clientName = document.getElementById("clientName").value.trim();
             const clientMsg = document.getElementById("clientMsg").value.trim();
             const btn = document.getElementById("sendBtn");
+            const hasImage = !!pendingImage;
 
-            if (!clientName || !clientMsg) {
-                showToast("Enter client name and message");
+            if (!clientName || (!clientMsg && !hasImage)) {
+                showToast("Enter client name and a message or image");
                 return;
             }
 
@@ -449,11 +568,24 @@ Response Structure Constraints:
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg><span class="text-[10px]">...</span>`;
 
+            const imageToSend = pendingImage;
+            clearPendingImage();
+
             try {
+                let imageUrl = null;
+                if (imageToSend) {
+                    try {
+                        imageUrl = await uploadImageToCloudinary(imageToSend.file);
+                    } catch (e) {
+                        console.warn("Cloudinary upload failed, continuing without stored URL:", e);
+                    }
+                }
+
                 // Save user message
                 await db.collection("clients").doc(clientName).collection("messages").add({
                     role: "user",
-                    content: clientMsg,
+                    content: clientMsg || "(sent an image)",
+                    imageUrl: imageUrl || null,
                     handledBy: auth.currentUser?.email || "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -469,7 +601,17 @@ Response Structure Constraints:
 
                 // Get AI response (through the Worker, keys stay server-side)
                 const chosenProvider = document.getElementById("providerSelect").value;
-                const result = await getAIResponse(clientMsg, null, chosenProvider);
+                const pricingMode = document.getElementById("pricingModeToggle").checked;
+                let result;
+                if (imageToSend) {
+                    result = await getAIResponseWithImage(clientMsg || "Please look at this photo and help.", imageToSend);
+                } else if (pricingMode) {
+                    const history = await getRecentHistoryText(clientName);
+                    const promptWithHistory = `Conversation so far:\n${history}\n\nContinue the intake — ask the next missing detail, or give the final quote if you now have everything you need.`;
+                    result = await getAIResponse(promptWithHistory, buildPricingSystemPrompt(), chosenProvider);
+                } else {
+                    result = await getAIResponse(clientMsg, null, chosenProvider);
+                }
                 logUsage(result.provider, result.tokens);
 
                 // Save AI response
@@ -541,6 +683,7 @@ Response Structure Constraints:
             if (isUser) {
                 div.innerHTML = `
                     <div class="max-w-[85%] md:max-w-[70%]">
+                        ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-40 h-40 object-cover rounded-xl mb-1.5 ml-auto block" />` : ''}
                         <div class="bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed">
                             ${escapeHtml(data.content)}
                         </div>
