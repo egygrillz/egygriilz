@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -329,32 +330,236 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                         <p class="text-[10px] text-gray-400 mt-0.5">Internal quote calculator — not saved to any client's chat.</p>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <button onclick="clearPricingChat()" class="text-[10px] text-gray-400 hover:text-black transition uppercase tracking-wider font-medium">New Quote</button>
                         <button onclick="closePricingChat()" class="text-gray-400 hover:text-black transition">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
                 </div>
-                <div id="pricingChatMessages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                    <div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants — the assistant will ask for missing details and calculate the quote</div>
-                </div>
-                <div class="shrink-0 border-t border-gray-100 px-6 py-4">
-                    <div class="flex items-end space-x-3">
-                        <textarea id="pricingChatInput" rows="2" placeholder="e.g. Client wants a full top grillz, solid gold..."
-                            class="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"
-                            onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();handlePricingSend();}"></textarea>
-                        <button id="pricingSendBtn" onclick="handlePricingSend()"
-                            class="shrink-0 h-[52px] px-4 bg-black text-white rounded-lg hover:bg-gray-800 active:scale-95 transition-all text-[10px] font-medium uppercase tracking-wider">
-                            Send
-                        </button>
+
+                <div class="px-6 pt-3 shrink-0 flex items-center justify-between border-b border-gray-100">
+                    <div class="flex space-x-1">
+                        <button id="pricingTabChatBtn" onclick="switchPricingTab('chat')" class="px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-black text-black">AI Chat</button>
+                        <button id="pricingTabCalcBtn" onclick="switchPricingTab('calc')" class="px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-transparent text-gray-400 hover:text-gray-700">Exact Calculator</button>
                     </div>
-                    <div class="mt-2 flex items-center justify-end space-x-2">
-                        <label class="text-[10px] text-gray-400">AI:</label>
-                        <select id="pricingProviderSelect" class="text-[10px] border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:border-gray-400">
-                            <option value="">Auto (fallback)</option>
-                            <option value="gemini">Gemini</option>
-                            <option value="groq">Groq</option>
-                                                    </select>
+                    <button id="pricingNewQuoteBtn" onclick="clearPricingChat()" class="text-[10px] text-gray-400 hover:text-black transition uppercase tracking-wider font-medium pb-2">New Quote</button>
+                </div>
+
+                <!-- AI CHAT PANEL -->
+                <div id="pricingTabChat" class="flex-1 flex flex-col min-h-0">
+                    <div id="pricingChatMessages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                        <div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants — the assistant will ask for missing details and calculate the quote</div>
+                    </div>
+                    <div class="shrink-0 border-t border-gray-100 px-6 py-4">
+                        <div class="bg-amber-50 border border-amber-200 text-amber-700 text-[10px] rounded-lg px-3 py-2 mb-2">
+                            AI math can occasionally slip on complex quotes. Double-check the final total on the <button onclick="switchPricingTab('calc')" class="underline font-medium">Exact Calculator</button> tab before quoting the client.
+                        </div>
+                        <div class="flex items-end space-x-3">
+                            <textarea id="pricingChatInput" rows="2" placeholder="e.g. Client wants a full top grillz, solid gold..."
+                                class="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"
+                                onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();handlePricingSend();}"></textarea>
+                            <button id="pricingSendBtn" onclick="handlePricingSend()"
+                                class="shrink-0 h-[52px] px-4 bg-black text-white rounded-lg hover:bg-gray-800 active:scale-95 transition-all text-[10px] font-medium uppercase tracking-wider">
+                                Send
+                            </button>
+                        </div>
+                        <div class="mt-2 flex items-center justify-end space-x-2">
+                            <label class="text-[10px] text-gray-400">AI:</label>
+                            <select id="pricingProviderSelect" class="text-[10px] border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:border-gray-400">
+                                <option value="">Auto (fallback)</option>
+                                <option value="gemini">Gemini</option>
+                                <option value="groq">Groq</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EXACT CALCULATOR PANEL -->
+                <div id="pricingTabCalc" class="hidden flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    <p class="text-[10px] text-gray-400">Deterministic — follows the pricing spec exactly, every time. Use this for the number you actually quote.</p>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Material</label>
+                            <select id="calcMaterial" onchange="onCalcMaterialChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="chrome">Cobalt Chrome</option>
+                                <option value="titanium">Titanium</option>
+                                <option value="silver">Sterling Silver 925</option>
+                                <option value="gold">Gold</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Teeth (1–16)</label>
+                            <input type="number" id="calcTeeth" min="1" max="16" value="6" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                        </div>
+                    </div>
+
+                    <div id="calcGoldWrap" class="hidden grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Karat</label>
+                            <select id="calcKarat" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="10">10K</option>
+                                <option value="14">14K</option>
+                                <option value="18" selected>18K</option>
+                                <option value="21">21K</option>
+                                <option value="22">22K</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Gold EGP/g</label>
+                            <input type="number" id="calcGoldPrice" placeholder="Ask staff for today's rate" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Design Level</label>
+                        <select id="calcLevel" onchange="onCalcLevelChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                            <option value="0.5">0.5 — Bars (half base, no design %)</option>
+                            <option value="1" selected>1 — Open face (+0%)</option>
+                            <option value="2">2 — More detail (+10%)</option>
+                            <option value="3">3 — Mid detail (+15%)</option>
+                            <option value="4">4 — Complex (+25%)</option>
+                            <option value="5">5 — Scorpion / heavy detail (+40%)</option>
+                            <option value="6">6 — Ultimate (+60%)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Stones</label>
+                        <select id="calcStonesMode" onchange="onCalcStonesChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                            <option value="none">None</option>
+                            <option value="accent">Accent (per stone)</option>
+                            <option value="fulliced">Full iced (per tooth)</option>
+                        </select>
+                        <p id="calcNoStonesNote" class="hidden text-[10px] text-gray-400 mt-1">Chrome and Titanium don't take stones.</p>
+                    </div>
+
+                    <div id="calcAccentWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Count</label>
+                                <input type="number" id="calcAccentCount" min="1" value="1" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Type</label>
+                                <select id="calcAccentType" onchange="onCalcAccentTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                    <option value="cz">CZ</option>
+                                    <option value="moissanite">Moissanite</option>
+                                    <option value="labgrown">Lab-Grown</option>
+                                    <option value="natural">Natural</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Setting</label>
+                                <select id="calcAccentSetting" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                    <option value="flush">Flush (150)</option>
+                                    <option value="twoprong">2-Prong (175)</option>
+                                    <option value="threeprong">3-Prong (200)</option>
+                                    <option value="fourprong">4-Prong (200)</option>
+                                    <option value="sixprong">6-Prong (220)</option>
+                                    <option value="bezelfull">Bezel full (250)</option>
+                                    <option value="bezelhalf">Bezel half (225)</option>
+                                    <option value="bar">Bar setting (200)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="calcAccentCustomPriceWrap" class="hidden">
+                            <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/stone) — ask staff</label>
+                            <input type="number" id="calcAccentCustomPrice" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                        </div>
+                    </div>
+
+                    <div id="calcFullIcedWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
+                        <div id="calcFullIcedBarsNote" class="hidden text-[10px] text-gray-500">Level 0.5 Bars + full iced uses a fixed 400 EGP/tooth — no type/coverage needed.</div>
+                        <div id="calcFullIcedNormalFields" class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Type</label>
+                                <select id="calcFullType" onchange="onCalcFullTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                    <option value="cz">CZ</option>
+                                    <option value="moissanite">Moissanite</option>
+                                    <option value="labgrown">Lab-Grown</option>
+                                    <option value="natural">Natural</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Coverage</label>
+                                <select id="calcCoverage" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                    <option value="standardpave">Standard Pave (1000)</option>
+                                    <option value="frenchpave">French Pave (1100)</option>
+                                    <option value="micropave">Micro-Pave (1200)</option>
+                                    <option value="channel">Channel (1500)</option>
+                                    <option value="invisible">Invisible (2500)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="calcFullCustomPriceWrap" class="hidden">
+                            <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/tooth) — ask staff</label>
+                            <input type="number" id="calcFullCustomPrice" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Plating</label>
+                            <select id="calcPlating" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="none">None</option>
+                                <option value="blackgold">Black gold (400)</option>
+                                <option value="whitegold">White gold (400)</option>
+                                <option value="rosegold">Rose gold (300)</option>
+                                <option value="silverplating">Silver plating (200)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Enamel</label>
+                            <select id="calcEnamel" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="none">None</option>
+                                <option value="single">Single (200)</option>
+                                <option value="multi">Multi (350)</option>
+                                <option value="master">Master (750)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Engraving</label>
+                            <select id="calcEngraving" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="none">None</option>
+                                <option value="small">Small (200)</option>
+                                <option value="medium">Medium (450)</option>
+                                <option value="large">Large (700)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Timeline</label>
+                            <select id="calcTimeline" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="standard">Standard (+0%)</option>
+                                <option value="rush">Rush (+25%)</option>
+                                <option value="emergency">Emergency (+50%)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Mold</label>
+                            <select id="calcMold" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="none">None</option>
+                                <option value="normalperarch">Normal, per arch (200)</option>
+                                <option value="digitalfullmouth">Digital full mouth (1500)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="runCalculator()" class="w-full py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium uppercase tracking-wider">Calculate Exact Quote</button>
+
+                    <div id="calcResult" class="hidden border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <pre id="calcResultText" class="text-xs whitespace-pre-wrap font-mono text-gray-800"></pre>
+                        <div class="mt-3">
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Client name (for PDF, optional)</label>
+                            <input type="text" id="calcClientNameForPdf" placeholder="e.g. Ahmed Mostafa" class="w-full px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-xs">
+                        </div>
+                        <div class="flex space-x-2 mt-3">
+                            <button onclick="copyText(document.getElementById('calcResultText').innerText, 'Copied')" class="flex-1 py-2 border border-gray-300 rounded-lg text-[10px] uppercase tracking-wider hover:bg-white">Copy</button>
+                            <button onclick="downloadQuotationPdf()" class="flex-1 py-2 border border-gray-300 rounded-lg text-[10px] uppercase tracking-wider hover:bg-white">Download PDF</button>
+                            <button onclick="insertCalcResultIntoPricingChat()" class="flex-1 py-2 bg-black text-white rounded-lg text-[10px] uppercase tracking-wider hover:bg-gray-800">Add to AI Chat</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -639,6 +844,7 @@ ${currentSettings.restrictions}
 CRITICAL CONSISTENCY RULES (apply identically on every model):
 - Answer ONLY from the Knowledge Base below. If something is not written there, say you will confirm with the team — do NOT invent prices, policies, or facts.
 - Always reply in ENGLISH.
+- BE EXTREMELY BRIEF. Answer only what was asked — nothing more. No unsolicited extra info, no restating the question, no filler sentences. If the answer fits in one sentence, use one sentence. Never pad a short question with a long reply.
 - Keep every reply short, straightforward, elegant, and respectful.
 - Be deterministic: same facts, same policy, same numbers every time. Do not add creative extras.
 - For ANY gold price or lab-grown/natural diamond price: ASK for today's rate before giving a final total (see pricing rules).
@@ -655,9 +861,9 @@ KNOWLEDGE BASE:
 ${kb || "(Knowledge base empty — ask staff to fill Knowledge Base settings.)"}
 
 Response structure:
-1. Short polite greeting (one line).
-2. Direct answer using only the Knowledge Base.
-3. One clear next step / CTA when relevant (book fitting, send design refs, confirm material).`;
+- Answer the question directly and briefly — that's the priority, not a fixed template.
+- A greeting is only needed at the very start of a conversation, not on every message.
+- Only add a next step / CTA when it's genuinely relevant (e.g. they're ready to book or need to send design refs) — skip it otherwise.`;
         }
 
         function buildPricingSystemPrompt() {
@@ -666,10 +872,13 @@ Response structure:
 CRITICAL:
 - Follow Pricing Calculation Rules EXACTLY. No invented numbers.
 - Always English. Short, elegant, straightforward.
+- BE EXTREMELY BRIEF. One question = one short line. Never explain the pricing logic back to the client unless they ask why.
 - Ask ONE short question at a time. Never a long list.
 - Never re-ask what was already answered in this thread.
 - Gold EGP/g and lab-grown/natural diamond rates: ASK for today's numbers before a final total.
 - Same math every time. Round final totals UP to nearest 50 EGP.
+- IMPORTANT: once you have all the details, give your best breakdown and total, but also explicitly tell staff to confirm the exact total on the built-in "Exact Calculator" tab (deterministic, never wrong) before quoting the client — your arithmetic is a draft, the calculator is the source of truth.
+- If a message starts with "[Exact Calculator result — use this number]", that number is already verified — restate it as the confirmed quote instead of recalculating.
 
 STONE / ICED RULES (do not get confused):
 - Level 0.5 Bars: material = half base. If also full iced on Bars: stoneCost = teeth × 400 only (no diamond count, no pave table).
@@ -1139,6 +1348,7 @@ ${currentSettings.materials || ""}
             return `${buildRestrictionsBlock()}You are an internal assistant for EGYGRILLZ staff (NOT a client).
 Answer plainly. You may help with pricing math using the pricing rules, drafts, and quick ops questions.
 Always English. Do not invent missing knowledge — say what must be confirmed.
+BE EXTREMELY BRIEF. Answer only what was asked, in as few words as possible. No padding, no restating the question.
 
 About:
 ${currentSettings.about || ""}
@@ -1341,6 +1551,331 @@ ${currentSettings.generalInfo || ""}
                 showToast("Started a new quote");
             } catch (e) {
                 showToast("Couldn't clear: " + e.message, true);
+            }
+        }
+
+        function switchPricingTab(tab) {
+            const chatBtn = document.getElementById("pricingTabChatBtn");
+            const calcBtn = document.getElementById("pricingTabCalcBtn");
+            const chatPanel = document.getElementById("pricingTabChat");
+            const calcPanel = document.getElementById("pricingTabCalc");
+            const newQuoteBtn = document.getElementById("pricingNewQuoteBtn");
+
+            if (tab === "calc") {
+                chatPanel.classList.add("hidden");
+                calcPanel.classList.remove("hidden");
+                chatBtn.className = "px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-transparent text-gray-400 hover:text-gray-700";
+                calcBtn.className = "px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-black text-black";
+                newQuoteBtn.classList.add("hidden");
+            } else {
+                chatPanel.classList.remove("hidden");
+                calcPanel.classList.add("hidden");
+                calcBtn.className = "px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-transparent text-gray-400 hover:text-gray-700";
+                chatBtn.className = "px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-black text-black";
+                newQuoteBtn.classList.remove("hidden");
+            }
+        }
+
+        // ==================== EXACT PRICING CALCULATOR ====================
+        // Deterministic implementation of EgyGrillz_Pricing_Engine.md (v4).
+        // This never guesses — same inputs always give the same, spec-correct total.
+        const CALC_MATERIAL_BASE = { chrome: 1000, titanium: 2800, silver: 1600 };
+        const CALC_GOLD_KARAT = {
+            "10": { purity: 0.417, margin: 2.5 },
+            "14": { purity: 0.583, margin: 2.6 },
+            "18": { purity: 0.750, margin: 2.8 },
+            "21": { purity: 0.875, margin: 3.0 },
+            "22": { purity: 0.917, margin: 3.2 }
+        };
+        const CALC_DESIGN_PCT = { "0.5": 0, "1": 0, "2": 10, "3": 15, "4": 25, "5": 40, "6": 60 };
+        const CALC_ACCENT_PRICE = { cz: 50, moissanite: 375, labgrown: null, natural: null };
+        const CALC_SETTING_PRICE = { flush: 150, twoprong: 175, threeprong: 200, fourprong: 200, sixprong: 220, bezelfull: 250, bezelhalf: 225, bar: 200 };
+        const CALC_FULL_PRICE = { cz: 0, moissanite: 500, labgrown: null, natural: null };
+        const CALC_COVERAGE_PRICE = { standardpave: 1000, frenchpave: 1100, micropave: 1200, channel: 1500, invisible: 2500 };
+        const CALC_PLATING = { none: 0, blackgold: 400, whitegold: 400, rosegold: 300, silverplating: 200 };
+        const CALC_ENAMEL = { none: 0, single: 200, multi: 350, master: 750 };
+        const CALC_ENGRAVING = { none: 0, small: 200, medium: 450, large: 700 };
+        const CALC_TIMELINE_PCT = { standard: 0, rush: 25, emergency: 50 };
+        const CALC_MOLD_FLAT = { none: 0, normalperarch: 200, digitalfullmouth: 1500 };
+
+        const CALC_LABELS = {
+            material: { chrome: "Cobalt Chrome", titanium: "Titanium", silver: "Sterling Silver 925", gold: "Gold" },
+            level: { "0.5": "0.5 Bars", "1": "1 Open face", "2": "2 More detail", "3": "3 Mid detail", "4": "4 Complex", "5": "5 Scorpion", "6": "6 Ultimate" },
+            accentType: { cz: "CZ", moissanite: "Moissanite", labgrown: "Lab-Grown", natural: "Natural" },
+            setting: { flush: "Flush", twoprong: "2-Prong", threeprong: "3-Prong", fourprong: "4-Prong", sixprong: "6-Prong", bezelfull: "Bezel full", bezelhalf: "Bezel half", bar: "Bar setting" },
+            coverage: { standardpave: "Standard Pave", frenchpave: "French Pave", micropave: "Micro-Pave", channel: "Channel", invisible: "Invisible" },
+            plating: { none: "None", blackgold: "Black gold", whitegold: "White gold", rosegold: "Rose gold", silverplating: "Silver plating" },
+            enamel: { none: "None", single: "Single", multi: "Multi", master: "Master" },
+            engraving: { none: "None", small: "Small", medium: "Medium", large: "Large" },
+            timeline: { standard: "Standard", rush: "Rush", emergency: "Emergency" },
+            mold: { none: "None", normalperarch: "Normal per arch", digitalfullmouth: "Digital full mouth" }
+        };
+
+        function onCalcMaterialChange() {
+            const material = document.getElementById("calcMaterial").value;
+            const isGold = material === "gold";
+            document.getElementById("calcGoldWrap").classList.toggle("hidden", !isGold);
+
+            const noStones = material === "chrome" || material === "titanium";
+            const stonesSelect = document.getElementById("calcStonesMode");
+            document.getElementById("calcNoStonesNote").classList.toggle("hidden", !noStones);
+            if (noStones) {
+                stonesSelect.value = "none";
+                stonesSelect.disabled = true;
+            } else {
+                stonesSelect.disabled = false;
+            }
+            onCalcStonesChange();
+        }
+
+        function onCalcLevelChange() {
+            onCalcStonesChange(); // full-iced-on-bars behaves differently
+        }
+
+        function onCalcStonesChange() {
+            const mode = document.getElementById("calcStonesMode").value;
+            document.getElementById("calcAccentWrap").classList.toggle("hidden", mode !== "accent");
+            document.getElementById("calcFullIcedWrap").classList.toggle("hidden", mode !== "fulliced");
+
+            if (mode === "fulliced") {
+                const isBars = document.getElementById("calcLevel").value === "0.5";
+                document.getElementById("calcFullIcedBarsNote").classList.toggle("hidden", !isBars);
+                document.getElementById("calcFullIcedNormalFields").classList.toggle("hidden", isBars);
+            }
+        }
+
+        function onCalcAccentTypeChange() {
+            const type = document.getElementById("calcAccentType").value;
+            document.getElementById("calcAccentCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
+        }
+
+        function onCalcFullTypeChange() {
+            const type = document.getElementById("calcFullType").value;
+            document.getElementById("calcFullCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
+        }
+
+        function runCalculator() {
+            const material = document.getElementById("calcMaterial").value;
+            const teeth = parseInt(document.getElementById("calcTeeth").value, 10);
+            const level = document.getElementById("calcLevel").value;
+            const stonesMode = document.getElementById("calcStonesMode").value;
+            const plating = document.getElementById("calcPlating").value;
+            const enamel = document.getElementById("calcEnamel").value;
+            const engraving = document.getElementById("calcEngraving").value;
+            const timeline = document.getElementById("calcTimeline").value;
+            const mold = document.getElementById("calcMold").value;
+
+            if (!teeth || teeth < 1 || teeth > 16) {
+                showToast("Teeth must be between 1 and 16", true);
+                return;
+            }
+
+            // --- Base per tooth ---
+            let base;
+            let materialLine;
+            if (material === "gold") {
+                const karat = document.getElementById("calcKarat").value;
+                const goldPrice = parseFloat(document.getElementById("calcGoldPrice").value);
+                if (!goldPrice || goldPrice <= 0) {
+                    showToast("Enter today's gold EGP/g first", true);
+                    return;
+                }
+                const k = CALC_GOLD_KARAT[karat];
+                base = (310 + 1.15 * goldPrice * k.purity) * k.margin;
+                materialLine = `Gold ${karat}K @ ${goldPrice} EGP/g → base/tooth = ${round2(base)} EGP`;
+            } else {
+                base = CALC_MATERIAL_BASE[material];
+                materialLine = `${CALC_LABELS.material[material]} → base/tooth = ${base} EGP`;
+            }
+
+            const isBars = level === "0.5";
+            const materialTotal = isBars ? base * 0.5 * teeth : base * teeth;
+
+            // --- Design cost ---
+            let designCost = 0;
+            if (!isBars) {
+                const pct = CALC_DESIGN_PCT[level];
+                designCost = materialTotal * (pct / 100);
+            }
+
+            // --- Stones ---
+            let stoneCost = 0;
+            let stoneLine = "None";
+            if (stonesMode === "accent") {
+                const count = parseInt(document.getElementById("calcAccentCount").value, 10) || 0;
+                const type = document.getElementById("calcAccentType").value;
+                const setting = document.getElementById("calcAccentSetting").value;
+                let accentPrice = CALC_ACCENT_PRICE[type];
+                if (accentPrice === null) {
+                    accentPrice = parseFloat(document.getElementById("calcAccentCustomPrice").value);
+                    if (!accentPrice) { showToast("Enter today's rate for Lab-Grown/Natural stones", true); return; }
+                }
+                const settingPrice = CALC_SETTING_PRICE[setting];
+                stoneCost = count * (accentPrice + settingPrice);
+                stoneLine = `Accent × ${count} (${CALC_LABELS.accentType[type]} ${accentPrice} + ${CALC_LABELS.setting[setting]} ${settingPrice}) = ${stoneCost} EGP`;
+            } else if (stonesMode === "fulliced") {
+                if (isBars) {
+                    stoneCost = teeth * 400;
+                    stoneLine = `Full iced on Bars: ${teeth} × 400 = ${stoneCost} EGP`;
+                } else {
+                    const type = document.getElementById("calcFullType").value;
+                    const coverage = document.getElementById("calcCoverage").value;
+                    let fullPrice = CALC_FULL_PRICE[type];
+                    if (fullPrice === null) {
+                        fullPrice = parseFloat(document.getElementById("calcFullCustomPrice").value);
+                        if (!fullPrice && fullPrice !== 0) { showToast("Enter today's rate for Lab-Grown/Natural stones", true); return; }
+                    }
+                    const coveragePrice = CALC_COVERAGE_PRICE[coverage];
+                    stoneCost = teeth * (fullPrice + coveragePrice);
+                    stoneLine = `Full iced × ${teeth} (${CALC_LABELS.accentType[type]} ${fullPrice} + ${CALC_LABELS.coverage[coverage]} ${coveragePrice}) = ${stoneCost} EGP`;
+                }
+            }
+
+            // --- Finishing ---
+            const platingCost = CALC_PLATING[plating] * teeth;
+            const enamelCost = CALC_ENAMEL[enamel] * teeth;
+            const engravingCost = CALC_ENGRAVING[engraving] * teeth;
+
+            const sub = materialTotal + designCost + stoneCost + platingCost + enamelCost + engravingCost;
+
+            // --- Timeline & mold ---
+            const tlPct = CALC_TIMELINE_PCT[timeline];
+            const tlAmount = sub * (tlPct / 100);
+            const moldCost = CALC_MOLD_FLAT[mold];
+            const preRound = sub + tlAmount + moldCost;
+            const total = Math.ceil(preRound / 50) * 50;
+
+            const lines = [
+                `Line: ${CALC_LABELS.material[material]} · ${teeth} teeth · ${CALC_LABELS.level[level]}`,
+                `  Material: ${materialLine} → ${round2(materialTotal)} EGP`,
+                `  Design: ${isBars ? "0 (Bars)" : `+${CALC_DESIGN_PCT[level]}% = ${round2(designCost)} EGP`}`,
+                `  Stones: ${stoneLine}`,
+                `  Plating: ${CALC_LABELS.plating[plating]} → ${platingCost} EGP`,
+                `  Enamel: ${CALC_LABELS.enamel[enamel]} → ${enamelCost} EGP`,
+                `  Engraving: ${CALC_LABELS.engraving[engraving]} → ${engravingCost} EGP`,
+                `  Subtotal: ${round2(sub)} EGP`,
+                `  Timeline: ${CALC_LABELS.timeline[timeline]} (+${tlPct}%) = ${round2(tlAmount)} EGP`,
+                `  Mold: ${CALC_LABELS.mold[mold]} → ${moldCost} EGP`,
+                `  Pre-round: ${round2(preRound)} EGP`,
+                ``,
+                `QUOTE TOTAL (rounded up to 50): ${total} EGP`
+            ];
+
+            document.getElementById("calcResultText").innerText = lines.join("\n");
+            document.getElementById("calcResult").classList.remove("hidden");
+
+            window._lastCalcQuote = {
+                materialLabel: CALC_LABELS.material[material],
+                levelLabel: CALC_LABELS.level[level],
+                teeth,
+                materialTotal, designCost, stoneCost, stoneLine,
+                platingCost, plating: CALC_LABELS.plating[plating],
+                enamelCost, enamel: CALC_LABELS.enamel[enamel],
+                engravingCost, engraving: CALC_LABELS.engraving[engraving],
+                sub, tlAmount, timeline: CALC_LABELS.timeline[timeline], tlPct,
+                moldCost, mold: CALC_LABELS.mold[mold],
+                total
+            };
+        }
+
+        function downloadQuotationPdf() {
+            const q = window._lastCalcQuote;
+            if (!q) { showToast("Calculate a quote first", true); return; }
+            if (!window.jspdf) { showToast("PDF library failed to load", true); return; }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: "pt", format: "a4" });
+            const clientName = document.getElementById("calcClientNameForPdf").value.trim();
+            const pageW = doc.internal.pageSize.getWidth();
+            let y = 60;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(20);
+            doc.text("EGYGRILLZ", 40, y);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(120);
+            doc.text("Beyond Jewelry.", 40, y + 14);
+            doc.setTextColor(0);
+
+            doc.setFontSize(10);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, pageW - 40, y - 6, { align: "right" });
+            if (clientName) doc.text(`Client: ${clientName}`, pageW - 40, y + 10, { align: "right" });
+
+            y += 40;
+            doc.setDrawColor(220);
+            doc.line(40, y, pageW - 40, y);
+            y += 25;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(`${q.materialLabel} · ${q.teeth} teeth · ${q.levelLabel}`, 40, y);
+            y += 22;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            const row = (label, value) => {
+                doc.text(label, 50, y);
+                doc.text(value, pageW - 40, y, { align: "right" });
+                y += 18;
+            };
+
+            row("Material", `${round2(q.materialTotal)} EGP`);
+            row("Design", q.designCost ? `${round2(q.designCost)} EGP` : "—");
+            row("Stones", q.stoneCost ? `${round2(q.stoneCost)} EGP` : "None");
+            if (q.platingCost) row(`Plating (${q.plating})`, `${q.platingCost} EGP`);
+            if (q.enamelCost) row(`Enamel (${q.enamel})`, `${q.enamelCost} EGP`);
+            if (q.engravingCost) row(`Engraving (${q.engraving})`, `${q.engravingCost} EGP`);
+
+            y += 4;
+            doc.setDrawColor(230);
+            doc.line(40, y, pageW - 40, y);
+            y += 18;
+
+            row("Subtotal", `${round2(q.sub)} EGP`);
+            if (q.tlAmount) row(`Timeline (${q.timeline}, +${q.tlPct}%)`, `${round2(q.tlAmount)} EGP`);
+            if (q.moldCost) row(`Mold (${q.mold})`, `${q.moldCost} EGP`);
+
+            y += 10;
+            doc.setDrawColor(0);
+            doc.setLineWidth(1);
+            doc.line(40, y, pageW - 40, y);
+            y += 26;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text("TOTAL", 40, y);
+            doc.text(`${q.total.toLocaleString()} EGP`, pageW - 40, y, { align: "right" });
+
+            y += 40;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(140);
+            doc.text("This quotation is an estimate. Gold and diamond rates are confirmed against the day of production.", 40, y);
+            doc.text("egygrillz.com  ·  @egygrillz  ·  booking: egygrillz.com/booking.html", 40, y + 12);
+
+            const filename = `EGYGRILLZ-Quotation${clientName ? "-" + clientName.replace(/[^a-z0-9]+/gi, "_") : ""}.pdf`;
+            doc.save(filename);
+        }
+
+        function round2(n) {
+            return Math.round(n * 100) / 100;
+        }
+
+        async function insertCalcResultIntoPricingChat() {
+            const text = document.getElementById("calcResultText").innerText;
+            if (!text) return;
+            try {
+                await db.collection("pricing_chat").doc("thread").collection("messages").add({
+                    role: "user",
+                    content: `[Exact Calculator result — use this number]\n${text}`,
+                    handledBy: auth.currentUser?.email || "unknown",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                switchPricingTab("chat");
+                showToast("Added to AI Chat");
+            } catch (e) {
+                showToast("Couldn't add: " + e.message, true);
             }
         }
 
