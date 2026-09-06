@@ -565,7 +565,7 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
 
             const data = await res.json();
             if (!data.text) throw new Error("Empty response from AI");
-            return { text: data.text, provider: data.provider, tokens: data.tokens || 0 };
+            return { text: data.text, provider: data.provider, tokens: data.tokens || 0, warnings: data.warnings };
         }
 
         function todayKey() {
@@ -644,6 +644,10 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
                 });
 
                 document.getElementById("providerBadge").innerText = `Generated via ${result.provider}`;
+                if (result.warnings && result.warnings.length) {
+                    console.warn("AI provider fallback warnings:", result.warnings);
+                    showToast(`Used ${result.provider} — others failed: ${result.warnings.join(" | ")}`, true);
+                }
                 setStatus("ready", "Ready");
                 loadAllClients();
 
