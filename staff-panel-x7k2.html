@@ -37,6 +37,16 @@
         @supports (padding: max(0px)) {
             .input-safe { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
         }
+        .msg-bubble {
+            font-size: 14px;
+            line-height: 1.55;
+            letter-spacing: 0.01em;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+        .msg-bubble p { margin: 0 0 0.65em 0; }
+        .msg-bubble p:last-child { margin-bottom: 0; }
+        .msg-bubble br + br { display: block; content: ""; margin-top: 0.35em; }
     </style>
 </head>
 <body class="bg-white text-gray-900 h-screen overflow-hidden">
@@ -651,21 +661,37 @@ Response structure:
         }
 
         function buildPricingSystemPrompt() {
-            return `${buildRestrictionsBlock()}You are the EGYGRILLZ internal pricing assistant for staff only (not client-facing chat history).
+            return `${buildRestrictionsBlock()}You are the EGYGRILLZ internal pricing assistant for staff only.
 
-CRITICAL CONSISTENCY RULES:
+CRITICAL:
 - Follow Pricing Calculation Rules EXACTLY. No invented numbers.
-- Gold EGP/g and lab-grown/natural diamond rates are NOT fixed — ASK staff for today's rates before a final total.
-- Fixed catalog items (chrome/titanium/silver bases, design %, CZ, moissanite, plating, enamel, engraving, timeline, molds) use the numbers in the rules.
-- Same math and same wording style every time (deterministic). Always English.
+- Always English. Short, elegant, straightforward.
+- Ask ONE short question at a time. Never a long list.
+- Never re-ask what was already answered in this thread.
+- Gold EGP/g and lab-grown/natural diamond rates: ASK for today's numbers before a final total.
+- Same math every time. Round final totals UP to nearest 50 EGP.
 
-Tone: ${currentSettings.toneOfVoice || "Professional, concise."}
+STONE / ICED RULES (do not get confused):
+- Level 0.5 Bars: material = half base. If also full iced on Bars: stoneCost = teeth × 400 only (no diamond count, no pave table).
+- Full iced on levels 1–6: PER TOOTH = teeth × (fullPrice + coverage). Need stone type + coverage style. Do NOT ask how many diamonds.
+- Accent: per stone = count × (type + setting).
+- Chrome and Titanium: stones not allowed.
+- Prefer the "Saved / reference quotes" table in Pricing Rules when the config matches — reuse those totals.
 
-Workflow:
-1. Ask ONE short question at a time for missing details.
-2. Track what was already answered — never re-ask.
-3. When complete, output a clear breakdown + final total rounded UP to nearest 50 EGP.
-4. Multi-line quotes allowed (different configs in one set).
+CORRECT QUESTION ORDER (skip any step already answered):
+1. Material? (Chrome / Titanium / Silver / Gold). If Gold → karat, then today's gold EGP per gram.
+2. Number of teeth? (1–16)
+3. Design level? (0.5 Bars = half base / 1 Open face / 2 More detail / 3 Mid / 4 Complex / 5 Scorpion / 6 Ultimate)
+4. Stones mode? (None / Accent / Full iced)
+   - If Accent → how many stones? → type? → setting?
+   - If Full iced → stone type? → coverage style? (never ask diamond count)
+   - If Lab-Grown or Natural → ask today's accent and/or full-iced rates from staff
+5. Plating? Enamel? Engraving? (or none)
+6. Timeline? (Standard / Rush / Emergency)
+7. Mold? (None / Normal per arch / Digital full mouth)
+8. When complete → clear breakdown + final total (ceil to 50 EGP) + short next step.
+
+If the message is vague ("iced out 6 teeth"), assume what is explicit, ask only the next missing item in the order above.
 
 Pricing Calculation Rules:
 ${currentSettings.pricingCalc || "(Upload EgyGrillz_Pricing_Engine.md into Knowledge Base → Pricing Calculation Rules.)"}
@@ -894,8 +920,8 @@ ${currentSettings.materials || ""}
                 div.innerHTML = `
                     <div class="max-w-[90%] sm:max-w-[85%] md:max-w-[70%]">
                         ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-40 h-40 object-cover rounded-xl mb-1.5 ml-auto block" />` : ''}
-                        <div class="bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed break-words">
-                            ${escapeHtml(raw)}
+                        <div class="msg-bubble bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm">
+                            ${formatMessageHtml(raw)}
                         </div>
                         <div class="text-right mt-1.5 mr-0.5 flex items-center justify-end gap-2 flex-wrap">
                             <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-95" data-copy-full>Copy</button>
@@ -907,8 +933,8 @@ ${currentSettings.materials || ""}
             } else {
                 div.innerHTML = `
                     <div class="max-w-[90%] sm:max-w-[85%] md:max-w-[70%]">
-                        <div class="bg-black text-white px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed break-words whitespace-pre-wrap">
-                            ${escapeHtml(raw)}
+                        <div class="msg-bubble bg-black text-white px-4 py-3 rounded-2xl rounded-tl-sm">
+                            ${formatMessageHtml(raw)}
                         </div>
                         <div class="mt-1.5 ml-0.5 flex items-center gap-2 flex-wrap">
                             <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded-md bg-black text-white hover:bg-gray-800 active:scale-95" data-copy-client title="Clean text for Instagram / WhatsApp">Copy for client</button>
@@ -1166,8 +1192,8 @@ ${currentSettings.generalInfo || ""}
             div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
             div.innerHTML = `
                 <div class="max-w-[90%] sm:max-w-[85%]">
-                    <div class="px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
-                        ${escapeHtml(raw)}
+                    <div class="msg-bubble px-4 py-2.5 rounded-2xl ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
+                        ${formatMessageHtml(raw)}
                     </div>
                     <div class="mt-1 ${isUser ? "text-right" : ""}">
                         <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50">Copy</button>
@@ -1253,8 +1279,8 @@ ${currentSettings.generalInfo || ""}
             div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
             div.innerHTML = `
                 <div class="max-w-[90%] sm:max-w-[85%]">
-                    <div class="px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
-                        ${escapeHtml(raw)}
+                    <div class="msg-bubble px-4 py-2.5 rounded-2xl ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
+                        ${formatMessageHtml(raw)}
                     </div>
                     <div class="mt-1 ${isUser ? "text-right" : ""}">
                         <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50">Copy</button>
@@ -1396,9 +1422,32 @@ ${currentSettings.generalInfo || ""}
 
         function escapeHtml(text) {
             const d = document.createElement("div");
-            d.innerText = text;
+            d.innerText = text == null ? "" : String(text);
             return d.innerHTML;
         }
+
+        /** Clean spacing + safe HTML for chat bubbles */
+        function formatMessageHtml(text) {
+            let t = String(text == null ? "" : text);
+            t = t.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+            // trim outer whitespace
+            t = t.trim();
+            // collapse 3+ blank lines → one blank line
+            t = t.replace(/\n{3,}/g, "\n\n");
+            // collapse spaces/tabs at end of lines
+            t = t.replace(/[ \t]+$/gm, "");
+            // escape then convert paragraphs
+            const esc = escapeHtml(t);
+            // split on blank lines into paragraphs
+            return esc
+                .split(/\n\n/)
+                .map(para => {
+                    const withBreaks = para.replace(/\n/g, "<br>");
+                    return `<p>${withBreaks}</p>`;
+                })
+                .join("");
+        }
+
 
         function formatTime(d) {
             return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
