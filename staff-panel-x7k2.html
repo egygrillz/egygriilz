@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>EGYGRILLZ - Support Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -10,8 +10,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 5px; }
+        * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; height: 100dvh; }
+        body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
@@ -19,6 +21,22 @@
         @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .sidebar-mask { transition: opacity 0.2s; }
         .sidebar-panel { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .copy-btn { min-height: 32px; min-width: 56px; }
+        textarea, input, button, select { font-size: 16px; } /* prevents iOS zoom on focus for small inputs — override below for compact UI */
+        #clientName, #clientMsg, #providerSelect, .text-xs, .text-\[10px\], .text-\[11px\] { font-size: inherit; }
+        #clientName { font-size: 14px; }
+        #clientMsg { font-size: 15px; }
+        @media (min-width: 768px) {
+            textarea, input, button, select { font-size: inherit; }
+        }
+        /* Comfortable touch targets on phones / iPad */
+        @media (max-width: 1024px) {
+            #sendBtn { min-width: 72px; min-height: 72px; }
+            .copy-btn { padding: 6px 12px !important; font-size: 11px !important; }
+        }
+        @supports (padding: max(0px)) {
+            .input-safe { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+        }
     </style>
 </head>
 <body class="bg-white text-gray-900 h-screen overflow-hidden">
@@ -105,7 +123,7 @@
             </div>
 
             <!-- Input Area -->
-            <div class="shrink-0 border-t border-gray-100 bg-white px-4 md:px-8 py-4">
+            <div class="shrink-0 border-t border-gray-100 bg-white px-4 md:px-8 py-4 input-safe">
                 <div class="max-w-2xl mx-auto">
                     <div class="flex items-end space-x-3">
                         <div class="flex-1">
@@ -131,8 +149,7 @@
                                 <option value="">Auto (fallback)</option>
                                 <option value="gemini">Gemini</option>
                                 <option value="groq">Groq</option>
-                                <option value="cerebras">Cerebras</option>
-                            </select>
+                                                            </select>
                             <span class="text-[10px] text-gray-300">Shift+Enter for new line</span>
                         </div>
                     </div>
@@ -155,7 +172,7 @@
 
                 <div class="flex-1 overflow-y-auto p-6 space-y-5">
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
-                        Changes update the AI behavior in real-time. Each section below can be typed directly, or you can upload a <code>.md</code> file to fill it in — you can still edit the text afterward. All settings are stored in Firestore.
+                        Fill every section so Gemini and Groq answer the same way. Upload <code>EgyGrillz_Pricing_Engine.md</code> into <strong>Pricing Calculation Rules</strong>. Multi-key API rotation is configured on the Cloudflare Worker. Settings are stored in Firestore.
                     </div>
 
                     <!-- About -->
@@ -168,7 +185,29 @@
                         <textarea id="settingAbout" rows="4" placeholder="Who EGYGRILLZ is, what you make, working hours, turnaround time, location/delivery, booking process, etc." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
                     </div>
 
+                    
+                    <!-- Process -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Order process / how it works</label>
+                            <button onclick="document.getElementById('uploadProcess').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadProcess" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingProcess')">
+                        </div>
+                        <textarea id="settingProcess" rows="4" placeholder="Steps from first contact → deposit → mold → production → delivery" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
+                    <!-- Materials -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Materials &amp; design options</label>
+                            <button onclick="document.getElementById('uploadMaterials').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadMaterials" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingMaterials')">
+                        </div>
+                        <textarea id="settingMaterials" rows="4" placeholder="Chrome, Titanium, Silver, Gold karats, design levels, stones allowed, plating, etc." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
                     <!-- Pricing Calculation -->
+
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pricing Calculation Rules</label>
@@ -183,7 +222,39 @@
 List every rule explicitly with real numbers — the AI can only calculate correctly with exact figures, not vague ranges." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none font-mono text-xs"></textarea>
                     </div>
 
+                    
+                    <!-- Care -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Care, warranty &amp; aftercare</label>
+                            <button onclick="document.getElementById('uploadCare').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadCare" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingCare')">
+                        </div>
+                        <textarea id="settingCare" rows="3" placeholder="Cleaning, storage, warranty length, what voids warranty" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
+                    <!-- Shipping -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Shipping, delivery &amp; studio</label>
+                            <button onclick="document.getElementById('uploadShipping').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadShipping" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingShipping')">
+                        </div>
+                        <textarea id="settingShipping" rows="3" placeholder="Pickup, courier areas, fees, international" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
+                    <!-- Payments -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Payments &amp; deposits</label>
+                            <button onclick="document.getElementById('uploadPayments').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
+                            <input type="file" id="uploadPayments" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingPayments')">
+                        </div>
+                        <textarea id="settingPayments" rows="3" placeholder="Methods, deposit %, when balance is due, refunds" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                    </div>
+
                     <!-- Tone of Voice -->
+
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tone of Voice</label>
@@ -273,8 +344,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             <option value="">Auto (fallback)</option>
                             <option value="gemini">Gemini</option>
                             <option value="groq">Groq</option>
-                            <option value="cerebras">Cerebras</option>
-                        </select>
+                                                    </select>
                     </div>
                 </div>
             </div>
@@ -314,8 +384,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             <option value="">Auto (fallback)</option>
                             <option value="gemini">Gemini</option>
                             <option value="groq">Groq</option>
-                            <option value="cerebras">Cerebras</option>
-                        </select>
+                                                    </select>
                     </div>
                 </div>
             </div>
@@ -398,12 +467,75 @@ List every rule explicitly with real numbers — the AI can only calculate corre
         const WORKER_URL = "https://egygrillz-clientele-assistant.egygrillzplatformsassistant.workers.dev";
 
         let currentSettings = {
-            about: "EGYGRILLZ — custom dental jewelry and grillz brand. Working Hours: Monday to Saturday, 12 PM - 8 PM. Turnaround Time: 5-7 business days for custom grillz. Studio fitting by appointment or mold kit delivery.",
+            about: `EGYGRILLZ is a custom dental jewelry and grillz studio in Egypt.
+
+Working hours: Monday–Saturday, 12:00–20:00.
+Typical turnaround: 5–7 business days after design and mold approval.
+Studio fittings by appointment. Mold kit or digital scan options available.
+
+We craft pieces in Cobalt Chrome, Titanium, Sterling Silver 925, and Gold (10K–22K).`,
+
+            process: `1. Choose material, number of teeth, design level, and any stones or finishing.
+2. Confirm the quote.
+3. Pay the deposit (see Payments).
+4. Provide a mold or digital scan.
+5. Approve the design when custom artwork is involved.
+6. Production and quality check.
+7. Studio pickup or delivery.`,
+
+            materials: `Materials: Cobalt Chrome, Titanium, Sterling Silver 925, Gold (10K, 14K, 18K, 21K, 22K).
+
+Design levels: Bar, Solid, Open face, Bars/Windows, Multi-cut, Intricate, Master custom.
+
+Stones: available on Silver and Gold only (not on Chrome or Titanium). Options: none, accent stones, or full iced. Stone types: CZ, Moissanite, Lab-Grown Diamond, Natural Diamond.
+
+Titanium: anodized colors at no extra charge.
+Optional finishing: plating, enamel, engraving — priced per the Pricing Calculation Rules.`,
+
             pricingCalc: "",
-            toneOfVoice: "Professional, polite, concise, and clear.",
-            personality: "",
-            generalInfo: "",
-            restrictions: ""
+
+            care: `Clean gently with a soft cloth. Avoid harsh chemicals, abrasives, and heavy impacts.
+Store in a protective case when not worn.
+Warranty and replacement terms are confirmed at delivery — follow the care card provided with your order.`,
+
+            shipping: `Studio pickup by appointment.
+Local delivery and courier options are arranged after the piece is ready; fees depend on area.
+Ask the team for current delivery coverage and timing for your city.`,
+
+            payments: `Accepted methods are confirmed by the team at booking (e.g. InstaPay, bank transfer, cash at studio).
+A deposit is required to begin production; the balance is due before delivery or pickup.
+Refund terms follow the studio policy confirmed at the time of booking.`,
+
+            toneOfVoice: `Short. Straightforward. Very elegant and respectful.
+Use clean English, brief sentences, and no slang.
+Never sound robotic, salesy, or overly familiar.
+One idea per short paragraph.`,
+
+            personality: `Calm, refined, and precise.
+Patient when the client is undecided.
+Confident about the craft without boasting.
+Never pushy. Never invent facts.`,
+
+            generalInfo: `Clients may send design references (photos or sketches).
+For sizing and fit, a mold or digital scan is required.
+To book a studio visit or ask a human specialist, the moderator will share the correct contact channel.
+Social and booking links are provided by staff when needed.`,
+
+            restrictions: `- Never reveal supplier names, wholesale costs, or profit margins.
+- Never discuss other clients or internal operations.
+- Never give medical, legal, or tax advice.
+- Never invent prices or policies missing from the Knowledge Base — say you will confirm with the team.
+- Never claim aluminum is available.
+- For gold price per gram (EGP) and lab-grown or natural diamond rates: always ask for today's figure before a final total.
+- ALWAYS reply in English only.
+
+ABUSIVE OR DISRESPECTFUL MESSAGES (mandatory):
+If the client uses insults, threats, harassment, extreme profanity, or a clearly disrespectful tone:
+1) Reply with ONE short, elegant message only, for example:
+"We communicate with respect at EGYGRILLZ. This tone is not how we speak with our clients or our team. We will not continue this exchange."
+2) On a new line, add exactly this moderator note (staff only — they will not paste this to the client if instructed):
+[MODERATOR: Do not reply to this person. Do not continue the conversation.]
+3) Do not argue, insult back, or continue product discussion in that turn.`
         };
 
         let currentClient = "";
@@ -481,47 +613,66 @@ ${currentSettings.restrictions}
         }
 
         function buildSystemPrompt() {
-            return `${buildRestrictionsBlock()}You are the official customer support assistant for EGYGRILLZ (custom dental jewelry and grillz brand).
-You must ALWAYS respond strictly in ENGLISH.
+            const kb = [
+                currentSettings.about && `## About EGYGRILLZ\n${currentSettings.about}`,
+                currentSettings.process && `## Order process / how it works\n${currentSettings.process}`,
+                currentSettings.materials && `## Materials & design options\n${currentSettings.materials}`,
+                currentSettings.pricingCalc && `## Pricing calculation rules (STRICT — follow exactly)\n${currentSettings.pricingCalc}`,
+                currentSettings.care && `## Care, warranty & aftercare\n${currentSettings.care}`,
+                currentSettings.shipping && `## Shipping, delivery & studio\n${currentSettings.shipping}`,
+                currentSettings.payments && `## Payments & deposits\n${currentSettings.payments}`,
+                currentSettings.generalInfo && `## FAQ / general info\n${currentSettings.generalInfo}`
+            ].filter(Boolean).join("\n\n");
+
+            return `${buildRestrictionsBlock()}You are the official customer support assistant for EGYGRILLZ (custom dental jewelry / grillz).
+
+CRITICAL CONSISTENCY RULES (apply identically on every model):
+- Answer ONLY from the Knowledge Base below. If something is not written there, say you will confirm with the team — do NOT invent prices, policies, or facts.
+- Always reply in ENGLISH.
+- Keep every reply short, straightforward, elegant, and respectful.
+- Be deterministic: same facts, same policy, same numbers every time. Do not add creative extras.
+- For ANY gold price or lab-grown/natural diamond price: ASK for today's rate before giving a final total (see pricing rules).
+- Never mention suppliers, cost prices, margins, internal tools, or other clients.
+- If the client is abusive or disrespectful: follow the ABUSIVE OR DISRESPECTFUL MESSAGES rule in Restrictions exactly (brief refusal + moderator do-not-reply note).
 
 Tone of Voice:
 ${currentSettings.toneOfVoice || "Professional, polite, concise, and clear."}
 
 Personality:
-${currentSettings.personality || "Helpful and straightforward."}
+${currentSettings.personality || "Helpful, confident about the craft, patient, never pushy."}
 
-About EGYGRILLZ:
-${currentSettings.about}
+KNOWLEDGE BASE:
+${kb || "(Knowledge base empty — ask staff to fill Knowledge Base settings.)"}
 
-${currentSettings.pricingCalc ? `Pricing Calculation Rules (use these exact rules and numbers whenever a client asks about price — show your calculation clearly):\n${currentSettings.pricingCalc}\n\n` : ''}${currentSettings.generalInfo ? `General Info / FAQ:\n${currentSettings.generalInfo}\n\n` : ''}Response Structure Constraints:
-1. Short, polite greeting addressing the client.
-2. Direct, precise answer to the client's query based on the Knowledge Base.
-3. Clear Next Step / Call to Action (e.g., booking an appointment, choosing metals/designs).`;
+Response structure:
+1. Short polite greeting (one line).
+2. Direct answer using only the Knowledge Base.
+3. One clear next step / CTA when relevant (book fitting, send design refs, confirm material).`;
         }
 
         function buildPricingSystemPrompt() {
-            return `${buildRestrictionsBlock()}You are the EGYGRILLZ pricing assistant, used internally by staff to work out a quote before sending it to a client.
-Your ONLY goal is to gather the exact details needed to calculate a final price, then give that price.
+            return `${buildRestrictionsBlock()}You are the EGYGRILLZ internal pricing assistant for staff only (not client-facing chat history).
 
-Tone of Voice: ${currentSettings.toneOfVoice || "Professional, polite, concise, and clear."}
-Personality: ${currentSettings.personality || "Helpful and straightforward."}
+CRITICAL CONSISTENCY RULES:
+- Follow Pricing Calculation Rules EXACTLY. No invented numbers.
+- Gold EGP/g and lab-grown/natural diamond rates are NOT fixed — ASK staff for today's rates before a final total.
+- Fixed catalog items (chrome/titanium/silver bases, design %, CZ, moissanite, plating, enamel, engraving, timeline, molds) use the numbers in the rules.
+- Same math and same wording style every time (deterministic). Always English.
 
-Rules:
-1. Ask ONE clear, short question at a time — never a long list of questions at once.
-2. Use the "Pricing Calculation Rules" below to know exactly which details you need (material/karat, number of teeth, top/bottom, gems, engraving, quantity, etc.). Do not ask about anything that isn't needed for the calculation.
-3. Keep track of what's already been said in this conversation — never re-ask something already answered.
-4. Once you have every detail the pricing rules require, STOP asking questions and give a final quote:
-   - Show a clear breakdown (each line item and its cost)
-   - Show the final total, following the rounding rule exactly
-   - End with a short next-step (e.g. booking a fitting or paying a deposit)
-5. If the staff member's message is vague or off-topic, gently steer back to the next missing detail.
+Tone: ${currentSettings.toneOfVoice || "Professional, concise."}
+
+Workflow:
+1. Ask ONE short question at a time for missing details.
+2. Track what was already answered — never re-ask.
+3. When complete, output a clear breakdown + final total rounded UP to nearest 50 EGP.
+4. Multi-line quotes allowed (different configs in one set).
 
 Pricing Calculation Rules:
-${currentSettings.pricingCalc || "(No pricing rules configured yet — ask for the details anyway, but flag that pricing rules need to be filled in Knowledge Base settings.)"}
+${currentSettings.pricingCalc || "(Upload EgyGrillz_Pricing_Engine.md into Knowledge Base → Pricing Calculation Rules.)"}
 
-About EGYGRILLZ:
-${currentSettings.about}
-${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}` : ''}`;
+Materials summary:
+${currentSettings.materials || ""}
+`;
         }
 
         async function getRecentHistoryText(clientName, limit = 14) {
@@ -695,38 +846,80 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
                 });
         }
 
+        function clientFacingText(raw) {
+            // Strip moderator-only notes so paste to Instagram/WhatsApp is clean
+            return String(raw || "")
+                .split("\n")
+                .filter(line => !/^\s*\[MODERATOR:/i.test(line))
+                .join("\n")
+                .trim();
+        }
+
+        async function copyText(text, label) {
+            const t = String(text || "");
+            if (!t) { showToast("Nothing to copy", true); return; }
+            try {
+                await navigator.clipboard.writeText(t);
+                showToast(label || "Copied");
+            } catch {
+                // Fallback for older WebViews
+                const ta = document.createElement("textarea");
+                ta.value = t;
+                ta.style.position = "fixed";
+                ta.style.left = "-9999px";
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand("copy");
+                    showToast(label || "Copied");
+                } catch {
+                    showToast("Copy failed — long-press the message", true);
+                }
+                document.body.removeChild(ta);
+            }
+        }
+
         function renderMessage(data) {
             const listEl = document.getElementById("messagesList");
             const isUser = data.role === "user";
             const time = data.timestamp?.toDate ? formatTime(data.timestamp.toDate()) : "";
+            const raw = data.content || "";
+            const forClient = clientFacingText(raw);
+            const id = "m" + Math.random().toString(36).slice(2, 9);
 
             const div = document.createElement("div");
             div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
 
             if (isUser) {
                 div.innerHTML = `
-                    <div class="max-w-[85%] md:max-w-[70%]">
+                    <div class="max-w-[90%] sm:max-w-[85%] md:max-w-[70%]">
                         ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-40 h-40 object-cover rounded-xl mb-1.5 ml-auto block" />` : ''}
-                        <div class="bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed">
-                            ${escapeHtml(data.content)}
+                        <div class="bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed break-words">
+                            ${escapeHtml(raw)}
                         </div>
-                        <div class="text-right mt-1 mr-1">
-                            <span class="text-[10px] text-gray-400">Client &middot; ${time}${data.handledBy ? ` &middot; logged by ${escapeHtml(data.handledBy)}` : ''}</span>
+                        <div class="text-right mt-1.5 mr-0.5 flex items-center justify-end gap-2 flex-wrap">
+                            <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-95" data-copy-full>Copy</button>
+                            <span class="text-[10px] text-gray-400">Client · ${time}</span>
                         </div>
                     </div>
                 `;
+                div.querySelector("[data-copy-full]").onclick = () => copyText(raw, "Client message copied");
             } else {
                 div.innerHTML = `
-                    <div class="max-w-[85%] md:max-w-[70%]">
-                        <div class="bg-black text-white px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed">
-                            ${escapeHtml(data.content)}
+                    <div class="max-w-[90%] sm:max-w-[85%] md:max-w-[70%]">
+                        <div class="bg-black text-white px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed break-words whitespace-pre-wrap">
+                            ${escapeHtml(raw)}
                         </div>
-                        <div class="mt-1 ml-1 flex items-center space-x-2">
-                            <span class="text-[10px] text-gray-400">EGYGRILLZ AI &middot; ${time}</span>
-                            ${data.provider ? `<span class="text-[10px] text-gray-300 bg-gray-100 px-1.5 py-0.5 rounded">${data.provider}</span>` : ''}
+                        <div class="mt-1.5 ml-0.5 flex items-center gap-2 flex-wrap">
+                            <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded-md bg-black text-white hover:bg-gray-800 active:scale-95" data-copy-client title="Clean text for Instagram / WhatsApp">Copy for client</button>
+                            <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95" data-copy-full title="Full reply including staff notes">Copy full</button>
+                            <span class="text-[10px] text-gray-400">AI · ${time}</span>
+                            ${data.provider ? `<span class="text-[10px] text-gray-300 bg-gray-100 px-1.5 py-0.5 rounded">${escapeHtml(data.provider)}</span>` : ''}
                         </div>
                     </div>
                 `;
+                div.querySelector("[data-copy-client]").onclick = () => copyText(forClient, "Ready to paste to client");
+                div.querySelector("[data-copy-full]").onclick = () => copyText(raw, "Full reply copied");
             }
             listEl.appendChild(div);
         }
@@ -850,12 +1043,23 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
         }
 
         function populateSettings() {
-            document.getElementById("settingAbout").value = currentSettings.about || "";
-            document.getElementById("settingPricingCalc").value = currentSettings.pricingCalc || "";
-            document.getElementById("settingToneOfVoice").value = currentSettings.toneOfVoice || "";
-            document.getElementById("settingPersonality").value = currentSettings.personality || "";
-            document.getElementById("settingGeneralInfo").value = currentSettings.generalInfo || "";
-            document.getElementById("settingRestrictions").value = currentSettings.restrictions || "";
+            const map = {
+                settingAbout: "about",
+                settingProcess: "process",
+                settingMaterials: "materials",
+                settingPricingCalc: "pricingCalc",
+                settingCare: "care",
+                settingShipping: "shipping",
+                settingPayments: "payments",
+                settingToneOfVoice: "toneOfVoice",
+                settingPersonality: "personality",
+                settingGeneralInfo: "generalInfo",
+                settingRestrictions: "restrictions"
+            };
+            Object.entries(map).forEach(([elId, key]) => {
+                const el = document.getElementById(elId);
+                if (el) el.value = currentSettings[key] || "";
+            });
         }
 
         function openSettings() {
@@ -875,7 +1079,12 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
 
             currentSettings = {
                 about: document.getElementById("settingAbout").value,
+                process: document.getElementById("settingProcess")?.value || "",
+                materials: document.getElementById("settingMaterials")?.value || "",
                 pricingCalc: document.getElementById("settingPricingCalc").value,
+                care: document.getElementById("settingCare")?.value || "",
+                shipping: document.getElementById("settingShipping")?.value || "",
+                payments: document.getElementById("settingPayments")?.value || "",
                 toneOfVoice: document.getElementById("settingToneOfVoice").value,
                 personality: document.getElementById("settingPersonality").value,
                 generalInfo: document.getElementById("settingGeneralInfo").value,
@@ -901,14 +1110,25 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
         let unsubStaffChat = null;
 
         function buildStaffSystemPrompt() {
-            return `${buildRestrictionsBlock()}You are an internal assistant helping EGYGRILLZ staff directly (NOT a client).
-Answer plainly and helpfully — do not use the client-facing greeting/CTA format.
-You may be asked to do pricing math, draft internal notes, or answer quick questions.
+            return `${buildRestrictionsBlock()}You are an internal assistant for EGYGRILLZ staff (NOT a client).
+Answer plainly. You may help with pricing math using the pricing rules, drafts, and quick ops questions.
+Always English. Do not invent missing knowledge — say what must be confirmed.
 
-About EGYGRILLZ:
-${currentSettings.about}
-${currentSettings.pricingCalc ? `\nPricing Calculation Rules:\n${currentSettings.pricingCalc}` : ''}
-${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}` : ''}`;
+About:
+${currentSettings.about || ""}
+
+Pricing rules:
+${currentSettings.pricingCalc || "(not configured)"}
+
+Materials:
+${currentSettings.materials || ""}
+
+Process:
+${currentSettings.process || ""}
+
+General:
+${currentSettings.generalInfo || ""}
+`;
         }
 
         function openStaffChat() {
@@ -941,13 +1161,20 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
         function renderStaffMessage(data) {
             const listEl = document.getElementById("staffChatMessages");
             const isUser = data.role === "user";
+            const raw = data.content || "";
             const div = document.createElement("div");
             div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
             div.innerHTML = `
-                <div class="max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
-                    ${escapeHtml(data.content)}
+                <div class="max-w-[90%] sm:max-w-[85%]">
+                    <div class="px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
+                        ${escapeHtml(raw)}
+                    </div>
+                    <div class="mt-1 ${isUser ? "text-right" : ""}">
+                        <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50">Copy</button>
+                    </div>
                 </div>
             `;
+            div.querySelector("button").onclick = () => copyText(raw, "Copied");
             listEl.appendChild(div);
         }
 
@@ -1021,13 +1248,20 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
         function renderPricingMessage(data) {
             const listEl = document.getElementById("pricingChatMessages");
             const isUser = data.role === "user";
+            const raw = data.content || "";
             const div = document.createElement("div");
             div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
             div.innerHTML = `
-                <div class="max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
-                    ${escapeHtml(data.content)}
+                <div class="max-w-[90%] sm:max-w-[85%]">
+                    <div class="px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap ${isUser ? "bg-gray-100 text-gray-900 rounded-tr-sm" : "bg-black text-white rounded-tl-sm"}">
+                        ${escapeHtml(raw)}
+                    </div>
+                    <div class="mt-1 ${isUser ? "text-right" : ""}">
+                        <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50">Copy</button>
+                    </div>
                 </div>
             `;
+            div.querySelector("button").onclick = () => copyText(raw, "Copied");
             listEl.appendChild(div);
         }
 
@@ -1087,10 +1321,11 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
         // ==================== USAGE ====================
         // Known free-tier daily caps, used only to show a rough % where the
         // provider doesn't expose real-time remaining quota via API.
-        const FREE_TIER_DAILY_TOKEN_CAP = {
-            cerebras: 1000000 // Cerebras publishes a 1M tokens/day free cap
-            // Gemini and Groq don't publish a stable, checkable daily token cap —
-            // check aistudio.google.com/usage and console.groq.com/dashboard/limits
+        // Approximate free-tier daily caps PER API KEY (multi-key multiplies capacity).
+        // Gemini: ~100 requests/day/key (RPD). Groq gpt-oss-20b: ~1K RPD, ~200K tokens/day/key.
+        const FREE_TIER_DAILY = {
+            gemini: { requests: 100, tokens: 100000, note: "~100 RPD / ~100K TPM per Gemini key" },
+            groq:   { requests: 1000, tokens: 200000, note: "~1K RPD / ~200K TPD per Groq key (gpt-oss-20b)" }
         };
 
         function openUsage() {
@@ -1110,29 +1345,29 @@ ${currentSettings.generalInfo ? `\nGeneral Info:\n${currentSettings.generalInfo}
                 const doc = await db.collection("usage_daily").doc(todayKey()).get();
                 const data = doc.exists ? doc.data() : {};
 
-                const providers = ["gemini", "groq", "cerebras"];
+                const providers = ["gemini", "groq"];
                 el.innerHTML = "";
 
                 providers.forEach(p => {
                     const requests = data[`${p}_requests`] || 0;
                     const tokens = data[`${p}_tokens`] || 0;
-                    const cap = FREE_TIER_DAILY_TOKEN_CAP[p];
-                    const pct = cap ? Math.min(100, Math.round((tokens / cap) * 100)) : null;
+                    const cap = FREE_TIER_DAILY[p];
+                    const reqPct = cap ? Math.min(100, Math.round((requests / cap.requests) * 100)) : null;
+                    const tokPct = cap ? Math.min(100, Math.round((tokens / cap.tokens) * 100)) : null;
+                    const pct = Math.max(reqPct || 0, tokPct || 0);
 
                     const row = document.createElement("div");
                     row.className = "border border-gray-200 rounded-lg p-4";
                     row.innerHTML = `
                         <div class="flex items-center justify-between mb-2">
                             <span class="font-semibold text-sm capitalize">${p}</span>
-                            <span class="text-[11px] text-gray-400">${requests} request${requests === 1 ? "" : "s"}</span>
+                            <span class="text-[11px] text-gray-400">${requests} / ~${cap ? cap.requests.toLocaleString() : "?"} req</span>
                         </div>
-                        <div class="text-xs text-gray-600 mb-2">${tokens.toLocaleString()} tokens used${cap ? ` of ~${cap.toLocaleString()} free/day` : ""}</div>
-                        ${pct !== null ? `
-                            <div class="w-full bg-gray-100 rounded-full h-1.5">
-                                <div class="h-1.5 rounded-full ${pct > 85 ? 'bg-red-500' : 'bg-black'}" style="width:${pct}%"></div>
-                            </div>
-                            <div class="text-[10px] text-gray-400 mt-1">${pct}% of daily free tokens used</div>
-                        ` : `<div class="text-[10px] text-gray-400">No published API-checkable cap — see provider dashboard</div>`}
+                        <div class="text-xs text-gray-600 mb-2">${tokens.toLocaleString()} tokens${cap ? ` · ~${cap.tokens.toLocaleString()} token budget/key/day` : ""}</div>
+                        <div class="w-full bg-gray-100 rounded-full h-1.5 mb-1">
+                            <div class="h-1.5 rounded-full ${pct > 85 ? 'bg-red-500' : 'bg-black'}" style="width:${pct}%"></div>
+                        </div>
+                        <div class="text-[10px] text-gray-400">${pct}% of tighter limit (req or tokens) · ${cap ? cap.note : ""} · multi-key multiplies capacity</div>
                     `;
                     el.appendChild(row);
                 });
