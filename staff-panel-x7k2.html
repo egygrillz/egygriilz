@@ -23,7 +23,7 @@
         .sidebar-mask { transition: opacity 0.2s; }
         .sidebar-panel { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
         .copy-btn { min-height: 32px; min-width: 56px; }
-        textarea, input, button, select { font-size: 16px; } /* prevents iOS zoom on focus for small inputs â€” override below for compact UI */
+        textarea, input, button, select { font-size: 16px; } /* prevents iOS zoom on focus for small inputs — override below for compact UI */
         #clientName, #clientMsg, #providerSelect, .text-xs, .text-\[10px\], .text-\[11px\] { font-size: inherit; }
         #clientName { font-size: 14px; }
         #clientMsg { font-size: 15px; }
@@ -48,6 +48,15 @@
         .msg-bubble p { margin: 0 0 0.65em 0; }
         .msg-bubble p:last-child { margin-bottom: 0; }
         .msg-bubble br + br { display: block; content: ""; margin-top: 0.35em; }
+
+        /* ---------- Exact Calculator: level picker + quote lines ---------- */
+        .lvl-chip { transition: background-color .15s, border-color .15s, color .15s; }
+        .lvl-chip.active { background: #000; border-color: #000; color: #fff; }
+        .lvl-chip.active .lvl-sub { color: #b9b9b9; }
+        .example-thumb { width: 100%; height: 78px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .line-card { transition: border-color .15s; }
+        .line-card:hover { border-color: #9ca3af; }
+        #calcLevelStrip::-webkit-scrollbar { height: 4px; }
     </style>
 </head>
 <body class="bg-white text-gray-900 h-screen overflow-hidden">
@@ -160,7 +169,7 @@
                                 <option value="">Auto (fallback)</option>
                                 <option value="gemini">Gemini</option>
                                 <option value="groq">Groq</option>
-                                                            </select>
+                            </select>
                             <span class="text-[10px] text-gray-300">Shift+Enter for new line</span>
                         </div>
                     </div>
@@ -184,6 +193,7 @@
                 <div class="flex-1 overflow-y-auto p-6 space-y-5">
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
                         Fill every section so Gemini and Groq answer the same way. Upload <code>EgyGrillz_Pricing_Engine.md</code> into <strong>Pricing Calculation Rules</strong>. Multi-key API rotation is configured on the Cloudflare Worker. Settings are stored in Firestore.
+                        <span class="block mt-1.5 text-[10px] text-gray-400">Design levels used by the panel: 0.5 Bars · 1 Solid (+0%) · 2 Open face (+10%) · 3 Mid detail (+15%) · 4 Complex (+25%) · 5 Scorpion / heavy detail (+40%) · 6 Ultimate (+60%). Keep the uploaded pricing .md using these exact names.</span>
                     </div>
 
                     <!-- About -->
@@ -196,7 +206,6 @@
                         <textarea id="settingAbout" rows="4" placeholder="Who EGYGRILLZ is, what you make, working hours, turnaround time, location/delivery, booking process, etc." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
                     </div>
 
-                    
                     <!-- Process -->
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
@@ -204,7 +213,7 @@
                             <button onclick="document.getElementById('uploadProcess').click()" class="text-[10px] text-gray-500 hover:text-black underline">Upload .md</button>
                             <input type="file" id="uploadProcess" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingProcess')">
                         </div>
-                        <textarea id="settingProcess" rows="4" placeholder="Steps from first contact â†’ deposit â†’ mold â†’ production â†’ delivery" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                        <textarea id="settingProcess" rows="4" placeholder="Steps from first contact → deposit → mold → production → delivery" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
                     </div>
 
                     <!-- Materials -->
@@ -218,7 +227,6 @@
                     </div>
 
                     <!-- Pricing Calculation -->
-
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pricing Calculation Rules</label>
@@ -226,14 +234,14 @@
                             <input type="file" id="uploadPricingCalc" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingPricingCalc')">
                         </div>
                         <textarea id="settingPricingCalc" rows="6" placeholder="Example:
-- Base price per tooth: [X] EGP for gold-plated, [Y] EGP for solid gold
-- Quantity discounts apply ONLY to non-material add-ons (e.g. gems, engraving) â€” never to the base metal cost
-- Round every final total to the nearest 50 EGP
+- Base price per tooth: [X] EGP for chrome, [Y] EGP for solid gold
+- Design levels: 0.5 Bars (half base, no design %) / 1 Solid (+0%) / 2 Open face (+10%) / 3 Mid detail (+15%) / 4 Complex (+25%) / 5 Scorpion-heavy (+40%) / 6 Ultimate (+60%)
+- A quote may contain several design lines; sum the lines, then apply the timeline %, then add the mold fee
+- Round every final total UP to the nearest 50 EGP
 - Mold kit fee: [X] EGP, refunded if client books in-studio fitting instead
-List every rule explicitly with real numbers â€” the AI can only calculate correctly with exact figures, not vague ranges." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none font-mono text-xs"></textarea>
+List every rule explicitly with real numbers — the AI can only calculate correctly with exact figures, not vague ranges." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none font-mono text-xs"></textarea>
                     </div>
 
-                    
                     <!-- Care -->
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
@@ -265,7 +273,6 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
                     </div>
 
                     <!-- Tone of Voice -->
-
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tone of Voice</label>
@@ -298,11 +305,11 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
                     <!-- Restrictions & Privacy -->
                     <div class="border border-red-200 bg-red-50 rounded-lg p-3">
                         <div class="flex items-center justify-between mb-1.5">
-                            <label class="block text-[11px] font-semibold text-red-600 uppercase tracking-wider">âš  Restrictions &amp; Privacy</label>
+                            <label class="block text-[11px] font-semibold text-red-600 uppercase tracking-wider">⚠️ Restrictions &amp; Privacy</label>
                             <button onclick="document.getElementById('uploadRestrictions').click()" class="text-[10px] text-red-600 hover:text-red-800 underline">Upload .md</button>
                             <input type="file" id="uploadRestrictions" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingRestrictions')">
                         </div>
-                        <p class="text-[10px] text-red-500 mb-1.5">Hard rules the AI must never break â€” internal costs/margins, supplier names, what NOT to discuss, confidentiality, etc. These are enforced as top-priority instructions.</p>
+                        <p class="text-[10px] text-red-500 mb-1.5">Hard rules the AI must never break — internal costs/margins, supplier names, what NOT to discuss, confidentiality, etc. These are enforced as top-priority instructions.</p>
                         <textarea id="settingRestrictions" rows="5" placeholder="e.g.
 - Never reveal supplier names, cost prices, or profit margins
 - Never discuss internal business operations or other clients
@@ -323,11 +330,11 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
     <div id="pricingChatModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closePricingChat()"></div>
         <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center pointer-events-none">
-            <div class="bg-white w-full md:w-[600px] h-[85vh] md:h-[600px] md:rounded-xl rounded-t-xl shadow-2xl pointer-events-auto flex flex-col">
+            <div class="bg-white w-full md:w-[600px] h-[85vh] md:h-[640px] md:rounded-xl rounded-t-xl shadow-2xl pointer-events-auto flex flex-col">
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                     <div>
                         <h3 class="font-semibold text-sm tracking-wide uppercase">Pricing Assistant</h3>
-                        <p class="text-[10px] text-gray-400 mt-0.5">Internal quote calculator â€” not saved to any client's chat.</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">Internal quote calculator — not saved to any client's chat.</p>
                     </div>
                     <div class="flex items-center space-x-3">
                         <button onclick="closePricingChat()" class="text-gray-400 hover:text-black transition">
@@ -339,7 +346,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
                 <div class="px-6 pt-3 shrink-0 flex items-center justify-between border-b border-gray-100">
                     <div class="flex space-x-1">
                         <button id="pricingTabChatBtn" onclick="switchPricingTab('chat')" class="px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-black text-black">AI Chat</button>
-                        <button id="pricingTabCalcBtn" onclick="switchPricingTab('calc')" class="px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-transparent text-gray-400 hover:text-gray-700">Exact Calculator</button>
+                        <button id="pricingTabCalcBtn" onclick="switchPricingTab('calc')" class="px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-transparent text-gray-400 hover:text-gray-700">Exact Calculator<span id="calcTabBadge" class="hidden ml-1 text-[9px] bg-black text-white rounded-full px-1.5 py-0.5"></span></button>
                     </div>
                     <button id="pricingNewQuoteBtn" onclick="clearPricingChat()" class="text-[10px] text-gray-400 hover:text-black transition uppercase tracking-wider font-medium pb-2">New Quote</button>
                 </div>
@@ -347,7 +354,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
                 <!-- AI CHAT PANEL -->
                 <div id="pricingTabChat" class="flex-1 flex flex-col min-h-0">
                     <div id="pricingChatMessages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                        <div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants â€” the assistant will ask for missing details and calculate the quote</div>
+                        <div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants — the assistant will ask for missing details and calculate the quote</div>
                     </div>
                     <div class="shrink-0 border-t border-gray-100 px-6 py-4">
                         <div class="bg-amber-50 border border-amber-200 text-amber-700 text-[10px] rounded-lg px-3 py-2 mb-2">
@@ -375,175 +382,245 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
 
                 <!-- EXACT CALCULATOR PANEL -->
                 <div id="pricingTabCalc" class="hidden flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                    <p class="text-[10px] text-gray-400">Deterministic â€” follows the pricing spec exactly, every time. Use this for the number you actually quote.</p>
+                    <p class="text-[10px] text-gray-400">Deterministic — follows the pricing spec exactly, every time. Use this for the number you actually quote.</p>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Material</label>
-                            <select id="calcMaterial" onchange="onCalcMaterialChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="chrome">Cobalt Chrome</option>
-                                <option value="titanium">Titanium</option>
-                                <option value="silver">Sterling Silver 925</option>
-                                <option value="gold">Gold</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Teeth (1â€“16)</label>
-                            <input type="number" id="calcTeeth" min="1" max="16" value="6" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                    <!-- Today's rates -->
+                    <div class="border border-gray-200 rounded-lg">
+                        <button type="button" onclick="toggleRatesPanel()" class="w-full flex items-center justify-between px-3 py-2">
+                            <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Today's rates <span id="ratesStatus" class="text-gray-300 normal-case font-normal tracking-normal"></span></span>
+                            <span id="ratesChevron" class="text-gray-400 text-[10px]">▾</span>
+                        </button>
+                        <div id="ratesPanel" class="px-3 pb-3 space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Gold EGP / gram</label>
+                                    <input type="number" id="rateGold" oninput="onTodayRatesInput()" placeholder="Today's rate" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" onclick="applyGoldRateToAllLines()" class="w-full py-1.5 border border-gray-300 rounded text-[10px] uppercase tracking-wider hover:bg-white">Apply to gold lines</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Lab-grown · per stone</label>
+                                    <input type="number" id="rateLabAccent" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Natural · per stone</label>
+                                    <input type="number" id="rateNatAccent" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Lab-grown · per tooth (full iced)</label>
+                                    <input type="number" id="rateLabFull" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Natural · per tooth (full iced)</label>
+                                    <input type="number" id="rateNatFull" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-gray-400">Saved on this device for today and auto-filled into the lines below. You can still override any line by hand.</p>
                         </div>
                     </div>
 
-                    <div id="calcGoldWrap" class="hidden grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Karat</label>
-                            <select id="calcKarat" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="10">10K</option>
-                                <option value="14">14K</option>
-                                <option value="18" selected>18K</option>
-                                <option value="21">21K</option>
-                                <option value="22">22K</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Gold EGP/g</label>
-                            <input type="number" id="calcGoldPrice" placeholder="Ask staff for today's rate" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                        </div>
-                    </div>
-
+                    <!-- Quote lines -->
                     <div>
-                        <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Design Level</label>
-                        <select id="calcLevel" onchange="onCalcLevelChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                            <option value="0.5">0.5 â€” Bars (half base, no design %)</option>
-                            <option value="1" selected>1 â€” Open face (+0%)</option>
-                            <option value="2">2 â€” More detail (+10%)</option>
-                            <option value="3">3 â€” Mid detail (+15%)</option>
-                            <option value="4">4 â€” Complex (+25%)</option>
-                            <option value="5">5 â€” Scorpion / heavy detail (+40%)</option>
-                            <option value="6">6 â€” Ultimate (+60%)</option>
-                        </select>
+                        <div class="flex items-center justify-between mb-1.5 gap-2">
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Design lines <span class="text-gray-300">(multiple designs in one quote)</span></label>
+                            <span class="shrink-0 flex items-center gap-2">
+                                <span id="lineCountBadge" class="text-[10px] text-gray-400"></span>
+                                <button type="button" onclick="clearLines()" class="text-[10px] text-gray-400 hover:text-red-500 underline">Clear all</button>
+                            </span>
+                        </div>
+                        <div id="quoteLinesList" class="space-y-2"></div>
+                        <div id="quoteLinesEmpty" class="text-[10px] text-gray-400 border border-dashed border-gray-200 rounded-lg px-3 py-2.5 leading-relaxed">
+                            No lines yet. Fill the line editor below and press “Add design line” for each design in the set — or just press “Calculate Exact Quote” to quote a single design.
+                        </div>
                     </div>
 
+                    <!-- Line editor -->
+                    <div id="lineEditor" class="border border-gray-200 rounded-lg p-3 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span id="editorTitle" class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Line editor</span>
+                            <button type="button" id="editorCancelEdit" onclick="cancelEditLine()" class="hidden text-[10px] text-gray-500 hover:text-black underline">Cancel edit</button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Material</label>
+                                <select id="calcMaterial" onchange="onCalcMaterialChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                    <option value="chrome">Cobalt Chrome</option>
+                                    <option value="titanium">Titanium</option>
+                                    <option value="silver">Sterling Silver 925</option>
+                                    <option value="gold">Gold</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Teeth (1–16)</label>
+                                <input type="number" id="calcTeeth" min="1" max="16" value="6" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                            </div>
+                        </div>
+
+                        <div id="calcGoldWrap" class="hidden grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Karat</label>
+                                <select id="calcKarat" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                    <option value="10">10K</option>
+                                    <option value="14">14K</option>
+                                    <option value="18" selected>18K</option>
+                                    <option value="21">21K</option>
+                                    <option value="22">22K</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Gold EGP/g</label>
+                                <input type="number" id="calcGoldPrice" placeholder="Ask staff for today's rate" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Design Level</label>
+                            <select id="calcLevel" onchange="onCalcLevelChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="0.5">0.5 — Bars (half base, no design %)</option>
+                                <option value="1" selected>1 — Solid (+0%)</option>
+                                <option value="2">2 — Open face (+10%)</option>
+                                <option value="3">3 — Mid detail (+15%)</option>
+                                <option value="4">4 — Complex (+25%)</option>
+                                <option value="5">5 — Scorpion / heavy detail (+40%)</option>
+                                <option value="6">6 — Ultimate (+60%)</option>
+                            </select>
+                            <div id="calcLevelStrip" class="flex gap-2 overflow-x-auto mt-2 pb-1"></div>
+                            <button type="button" onclick="toggleLevelGuide()" class="mt-1 text-[10px] text-gray-500 hover:text-black underline">Level guide &amp; examples</button>
+                            <div id="calcLevelGuide" class="hidden mt-2 space-y-2"></div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Stones</label>
+                            <select id="calcStonesMode" onchange="onCalcStonesChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <option value="none">None</option>
+                                <option value="accent">Accent (per stone)</option>
+                                <option value="fulliced">Full iced (per tooth)</option>
+                            </select>
+                            <p id="calcNoStonesNote" class="hidden text-[10px] text-gray-400 mt-1">Chrome and Titanium don't take stones.</p>
+                        </div>
+
+                        <div id="calcAccentWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Count</label>
+                                    <input type="number" id="calcAccentCount" min="1" value="1" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Type</label>
+                                    <select id="calcAccentType" onchange="onCalcAccentTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                        <option value="cz">CZ</option>
+                                        <option value="moissanite">Moissanite</option>
+                                        <option value="labgrown">Lab-Grown</option>
+                                        <option value="natural">Natural</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Setting</label>
+                                    <select id="calcAccentSetting" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                        <option value="flush">Flush (150)</option>
+                                        <option value="twoprong">2-Prong (175)</option>
+                                        <option value="threeprong">3-Prong (200)</option>
+                                        <option value="fourprong">4-Prong (200)</option>
+                                        <option value="sixprong">6-Prong (220)</option>
+                                        <option value="bezelfull">Bezel full (250)</option>
+                                        <option value="bezelhalf">Bezel half (225)</option>
+                                        <option value="bar">Bar setting (200)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="calcAccentCustomPriceWrap" class="hidden">
+                                <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/stone) — ask staff</label>
+                                <input type="number" id="calcAccentCustomPrice" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                            </div>
+                        </div>
+
+                        <div id="calcFullIcedWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
+                            <div id="calcFullIcedBarsNote" class="hidden text-[10px] text-gray-500">Level 0.5 Bars + full iced uses a fixed 400 EGP/tooth — no type/coverage needed.</div>
+                            <div id="calcFullIcedNormalFields" class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Type</label>
+                                    <select id="calcFullType" onchange="onCalcFullTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                        <option value="cz">CZ</option>
+                                        <option value="moissanite">Moissanite</option>
+                                        <option value="labgrown">Lab-Grown</option>
+                                        <option value="natural">Natural</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">Coverage</label>
+                                    <select id="calcCoverage" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                        <option value="standardpave">Standard Pave (1000)</option>
+                                        <option value="frenchpave">French Pave (1100)</option>
+                                        <option value="micropave">Micro-Pave (1200)</option>
+                                        <option value="channel">Channel (1500)</option>
+                                        <option value="invisible">Invisible (2500)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="calcFullCustomPriceWrap" class="hidden">
+                                <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/tooth) — ask staff</label>
+                                <input type="number" id="calcFullCustomPrice" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Plating</label>
+                                <select id="calcPlating" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                    <option value="none">None</option>
+                                    <option value="blackgold">Black gold (400)</option>
+                                    <option value="whitegold">White gold (400)</option>
+                                    <option value="rosegold">Rose gold (300)</option>
+                                    <option value="silverplating">Silver plating (200)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Enamel</label>
+                                <select id="calcEnamel" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                    <option value="none">None</option>
+                                    <option value="single">Single (200)</option>
+                                    <option value="multi">Multi (350)</option>
+                                    <option value="master">Master (750)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Engraving</label>
+                                <select id="calcEngraving" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                    <option value="none">None</option>
+                                    <option value="small">Small (200)</option>
+                                    <option value="medium">Medium (450)</option>
+                                    <option value="large">Large (700)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="button" id="addLineBtn" onclick="addDesignLine()" class="w-full py-2.5 border border-black text-black rounded-lg hover:bg-black hover:text-white transition text-[10px] font-medium uppercase tracking-wider">＋ Add design line to quote</button>
+                    </div>
+
+                    <!-- Order level settings -->
                     <div>
-                        <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Stones</label>
-                        <select id="calcStonesMode" onchange="onCalcStonesChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                            <option value="none">None</option>
-                            <option value="accent">Accent (per stone)</option>
-                            <option value="fulliced">Full iced (per tooth)</option>
-                        </select>
-                        <p id="calcNoStonesNote" class="hidden text-[10px] text-gray-400 mt-1">Chrome and Titanium don't take stones.</p>
-                    </div>
-
-                    <div id="calcAccentWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
-                        <div class="grid grid-cols-3 gap-2">
+                        <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Order settings (whole quote)</label>
+                        <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Count</label>
-                                <input type="number" id="calcAccentCount" min="1" value="1" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Type</label>
-                                <select id="calcAccentType" onchange="onCalcAccentTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                    <option value="cz">CZ</option>
-                                    <option value="moissanite">Moissanite</option>
-                                    <option value="labgrown">Lab-Grown</option>
-                                    <option value="natural">Natural</option>
+                                <label class="block text-[10px] text-gray-500 mb-1">Timeline</label>
+                                <select id="calcTimeline" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                    <option value="standard">Standard (+0%)</option>
+                                    <option value="rush">Rush (+25%)</option>
+                                    <option value="emergency">Emergency (+50%)</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Setting</label>
-                                <select id="calcAccentSetting" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                    <option value="flush">Flush (150)</option>
-                                    <option value="twoprong">2-Prong (175)</option>
-                                    <option value="threeprong">3-Prong (200)</option>
-                                    <option value="fourprong">4-Prong (200)</option>
-                                    <option value="sixprong">6-Prong (220)</option>
-                                    <option value="bezelfull">Bezel full (250)</option>
-                                    <option value="bezelhalf">Bezel half (225)</option>
-                                    <option value="bar">Bar setting (200)</option>
+                                <label class="block text-[10px] text-gray-500 mb-1">Mold</label>
+                                <select id="calcMold" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                    <option value="none">None</option>
+                                    <option value="normalperarch">Normal, per arch (200)</option>
+                                    <option value="digitalfullmouth">Digital full mouth (1500)</option>
                                 </select>
                             </div>
-                        </div>
-                        <div id="calcAccentCustomPriceWrap" class="hidden">
-                            <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/stone) â€” ask staff</label>
-                            <input type="number" id="calcAccentCustomPrice" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                        </div>
-                    </div>
-
-                    <div id="calcFullIcedWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
-                        <div id="calcFullIcedBarsNote" class="hidden text-[10px] text-gray-500">Level 0.5 Bars + full iced uses a fixed 400 EGP/tooth â€” no type/coverage needed.</div>
-                        <div id="calcFullIcedNormalFields" class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Type</label>
-                                <select id="calcFullType" onchange="onCalcFullTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                    <option value="cz">CZ</option>
-                                    <option value="moissanite">Moissanite</option>
-                                    <option value="labgrown">Lab-Grown</option>
-                                    <option value="natural">Natural</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Coverage</label>
-                                <select id="calcCoverage" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                    <option value="standardpave">Standard Pave (1000)</option>
-                                    <option value="frenchpave">French Pave (1100)</option>
-                                    <option value="micropave">Micro-Pave (1200)</option>
-                                    <option value="channel">Channel (1500)</option>
-                                    <option value="invisible">Invisible (2500)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="calcFullCustomPriceWrap" class="hidden">
-                            <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/tooth) â€” ask staff</label>
-                            <input type="number" id="calcFullCustomPrice" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Plating</label>
-                            <select id="calcPlating" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="none">None</option>
-                                <option value="blackgold">Black gold (400)</option>
-                                <option value="whitegold">White gold (400)</option>
-                                <option value="rosegold">Rose gold (300)</option>
-                                <option value="silverplating">Silver plating (200)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Enamel</label>
-                            <select id="calcEnamel" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="none">None</option>
-                                <option value="single">Single (200)</option>
-                                <option value="multi">Multi (350)</option>
-                                <option value="master">Master (750)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Engraving</label>
-                            <select id="calcEngraving" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="none">None</option>
-                                <option value="small">Small (200)</option>
-                                <option value="medium">Medium (450)</option>
-                                <option value="large">Large (700)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Timeline</label>
-                            <select id="calcTimeline" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="standard">Standard (+0%)</option>
-                                <option value="rush">Rush (+25%)</option>
-                                <option value="emergency">Emergency (+50%)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Mold</label>
-                            <select id="calcMold" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="none">None</option>
-                                <option value="normalperarch">Normal, per arch (200)</option>
-                                <option value="digitalfullmouth">Digital full mouth (1500)</option>
-                            </select>
                         </div>
                     </div>
 
@@ -573,7 +650,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
             <div class="bg-white w-full md:w-[600px] h-[85vh] md:h-[600px] md:rounded-xl rounded-t-xl shadow-2xl pointer-events-auto flex flex-col">
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                     <div>
-                        <h3 class="font-semibold text-sm tracking-wide uppercase">Ask AI â€” Staff Only</h3>
+                        <h3 class="font-semibold text-sm tracking-wide uppercase">Ask AI — Staff Only</h3>
                         <p class="text-[10px] text-gray-400 mt-0.5">Not visible to clients. Uses the same knowledge base.</p>
                     </div>
                     <button onclick="closeStaffChat()" class="text-gray-400 hover:text-black transition">
@@ -581,7 +658,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
                     </button>
                 </div>
                 <div id="staffChatMessages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                    <div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Ask anything â€” pricing math, drafting help, quick questions</div>
+                    <div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Ask anything — pricing math, drafting help, quick questions</div>
                 </div>
                 <div class="shrink-0 border-t border-gray-100 px-6 py-4">
                     <div class="flex items-end space-x-3">
@@ -599,7 +676,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
                             <option value="">Auto (fallback)</option>
                             <option value="gemini">Gemini</option>
                             <option value="groq">Groq</option>
-                                                    </select>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -612,7 +689,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
         <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center pointer-events-none">
             <div class="bg-white w-full md:w-[480px] md:max-h-[75vh] md:rounded-xl rounded-t-xl shadow-2xl pointer-events-auto flex flex-col max-h-[90vh]">
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <h3 class="font-semibold text-sm tracking-wide uppercase">AI Usage â€” Today</h3>
+                    <h3 class="font-semibold text-sm tracking-wide uppercase">AI Usage — Today</h3>
                     <button onclick="closeUsage()" class="text-gray-400 hover:text-black transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -621,7 +698,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
                     <div class="text-center py-10 text-gray-400 text-xs">Loading...</div>
                 </div>
                 <div class="px-6 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl">
-                    <p class="text-[10px] text-gray-400">Resets daily. Gemini/Groq don't expose an exact remaining quota via API â€” check their dashboards for the full picture.</p>
+                    <p class="text-[10px] text-gray-400">Resets daily. Gemini/Groq don't expose an exact remaining quota via API — check their dashboards for the full picture.</p>
                 </div>
             </div>
         </div>
@@ -662,7 +739,7 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
 
     <script>
         // ==================== CONFIG ====================
-        // Firebase web config is safe to expose publicly â€” it is NOT a secret,
+        // Firebase web config is safe to expose publicly — it is NOT a secret,
         // it just identifies which Firebase project to talk to. Real access
         // control is enforced by Firestore Security Rules (see firestore.rules).
         const firebaseConfig = {
@@ -678,17 +755,17 @@ List every rule explicitly with real numbers â€” the AI can only calculate 
         const auth = firebase.auth();
 
         // The Cloudflare Worker URL that proxies Gemini/Groq. The Gemini and
-        // Groq API keys live ONLY in the Worker's environment now â€” never here.
+        // Groq API keys live ONLY in the Worker's environment now — never here.
         const WORKER_URL = "https://egygrillz-clientele-assistant.egygrillzplatformsassistant.workers.dev";
 
         let currentSettings = {
             about: `EGYGRILLZ is a custom dental jewelry and grillz studio in Egypt.
 
-Working hours: Mondayâ€“Saturday, 12:00â€“20:00.
-Typical turnaround: 5â€“7 business days after design and mold approval.
+Working hours: Monday–Saturday, 12:00–20:00.
+Typical turnaround: 5–7 business days after design and mold approval.
 Studio fittings by appointment. Mold kit or digital scan options available.
 
-We craft pieces in Cobalt Chrome, Titanium, Sterling Silver 925, and Gold (10Kâ€“22K).`,
+We craft pieces in Cobalt Chrome, Titanium, Sterling Silver 925, and Gold (10K–22K).`,
 
             process: `1. Choose material, number of teeth, design level, and any stones or finishing.
 2. Confirm the quote.
@@ -700,18 +777,18 @@ We craft pieces in Cobalt Chrome, Titanium, Sterling Silver 925, and Gold (10Kâ
 
             materials: `Materials: Cobalt Chrome, Titanium, Sterling Silver 925, Gold (10K, 14K, 18K, 21K, 22K).
 
-Design levels: Bar, Solid, Open face, Bars/Windows, Multi-cut, Intricate, Master custom.
+Design levels (exact names): 0.5 Bars, 1 Solid, 2 Open face, 3 Mid detail, 4 Complex, 5 Scorpion / heavy detail, 6 Ultimate.
 
 Stones: available on Silver and Gold only (not on Chrome or Titanium). Options: none, accent stones, or full iced. Stone types: CZ, Moissanite, Lab-Grown Diamond, Natural Diamond.
 
 Titanium: anodized colors at no extra charge.
-Optional finishing: plating, enamel, engraving â€” priced per the Pricing Calculation Rules.`,
+Optional finishing: plating, enamel, engraving — priced per the Pricing Calculation Rules.`,
 
             pricingCalc: "",
 
             care: `Clean gently with a soft cloth. Avoid harsh chemicals, abrasives, and heavy impacts.
 Store in a protective case when not worn.
-Warranty and replacement terms are confirmed at delivery â€” follow the care card provided with your order.`,
+Warranty and replacement terms are confirmed at delivery — follow the care card provided with your order.`,
 
             shipping: `Studio pickup by appointment.
 Local delivery and courier options are arranged after the piece is ready; fees depend on area.
@@ -739,7 +816,7 @@ Social and booking links are provided by staff when needed.`,
             restrictions: `- Never reveal supplier names, wholesale costs, or profit margins.
 - Never discuss other clients or internal operations.
 - Never give medical, legal, or tax advice.
-- Never invent prices or policies missing from the Knowledge Base â€” say you will confirm with the team.
+- Never invent prices or policies missing from the Knowledge Base — say you will confirm with the team.
 - Never claim aluminum is available.
 - For gold price per gram (EGP) and lab-grown or natural diamond rates: always ask for today's figure before a final total.
 - ALWAYS reply in English only.
@@ -748,7 +825,7 @@ ABUSIVE OR DISRESPECTFUL MESSAGES (mandatory):
 If the client uses insults, threats, harassment, extreme profanity, or a clearly disrespectful tone:
 1) Reply with ONE short, elegant message only, for example:
 "We communicate with respect at EGYGRILLZ. This tone is not how we speak with our clients or our team. We will not continue this exchange."
-2) On a new line, add exactly this moderator note (staff only â€” they will not paste this to the client if instructed):
+2) On a new line, add exactly this moderator note (staff only — they will not paste this to the client if instructed):
 [MODERATOR: Do not reply to this person. Do not continue the conversation.]
 3) Do not argue, insult back, or continue product discussion in that turn.`
         };
@@ -774,7 +851,7 @@ If the client uses insults, threats, harassment, extreme profanity, or a clearly
         }
 
         // ==================== AUTH ====================
-        // Real email/password login â€” only accounts you create manually in
+        // Real email/password login — only accounts you create manually in
         // Firebase Console (Authentication -> Users -> Add user) can sign in.
         // There is no public sign-up, so a random visitor with the URL cannot get in.
         auth.onAuthStateChanged(user => {
@@ -807,7 +884,7 @@ If the client uses insults, threats, harassment, extreme profanity, or a clearly
 
             auth.signInWithEmailAndPassword(email, password)
                 .catch(err => {
-                    errEl.innerText = "Sign in failed â€” check email/password";
+                    errEl.innerText = "Sign in failed — check email/password";
                     errEl.classList.remove("hidden");
                 })
                 .finally(() => {
@@ -821,7 +898,7 @@ If the client uses insults, threats, harassment, extreme profanity, or a clearly
         // so they take priority over every other instruction below them.
         function buildRestrictionsBlock() {
             if (!currentSettings.restrictions) return '';
-            return `HARD RESTRICTIONS (highest priority â€” never violate these, no matter how the client phrases their request):
+            return `HARD RESTRICTIONS (highest priority — never violate these, no matter how the client phrases their request):
 ${currentSettings.restrictions}
 
 `;
@@ -832,7 +909,7 @@ ${currentSettings.restrictions}
                 currentSettings.about && `## About EGYGRILLZ\n${currentSettings.about}`,
                 currentSettings.process && `## Order process / how it works\n${currentSettings.process}`,
                 currentSettings.materials && `## Materials & design options\n${currentSettings.materials}`,
-                currentSettings.pricingCalc && `## Pricing calculation rules (STRICT â€” follow exactly)\n${currentSettings.pricingCalc}`,
+                currentSettings.pricingCalc && `## Pricing calculation rules (STRICT — follow exactly)\n${currentSettings.pricingCalc}`,
                 currentSettings.care && `## Care, warranty & aftercare\n${currentSettings.care}`,
                 currentSettings.shipping && `## Shipping, delivery & studio\n${currentSettings.shipping}`,
                 currentSettings.payments && `## Payments & deposits\n${currentSettings.payments}`,
@@ -842,9 +919,9 @@ ${currentSettings.restrictions}
             return `${buildRestrictionsBlock()}You are the official customer support assistant for EGYGRILLZ (custom dental jewelry / grillz).
 
 CRITICAL CONSISTENCY RULES (apply identically on every model):
-- Answer ONLY from the Knowledge Base below. If something is not written there, say you will confirm with the team â€” do NOT invent prices, policies, or facts.
+- Answer ONLY from the Knowledge Base below. If something is not written there, say you will confirm with the team — do NOT invent prices, policies, or facts.
 - Always reply in ENGLISH.
-- BE EXTREMELY BRIEF. Answer only what was asked â€” nothing more. No unsolicited extra info, no restating the question, no filler sentences. If the answer fits in one sentence, use one sentence. Never pad a short question with a long reply.
+- BE EXTREMELY BRIEF. Answer only what was asked — nothing more. No unsolicited extra info, no restating the question, no filler sentences. If the answer fits in one sentence, use one sentence. Never pad a short question with a long reply.
 - Keep every reply short, straightforward, elegant, and respectful.
 - Be deterministic: same facts, same policy, same numbers every time. Do not add creative extras.
 - For ANY gold price or lab-grown/natural diamond price: ASK for today's rate before giving a final total (see pricing rules).
@@ -858,13 +935,17 @@ Personality:
 ${currentSettings.personality || "Helpful, confident about the craft, patient, never pushy."}
 
 KNOWLEDGE BASE:
-${kb || "(Knowledge base empty â€” ask staff to fill Knowledge Base settings.)"}
+${kb || "(Knowledge base empty — ask staff to fill Knowledge Base settings.)"}
 
 Response structure:
-- Answer the question directly and briefly â€” that's the priority, not a fixed template.
+- Answer the question directly and briefly — that's the priority, not a fixed template.
 - A greeting is only needed at the very start of a conversation, not on every message.
-- Only add a next step / CTA when it's genuinely relevant (e.g. they're ready to book or need to send design refs) â€” skip it otherwise.`;
+- Only add a next step / CTA when it's genuinely relevant (e.g. they're ready to book or need to send design refs) — skip it otherwise.`;
         }
+
+        // Level names are hardcoded here on purpose so the AI can never drift from
+        // the panel's own labels, even if the uploaded pricing .md is worded differently.
+        const LEVEL_NAMES_LINE = "0.5 Bars (half base, no design %) / 1 Solid (+0%) / 2 Open face (+10%) / 3 Mid detail (+15%) / 4 Complex (+25%) / 5 Scorpion-heavy (+40%) / 6 Ultimate (+60%).";
 
         function buildPricingSystemPrompt() {
             return `${buildRestrictionsBlock()}You are the EGYGRILLZ internal pricing assistant for staff only.
@@ -877,33 +958,45 @@ CRITICAL:
 - Never re-ask what was already answered in this thread.
 - Gold EGP/g and lab-grown/natural diamond rates: ASK for today's numbers before a final total.
 - Same math every time. Round final totals UP to nearest 50 EGP.
-- IMPORTANT: once you have all the details, give your best breakdown and total, but also explicitly tell staff to confirm the exact total on the built-in "Exact Calculator" tab (deterministic, never wrong) before quoting the client â€” your arithmetic is a draft, the calculator is the source of truth.
-- If a message starts with "[Exact Calculator result â€” use this number]", that number is already verified â€” restate it as the confirmed quote instead of recalculating.
+- IMPORTANT: once you have all the details, give your best breakdown and total, but also explicitly tell staff to confirm the exact total on the built-in "Exact Calculator" tab (deterministic, never wrong) before quoting the client — your arithmetic is a draft, the calculator is the source of truth.
+- If a message starts with "[Exact Calculator result — use this number]", that number is already verified — restate it as the confirmed quote instead of recalculating.
+
+DESIGN LEVELS (use these exact names — the same ones shown in the Exact Calculator):
+${LEVEL_NAMES_LINE}
+Never invent level names or percentages. If staff describe a design that isn't clearly one of those levels, ask which level to use.
+
+MULTIPLE DESIGNS IN ONE QUOTE:
+- A single order may contain several design lines (e.g. top grillz mid detail + bottom grillz bars, or a 6-tooth piece plus a 4-tooth piece).
+- For each line, collect: material (+ karat/gold rate if gold), teeth, design level, stones, and any per-tooth finishing (plating/enamel/engraving).
+- Order-level settings apply once to the whole quote: timeline (%) and mold fee.
+- The Exact Calculator supports multiple lines and does all of this deterministically — prefer sending staff there for the final number.
+- If staff paste an Exact Calculator result (lines included), treat it as verified: just restate the totals + next step. Never re-add or re-sum the lines yourself.
 
 STONE / ICED RULES (do not get confused):
-- Level 0.5 Bars: material = half base. If also full iced on Bars: stoneCost = teeth Ã— 400 only (no diamond count, no pave table).
-- Full iced on levels 1â€“6: PER TOOTH = teeth Ã— (fullPrice + coverage). Need stone type + coverage style. Do NOT ask how many diamonds.
-- Accent: per stone = count Ã— (type + setting).
+- Level 0.5 Bars: material = half base. If also full iced on Bars: stoneCost = teeth × 400 only (no diamond count, no pave table).
+- Full iced on levels 1–6: PER TOOTH = teeth × (fullPrice + coverage). Need stone type + coverage style. Do NOT ask how many diamonds.
+- Accent: per stone = count × (type + setting).
 - Chrome and Titanium: stones not allowed.
-- Prefer the "Saved / reference quotes" table in Pricing Rules when the config matches â€” reuse those totals.
+- Prefer the "Saved / reference quotes" table in Pricing Rules when the config matches — reuse those totals.
 
 CORRECT QUESTION ORDER (skip any step already answered):
-1. Material? (Chrome / Titanium / Silver / Gold). If Gold â†’ karat, then today's gold EGP per gram.
-2. Number of teeth? (1â€“16)
-3. Design level? (0.5 Bars = half base / 1 Open face / 2 More detail / 3 Mid / 4 Complex / 5 Scorpion / 6 Ultimate)
+1. Material? (Chrome / Titanium / Silver / Gold). If Gold → karat, then today's gold EGP per gram.
+2. Number of teeth? (1–16)
+3. Design level? (0.5 Bars = half base / 1 Solid / 2 Open face / 3 Mid detail / 4 Complex / 5 Scorpion-heavy / 6 Ultimate)
 4. Stones mode? (None / Accent / Full iced)
-   - If Accent â†’ how many stones? â†’ type? â†’ setting?
-   - If Full iced â†’ stone type? â†’ coverage style? (never ask diamond count)
-   - If Lab-Grown or Natural â†’ ask today's accent and/or full-iced rates from staff
+   - If Accent → how many stones? → type? → setting?
+   - If Full iced → stone type? → coverage style? (never ask diamond count)
+   - If Lab-Grown or Natural → ask today's accent and/or full-iced rates from staff
 5. Plating? Enamel? Engraving? (or none)
 6. Timeline? (Standard / Rush / Emergency)
 7. Mold? (None / Normal per arch / Digital full mouth)
-8. When complete â†’ clear breakdown + final total (ceil to 50 EGP) + short next step.
+8. More than one design in the set? → ask if there's another piece/design line, then repeat steps 1–5 for it.
+9. When complete → clear per-line breakdown + final total (ceil to 50 EGP) + remind staff to verify on the Exact Calculator tab.
 
 If the message is vague ("iced out 6 teeth"), assume what is explicit, ask only the next missing item in the order above.
 
 Pricing Calculation Rules:
-${currentSettings.pricingCalc || "(Upload EgyGrillz_Pricing_Engine.md into Knowledge Base â†’ Pricing Calculation Rules.)"}
+${currentSettings.pricingCalc || "(Upload EgyGrillz_Pricing_Engine.md into Knowledge Base → Pricing Calculation Rules.)"}
 
 Materials summary:
 ${currentSettings.materials || ""}
@@ -1032,7 +1125,7 @@ ${currentSettings.materials || ""}
                 document.getElementById("providerBadge").innerText = `Generated via ${result.provider}`;
                 if (result.warnings && result.warnings.length) {
                     console.warn("AI provider fallback warnings:", result.warnings);
-                    showToast(`Used ${result.provider} â€” others failed: ${result.warnings.join(" | ")}`, true);
+                    showToast(`Used ${result.provider} — others failed: ${result.warnings.join(" | ")}`, true);
                 }
                 setStatus("ready", "Ready");
                 loadAllClients();
@@ -1108,7 +1201,7 @@ ${currentSettings.materials || ""}
                     document.execCommand("copy");
                     showToast(label || "Copied");
                 } catch {
-                    showToast("Copy failed â€” long-press the message", true);
+                    showToast("Copy failed — long-press the message", true);
                 }
                 document.body.removeChild(ta);
             }
@@ -1134,7 +1227,7 @@ ${currentSettings.materials || ""}
                         </div>
                         <div class="text-right mt-1.5 mr-0.5 flex items-center justify-end gap-2 flex-wrap">
                             <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-95" data-copy-full>Copy</button>
-                            <span class="text-[10px] text-gray-400">Client Â· ${time}</span>
+                            <span class="text-[10px] text-gray-400">Client · ${time}</span>
                         </div>
                     </div>
                 `;
@@ -1148,7 +1241,7 @@ ${currentSettings.materials || ""}
                         <div class="mt-1.5 ml-0.5 flex items-center gap-2 flex-wrap">
                             <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded-md bg-black text-white hover:bg-gray-800 active:scale-95" data-copy-client title="Clean text for Instagram / WhatsApp">Copy for client</button>
                             <button type="button" class="copy-btn text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95" data-copy-full title="Full reply including staff notes">Copy full</button>
-                            <span class="text-[10px] text-gray-400">AI Â· ${time}</span>
+                            <span class="text-[10px] text-gray-400">AI · ${time}</span>
                             ${data.provider ? `<span class="text-[10px] text-gray-300 bg-gray-100 px-1.5 py-0.5 rounded">${escapeHtml(data.provider)}</span>` : ''}
                         </div>
                     </div>
@@ -1203,7 +1296,7 @@ ${currentSettings.materials || ""}
                             ${name.charAt(0).toUpperCase()}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="font-medium text-xs text-gray-900 truncate">${name}</p>
+                            <p class="font-medium text-xs text-gray-900 truncate">${escapeHtml(name)}</p>
                             <p class="text-[10px] text-gray-400">${timeAgo(updated)}</p>
                         </div>
                         <button onclick="event.stopPropagation(); deleteClient('${name.replace(/'/g, "\\'")}')" class="opacity-0 group-hover:opacity-100 transition text-gray-300 hover:text-red-500 p-1 shrink-0" title="Delete conversation">
@@ -1347,8 +1440,10 @@ ${currentSettings.materials || ""}
         function buildStaffSystemPrompt() {
             return `${buildRestrictionsBlock()}You are an internal assistant for EGYGRILLZ staff (NOT a client).
 Answer plainly. You may help with pricing math using the pricing rules, drafts, and quick ops questions.
-Always English. Do not invent missing knowledge â€” say what must be confirmed.
+Always English. Do not invent missing knowledge — say what must be confirmed.
 BE EXTREMELY BRIEF. Answer only what was asked, in as few words as possible. No padding, no restating the question.
+
+Design levels (use these exact names): ${LEVEL_NAMES_LINE}
 
 About:
 ${currentSettings.about || ""}
@@ -1385,7 +1480,7 @@ ${currentSettings.generalInfo || ""}
                 .orderBy("timestamp", "asc")
                 .onSnapshot(snapshot => {
                     if (snapshot.empty) {
-                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Ask anything â€” pricing math, drafting help, quick questions</div>`;
+                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Ask anything — pricing math, drafting help, quick questions</div>`;
                         return;
                     }
                     listEl.innerHTML = "";
@@ -1472,7 +1567,7 @@ ${currentSettings.generalInfo || ""}
                 .orderBy("timestamp", "asc")
                 .onSnapshot(snapshot => {
                     if (snapshot.empty) {
-                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants â€” the assistant will ask for missing details and calculate the quote</div>`;
+                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants — the assistant will ask for missing details and calculate the quote</div>`;
                         return;
                     }
                     listEl.innerHTML = "";
@@ -1521,7 +1616,7 @@ ${currentSettings.generalInfo || ""}
                 });
 
                 const history = await getRecentThreadHistoryText(threadRef);
-                const promptWithHistory = `Conversation so far:\n${history}\n\nContinue the intake â€” ask the next missing detail, or give the final quote if you now have everything you need.`;
+                const promptWithHistory = `Conversation so far:\n${history}\n\nContinue the intake — ask the next missing detail, or give the final quote if you now have everything you need.`;
                 const result = await getAIResponse(promptWithHistory, buildPricingSystemPrompt(), document.getElementById("pricingProviderSelect").value);
                 logUsage(result.provider, result.tokens);
 
@@ -1577,8 +1672,10 @@ ${currentSettings.generalInfo || ""}
         }
 
         // ==================== EXACT PRICING CALCULATOR ====================
-        // Deterministic implementation of EgyGrillz_Pricing_Engine.md (v4).
-        // This never guesses â€” same inputs always give the same, spec-correct total.
+        // Deterministic implementation of EgyGrillz_Pricing_Engine.md (v4 + level rename).
+        // Supports MULTIPLE design lines in one quote: each line = material + teeth +
+        // level + stones + per-tooth finishing. Timeline % and mold fee are order-level
+        // and applied on the sum of all lines, then the total is rounded UP to 50 EGP.
         const CALC_MATERIAL_BASE = { chrome: 1000, titanium: 2800, silver: 1600 };
         const CALC_GOLD_KARAT = {
             "10": { purity: 0.417, margin: 2.5 },
@@ -1600,7 +1697,7 @@ ${currentSettings.generalInfo || ""}
 
         const CALC_LABELS = {
             material: { chrome: "Cobalt Chrome", titanium: "Titanium", silver: "Sterling Silver 925", gold: "Gold" },
-            level: { "0.5": "0.5 Bars", "1": "1 Open face", "2": "2 More detail", "3": "3 Mid detail", "4": "4 Complex", "5": "5 Scorpion", "6": "6 Ultimate" },
+            level: { "0.5": "0.5 Bars", "1": "1 Solid", "2": "2 Open face", "3": "3 Mid detail", "4": "4 Complex", "5": "5 Scorpion", "6": "6 Ultimate" },
             accentType: { cz: "CZ", moissanite: "Moissanite", labgrown: "Lab-Grown", natural: "Natural" },
             setting: { flush: "Flush", twoprong: "2-Prong", threeprong: "3-Prong", fourprong: "4-Prong", sixprong: "6-Prong", bezelfull: "Bezel full", bezelhalf: "Bezel half", bar: "Bar setting" },
             coverage: { standardpave: "Standard Pave", frenchpave: "French Pave", micropave: "Micro-Pave", channel: "Channel", invisible: "Invisible" },
@@ -1611,10 +1708,356 @@ ${currentSettings.generalInfo || ""}
             mold: { none: "None", normalperarch: "Normal per arch", digitalfullmouth: "Digital full mouth" }
         };
 
+        // Design levels as shown to staff — one place to edit descriptions/examples.
+        const LEVEL_INFO = {
+            "0.5": { name: "Bars", pct: 0, desc: "Half base. Open bars / windows in the front only, visible teeth behind.", examples: ["Single bar across the front", "Bars + windows", "3-4 bars with gaps"] },
+            "1":   { name: "Solid", pct: 0, desc: "Fully solid metal, no cuts. One clean metal surface.", examples: ["Plain solid cap / full cover", "Solid front, plain sides", "Solid with mirror finish"] },
+            "2":   { name: "Open face", pct: 10, desc: "Solid base with openings cut over the face of the teeth.", examples: ["Window over the front teeth", "Centre opening + solid sides", "Solid with an open face section"] },
+            "3":   { name: "Mid detail", pct: 15, desc: "Moderate detail — lettering, simple outlines, a few cuts.", examples: ["Name or lettering", "Diamond-cut outlines", "Two-tone with simple line pattern"] },
+            "4":   { name: "Complex", pct: 25, desc: "Dense, intricate detail across most of the piece.", examples: ["Full deep engraving", "Dense diamond-cut pattern", "Multi-eyelet / many cuts"] },
+            "5":   { name: "Scorpion", pct: 40, desc: "Heavy 3D detail — sculpted shapes and deep relief.", examples: ["Scorpion or animal shape", "3D logo sculpted in metal", "Deep relief across all teeth"] },
+            "6":   { name: "Ultimate", pct: 60, desc: "Ultimate custom work — fully sculpted, multi-layer, maximum detail.", examples: ["Full custom sculpture piece", "Multi-layer 3D with cut-outs", "Anything beyond heavy detail"] }
+        };
+        // Place your own reference photos in a folder next to this file,
+        // then set the path here — e.g. "levels/3.jpg" or "https://..."
+        const LEVEL_EXAMPLE_IMAGES = { "0.5": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "" };
+
+        const LINE_TIMELINE_DEFAULT = "standard";
+        let calcLines = [];        // saved design lines for the current quote
+        let editingLineId = null;  // null = editor in "add new line" mode
+        let lineSeq = 0;
+
+        // ---------- Quote lines store ----------
+        function newLineId() { lineSeq += 1; return "L" + Date.now().toString(36) + lineSeq; }
+
+        function getLines() {
+            return calcLines.map(l => ({ ...l }));
+        }
+
+        function setLines(lines) {
+            calcLines = Array.isArray(lines) ? lines : [];
+            refreshLinesUI();
+        }
+
+        function refreshLinesUI() {
+            renderLinesList();
+            renderLevelStrip();
+            persistQuoteState();
+        }
+
+        function addDesignLine() {
+            const parsed = buildLineFromEditor();
+            if (!parsed) return;
+
+            if (editingLineId) {
+                const idx = calcLines.findIndex(l => l.id === editingLineId);
+                if (idx > -1) calcLines[idx] = { ...parsed, id: editingLineId };
+                editingLineId = null;
+                setEditorMode("add");
+            } else {
+                calcLines.push({ ...parsed, id: newLineId() });
+            }
+
+            refreshLinesUI();
+            showToast("Line added to quote");
+        }
+
+        function editLine(id) {
+            const line = calcLines.find(l => l.id === id);
+            if (!line) return;
+            editingLineId = id;
+            writeLineToEditor(line);
+            setEditorMode("edit");
+            document.getElementById("lineEditor").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        function deleteLine(id) {
+            calcLines = calcLines.filter(l => l.id !== id);
+            if (editingLineId === id) { editingLineId = null; setEditorMode("add"); }
+            refreshLinesUI();
+        }
+
+        function clearLines() {
+            if (calcLines.length && !confirm("Remove all design lines from this quote?")) return;
+            calcLines = [];
+            editingLineId = null;
+            setEditorMode("add");
+            refreshLinesUI();
+            document.getElementById("calcResult").classList.add("hidden");
+        }
+
+        function cancelEditLine() {
+            editingLineId = null;
+            setEditorMode("add");
+            showToast("Edit cancelled");
+        }
+
+        function setEditorMode(mode) {
+            const title = document.getElementById("editorTitle");
+            const btn = document.getElementById("addLineBtn");
+            const cancelBtn = document.getElementById("editorCancelEdit");
+            if (mode === "edit") {
+                title.innerText = "Editing line";
+                btn.innerText = "✓ Update this line";
+                cancelBtn.classList.remove("hidden");
+            } else {
+                title.innerText = "Line editor";
+                btn.innerText = "＋ Add design line to quote";
+                cancelBtn.classList.add("hidden");
+            }
+        }
+
+        function renderLinesList() {
+            const list = document.getElementById("quoteLinesList");
+            const empty = document.getElementById("quoteLinesEmpty");
+            const badge = document.getElementById("lineCountBadge");
+
+            badge.innerText = calcLines.length ? `${calcLines.length} line${calcLines.length > 1 ? "s" : ""}` : "";
+            empty.classList.toggle("hidden", calcLines.length > 0);
+
+            list.innerHTML = "";
+            calcLines.forEach(line => {
+                const card = document.createElement("div");
+                card.className = "line-card border border-gray-200 rounded-lg px-3 py-2.5 bg-white";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-medium text-gray-900">${escapeHtml(lineLabel(line))}</span>
+                        <span class="text-xs font-semibold shrink-0">${formatMoney(line.subtotal)} EGP</span>
+                    </div>
+                    <div class="mt-0.5 flex items-center justify-between gap-2">
+                        <span class="text-[10px] text-gray-500 truncate">${escapeHtml(lineSubLabel(line))}</span>
+                        <span class="shrink-0 flex items-center gap-1.5">
+                            <button type="button" data-edit="${line.id}" class="text-[10px] text-gray-500 hover:text-black underline">Edit</button>
+                            <button type="button" data-del="${line.id}" class="text-[10px] text-gray-400 hover:text-red-500 underline">Remove</button>
+                        </span>
+                    </div>
+                `;
+                card.querySelector("[data-edit]").onclick = () => editLine(line.id);
+                card.querySelector("[data-del]").onclick = () => deleteLine(line.id);
+                list.appendChild(card);
+            });
+        }
+
+        function parseNum(v, fallback) {
+            const n = parseFloat(v);
+            return isNaN(n) ? fallback : n;
+        }
+
+        // Builds a line object from the editor fields.
+        // Returns { line } , { needRates: true } or { error: "..." }
+        function computeLineFromEditor() {
+            const material = document.getElementById("calcMaterial").value;
+            const teeth = parseInt(document.getElementById("calcTeeth").value, 10);
+            const level = document.getElementById("calcLevel").value;
+            const stones = document.getElementById("calcStonesMode").value;
+            const plating = document.getElementById("calcPlating").value;
+            const enamel = document.getElementById("calcEnamel").value;
+            const engraving = document.getElementById("calcEngraving").value;
+
+            const res = { needRates: false };
+            if (!teeth || teeth < 1 || teeth > 16) return { error: "Teeth must be between 1 and 16" };
+
+            const line = { material, teeth, level, stones, plating, enamel, engraving };
+
+            // --- base price per tooth ---
+            let base = null;
+            if (material === "gold") {
+                line.karat = document.getElementById("calcKarat").value;
+                const gp = parseFloat(document.getElementById("calcGoldPrice").value);
+                if (!gp || gp <= 0) return { error: "Enter today's gold EGP/g for the gold line" };
+                line.goldPrice = gp;
+                const k = CALC_GOLD_KARAT[line.karat];
+                base = (310 + 1.15 * gp * k.purity) * k.margin;
+            } else {
+                base = CALC_MATERIAL_BASE[material];
+            }
+            line.base = base;
+            const isBars = level === "0.5";
+            line.materialTotal = isBars ? base * 0.5 * teeth : base * teeth;
+            line.designCost = isBars ? 0 : line.materialTotal * (CALC_DESIGN_PCT[level] / 100);
+
+            // --- stones ---
+            line.stoneCost = 0;
+            if (stones === "accent") {
+                const count = parseInt(document.getElementById("calcAccentCount").value, 10) || 0;
+                if (count < 1) return { error: "Accent stones: count must be at least 1" };
+                const type = document.getElementById("calcAccentType").value;
+                const setting = document.getElementById("calcAccentSetting").value;
+                let price = CALC_ACCENT_PRICE[type];
+                if (price === null) {
+                    price = parseFloat(document.getElementById("calcAccentCustomPrice").value);
+                    if (price === null || isNaN(price) || price < 0) return { needRates: "LAB_ACCENT", error: "Enter today's rate for Lab-Grown/Natural accent stones" };
+                }
+                line.accent = { count, type, setting, price, settingPrice: CALC_SETTING_PRICE[setting] };
+                line.stoneCost = count * (price + CALC_SETTING_PRICE[setting]);
+            } else if (stones === "fulliced") {
+                if (isBars) {
+                    line.full = { bars: true };
+                    line.stoneCost = teeth * 400;
+                } else {
+                    const type = document.getElementById("calcFullType").value;
+                    const coverage = document.getElementById("calcCoverage").value;
+                    let price = CALC_FULL_PRICE[type];
+                    if (price === null) {
+                        price = parseFloat(document.getElementById("calcFullCustomPrice").value);
+                        if (isNaN(price) || price < 0) return { needRates: "LAB_FULL", error: "Enter today's rate for Lab-Grown/Natural full-iced stones" };
+                    }
+                    line.full = { type, coverage, price, coveragePrice: CALC_COVERAGE_PRICE[coverage] };
+                    line.stoneCost = teeth * (price + CALC_COVERAGE_PRICE[coverage]);
+                }
+            }
+
+            // --- per-tooth finishing ---
+            line.platingCost = CALC_PLATING[plating] * teeth;
+            line.enamelCost = CALC_ENAMEL[enamel] * teeth;
+            line.engravingCost = CALC_ENGRAVING[engraving] * teeth;
+            line.subtotal = line.materialTotal + line.designCost + line.stoneCost + line.platingCost + line.enamelCost + line.engravingCost;
+            res.line = line;
+            return res;
+        }
+
+        // Builds a valid line object from the editor inputs. On failure it shows the
+        // right toast / highlights today's rates panel and returns null.
+        function buildLineFromEditor() {
+            const r = computeLineFromEditor();
+            if (r.error) {
+                showToast(r.error, true);
+                if (r.needRates === "LAB_ACCENT") { focusRatesPanel("#rateLabAccent"); applyTodayRatesToEditor("accent"); }
+                if (r.needRates === "LAB_FULL") { focusRatesPanel("#rateLabFull"); applyTodayRatesToEditor("full"); }
+                return null;
+            }
+            return r.line;
+        }
+
+        function lineLabel(line) {
+            const materialLabel = line.material === "gold" ? `Gold ${line.karat}K` : CALC_LABELS.material[line.material];
+            return `${materialLabel} · ${line.teeth} teeth · ${CALC_LABELS.level[line.level]}`;
+        }
+
+        function lineSubLabel(line) {
+            const bits = [];
+            if (line.accent) bits.push(`${line.accent.count}× ${CALC_LABELS.accentType[line.accent.type]} ${CALC_LABELS.setting[line.accent.setting]}`);
+            if (line.full && line.full.bars) bits.push("Full iced (Bars @400)");
+            else if (line.full) bits.push(`Full iced ${CALC_LABELS.accentType[line.full.type]} ${CALC_LABELS.coverage[line.full.coverage]}`);
+            if (line.plating !== "none") bits.push(CALC_LABELS.plating[line.plating]);
+            if (line.enamel !== "none") bits.push("Enamel " + CALC_LABELS.enamel[line.enamel]);
+            if (line.engraving !== "none") bits.push("Engraving " + CALC_LABELS.engraving[line.engraving]);
+            return bits.length ? bits.join(" · ") : "Base only";
+        }
+
+        function formatMoney(n) {
+            return (Math.round(n * 100) / 100).toLocaleString();
+        }
+
+        function round2(n) { return Math.round(n * 100) / 100; }
+
+        // ---------- Editor <-> line ----------
+        function writeLineToEditor(line) {
+            document.getElementById("calcMaterial").value = line.material;
+            onCalcMaterialChange();
+            document.getElementById("calcTeeth").value = line.teeth;
+            document.getElementById("calcLevel").value = line.level;
+            if (line.material === "gold") {
+                document.getElementById("calcKarat").value = line.karat || "18";
+                document.getElementById("calcGoldPrice").value = line.goldPrice || "";
+            }
+            document.getElementById("calcStonesMode").value = line.stones;
+            onCalcStonesChange();
+            if (line.accent) {
+                document.getElementById("calcAccentCount").value = line.accent.count;
+                document.getElementById("calcAccentType").value = line.accent.type;
+                onCalcAccentTypeChange();
+                document.getElementById("calcAccentSetting").value = line.accent.setting;
+                if (CALC_ACCENT_PRICE[line.accent.type] === null) document.getElementById("calcAccentCustomPrice").value = line.accent.price;
+            }
+            if (line.full) {
+                if (!line.full.bars) {
+                    document.getElementById("calcFullType").value = line.full.type;
+                    onCalcFullTypeChange();
+                    document.getElementById("calcCoverage").value = line.full.coverage;
+                    if (CALC_FULL_PRICE[line.full.type] === null) document.getElementById("calcFullCustomPrice").value = line.full.price;
+                }
+            }
+            document.getElementById("calcPlating").value = line.plating;
+            document.getElementById("calcEnamel").value = line.enamel;
+            document.getElementById("calcEngraving").value = line.engraving;
+            renderLevelStrip();
+        }
+
+        // ---------- Level picker + guide with examples ----------
+        function renderLevelStrip() {
+            const strip = document.getElementById("calcLevelStrip");
+            if (!strip) return;
+            const current = document.getElementById("calcLevel").value;
+            strip.innerHTML = "";
+
+            Object.keys(LEVEL_INFO).forEach(key => {
+                const info = LEVEL_INFO[key];
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "lvl-chip shrink-0 text-left border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white" +
+                    (key === current ? " active" : " hover:border-gray-400");
+                btn.dataset.level = key;
+                btn.innerHTML = `
+                    <span class="block text-[11px] font-semibold leading-tight">${escapeHtml(key)} ${escapeHtml(info.name)}</span>
+                    <span class="lvl-sub block text-[9px] text-gray-400 leading-tight">${info.pct ? "+" + info.pct + "%" : "half base"}</span>
+                `;
+                btn.onclick = () => {
+                    document.getElementById("calcLevel").value = key;
+                    renderLevelStrip();
+                    onCalcLevelChange();
+                };
+                strip.appendChild(btn);
+            });
+        }
+
+        function renderLevelGuide() {
+            const el = document.getElementById("calcLevelGuide");
+            el.innerHTML = "";
+            Object.keys(LEVEL_INFO).forEach(key => {
+                const info = LEVEL_INFO[key];
+                const img = LEVEL_EXAMPLE_IMAGES[key];
+                const card = document.createElement("div");
+                card.className = "border border-gray-200 rounded-lg p-3 bg-white";
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-semibold">${escapeHtml(key)} — ${escapeHtml(info.name)}</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5 leading-relaxed">${escapeHtml(info.desc)}</p>
+                        </div>
+                        <span class="text-[10px] text-gray-400 shrink-0">${info.pct ? "+" + info.pct + "%" : "half base"}</span>
+                    </div>
+                    ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(info.name)} example" class="example-thumb mt-2">` : ""}
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${info.examples.map(ex => `<span class="text-[9px] text-gray-500 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">${escapeHtml(ex)}</span>`).join("")}
+                    </div>
+                    <button type="button" data-use-level="${key}" class="mt-2 text-[10px] text-black underline hover:text-gray-500">Use this level</button>
+                `;
+                card.querySelector("[data-use-level]").onclick = () => {
+                    document.getElementById("calcLevel").value = key;
+                    renderLevelStrip();
+                    onCalcLevelChange();
+                    showToast(`Level set to ${key} ${info.name}`);
+                };
+                el.appendChild(card);
+            });
+        }
+
+        function toggleLevelGuide() {
+            const el = document.getElementById("calcLevelGuide");
+            const willShow = el.classList.contains("hidden");
+            if (willShow) renderLevelGuide();
+            el.classList.toggle("hidden", !willShow);
+        }
+
         function onCalcMaterialChange() {
             const material = document.getElementById("calcMaterial").value;
             const isGold = material === "gold";
             document.getElementById("calcGoldWrap").classList.toggle("hidden", !isGold);
+
+            if (isGold) {
+                autoFillGoldPriceIfEmpty();
+            }
 
             const noStones = material === "chrome" || material === "titanium";
             const stonesSelect = document.getElementById("calcStonesMode");
@@ -1629,6 +2072,7 @@ ${currentSettings.generalInfo || ""}
         }
 
         function onCalcLevelChange() {
+            renderLevelStrip();
             onCalcStonesChange(); // full-iced-on-bars behaves differently
         }
 
@@ -1637,147 +2081,327 @@ ${currentSettings.generalInfo || ""}
             document.getElementById("calcAccentWrap").classList.toggle("hidden", mode !== "accent");
             document.getElementById("calcFullIcedWrap").classList.toggle("hidden", mode !== "fulliced");
 
+            if (mode === "accent") autoFillStonePrice("accent");
             if (mode === "fulliced") {
                 const isBars = document.getElementById("calcLevel").value === "0.5";
                 document.getElementById("calcFullIcedBarsNote").classList.toggle("hidden", !isBars);
                 document.getElementById("calcFullIcedNormalFields").classList.toggle("hidden", isBars);
+                if (!isBars) autoFillStonePrice("full");
             }
         }
 
         function onCalcAccentTypeChange() {
             const type = document.getElementById("calcAccentType").value;
             document.getElementById("calcAccentCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
+            autoFillStonePrice("accent");
         }
 
         function onCalcFullTypeChange() {
             const type = document.getElementById("calcFullType").value;
             document.getElementById("calcFullCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
+            autoFillStonePrice("full");
         }
 
+        function readOrderSettings() {
+            return {
+                timeline: document.getElementById("calcTimeline").value,
+                mold: document.getElementById("calcMold").value
+            };
+        }
+
+        function applyOrderSettings(order) {
+            if (!order) return;
+            if (order.timeline) document.getElementById("calcTimeline").value = order.timeline;
+            if (order.mold) document.getElementById("calcMold").value = order.mold;
+        }
+
+        // ---------- Main calculation ----------
         function runCalculator() {
-            const material = document.getElementById("calcMaterial").value;
-            const teeth = parseInt(document.getElementById("calcTeeth").value, 10);
-            const level = document.getElementById("calcLevel").value;
-            const stonesMode = document.getElementById("calcStonesMode").value;
-            const plating = document.getElementById("calcPlating").value;
-            const enamel = document.getElementById("calcEnamel").value;
-            const engraving = document.getElementById("calcEngraving").value;
+            // 1) Build lines: use the saved list, or fall back to the single line in the editor.
+            let lines = getLines();
+            if (lines.length === 0) {
+                const added = buildLineFromEditor();
+                if (!added) return; // buildLineFromEditor already explained why
+                lines = [added];
+            }
+
+            // 2) Order-level inputs
             const timeline = document.getElementById("calcTimeline").value;
             const mold = document.getElementById("calcMold").value;
 
-            if (!teeth || teeth < 1 || teeth > 16) {
-                showToast("Teeth must be between 1 and 16", true);
-                return;
-            }
-
-            // --- Base per tooth ---
-            let base;
-            let materialLine;
-            if (material === "gold") {
-                const karat = document.getElementById("calcKarat").value;
-                const goldPrice = parseFloat(document.getElementById("calcGoldPrice").value);
-                if (!goldPrice || goldPrice <= 0) {
-                    showToast("Enter today's gold EGP/g first", true);
-                    return;
-                }
-                const k = CALC_GOLD_KARAT[karat];
-                base = (310 + 1.15 * goldPrice * k.purity) * k.margin;
-                materialLine = `Gold ${karat}K @ ${goldPrice} EGP/g â†’ base/tooth = ${round2(base)} EGP`;
-            } else {
-                base = CALC_MATERIAL_BASE[material];
-                materialLine = `${CALC_LABELS.material[material]} â†’ base/tooth = ${base} EGP`;
-            }
-
-            const isBars = level === "0.5";
-            const materialTotal = isBars ? base * 0.5 * teeth : base * teeth;
-
-            // --- Design cost ---
-            let designCost = 0;
-            if (!isBars) {
-                const pct = CALC_DESIGN_PCT[level];
-                designCost = materialTotal * (pct / 100);
-            }
-
-            // --- Stones ---
-            let stoneCost = 0;
-            let stoneLine = "None";
-            if (stonesMode === "accent") {
-                const count = parseInt(document.getElementById("calcAccentCount").value, 10) || 0;
-                const type = document.getElementById("calcAccentType").value;
-                const setting = document.getElementById("calcAccentSetting").value;
-                let accentPrice = CALC_ACCENT_PRICE[type];
-                if (accentPrice === null) {
-                    accentPrice = parseFloat(document.getElementById("calcAccentCustomPrice").value);
-                    if (!accentPrice) { showToast("Enter today's rate for Lab-Grown/Natural stones", true); return; }
-                }
-                const settingPrice = CALC_SETTING_PRICE[setting];
-                stoneCost = count * (accentPrice + settingPrice);
-                stoneLine = `Accent Ã— ${count} (${CALC_LABELS.accentType[type]} ${accentPrice} + ${CALC_LABELS.setting[setting]} ${settingPrice}) = ${stoneCost} EGP`;
-            } else if (stonesMode === "fulliced") {
-                if (isBars) {
-                    stoneCost = teeth * 400;
-                    stoneLine = `Full iced on Bars: ${teeth} Ã— 400 = ${stoneCost} EGP`;
-                } else {
-                    const type = document.getElementById("calcFullType").value;
-                    const coverage = document.getElementById("calcCoverage").value;
-                    let fullPrice = CALC_FULL_PRICE[type];
-                    if (fullPrice === null) {
-                        fullPrice = parseFloat(document.getElementById("calcFullCustomPrice").value);
-                        if (!fullPrice && fullPrice !== 0) { showToast("Enter today's rate for Lab-Grown/Natural stones", true); return; }
-                    }
-                    const coveragePrice = CALC_COVERAGE_PRICE[coverage];
-                    stoneCost = teeth * (fullPrice + coveragePrice);
-                    stoneLine = `Full iced Ã— ${teeth} (${CALC_LABELS.accentType[type]} ${fullPrice} + ${CALC_LABELS.coverage[coverage]} ${coveragePrice}) = ${stoneCost} EGP`;
-                }
-            }
-
-            // --- Finishing ---
-            const platingCost = CALC_PLATING[plating] * teeth;
-            const enamelCost = CALC_ENAMEL[enamel] * teeth;
-            const engravingCost = CALC_ENGRAVING[engraving] * teeth;
-
-            const sub = materialTotal + designCost + stoneCost + platingCost + enamelCost + engravingCost;
-
-            // --- Timeline & mold ---
+            // 3) Totals
+            const linesSubtotal = lines.reduce((s, l) => s + l.subtotal, 0);
             const tlPct = CALC_TIMELINE_PCT[timeline];
-            const tlAmount = sub * (tlPct / 100);
+            const tlAmount = linesSubtotal * (tlPct / 100);
             const moldCost = CALC_MOLD_FLAT[mold];
-            const preRound = sub + tlAmount + moldCost;
+            const preRound = linesSubtotal + tlAmount + moldCost;
             const total = Math.ceil(preRound / 50) * 50;
 
-            const lines = [
-                `Line: ${CALC_LABELS.material[material]} Â· ${teeth} teeth Â· ${CALC_LABELS.level[level]}`,
-                `  Material: ${materialLine} â†’ ${round2(materialTotal)} EGP`,
-                `  Design: ${isBars ? "0 (Bars)" : `+${CALC_DESIGN_PCT[level]}% = ${round2(designCost)} EGP`}`,
-                `  Stones: ${stoneLine}`,
-                `  Plating: ${CALC_LABELS.plating[plating]} â†’ ${platingCost} EGP`,
-                `  Enamel: ${CALC_LABELS.enamel[enamel]} â†’ ${enamelCost} EGP`,
-                `  Engraving: ${CALC_LABELS.engraving[engraving]} â†’ ${engravingCost} EGP`,
-                `  Subtotal: ${round2(sub)} EGP`,
-                `  Timeline: ${CALC_LABELS.timeline[timeline]} (+${tlPct}%) = ${round2(tlAmount)} EGP`,
-                `  Mold: ${CALC_LABELS.mold[mold]} â†’ ${moldCost} EGP`,
-                `  Pre-round: ${round2(preRound)} EGP`,
-                ``,
-                `QUOTE TOTAL (rounded up to 50): ${total} EGP`
-            ];
+            // 4) Render breakdown
+            const out = [];
+            lines.forEach((l, i) => {
+                const materialLine = l.material === "gold"
+                    ? `Gold ${l.karat}K @ ${l.goldPrice} EGP/g → base/tooth = ${formatMoney(l.base)} EGP`
+                    : `${CALC_LABELS.material[l.material]} → base/tooth = ${formatMoney(l.base)} EGP`;
 
-            document.getElementById("calcResultText").innerText = lines.join("\n");
+                let stoneLine = "None";
+                if (l.accent) {
+                    stoneLine = `Accent × ${l.accent.count} (${CALC_LABELS.accentType[l.accent.type]} ${formatMoney(l.accent.price)} + ${CALC_LABELS.setting[l.accent.setting]} ${l.accent.settingPrice}) = ${formatMoney(l.stoneCost)} EGP`;
+                } else if (l.full && l.full.bars) {
+                    stoneLine = `Full iced on Bars: ${l.teeth} × 400 = ${formatMoney(l.stoneCost)} EGP`;
+                } else if (l.full) {
+                    stoneLine = `Full iced × ${l.teeth} (${CALC_LABELS.accentType[l.full.type]} ${formatMoney(l.full.price)} + ${CALC_LABELS.coverage[l.full.coverage]} ${l.full.coveragePrice}) = ${formatMoney(l.stoneCost)} EGP`;
+                }
+
+                out.push(`LINE ${i + 1}: ${lineLabel(l)}`);
+                out.push(`  Material: ${materialLine} → ${formatMoney(l.materialTotal)} EGP`);
+                out.push(`  Design: ${l.level === "0.5" ? "0 (Bars)" : `+${CALC_DESIGN_PCT[l.level]}% = ${formatMoney(l.designCost)} EGP`}`);
+                out.push(`  Stones: ${stoneLine}`);
+                out.push(`  Plating: ${CALC_LABELS.plating[l.plating]} → ${l.platingCost} EGP`);
+                out.push(`  Enamel: ${CALC_LABELS.enamel[l.enamel]} → ${l.enamelCost} EGP`);
+                out.push(`  Engraving: ${CALC_LABELS.engraving[l.engraving]} → ${l.engravingCost} EGP`);
+                out.push(`  Line subtotal: ${formatMoney(l.subtotal)} EGP`);
+                out.push("");
+            });
+
+            out.push(`Lines subtotal: ${formatMoney(linesSubtotal)} EGP`);
+            out.push(`Timeline: ${CALC_LABELS.timeline[timeline]} (+${tlPct}%) = ${formatMoney(tlAmount)} EGP`);
+            out.push(`Mold: ${CALC_LABELS.mold[mold]} → ${moldCost} EGP`);
+            out.push(`Pre-round: ${formatMoney(preRound)} EGP`);
+            out.push("");
+            out.push(`QUOTE TOTAL (rounded up to 50): ${total.toLocaleString()} EGP`);
+
+            document.getElementById("calcResultText").innerText = out.join("\n");
             document.getElementById("calcResult").classList.remove("hidden");
 
+            // 5) Snapshot for the PDF (same shape as the original single-line version)
+            const first = lines[0];
             window._lastCalcQuote = {
-                materialLabel: CALC_LABELS.material[material],
-                levelLabel: CALC_LABELS.level[level],
-                teeth,
-                materialTotal, designCost, stoneCost, stoneLine,
-                platingCost, plating: CALC_LABELS.plating[plating],
-                enamelCost, enamel: CALC_LABELS.enamel[enamel],
-                engravingCost, engraving: CALC_LABELS.engraving[engraving],
-                sub, tlAmount, timeline: CALC_LABELS.timeline[timeline], tlPct,
+                lines,
+                lineCount: lines.length,
+                materialLabel: lines.length > 1 ? `${lines.length} designs` : lineLabel(first),
+                levelLabel: CALC_LABELS.level[first.level],
+                teeth: first.teeth,
+                materialTotal: lines.reduce((s, l) => s + l.materialTotal, 0),
+                designCost: lines.reduce((s, l) => s + l.designCost, 0),
+                stoneCost: lines.reduce((s, l) => s + l.stoneCost, 0),
+                platingCost: lines.reduce((s, l) => s + l.platingCost, 0),
+                plating: lines.length === 1 ? CALC_LABELS.plating[first.plating] : "—",
+                enamelCost: lines.reduce((s, l) => s + l.enamelCost, 0),
+                enamel: lines.length === 1 ? CALC_LABELS.enamel[first.enamel] : "—",
+                engravingCost: lines.reduce((s, l) => s + l.engravingCost, 0),
+                engraving: lines.length === 1 ? CALC_LABELS.engraving[first.engraving] : "—",
+                sub: linesSubtotal,
+                tlAmount, timeline: CALC_LABELS.timeline[timeline], tlPct,
                 moldCost, mold: CALC_LABELS.mold[mold],
                 total
             };
         }
 
+        // ==================== TODAY'S RATES (device-local, per day) ====================
+        // Gold and lab-grown/natural stone rates change daily. They are kept on this
+        // device for today only, auto-filled into the lines, and can always be
+        // overridden per line by hand.
+        const LS_PREFIX = "egygz_pricing_v1_";
+        function lsQuoteKey() { return LS_PREFIX + todayKey(); }
+
+        function getTodayRates() {
+            const val = id => {
+                const el = document.getElementById(id);
+                if (!el) return "";
+                return el.value === "" ? "" : parseFloat(el.value);
+            };
+            return {
+                gold: val("rateGold"),
+                labAccent: val("rateLabAccent"),
+                natAccent: val("rateNatAccent"),
+                labFull: val("rateLabFull"),
+                natFull: val("rateNatFull")
+            };
+        }
+
+        function setRateInputs(rates) {
+            if (!rates) return;
+            const set = (id, v) => {
+                const el = document.getElementById(id);
+                if (el && v !== undefined && v !== null && v !== "") el.value = v;
+            };
+            set("rateGold", rates.gold);
+            set("rateLabAccent", rates.labAccent);
+            set("rateNatAccent", rates.natAccent);
+            set("rateLabFull", rates.labFull);
+            set("rateNatFull", rates.natFull);
+        }
+
+        function toggleRatesPanel() {
+            const panel = document.getElementById("ratesPanel");
+            const willShow = panel.classList.contains("hidden");
+            panel.classList.toggle("hidden", !willShow);
+            document.getElementById("ratesChevron").innerText = willShow ? "▴" : "▾";
+        }
+
+        function focusRatesPanel(selector) {
+            const panel = document.getElementById("ratesPanel");
+            if (panel.classList.contains("hidden")) toggleRatesPanel();
+            const el = document.querySelector(selector);
+            if (el) {
+                el.focus();
+                el.classList.add("ring-2", "ring-black/20");
+                setTimeout(() => el.classList.remove("ring-2", "ring-black/20"), 1500);
+            }
+        }
+
+        function renderTodayRatesPanel(changed) {
+            const r = getTodayRates();
+            const bits = [];
+            if (r.gold) bits.push(`gold ${r.gold} EGP/g`);
+            if (r.labAccent || r.natAccent || r.labFull || r.natFull) bits.push("stone rates set");
+            const el = document.getElementById("ratesStatus");
+            if (el) el.innerText = bits.length ? `· ${bits.join(" · ")}` : "· not set";
+            if (changed) showToast("Rates updated");
+        }
+
+        function onTodayRatesInput() {
+            const r = getTodayRates();
+            // Keep gold lines in sync with the day's rate automatically.
+            let touched = false;
+            calcLines.forEach(l => {
+                if (l.material === "gold" && r.gold) {
+                    l.goldPrice = r.gold;
+                    recalcLineObject(l);
+                    touched = true;
+                }
+            });
+            if (touched) renderLinesList();
+            renderTodayRatesPanel(false);
+            persistQuoteState();
+        }
+
+        function applyGoldRateToAllLines() {
+            const r = getTodayRates();
+            if (!r.gold) { showToast("Enter today's gold price first", true); focusRatesPanel("#rateGold"); return; }
+            let count = 0;
+            calcLines.forEach(l => {
+                if (l.material === "gold") { l.goldPrice = r.gold; recalcLineObject(l); count++; }
+            });
+            refreshLinesUI();
+            showToast(count ? `Gold rate applied to ${count} line${count > 1 ? "s" : ""}` : "No gold lines in this quote", count === 0);
+        }
+
+        function autoFillGoldPriceIfEmpty() {
+            const r = getTodayRates();
+            const el = document.getElementById("calcGoldPrice");
+            if (el && !el.value && r.gold) el.value = r.gold;
+        }
+
+        function autoFillStonePrice(which) {
+            const r = getTodayRates();
+            if (which === "accent") {
+                const type = document.getElementById("calcAccentType").value;
+                const el = document.getElementById("calcAccentCustomPrice");
+                if (!el || el.value) return;
+                if (type === "labgrown" && r.labAccent) el.value = r.labAccent;
+                if (type === "natural" && r.natAccent) el.value = r.natAccent;
+            }
+            if (which === "full") {
+                const type = document.getElementById("calcFullType").value;
+                const el = document.getElementById("calcFullCustomPrice");
+                if (!el || el.value) return;
+                if (type === "labgrown" && r.labFull) el.value = r.labFull;
+                if (type === "natural" && r.natFull) el.value = r.natFull;
+            }
+        }
+
+        function applyTodayRatesToEditor(which) {
+            // Called right after telling staff to ask for today's rate — drop in the
+            // saved value so the toast doesn't leave them stuck.
+            if (which === "accent") autoFillStonePrice("accent");
+            if (which === "full") autoFillStonePrice("full");
+        }
+
+        // Recomputes all derived numbers on a saved line (used when today's gold
+        // rate changes, so historic lines stay correct).
+        function recalcLineObject(line) {
+            const k = CALC_GOLD_KARAT[line.karat] || CALC_GOLD_KARAT["18"];
+            const base = line.material === "gold"
+                ? (310 + 1.15 * (line.goldPrice || 0) * k.purity) * k.margin
+                : CALC_MATERIAL_BASE[line.material];
+            line.base = base;
+
+            const isBars = line.level === "0.5";
+            line.materialTotal = isBars ? base * 0.5 * line.teeth : base * line.teeth;
+            line.designCost = isBars ? 0 : line.materialTotal * (CALC_DESIGN_PCT[line.level] / 100);
+
+            if (line.accent) line.stoneCost = line.accent.count * (line.accent.price + line.accent.settingPrice);
+            else if (line.full && line.full.bars) line.stoneCost = line.teeth * 400;
+            else if (line.full) line.stoneCost = line.teeth * (line.full.price + line.full.coveragePrice);
+            else line.stoneCost = 0;
+
+            line.platingCost = CALC_PLATING[line.plating] * line.teeth;
+            line.enamelCost = CALC_ENAMEL[line.enamel] * line.teeth;
+            line.engravingCost = CALC_ENGRAVING[line.engraving] * line.teeth;
+            line.subtotal = line.materialTotal + line.designCost + line.stoneCost + line.platingCost + line.enamelCost + line.engravingCost;
+            return line;
+        }
+
+        // ==================== QUOTE STATE PERSISTENCE (same device, same day) ====================
+        function persistQuoteState() {
+            try {
+                const state = {
+                    savedAt: new Date().toISOString(),
+                    lines: calcLines,
+                    timeline: document.getElementById("calcTimeline")?.value || "standard",
+                    mold: document.getElementById("calcMold")?.value || "none",
+                    level: document.getElementById("calcLevel")?.value || "1",
+                    clientName: document.getElementById("calcClientNameForPdf")?.value || "",
+                    rates: getTodayRates(),
+                    editor: {
+                        goldPrice: document.getElementById("calcGoldPrice")?.value || "",
+                        accentCustom: document.getElementById("calcAccentCustomPrice")?.value || "",
+                        fullCustom: document.getElementById("calcFullCustomPrice")?.value || ""
+                    }
+                };
+                localStorage.setItem(lsQuoteKey(), JSON.stringify(state));
+            } catch (e) { /* private mode / quota — pricing still works, just no auto-save */ }
+        }
+
+        function restoreQuoteState() {
+            renderLevelStrip();
+            setEditorMode("add");
+
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem(lsQuoteKey()) || "null"); } catch (e) { saved = null; }
+
+            if (saved) {
+                applyOrderSettings({ timeline: saved.timeline, mold: saved.mold });
+                if (saved.level) document.getElementById("calcLevel").value = saved.level;
+                if (saved.clientName) document.getElementById("calcClientNameForPdf").value = saved.clientName;
+                if (Array.isArray(saved.lines)) calcLines = saved.lines;
+                if (saved.editor) {
+                    if (saved.editor.goldPrice) document.getElementById("calcGoldPrice").value = saved.editor.goldPrice;
+                    if (saved.editor.accentCustom) document.getElementById("calcAccentCustomPrice").value = saved.editor.accentCustom;
+                    if (saved.editor.fullCustom) document.getElementById("calcFullCustomPrice").value = saved.editor.fullCustom;
+                }
+                setRateInputs(saved.rates);
+            } else {
+                pruneOldQuoteState();
+            }
+
+            onCalcMaterialChange();   // sync gold/stones visibility
+            refreshLinesUI();
+            renderTodayRatesPanel(false);
+        }
+
+        function pruneOldQuoteState() {
+            try {
+                const keep = lsQuoteKey();
+                Object.keys(localStorage)
+                    .filter(k => k.startsWith(LS_PREFIX) && k !== keep)
+                    .forEach(k => localStorage.removeItem(k));
+            } catch (e) { /* ignore */ }
+        }
+
+        // ==================== QUOTATION PDF ====================
         function downloadQuotationPdf() {
             const q = window._lastCalcQuote;
             if (!q) { showToast("Calculate a quote first", true); return; }
@@ -1787,6 +2411,7 @@ ${currentSettings.generalInfo || ""}
             const doc = new jsPDF({ unit: "pt", format: "a4" });
             const clientName = document.getElementById("calcClientNameForPdf").value.trim();
             const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
             let y = 60;
 
             doc.setFont("helvetica", "bold");
@@ -1807,34 +2432,44 @@ ${currentSettings.generalInfo || ""}
             doc.line(40, y, pageW - 40, y);
             y += 25;
 
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(12);
-            doc.text(`${q.materialLabel} Â· ${q.teeth} teeth Â· ${q.levelLabel}`, 40, y);
-            y += 22;
-
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            const row = (label, value) => {
-                doc.text(label, 50, y);
+            const row = (label, value, indent) => {
+                doc.text(label, indent || 50, y);
                 doc.text(value, pageW - 40, y, { align: "right" });
                 y += 18;
             };
 
-            row("Material", `${round2(q.materialTotal)} EGP`);
-            row("Design", q.designCost ? `${round2(q.designCost)} EGP` : "â€”");
-            row("Stones", q.stoneCost ? `${round2(q.stoneCost)} EGP` : "None");
-            if (q.platingCost) row(`Plating (${q.plating})`, `${q.platingCost} EGP`);
-            if (q.enamelCost) row(`Enamel (${q.enamel})`, `${q.enamelCost} EGP`);
-            if (q.engravingCost) row(`Engraving (${q.engraving})`, `${q.engravingCost} EGP`);
+            // --- one block per design line ---
+            (q.lines || []).forEach((l, i) => {
+                if (y > pageH - 150) { doc.addPage(); y = 60; }
 
-            y += 4;
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text(`Line ${i + 1}: ${lineLabel(l)}`, 40, y);
+                y += 20;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                row("Material", `${formatMoney(l.materialTotal)} EGP`);
+                row("Design", l.designCost ? `${formatMoney(l.designCost)} EGP` : "—");
+                row("Stones", l.stoneCost ? `${formatMoney(l.stoneCost)} EGP` : "None");
+                if (l.platingCost) row(`Plating (${CALC_LABELS.plating[l.plating]})`, `${l.platingCost} EGP`);
+                if (l.enamelCost) row(`Enamel (${CALC_LABELS.enamel[l.enamel]})`, `${l.enamelCost} EGP`);
+                if (l.engravingCost) row(`Engraving (${CALC_LABELS.engraving[l.engraving]})`, `${l.engravingCost} EGP`);
+                row("Line subtotal", `${formatMoney(l.subtotal)} EGP`, 50);
+                y += 8;
+            });
+
+            if (y > pageH - 150) { doc.addPage(); y = 60; }
+
             doc.setDrawColor(230);
             doc.line(40, y, pageW - 40, y);
             y += 18;
 
-            row("Subtotal", `${round2(q.sub)} EGP`);
-            if (q.tlAmount) row(`Timeline (${q.timeline}, +${q.tlPct}%)`, `${round2(q.tlAmount)} EGP`);
-            if (q.moldCost) row(`Mold (${q.mold})`, `${q.moldCost} EGP`);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            row("Subtotal (all lines)", `${formatMoney(q.sub)} EGP`, 40);
+            if (q.tlAmount) row(`Timeline (${q.timeline}, +${q.tlPct}%)`, `${formatMoney(q.tlAmount)} EGP`, 40);
+            if (q.moldCost) row(`Mold (${q.mold})`, `${q.moldCost} EGP`, 40);
 
             y += 10;
             doc.setDrawColor(0);
@@ -1852,26 +2487,23 @@ ${currentSettings.generalInfo || ""}
             doc.setFontSize(8);
             doc.setTextColor(140);
             doc.text("This quotation is an estimate. Gold and diamond rates are confirmed against the day of production.", 40, y);
-            doc.text("egygrillz.com  Â·  @egygrillz  Â·  booking: egygrillz.com/booking.html", 40, y + 12);
+            doc.text("egygrillz.com  ·  @egygrillz  ·  booking: egygrillz.com/booking.html", 40, y + 12);
 
             const filename = `EGYGRILLZ-Quotation${clientName ? "-" + clientName.replace(/[^a-z0-9]+/gi, "_") : ""}.pdf`;
             doc.save(filename);
         }
 
-        function round2(n) {
-            return Math.round(n * 100) / 100;
-        }
-
-        async function insertCalcResultIntoPricingChat() {
+        function insertCalcResultIntoPricingChat() {
             const text = document.getElementById("calcResultText").innerText;
-            if (!text) return;
+            if (!text) { showToast("Calculate a quote first", true); return; }
+            const clientName = document.getElementById("calcClientNameForPdf").value.trim();
             try {
-                await db.collection("pricing_chat").doc("thread").collection("messages").add({
+                db.collection("pricing_chat").doc("thread").collection("messages").add({
                     role: "user",
-                    content: `[Exact Calculator result â€” use this number]\n${text}`,
+                    content: `[Exact Calculator result — use this number]${clientName ? ` Client: ${clientName}.` : ""}\n${text}`,
                     handledBy: auth.currentUser?.email || "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                }).catch(e => showToast("Couldn't add: " + e.message, true));
                 switchPricingTab("chat");
                 showToast("Added to AI Chat");
             } catch (e) {
@@ -1924,11 +2556,11 @@ ${currentSettings.generalInfo || ""}
                             <span class="font-semibold text-sm capitalize">${p}</span>
                             <span class="text-[11px] text-gray-400">${requests} / ~${cap ? cap.requests.toLocaleString() : "?"} req</span>
                         </div>
-                        <div class="text-xs text-gray-600 mb-2">${tokens.toLocaleString()} tokens${cap ? ` Â· ~${cap.tokens.toLocaleString()} token budget/key/day` : ""}</div>
+                        <div class="text-xs text-gray-600 mb-2">${tokens.toLocaleString()} tokens${cap ? ` · ~${cap.tokens.toLocaleString()} token budget/key/day` : ""}</div>
                         <div class="w-full bg-gray-100 rounded-full h-1.5 mb-1">
                             <div class="h-1.5 rounded-full ${pct > 85 ? 'bg-red-500' : 'bg-black'}" style="width:${pct}%"></div>
                         </div>
-                        <div class="text-[10px] text-gray-400">${pct}% of tighter limit (req or tokens) Â· ${cap ? cap.note : ""} Â· multi-key multiplies capacity</div>
+                        <div class="text-[10px] text-gray-400">${pct}% of tighter limit (req or tokens) · ${cap ? cap.note : ""} · multi-key multiplies capacity</div>
                     `;
                     el.appendChild(row);
                 });
@@ -1967,7 +2599,7 @@ ${currentSettings.generalInfo || ""}
             t = t.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
             // trim outer whitespace
             t = t.trim();
-            // collapse 3+ blank lines â†’ one blank line
+            // collapse 3+ blank lines → one blank line
             t = t.replace(/\n{3,}/g, "\n\n");
             // collapse spaces/tabs at end of lines
             t = t.replace(/[ \t]+$/gm, "");
@@ -1982,7 +2614,6 @@ ${currentSettings.generalInfo || ""}
                 })
                 .join("");
         }
-
 
         function formatTime(d) {
             return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -2003,7 +2634,8 @@ ${currentSettings.generalInfo || ""}
         // once anonymous sign-in completes, so Firestore reads never race auth.
         document.addEventListener("DOMContentLoaded", () => {
             setStatus("ready", "Ready");
+            try { restoreQuoteState(); } catch (e) { console.warn("Quote restore failed:", e); }
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425d7c169ea5dd1',t:'MTc5MDYzMDk1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
