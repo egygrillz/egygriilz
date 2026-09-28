@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EGYGRILLZ â€” Smart Cloudinary Migration</title>
+<title>EGYGRILLZ — Smart Cloudinary Migration</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: 'Courier New', monospace; background:#0a0a0a; color:#e0e0e0; min-height:100vh; padding:30px; }
@@ -40,7 +40,7 @@ h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
 </head>
 <body>
 
-<h1>EGYGRILLZ â€” Smart Cloudinary Migration</h1>
+<h1>EGYGRILLZ — Smart Cloudinary Migration</h1>
 <p class="sub">Dynamic branch & path finder migration tool</p>
 
 <div class="config">
@@ -60,8 +60,8 @@ h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
   <input type="text" id="cl-preset" value="egygrillz_upload">
   
   <div style="display:flex;gap:10px;margin-top:6px;">
-    <button class="btn" id="start-btn" onclick="startMigration()">â–¶ Start Migration</button>
-    <button class="btn" id="stop-btn" onclick="stopMigration()" disabled>â–  Stop</button>
+    <button class="btn" id="start-btn" onclick="startMigration()">▶ Start Migration</button>
+    <button class="btn" id="stop-btn" onclick="stopMigration()" disabled>■ Stop</button>
   </div>
 </div>
 
@@ -136,7 +136,7 @@ function setProgress(cur, total) {
 
 function stopMigration() {
   stopped = true;
-  log('â¹ Stop requested...', 'warn');
+  log('⏹ Stop requested...', 'warn');
   document.getElementById('stop-btn').disabled = true;
 }
 
@@ -162,7 +162,7 @@ async function ghGet(path, cfg) {
   return res.json();
 }
 
-// ðŸ” Smart Scanner: scans the directory structure inside the item folder dynamically
+// 🔍 Smart Scanner: scans the directory structure inside the item folder dynamically
 async function findImageInFolder(catFolder, itemFolder, filename, cfg) {
   const basePath = `assets/images/${catFolder}/${itemFolder}`;
   
@@ -193,7 +193,7 @@ async function findImageInFolder(catFolder, itemFolder, filename, cfg) {
 
 async function ghPut(path, content, sha, cfg) {
   const body = {
-    message: 'migrate: ' + path + ' â†’ Cloudinary',
+    message: 'migrate: ' + path + ' → Cloudinary',
     content: utf8_to_b64(content),
   };
   if (sha) body.sha = sha;
@@ -260,7 +260,7 @@ async function migrateItem(catFolder, itemFolder, cfg) {
   const infoPath = `assets/images/${catFolder}/${itemFolder}/info.txt`;
   const infoRes = await ghGet(infoPath, cfg);
   if (!infoRes) {
-    log(`  âš ï¸  No info.txt in: ${itemFolder} (Skipping item)`, 'warn');
+    log(`  ⚠️  No info.txt in: ${itemFolder} (Skipping item)`, 'warn');
     stats.err++;
     return;
   }
@@ -269,7 +269,7 @@ async function migrateItem(catFolder, itemFolder, cfg) {
   try {
     infoText = b64_to_utf8(infoRes.content);
   } catch(e) {
-    log(`  âœ— Could not decode info.txt for ${itemFolder}`, 'err');
+    log(`  ✗ Could not decode info.txt for ${itemFolder}`, 'err');
     stats.err++;
     return;
   }
@@ -277,12 +277,12 @@ async function migrateItem(catFolder, itemFolder, cfg) {
   const info = parseInfo(infoText);
   const allCloud = info.images.length > 0 && info.images.every(img => img.startsWith('http'));
   if (allCloud) {
-    log(`  âœ… Skip (already Cloudinary): ${itemFolder}`, 'dim');
+    log(`  ✅ Skip (already Cloudinary): ${itemFolder}`, 'dim');
     stats.skip++;
     return;
   }
 
-  log(`  ðŸ“¤ Migrating: ${itemFolder} â€” ${info.images.length} image(s)`, 'info');
+  log(`  📤 Migrating: ${itemFolder} — ${info.images.length} image(s)`, 'info');
 
   const newUrls = [];
   for (const imgName of info.images) {
@@ -291,15 +291,15 @@ async function migrateItem(catFolder, itemFolder, cfg) {
       continue;
     }
     
-    // ðŸ” Find image location live across potential structural variations
+    // 🔍 Find image location live across potential structural variations
     const verifiedRawUrl = await findImageInFolder(catFolder, itemFolder, imgName, cfg);
     
     try {
       const cloudUrl = await uploadToCloudinary(verifiedRawUrl, `${catFolder}/${itemFolder}`, cfg);
-      log(`     âœ“ ${imgName}`, 'ok');
+      log(`     ✓ ${imgName}`, 'ok');
       newUrls.push(cloudUrl);
     } catch(e) {
-      log(`     âœ— ${imgName}: ${e.message}`, 'err');
+      log(`     ✗ ${imgName}: ${e.message}`, 'err');
       newUrls.push(`assets/images/${catFolder}/${itemFolder}/${imgName}`);
       stats.err++;
     }
@@ -308,10 +308,10 @@ async function migrateItem(catFolder, itemFolder, cfg) {
   info.images = newUrls;
   try {
     await ghPut(infoPath, buildInfoTxt(info), infoRes.sha, cfg);
-    log(`  ðŸ’¾ Saved: ${itemFolder}`, 'ok');
+    log(`  💾 Saved: ${itemFolder}`, 'ok');
     stats.done++;
   } catch(e) {
-    log(`  âœ— Save failed: ${e.message}`, 'err');
+    log(`  ✗ Save failed: ${e.message}`, 'err');
     stats.err++;
   }
 }
@@ -323,37 +323,37 @@ async function startMigration() {
   clearLog();
 
   const cfg = getConfig();
-  if (!cfg.token) { log('âŒ GitHub token is required', 'err'); return; }
+  if (!cfg.token) { log('❌ GitHub token is required', 'err'); return; }
 
   document.getElementById('start-btn').disabled = true;
   document.getElementById('stop-btn').disabled = false;
 
-  log('ðŸš€ Starting smart discovery migration...', 'info');
+  log('🚀 Starting smart discovery migration...', 'info');
 
   let allItems = [];
   for (const cat of CATEGORIES) {
     const jsonRes = await ghGet(`assets/images/${cat.folder}/${cat.json}`, cfg);
     if (!jsonRes) {
-      log(`âš ï¸  Skipping ${cat.folder} â€” JSON list index file not found`, 'warn');
+      log(`⚠️  Skipping ${cat.folder} — JSON list index file not found`, 'warn');
       continue;
     }
     let list;
     try {
       list = JSON.parse(b64_to_utf8(jsonRes.content));
     } catch(e) {
-      log('âš ï¸  Could not parse JSON index for ' + cat.folder, 'warn');
+      log('⚠️  Could not parse JSON index for ' + cat.folder, 'warn');
       continue;
     }
-    log(`ðŸ“ ${cat.folder}: ${list.length} products found`, 'info');
+    log(`📁 ${cat.folder}: ${list.length} products found`, 'info');
     list.forEach(item => allItems.push({ cat, item }));
   }
 
   stats.total = allItems.length;
   updateStats();
-  log(`\nðŸ“Š Total items queued: ${allItems.length}\n`, 'info');
+  log(`\n📊 Total items queued: ${allItems.length}\n`, 'info');
 
   if (allItems.length === 0) {
-    log('âŒ No migration targets discovered. Verify token and repository configs.', 'err');
+    log('❌ No migration targets discovered. Verify token and repository configs.', 'err');
     document.getElementById('start-btn').disabled = false;
     document.getElementById('stop-btn').disabled = true;
     return;
@@ -362,9 +362,9 @@ async function startMigration() {
   let processed = 0;
   let lastCat = '';
   for (const { cat, item } of allItems) {
-    if (stopped) { log('\nâ¹ Stopped by user.', 'warn'); break; }
+    if (stopped) { log('\n⏹ Stopped by user.', 'warn'); break; }
     if (cat.folder !== lastCat) {
-      log(`\nðŸ“ Category: ${cat.folder.toUpperCase()}`, 'info');
+      log(`\n📁 Category: ${cat.folder.toUpperCase()}`, 'info');
       lastCat = cat.folder;
     }
     await migrateItem(cat.folder, item, cfg);
@@ -374,8 +374,8 @@ async function startMigration() {
     await new Promise(r => setTimeout(r, 250));
   }
 
-  log('\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•', 'dim');
-  log(`âœ… Processing Finished! Migrated: ${stats.done} | Skipped: ${stats.skip} | Errors: ${stats.err}`, stats.err > 0 ? 'warn' : 'ok');
+  log('\n══════════════════════════════', 'dim');
+  log(`✅ Processing Finished! Migrated: ${stats.done} | Skipped: ${stats.skip} | Errors: ${stats.err}`, stats.err > 0 ? 'warn' : 'ok');
 
   document.getElementById('start-btn').disabled = false;
   document.getElementById('stop-btn').disabled = true;

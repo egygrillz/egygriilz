@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-elem 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://raw.githubusercontent.com https://api.gold-api.com https://data-asg.goldprice.org; frame-src https://www.google.com https://www.recaptcha.net https://*.firebaseapp.com; worker-src 'self' blob:; form-action 'self'">
-<meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gallery â€“ EGYGRILLZ</title>
+  <title>Gallery – EGYGRILLZ</title>
   <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96"/>
   <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
   <link rel="shortcut icon" href="favicon.ico"/>
@@ -58,11 +56,11 @@
     .search-wrap svg { position:absolute; right:13px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#aaa; pointer-events:none; }
     @media(max-width:680px) { .page-header { padding-top:80px; } .search-wrap { max-width:100%; } }
 
-    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    /* ══════════════════════════════════════
        EDITORIAL GALLERY ROWS
-       Pattern cycles: A(2/3+1/3) â†’ B(1/3+2/3) â†’ C(3Ã—equal) â†’ repeat
+       Pattern cycles: A(2/3+1/3) → B(1/3+2/3) → C(3×equal) → repeat
        Last row (or single leftover) expands to 100vh
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    ══════════════════════════════════════ */
     .gallery-wrap { padding:8px 0 0; }
 
     .ed-row { display:grid; gap:3px; margin-bottom:3px; }
@@ -105,7 +103,7 @@
     .ed-panel.loading { background:linear-gradient(90deg,#ede9e4 25%,#e4e0db 50%,#ede9e4 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-    /* â”€â”€ MOBILE â”€â”€ */
+    /* ── MOBILE ── */
     @media(max-width:680px) {
       .gallery-wrap { padding-bottom:0; }
       .ed-row.layout-a, .ed-row.layout-b { grid-template-columns:1fr 1fr; }
@@ -197,9 +195,8 @@
       .modal-cta-primary,.modal-cta-secondary { flex:1; font-size:9px; padding:13px 8px; letter-spacing:2px; }
     }
   </style>
-<script src="/secure/vendor/purify.min.js"></script>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
   <div class="floating-logo" id="floating-logo"><a href="index.html">EGYGRILLZ</a></div>
 
@@ -222,10 +219,10 @@
   <div class="page-header">
     <div class="eyebrow">Portfolio</div>
     <h1>Custom Creations</h1>
-    <p>A curated portfolio of our most iconic handcrafted smiles â€” each piece a one-of-a-kind work of dental art.</p>
+    <p>A curated portfolio of our most iconic handcrafted smiles — each piece a one-of-a-kind work of dental art.</p>
     <div class="rule"></div>
     <div class="search-wrap">
-      <input type="text" id="search-input" placeholder="Search by nameâ€¦" autocomplete="off">
+      <input type="text" id="search-input" placeholder="Search by name…" autocomplete="off">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
     </div>
   </div>
@@ -261,7 +258,7 @@
   <div class="cta-band">
     <div class="eyebrow">Begin Your Journey</div>
     <h2>Book Your Appointment</h2>
-    <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out â€” we serve clients across Egypt and ship worldwide.</p>
+    <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
     <div class="cta-btns">
       <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
       <a href="contact.html" class="cta-btn-outline">Contact Us</a>
@@ -275,13 +272,167 @@
       <div class="footer-col"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="shipping.html">Care &amp; Shipping</a></div>
     </div>
     <div class="footer-bottom">
-      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a></div>
+      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a></div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
       <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
-      <div class="legal-text">Â© 2026 EGYGRILLZ</div>
+      <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
   </footer>
 
-  <script src="/secure/pages/grillz-gallery-1.js"></script>
+  <script>
+    /* ── Header ── */
+    (function(){
+      const header=document.getElementById('site-header'), floatLogo=document.getElementById('floating-logo');
+      let lastY=window.scrollY;
+      window.addEventListener('scroll',()=>{ const y=window.scrollY; const hiding=y>lastY&&y>80; header.classList.toggle('hidden',hiding); floatLogo.classList.toggle('visible',hiding); lastY=y; },{passive:true});
+    })();
+    document.querySelector('.menu-toggle').addEventListener('click',()=>{ document.querySelector('.main-nav').classList.toggle('active'); document.body.classList.toggle('menu-open'); });
+
+    /* ── Parse info.txt ── */
+    function parseInfo(text){ let name='',desc='',price='',images=[]; text.split('\n').forEach(line=>{ line=line.replace(/\r/g,'').trim(); const ci=line.indexOf(':'); if(ci===-1)return; const key=line.slice(0,ci).trim().toLowerCase(); const val=line.slice(ci+1).trim(); if(key==='name'||key==='title')name=val; else if(key==='description'||key==='desc')desc=val; else if(key==='price')price=val; else if(key==='images')images=val.split(',').map(i=>i.trim()).filter(Boolean); }); return{name,desc,price,images}; }
+
+    /* ── Modal ── */
+    const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
+    let mCur=0,mTot=0;
+    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img src="'+src+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+        modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
+    function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
+    function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
+    function closeModal(){ modalBg.classList.remove('open'); document.body.classList.remove('modal-open'); }
+    document.getElementById('modal-prev').addEventListener('click',()=>goTo(mCur-1));
+    document.getElementById('modal-next').addEventListener('click',()=>goTo(mCur+1));
+    document.getElementById('modal-close').addEventListener('click',closeModal);
+    modalBg.addEventListener('click',e=>{ if(e.target===modalBg)closeModal(); });
+    document.addEventListener('keydown',e=>{ if(!modalBg.classList.contains('open'))return; if(e.key==='Escape')closeModal(); if(e.key==='ArrowLeft')goTo(mCur-1); if(e.key==='ArrowRight')goTo(mCur+1); });
+
+    /* ── Build panel ── */
+    function buildPanel(item){
+      const panel=document.createElement('div');
+      panel.className='ed-panel loading';
+
+      const dotsHtml=item.images.length>1
+        ? '<div class="ed-dots">'+item.images.map(function(_,i){ return '<span class="ed-dot'+(i===0?' active':'')+'"></span>'; }).join('')+'</div>'
+        : '';
+
+      let imgsHtml='';
+      item.images.forEach(function(s,i){
+        imgsHtml+='<img src="'+s+'" class="'+(i===0?'active':'')+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+      });
+
+      panel.innerHTML=imgsHtml
+        +'<div class="ed-panel-info">'
+        +'<div class="name">'+item.name+'</div>'
+        +'<div class="desc">'+item.desc+'</div>'
+        +'<div class="price">'+item.price+'</div>'
+        +'</div>'
+        +dotsHtml;
+
+      const firstImg=panel.querySelector('img');
+      if(firstImg){
+        if(firstImg.complete&&firstImg.naturalWidth) panel.classList.remove('loading');
+        else firstImg.addEventListener('load',function(){ panel.classList.remove('loading'); },{once:true});
+      }
+
+      let c=0;
+      const imgs=panel.querySelectorAll('img');
+      const dots=panel.querySelectorAll('.ed-dot');
+      if(imgs.length>1){
+        setInterval(function(){
+          imgs[c].classList.remove('active');
+          if(dots[c]) dots[c].classList.remove('active');
+          c=(c+1)%imgs.length;
+          imgs[c].classList.add('active');
+          if(dots[c]) dots[c].classList.add('active');
+        }, 3500+Math.random()*1000);
+      }
+
+      panel.addEventListener('click',function(){ openModal(item); });
+      return panel;
+    }
+
+    /* ── Layout engine: A(2) → B(2) → C(3) → repeat
+       Last row always 100vh. Lone leftover = full-width 100vh.
+    ── */
+    const PATTERNS=['a','b','c'];
+    const SIZES={a:2,b:2,c:3};
+    const galleryWrap=document.getElementById('gallery-wrap');
+    const PAGE=10;
+    let shown=0, allItems=[], patternIdx=0;
+
+    function renderBatch(items){
+      const batch=items.slice(shown,shown+PAGE);
+      if(!batch.length) return;
+
+      /* remove is-last-row from previously last row */
+      const prevLast=galleryWrap.querySelector('.is-last-row');
+      if(prevLast) prevLast.classList.remove('is-last-row');
+
+      const newRows=[];
+      let bi=0;
+
+      while(bi<batch.length){
+        const pat=PATTERNS[patternIdx%PATTERNS.length];
+        const size=SIZES[pat];
+        const chunk=batch.slice(bi,bi+size);
+        if(!chunk.length) break;
+
+        const row=document.createElement('div');
+
+        if(chunk.length===1){
+          row.className='ed-row layout-single';
+          row.appendChild(buildPanel(chunk[0]));
+        } else {
+          row.className='ed-row layout-'+pat;
+          if(chunk.length<size){
+            row.style.gridTemplateColumns=chunk.map(function(){ return '1fr'; }).join(' ');
+          }
+          chunk.forEach(function(it){ row.appendChild(buildPanel(it)); });
+          patternIdx++;
+        }
+
+        newRows.push(row);
+        bi+=chunk.length;
+      }
+
+      newRows.forEach(function(r){ galleryWrap.appendChild(r); });
+      if(newRows.length) newRows[newRows.length-1].classList.add('is-last-row');
+
+      shown+=batch.length;
+      document.getElementById('see-more-wrap').style.display=shown<items.length?'block':'none';
+    }
+
+    /* ── Search ── */
+    let searchTimer=null;
+    document.getElementById('search-input').addEventListener('input',function(){
+      clearTimeout(searchTimer);
+      searchTimer=setTimeout(()=>{
+        const q=this.value.trim().toLowerCase();
+        const noRes=document.getElementById('no-results');
+        noRes.style.display='none';
+        galleryWrap.innerHTML='';
+        shown=0; patternIdx=0;
+        const items=q?allItems.filter(item=>item.name.toLowerCase().includes(q)||item.desc.toLowerCase().includes(q)):allItems;
+        if(!items.length){ noRes.style.display='block'; document.getElementById('see-more-wrap').style.display='none'; return; }
+        renderBatch(items);
+        document.getElementById('see-more-btn').onclick=()=>renderBatch(items);
+      },200);
+    });
+
+    /* ── Load ── */
+    const BASE='assets/images/sets';
+    fetch(`${BASE}/sets.json`)
+      .then(r=>r.json())
+      .then(folders=>{
+        const promises=folders.map(folder=>fetch(`${BASE}/${folder}/info.txt`).then(r=>{ if(!r.ok)throw 0; return r.text(); }).then(text=>{ const{name,desc,price,images}=parseInfo(text); return{name,desc,price,images:images.map(img=>`${BASE}/${folder}/${img}`),folder}; }).catch(()=>null));
+        return Promise.all(promises);
+      })
+      .then(items=>{
+        allItems=items.filter(Boolean);
+        if(!allItems.length){ document.getElementById('no-results').style.display='block'; return; }
+        renderBatch(allItems);
+        document.getElementById('see-more-btn').addEventListener('click',()=>renderBatch(allItems));
+      })
+      .catch(e=>{ console.error(e); document.getElementById('no-results').style.display='block'; });
+  </script>
 </body>
 </html>

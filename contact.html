@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-elem 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://raw.githubusercontent.com https://api.gold-api.com https://data-asg.goldprice.org; frame-src https://www.google.com https://www.recaptcha.net https://*.firebaseapp.com; worker-src 'self' blob:; form-action 'self'">
-<meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact â€“ EGYGRILLZ</title>
+  <title>Contact – EGYGRILLZ</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
   <!-- Firebase Compat SDK -->
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <script data-cfasync="false" src="/secure/pages/contact-1.js"></script>
+  <script data-cfasync="false">
+    function toggleMenu() {
+      document.querySelector('.main-nav').classList.toggle('active');
+      document.body.classList.toggle('menu-open');
+    }
+  </script>
 
   <style>
     :root { --bg:#FAFAF9; --text:#1a1a1a; --muted:#888; --border:rgba(0,0,0,0.08); }
@@ -95,16 +100,8 @@
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
   </style>
-
-
-
-
-
-
-
-<script src="/secure/vendor/firebase-runtime.js"></script><script src="/secure/config.js"></script><script src="/secure/api.js"></script><script src="/secure/auth.js"></script>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
   <div class="floating-logo" id="floating-logo"><a href="index.html">EGYGRILLZ</a></div>
 
@@ -139,18 +136,17 @@
       </div>
       <div class="detail-item">
         <h3>Follow</h3>
-        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer">Instagram / @egygrillz</a>
+        <a href="https://instagram.com/egygrillz" target="_blank">Instagram / @egygrillz</a>
       </div>
     </div>
 
     <div class="contact-form">
       <div id="form-wrapper">
         <h2>Send a Message</h2>
-        <div class="form-group"><input type="text" id="c-name" aria-label="Your name" maxlength="100" placeholder="Your Name" required></div>
-        <div class="form-group"><input type="email" id="c-email" aria-label="Email address" maxlength="254" placeholder="Email Address" required></div>
-        <div class="form-group"><textarea id="c-message" aria-label="Your message" maxlength="4000" rows="5" placeholder="How can we help?" required></textarea></div>
-        <div class="error-msg" id="c-error" role="alert">Oops! There was a problem. Please try again.</div>
-        <p style="font-size:12px;line-height:1.6">Protected by reCAPTCHA. Googleâ€™s <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms</a> apply.</p>
+        <div class="form-group"><input type="text" id="c-name" placeholder="Your Name" required></div>
+        <div class="form-group"><input type="email" id="c-email" placeholder="Email Address" required></div>
+        <div class="form-group"><textarea id="c-message" rows="5" placeholder="How can we help?" required></textarea></div>
+        <div class="error-msg" id="c-error">Oops! There was a problem. Please try again.</div>
         <button id="submit-btn" class="submit-btn" onclick="sendMessage()">Send Message</button>
       </div>
       <div id="success-message" style="display:none;text-align:center;padding:40px 20px;">
@@ -163,7 +159,7 @@
   <div class="cta-band">
     <div class="eyebrow">Begin Your Journey</div>
     <h2>Book Your Appointment</h2>
-    <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out â€” we serve clients across Egypt and ship worldwide.</p>
+    <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
     <div class="cta-btns">
       <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
       <a href="contact.html" class="cta-btn-outline">Contact Us</a>
@@ -191,18 +187,100 @@
     </div>
     <div class="footer-bottom">
       <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
+        <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
       <div class="ceo-wrap">
         <span class="ceo-label">Founder</span>
         <span class="ceo-name">DR Mohamed Mahdy</span>
       </div>
-      <div class="legal-text">Â© 2026 EGYGRILLZ</div>
+      <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
   </footer>
 
-  <script data-cfasync="false" src="/secure/pages/contact-2.js"></script>
+  <script data-cfasync="false">
+    // ── FIREBASE INIT ──
+    var db;
+    try {
+      firebase.initializeApp({
+        apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
+        authDomain: "egygrillz-studio.firebaseapp.com",
+        projectId: "egygrillz-studio",
+        storageBucket: "egygrillz-studio.firebasestorage.app",
+        messagingSenderId: "1022362401463",
+        appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
+      });
+      db = firebase.firestore();
+    } catch(e) { console.error('Firebase init failed:', e); }
+
+    // ── HEADER SCROLL ──
+    (function(){
+      var header = document.getElementById('site-header');
+      var floatLogo = document.getElementById('floating-logo');
+      var lastY = window.scrollY;
+      window.addEventListener('scroll', function() {
+        var y = window.scrollY;
+        var hiding = y > lastY && y > 80;
+        header.classList.toggle('hidden', hiding);
+        floatLogo.classList.toggle('visible', hiding);
+        lastY = y;
+      }, { passive: true });
+    })();
+
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    document.addEventListener('dragstart', function(e) { e.preventDefault(); });
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey||e.metaKey) && ['s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
+      if (e.key === 'F12') e.preventDefault();
+    });
+
+    async function sendMessage() {
+      var name = (document.getElementById('c-name').value || '').trim();
+      var email = (document.getElementById('c-email').value || '').trim();
+      var message = (document.getElementById('c-message').value || '').trim();
+      if (!name || !email || !message) { return; }
+
+      var btn = document.getElementById('submit-btn');
+      var errEl = document.getElementById('c-error');
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      errEl.style.display = 'none';
+
+      try {
+        // 1. Save to Firestore
+        if (db) {
+          await db.collection('messages').add({
+            name: name,
+            email: email,
+            message: message,
+            read: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        // 2. WhatsApp notification
+        try {
+          var msg = encodeURIComponent(
+            '💬 New Message — EGYGRILLZ\n' +
+            '👤 ' + name + '\n' +
+            '✉️ ' + email + '\n' +
+            '📝 ' + message
+          );
+          await fetch('https://api.callmebot.com/whatsapp.php?phone=+201000353839&text=' + msg + '&apikey=5240719');
+        } catch(waErr) { console.warn('WhatsApp error:', waErr); }
+
+        // Success
+        document.getElementById('form-wrapper').style.display = 'none';
+        document.getElementById('success-message').style.display = 'block';
+
+      } catch(err) {
+        console.error('Contact form error:', err);
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Send Message';
+      }
+    }
+  </script>
 </body>
 </html>

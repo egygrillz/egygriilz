@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-elem 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://raw.githubusercontent.com https://api.gold-api.com https://data-asg.goldprice.org; frame-src https://my.spline.design https://www.google.com https://www.recaptcha.net https://*.firebaseapp.com; worker-src 'self' blob:; form-action 'self'">
-<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Price Estimator â€” EGYGRILLZ</title>
+<title>Price Estimator — EGYGRILLZ</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
@@ -19,9 +17,9 @@ body{font-family:'Arimo',sans-serif;background:#fff;color:var(--text);-webkit-fo
 a{text-decoration:none;color:inherit;}
 img{display:block;max-width:100%;}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════
    SPLINE HERO BACKGROUND
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════ */
 .spline-bg {
   position:fixed;top:0;left:0;width:100%;height:100%;
   z-index:0;pointer-events:none;overflow:hidden;
@@ -50,14 +48,14 @@ img{display:block;max-width:100%;}
   z-index:1;pointer-events:none;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════
    PAGE CONTENT LAYER
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════ */
 .page-content {
   position:relative;z-index:2;
 }
 
-/* â”€â”€ HEADER â”€â”€ */
+/* ── HEADER ── */
 header{
   position:fixed;top:0;left:0;right:0;height:60px;
   background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
@@ -79,7 +77,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
   .main-nav a{font-size:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06);width:100%;}
 }
 
-/* â”€â”€ FLOATING PRICE BAR â”€â”€ */
+/* ── FLOATING PRICE BAR ── */
 .price-bar{
   position:fixed;top:0;left:0;right:0;z-index:1000;
   background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
@@ -116,7 +114,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .pb-price.pop{animation:numPop .22s ease;}
 .bar-spacer{height:60px;}
 
-/* â”€â”€ CURRENCY SWITCHER â”€â”€ */
+/* ── CURRENCY SWITCHER ── */
 .currency-switcher{
   display:flex;align-items:center;gap:3px;
   background:var(--off);border-radius:20px;padding:3px;
@@ -131,7 +129,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .cur-btn.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.08);}
 .cur-btn:hover:not(.active){color:var(--text);}
 
-/* â”€â”€ PROGRESS â”€â”€ */
+/* ── PROGRESS ── */
 .progress-wrap{
   background:rgba(255,255,255,0.9);backdrop-filter:blur(8px);
   padding:12px 5%;border-bottom:1px solid var(--border);
@@ -145,9 +143,9 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .prog-sep{width:28px;height:1px;background:var(--border);}
 @media(max-width:600px){.prog-step span:last-child{display:none;}.prog-step{padding:0 6px;}}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   HERO â€” transparent, floats over Spline
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════
+   HERO — transparent, floats over Spline
+══════════════════════════════════════ */
 .hero{
   padding:120px 5% 100px;text-align:center;
   background:transparent;
@@ -192,22 +190,22 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   CONTENT CARD â€” white background starts here
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════
+   CONTENT CARD — white background starts here
+══════════════════════════════════════ */
 .content-start {
   position:relative;z-index:5;
   background:#fff;
 }
 
-/* â”€â”€ SECTION â”€â”€ */
+/* ── SECTION ── */
 .section{padding:72px 0 48px;border-bottom:1px solid var(--border);background:#fff;}
 .section-inner{max-width:1100px;margin:0 auto;padding:0 5%;}
 .section-label{text-align:center;font-size:10px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;}
 .section-title{font-family:'Playfair Display',serif;text-align:center;font-size:clamp(22px,3vw,36px);font-weight:400;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin-bottom:8px;}
 .section-sub{text-align:center;font-size:13px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
 
-/* â”€â”€ SCROLL REVEAL â”€â”€ */
+/* ── SCROLL REVEAL ── */
 .reveal{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.4,0,.2,1),transform .7s cubic-bezier(.4,0,.2,1);}
 .reveal.visible{opacity:1;transform:translateY(0);}
 .reveal-delay-1{transition-delay:.1s;}
@@ -215,7 +213,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .reveal-delay-3{transition-delay:.3s;}
 .reveal-delay-4{transition-delay:.4s;}
 
-/* â”€â”€ INFO TOOLTIP â”€â”€ */
+/* ── INFO TOOLTIP ── */
 .info-trigger{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--text3);font-size:10px;font-weight:700;color:var(--text3);cursor:pointer;flex-shrink:0;transition:all .2s;font-style:normal;vertical-align:middle;margin-left:6px;user-select:none;}
 .info-trigger:hover{border-color:var(--text);color:var(--text);}
 .info-trigger.active{background:var(--text);color:#fff;border-color:var(--text);}
@@ -224,9 +222,9 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .info-content{background:var(--off);border-radius:10px;padding:16px 18px;margin:12px 0;font-size:13px;color:var(--text2);line-height:1.75;border-left:2px solid var(--text3);}
 .info-content strong{color:var(--text);}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════
    ODONTOGRAM
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════ */
 .odontogram-wrap{
   max-width:780px;margin:0 auto 12px;
   padding:32px 20px 20px;
@@ -304,9 +302,9 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
   font-family:'Arimo',sans-serif;font-size:14px;color:var(--text3);font-weight:400;margin-left:8px;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════
    CAROUSEL + IMAGE FIX (mix-blend-mode)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════ */
 .carousel-outer{overflow:hidden;position:relative;padding:28px 0 10px;}
 .carousel-track{display:flex;align-items:center;transition:transform .45s cubic-bezier(.4,0,.2,1);will-change:transform;}
 .c-item{flex-shrink:0;width:220px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:all .45s cubic-bezier(.34,1.2,.64,1);padding:0 12px;opacity:.3;transform:scale(.75);}
@@ -339,7 +337,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .c-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);transition:all .3s;cursor:pointer;border:none;padding:0;}
 .c-dot.on{background:var(--text);transform:scale(1.3);}
 
-/* â”€â”€ MATERIAL SINGLE DESC â”€â”€ */
+/* ── MATERIAL SINGLE DESC ── */
 .mat-single-desc{
   max-width:520px;margin:0 auto;
   text-align:center;padding:18px 24px;
@@ -351,7 +349,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .mat-single-desc .mt{font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;}
 .mat-single-desc .mg{font-size:12px;color:#9a7f1a;background:#fffbea;border-radius:6px;padding:5px 10px;margin-top:8px;display:inline-block;}
 
-/* â”€â”€ ADD-ONS â”€â”€ */
+/* ── ADD-ONS ── */
 .addons-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border-radius:16px;overflow:hidden;}
 .addon-tile{background:#fff;padding:26px 26px 22px;cursor:pointer;transition:background .2s;}
 .addon-tile:hover{background:var(--off);}
@@ -386,7 +384,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .stp-btn:hover{background:var(--text);color:#fff;border-color:var(--text);}
 .stp-n{font-family:'Playfair Display',serif;font-size:36px;font-weight:400;color:var(--text);min-width:40px;text-align:center;letter-spacing:-1px;}
 
-/* â”€â”€ MODAL â”€â”€ */
+/* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:20px;}
 .modal-overlay.open{opacity:1;pointer-events:all;}
 .modal-box{background:#fff;border-radius:16px;max-width:460px;width:100%;padding:32px;transform:translateY(20px);transition:transform .3s;max-height:80vh;overflow-y:auto;}
@@ -400,7 +398,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .modal-close{display:block;width:100%;margin-top:20px;background:var(--text);color:#fff;border:none;font-family:'Arimo',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;padding:14px;border-radius:8px;cursor:pointer;transition:opacity .2s;}
 .modal-close:hover{opacity:.8;}
 
-/* â”€â”€ SHARE PANEL â”€â”€ */
+/* ── SHARE PANEL ── */
 .share-panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-top:28px;display:none;}
 .share-panel.show{display:block;}
 .share-summary{font-size:12px;color:var(--text2);line-height:1.8;background:var(--off);border-radius:8px;padding:14px;margin-bottom:14px;font-family:monospace;white-space:pre-line;}
@@ -408,7 +406,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .share-btn{padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;transition:all .2s;font-family:'Arimo',sans-serif;display:flex;align-items:center;gap:6px;}
 .share-btn:hover{background:var(--text);color:#fff;border-color:var(--text);}
 
-/* â”€â”€ SUMMARY FOOTER â”€â”€ */
+/* ── SUMMARY FOOTER ── */
 .sum-footer{background:var(--off);padding:70px 5%;text-align:center;}
 .sf-inner{max-width:600px;margin:0 auto;}
 .sf-config{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:32px;}
@@ -423,7 +421,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .sf-ghost-btn{display:inline-block;font-size:12px;color:var(--text2);background:none;border:1px solid var(--border);border-radius:20px;padding:8px 20px;cursor:pointer;transition:all .2s;font-family:'Arimo',sans-serif;}
 .sf-ghost-btn:hover{border-color:var(--text);color:var(--text);}
 
-/* â”€â”€ WHY â”€â”€ */
+/* ── WHY ── */
 .why-section{padding:80px 5%;background:#fff;border-bottom:1px solid var(--border);}
 .why-inner{max-width:1000px;margin:0 auto;}
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;margin-top:48px;}
@@ -436,7 +434,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .why-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:400;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .why-desc{font-size:13px;color:var(--text2);line-height:1.7;}
 
-/* â”€â”€ FAQ â”€â”€ */
+/* ── FAQ ── */
 .faq-section{padding:80px 5%;border-bottom:1px solid var(--border);background:#fff;}
 .faq-inner{max-width:720px;margin:0 auto;}
 .faq-item{border-bottom:1px solid var(--border);}
@@ -448,7 +446,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .faq-item.open .faq-a{max-height:400px;}
 .faq-a p{font-size:13px;color:var(--text2);line-height:1.8;padding-bottom:20px;}
 
-/* â”€â”€ CTA BAND â”€â”€ */
+/* ── CTA BAND ── */
 .cta-band{background:#fff;text-align:center;padding:90px 5%;}
 .cta-band .eyebrow{font-size:9px;letter-spacing:5px;text-transform:uppercase;color:#aaa;margin-bottom:12px;}
 .cta-band h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(22px,3.5vw,42px);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;}
@@ -459,7 +457,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .cta-btn-outline{display:inline-block;font-size:10px;letter-spacing:3px;text-transform:uppercase;border:1px solid #ddd;padding:15px 38px;color:#aaa;transition:.25s;}
 .cta-btn-outline:hover{border-color:#aaa;color:#666;}
 
-/* â”€â”€ FOOTER â”€â”€ */
+/* ── FOOTER ── */
 footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 .footer-main{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:40px;padding-bottom:40px;border-bottom:1px solid #eee;}
 .footer-col h4{font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;color:#999;}
@@ -476,14 +474,14 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 .footer-icons a:hover{color:#000;}
 @media(max-width:768px){.footer-main{grid-template-columns:1fr;text-align:center;gap:30px;}.footer-col{display:flex;flex-direction:column;align-items:center;}.footer-bottom{flex-direction:column;text-align:center;}}
 
-/* â”€â”€ PARALLAX grain overlay â”€â”€ */
+/* ── PARALLAX grain overlay ── */
 body::before{
   content:'';position:fixed;top:0;left:0;width:100%;height:100%;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   opacity:.3;pointer-events:none;z-index:0;
 }
 
-/* â”€â”€ CUSTOM CURSOR â”€â”€ */
+/* ── CUSTOM CURSOR ── */
 .cursor{
   position:fixed;top:0;left:0;z-index:9999;pointer-events:none;
   mix-blend-mode:multiply;
@@ -505,7 +503,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 
 @media(hover:none){.cursor{display:none;}}
 
-/* â”€â”€ INTERACTIVE NUMBER GLOW â”€â”€ */
+/* ── INTERACTIVE NUMBER GLOW ── */
 @keyframes priceGlow{
   0%{text-shadow:none;}
   50%{text-shadow:0 0 30px rgba(201,162,39,0.15);}
@@ -570,9 +568,9 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
       </div>
       <div class="gold-badge" id="gold-badge" style="display:none">
         <div class="gold-dot"></div>
-        <span id="gold-badge-text">18K: â€” EGP/g</span>
+        <span id="gold-badge-text">18K: — EGP/g</span>
       </div>
-      <span class="pb-note">Estimate only â€” final quote at studio</span>
+      <span class="pb-note">Estimate only — final quote at studio</span>
       <button class="sf-ghost-btn" onclick="openModal()" id="breakdown-btn" style="display:none">View Breakdown</button>
       <a href="booking.html" class="cta-book">Book Now</a>
     </div>
@@ -593,7 +591,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 
 <div class="bar-spacer"></div>
 
-<!-- HERO (transparent â€” Spline shows through) -->
+<!-- HERO (transparent — Spline shows through) -->
 <div class="hero" id="hero-section">
   <span class="hero-eyebrow">Custom Grillz Builder</span>
   <h1>Design Your<br><em>Perfect Set.</em></h1>
@@ -601,10 +599,10 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
   <div class="hero-actions">
     <div class="gold-strip">
       <div class="gold-dot"></div>
-      <span>Live Gold 18K: <strong id="hero-gold-price">Loadingâ€¦</strong></span>
+      <span>Live Gold 18K: <strong id="hero-gold-price">Loading…</strong></span>
       <span style="color:var(--gold);margin-left:4px;font-size:10px;" id="hero-gold-time"></span>
     </div>
-    <a href="#sec-teeth" class="cta-book" style="padding:10px 28px;font-size:10px;">Start Building â†“</a>
+    <a href="#sec-teeth" class="cta-book" style="padding:10px 28px;font-size:10px;">Start Building ↓</a>
   </div>
   <div class="hero-scroll-hint">
     <div class="scroll-line"></div>
@@ -637,15 +635,15 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
     <p class="section-sub reveal reveal-delay-2">Tap each tooth you want covered. Tap again to deselect.</p>
     <div class="info-panel" id="info-teeth">
       <div class="info-content">
-        <strong>R = Right side Â· L = Left side</strong> (as seen from the front)<br>
-        Numbers 1â€“5 count outward from the center: 1 = front incisor, 2 = lateral incisor, 3 = canine (fang), 4â€“5 = premolars.<br><br>
-        <strong>Common combos:</strong> Top 6 (R3â€“L3 upper) Â· Bottom 6 (R3â€“L3 lower) Â· Fangs (R3+L3 both jaws) Â· Full Set Â· Single tooth
+        <strong>R = Right side · L = Left side</strong> (as seen from the front)<br>
+        Numbers 1–5 count outward from the center: 1 = front incisor, 2 = lateral incisor, 3 = canine (fang), 4–5 = premolars.<br><br>
+        <strong>Common combos:</strong> Top 6 (R3–L3 upper) · Bottom 6 (R3–L3 lower) · Fangs (R3+L3 both jaws) · Full Set · Single tooth
       </div>
     </div>
 
     <!-- ODONTOGRAM -->
     <div class="odontogram-wrap reveal reveal-delay-2">
-      <div class="odontogram-label">Click or tap any tooth to select Â· Click again to deselect</div>
+      <div class="odontogram-label">Click or tap any tooth to select · Click again to deselect</div>
       <svg id="odontogram-svg" class="odontogram-svg" viewBox="0 0 740 300" xmlns="http://www.w3.org/2000/svg">
         <!-- Generated by buildOdontogram() -->
       </svg>
@@ -675,10 +673,10 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
     <p class="section-sub reveal reveal-delay-2">Each material determines look, price, and turnaround time.</p>
     <div class="info-panel" id="info-mat">
       <div class="info-content">
-        <strong>Silver 925</strong> â€” Lost-wax cast sterling silver. Brilliant, affordable. Price tied to live silver rate (default: 125 EGP/g).<br><br>
-        <strong>Gold 18K</strong> â€” Lost-wax cast solid gold. Hypoallergenic, tarnish-free, highest value. Price auto-calculated from live 18K gold market rate.<br><br>
-        <strong>Cobalt Chrome</strong> â€” 3D printed metal (DMLS). Ultra-durable, scratch-resistant. Fixed production cost.<br><br>
-        <strong>Titanium</strong> â€” 3D printed aerospace-grade titanium. Lightest, fully biocompatible. Fixed production cost.
+        <strong>Silver 925</strong> — Lost-wax cast sterling silver. Brilliant, affordable. Price tied to live silver rate (default: 125 EGP/g).<br><br>
+        <strong>Gold 18K</strong> — Lost-wax cast solid gold. Hypoallergenic, tarnish-free, highest value. Price auto-calculated from live 18K gold market rate.<br><br>
+        <strong>Cobalt Chrome</strong> — 3D printed metal (DMLS). Ultra-durable, scratch-resistant. Fixed production cost.<br><br>
+        <strong>Titanium</strong> — 3D printed aerospace-grade titanium. Lightest, fully biocompatible. Fixed production cost.
       </div>
     </div>
   </div>
@@ -704,13 +702,13 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
     <p class="section-sub reveal reveal-delay-2">From clean and minimal to masterpiece-level sculpture. Complexity adds to the designer fee and final retail price.</p>
     <div class="info-panel" id="info-cplx">
       <div class="info-content">
-        <strong>Level 1 â€” The Bar (0%)</strong> Simple solid bar â€” no cuts or detail. Lowest complexity.<br>
-        <strong>Level 2 â€” Solid Cap (+5%)</strong> Seamless polished plain cap. Standard base design.<br>
-        <strong>Level 3 â€” Medium (+10%)</strong> Texture work or shaped framing (e.g. drip, flame).<br>
-        <strong>Level 4 â€” Hard (+15%)</strong> Intricate manual detail (e.g. flower).<br>
-        <strong>Level 5 â€” Complex (+25%)</strong> Advanced layering or multi-step design (e.g. snake, scorpion).<br>
-        <strong>Level 6 â€” Master (+40%)</strong> Full artistic sculpting, expert-level modeling (e.g. mermaid).<br>
-        <strong>Level 7 â€” Masterpiece (Special)</strong> Maximum complexity â€” one-of-a-kind commission. Price on consultation.
+        <strong>Level 1 — The Bar (0%)</strong> Simple solid bar — no cuts or detail. Lowest complexity.<br>
+        <strong>Level 2 — Solid Cap (+5%)</strong> Seamless polished plain cap. Standard base design.<br>
+        <strong>Level 3 — Medium (+10%)</strong> Texture work or shaped framing (e.g. drip, flame).<br>
+        <strong>Level 4 — Hard (+15%)</strong> Intricate manual detail (e.g. flower).<br>
+        <strong>Level 5 — Complex (+25%)</strong> Advanced layering or multi-step design (e.g. snake, scorpion).<br>
+        <strong>Level 6 — Master (+40%)</strong> Full artistic sculpting, expert-level modeling (e.g. mermaid).<br>
+        <strong>Level 7 — Masterpiece (Special)</strong> Maximum complexity — one-of-a-kind commission. Price on consultation.
       </div>
     </div>
   </div>
@@ -736,23 +734,23 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
         <div class="ao-head">
           <div class="ao-left">
             <div class="ao-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg></div>
-            <div><div class="ao-title">Stones &amp; Diamonds</div><div class="ao-hint">CZ Â· Moissanite Â· Natural Diamond</div></div>
+            <div><div class="ao-title">Stones &amp; Diamonds</div><div class="ao-hint">CZ · Moissanite · Natural Diamond</div></div>
           </div>
           <span class="ao-chev"><i class="fas fa-chevron-down"></i></span>
         </div>
         <div class="ao-body" onclick="event.stopPropagation()">
-          <div class="ao-avail-note" id="stones-avail-note">âš ï¸ Diamond setting is only available for Silver 925 and Gold 18K.</div>
+          <div class="ao-avail-note" id="stones-avail-note">⚠️ Diamond setting is only available for Silver 925 and Gold 18K.</div>
           <div class="ao-sub-row">
             <div class="ao-sub" style="margin-top:0;">Stone Style</div>
             <span class="info-trigger" style="margin-left:6px;margin-bottom:10px;" onclick="toggleInfo('info-stones')">i</span>
           </div>
           <div class="info-panel" id="info-stones">
             <div class="info-content">
-              <strong>Single Stone(s)</strong> â€” Individual gems set at specific spots.<br><br>
-              <strong>Iced Out</strong> â€” Full honeycomb coverage across the entire tooth surface.<br><br>
-              <strong>CZ</strong> â€” AAAAA cubic zirconia. Excellent sparkle, very affordable.<br>
-              <strong>Moissanite</strong> â€” VVS1 / D color / GRA certified. Near-diamond brilliance.<br>
-              <strong>Natural Diamond</strong> â€” SI or VS certified real diamonds.
+              <strong>Single Stone(s)</strong> — Individual gems set at specific spots.<br><br>
+              <strong>Iced Out</strong> — Full honeycomb coverage across the entire tooth surface.<br><br>
+              <strong>CZ</strong> — AAAAA cubic zirconia. Excellent sparkle, very affordable.<br>
+              <strong>Moissanite</strong> — VVS1 / D color / GRA certified. Near-diamond brilliance.<br>
+              <strong>Natural Diamond</strong> — SI or VS certified real diamonds.
             </div>
           </div>
           <div class="pills" id="sg-pills">
@@ -775,7 +773,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
             </div>
             <div class="ao-sub">Number of Stones</div>
             <div class="stepper">
-              <button class="stp-btn" onclick="adjS(event,-1)">âˆ’</button>
+              <button class="stp-btn" onclick="adjS(event,-1)">−</button>
               <span class="stp-n" id="stn">1</span>
               <button class="stp-btn" onclick="adjS(event,1)">+</button>
             </div>
@@ -787,12 +785,12 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
             </div>
             <div class="info-panel" id="info-iced">
               <div class="info-content">
-                <strong>PavÃ© (Honeycomb)</strong> â€” Stones packed tightly. +1,000 EGP / tooth.<br><br>
-                <strong>Channel (Linear Rows)</strong> â€” Stones in rows. +1,500 EGP / tooth.
+                <strong>Pavé (Honeycomb)</strong> — Stones packed tightly. +1,000 EGP / tooth.<br><br>
+                <strong>Channel (Linear Rows)</strong> — Stones in rows. +1,500 EGP / tooth.
               </div>
             </div>
             <div class="pills" id="ios-pills">
-              <button class="pill on" data-v="Pave"    onclick="pp(event,this,'ios')">PavÃ© +1,000/tooth</button>
+              <button class="pill on" data-v="Pave"    onclick="pp(event,this,'ios')">Pavé +1,000/tooth</button>
               <button class="pill"    data-v="Channel" onclick="pp(event,this,'ios')">Channel +1,500/tooth</button>
             </div>
             <div class="ao-sub">Gem Type</div>
@@ -821,15 +819,15 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
           </div>
           <div class="info-panel" id="info-enamel">
             <div class="info-content">
-              <strong>Single Tone</strong> â€” 1 color, solid fill. 200 EGP / tooth.<br>
-              <strong>Multi-Tone</strong> â€” 2â€“4 colors, patterned. 350 EGP / tooth.<br>
-              <strong>Master Color</strong> â€” 4+ colors, complex artwork. 750 EGP / tooth.
+              <strong>Single Tone</strong> — 1 color, solid fill. 200 EGP / tooth.<br>
+              <strong>Multi-Tone</strong> — 2–4 colors, patterned. 350 EGP / tooth.<br>
+              <strong>Master Color</strong> — 4+ colors, complex artwork. 750 EGP / tooth.
             </div>
           </div>
           <div class="pills" id="en-pills">
-            <button class="pill on" data-v="Single Tone"   onclick="pp(event,this,'en')">Single Tone â€” 200 EGP</button>
-            <button class="pill"    data-v="Multi-Tone"    onclick="pp(event,this,'en')">Multi-Tone â€” 350 EGP</button>
-            <button class="pill"    data-v="Master Color"  onclick="pp(event,this,'en')">Master Color â€” 750 EGP</button>
+            <button class="pill on" data-v="Single Tone"   onclick="pp(event,this,'en')">Single Tone — 200 EGP</button>
+            <button class="pill"    data-v="Multi-Tone"    onclick="pp(event,this,'en')">Multi-Tone — 350 EGP</button>
+            <button class="pill"    data-v="Master Color"  onclick="pp(event,this,'en')">Master Color — 750 EGP</button>
           </div>
         </div>
       </div>
@@ -839,7 +837,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
         <div class="ao-head">
           <div class="ao-left">
             <div class="ao-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/></svg></div>
-            <div><div class="ao-title">Surface Plating</div><div class="ao-hint">Yellow Â· Rose Â· White Â· Black Â· Silver</div></div>
+            <div><div class="ao-title">Surface Plating</div><div class="ao-hint">Yellow · Rose · White · Black · Silver</div></div>
           </div>
           <span class="ao-chev"><i class="fas fa-chevron-down"></i></span>
         </div>
@@ -851,9 +849,9 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
           <div class="info-panel" id="info-plate">
             <div class="info-content">
               A thin layer of precious metal applied over the base.<br><br>
-              <strong>Black Gold / White Gold</strong> â€” 400 EGP / tooth<br>
-              <strong>Rose Gold / Standard White</strong> â€” 300 EGP / tooth<br>
-              <strong>Silver Plating</strong> â€” 200 EGP / tooth
+              <strong>Black Gold / White Gold</strong> — 400 EGP / tooth<br>
+              <strong>Rose Gold / Standard White</strong> — 300 EGP / tooth<br>
+              <strong>Silver Plating</strong> — 200 EGP / tooth
             </div>
           </div>
           <div style="position:relative;margin-top:12px;">
@@ -881,15 +879,15 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
           </div>
           <div class="info-panel" id="info-laser">
             <div class="info-content">
-              <strong>Small (200 EGP)</strong> â€” Simple logo, single number.<br>
-              <strong>Medium (450 EGP)</strong> â€” Full name, drawing, center-face coverage.<br>
-              <strong>Large (700 EGP)</strong> â€” Full surface detail, wrapped pattern.
+              <strong>Small (200 EGP)</strong> — Simple logo, single number.<br>
+              <strong>Medium (450 EGP)</strong> — Full name, drawing, center-face coverage.<br>
+              <strong>Large (700 EGP)</strong> — Full surface detail, wrapped pattern.
             </div>
           </div>
           <div class="pills" id="ls-pills">
-            <button class="pill on" data-v="Small"  onclick="pp(event,this,'ls')">Small â€” 200 EGP</button>
-            <button class="pill"    data-v="Medium" onclick="pp(event,this,'ls')">Medium â€” 450 EGP</button>
-            <button class="pill"    data-v="Large"  onclick="pp(event,this,'ls')">Large â€” 700 EGP</button>
+            <button class="pill on" data-v="Small"  onclick="pp(event,this,'ls')">Small — 200 EGP</button>
+            <button class="pill"    data-v="Medium" onclick="pp(event,this,'ls')">Medium — 450 EGP</button>
+            <button class="pill"    data-v="Large"  onclick="pp(event,this,'ls')">Large — 700 EGP</button>
           </div>
         </div>
       </div>
@@ -899,7 +897,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
         <div class="ao-head">
           <div class="ao-left">
             <div class="ao-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg></div>
-            <div><div class="ao-title">Anodize Coloring</div><div class="ao-hint">Titanium exclusive â€” permanent molecular color</div></div>
+            <div><div class="ao-title">Anodize Coloring</div><div class="ao-hint">Titanium exclusive — permanent molecular color</div></div>
           </div>
           <span class="ao-chev"><i class="fas fa-chevron-down"></i></span>
         </div>
@@ -910,16 +908,16 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
           </div>
           <div class="info-panel" id="info-anod">
             <div class="info-content">
-              Electrical process that colors Titanium at the molecular level â€” never peels, chips, or fades.<br><br>
-              <strong>Single Color (300 EGP)</strong> â€” Any single color, any number of teeth.<br>
-              <strong>Dual Tone (350 EGP)</strong> â€” Two distinct colors. Minimum 2 teeth.<br>
-              <strong>Multi-Color (450 EGP)</strong> â€” 3+ colors / rainbow. Minimum 3 teeth.
+              Electrical process that colors Titanium at the molecular level — never peels, chips, or fades.<br><br>
+              <strong>Single Color (300 EGP)</strong> — Any single color, any number of teeth.<br>
+              <strong>Dual Tone (350 EGP)</strong> — Two distinct colors. Minimum 2 teeth.<br>
+              <strong>Multi-Color (450 EGP)</strong> — 3+ colors / rainbow. Minimum 3 teeth.
             </div>
           </div>
           <div class="pills" id="an-pills">
-            <button class="pill on" data-v="Single"  onclick="pp(event,this,'an')">Single Color â€” 300 EGP</button>
-            <button class="pill"    data-v="Dual"    onclick="pp(event,this,'an')">Dual Tone â€” 350 EGP</button>
-            <button class="pill"    data-v="Multi"   onclick="pp(event,this,'an')">Multi-Color â€” 450 EGP</button>
+            <button class="pill on" data-v="Single"  onclick="pp(event,this,'an')">Single Color — 300 EGP</button>
+            <button class="pill"    data-v="Dual"    onclick="pp(event,this,'an')">Dual Tone — 350 EGP</button>
+            <button class="pill"    data-v="Multi"   onclick="pp(event,this,'an')">Multi-Color — 450 EGP</button>
           </div>
         </div>
       </div>
@@ -946,7 +944,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
     <span class="sf-label">Your Estimated Price</span>
     <div class="sf-price-big" id="sf-price"><sup>EGP</sup>0</div>
     <div class="sf-secondary" id="sf-secondary"></div>
-    <div style="margin-bottom:36px;"><div class="sf-est-note">Estimate only â€” final price confirmed at your studio visit after impression</div></div>
+    <div style="margin-bottom:36px;"><div class="sf-est-note">Estimate only — final price confirmed at your studio visit after impression</div></div>
     <!-- Currency switcher in footer too -->
     <div style="display:flex;justify-content:center;margin-bottom:28px;">
       <div class="currency-switcher">
@@ -974,10 +972,10 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
     <h2 class="section-title reveal">Why EGYGRILLZ</h2>
     <p class="section-sub reveal reveal-delay-1">Egypt's most trusted custom dental jewelry studio.</p>
     <div class="why-grid">
-      <div class="why-card reveal reveal-delay-1"><div class="why-icon"><i class="fas fa-fingerprint"></i></div><div class="why-title">100% Custom</div><div class="why-desc">Every piece made from an impression of your exact teeth. Your smile is unique â€” your grillz should be too.</div></div>
+      <div class="why-card reveal reveal-delay-1"><div class="why-icon"><i class="fas fa-fingerprint"></i></div><div class="why-title">100% Custom</div><div class="why-desc">Every piece made from an impression of your exact teeth. Your smile is unique — your grillz should be too.</div></div>
       <div class="why-card reveal reveal-delay-2"><div class="why-icon"><i class="fas fa-gem"></i></div><div class="why-title">Certified Materials</div><div class="why-desc">Genuine 18K gold, real 925 silver, aerospace titanium, and cobalt chrome. GRA-certified diamonds available.</div></div>
       <div class="why-card reveal reveal-delay-3"><div class="why-icon"><i class="fas fa-shield-alt"></i></div><div class="why-title">Safe &amp; Removable</div><div class="why-desc">No drilling, no permanent attachment. Fully removable, safe for daily wear when kept clean.</div></div>
-      <div class="why-card reveal reveal-delay-4"><div class="why-icon"><i class="fas fa-clock"></i></div><div class="why-title">Fast Turnaround</div><div class="why-desc">Chrome &amp; Titanium: 5â€“7 days. Gold &amp; Silver: 10â€“14 days. Rush service available on request.</div></div>
+      <div class="why-card reveal reveal-delay-4"><div class="why-icon"><i class="fas fa-clock"></i></div><div class="why-title">Fast Turnaround</div><div class="why-desc">Chrome &amp; Titanium: 5–7 days. Gold &amp; Silver: 10–14 days. Rush service available on request.</div></div>
     </div>
   </div>
 </div>
@@ -996,7 +994,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 <div class="cta-band">
   <div class="eyebrow">Begin Your Journey</div>
   <h2>Book Your Appointment</h2>
-  <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out â€” we serve clients across Egypt and ship worldwide.</p>
+  <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
   <div class="cta-btns">
     <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
     <a href="contact.html" class="cta-btn-outline">Contact Us</a>
@@ -1025,15 +1023,15 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
   </div>
   <div class="footer-bottom">
     <div class="footer-icons">
-      <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-      <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
+      <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
+      <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a>
     </div>
     <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
     <div class="ceo-wrap">
       <span class="ceo-label">Founder</span>
       <span class="ceo-name">DR Mohamed Mahdy</span>
     </div>
-    <div class="legal-text">Â© 2026 EGYGRILLZ</div>
+    <div class="legal-text">© 2026 EGYGRILLZ</div>
   </div>
 </footer>
 
@@ -1049,6 +1047,780 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
   </div>
 </div>
 
-<script src="/secure/pages/atelier-1.js"></script>
+<script>
+/* ════════════════════════════════════════
+   DATA
+════════════════════════════════════════ */
+const _BASE = 'https://raw.githubusercontent.com/egygrillz/egygriilz/main/';
+
+/* ── CURRENCY CONFIG ── */
+// Rates are multiplied against the EGP total to get the display currency
+// These are approximate rates — the app fetches live EGP/USD from the gold API
+// and derives the others from stable cross-rates
+const CURRENCIES = {
+  EGP: { symbol: 'EGP', sign: '',    rate: 1,       decimals: 0  },
+  USD: { symbol: 'USD', sign: '$',   rate: 0.021,   decimals: 0  },
+  EUR: { symbol: 'EUR', sign: '€',   rate: 0.019,   decimals: 0  },
+  SAR: { symbol: 'SAR', sign: 'ر.س', rate: 0.079,   decimals: 0  },
+  AED: { symbol: 'AED', sign: 'د.إ', rate: 0.077,   decimals: 0  },
+};
+let activeCurrency = 'EGP';
+// EGP/USD rate updated after live gold fetch
+let EGP_TO_USD = 0.021;
+
+/* Silver: 125 EGP/g default */
+let SILVER_PER_GRAM = 125;
+let GOLD18K_PER_GRAM = 6250; /* fallback, overridden by live fetch */
+let goldFetchedAt = 0;
+const GOLD_REFRESH_MS = 60 * 60 * 1000; /* 1 hour */
+
+/* ── MATERIALS ── */
+const MATS = [
+  {
+    id:'Silver 925', nm:'Silver 925', sub:'Sterling Silver · Lost-Wax Cast',
+    desc:'The brilliant, affordable classic. Perfect for intricate cutwork and iced-out designs. Hypoallergenic and easy to polish.',
+    precious:true,
+    img:_BASE+'materials/SILVER.png',
+    calcBase: ()=> Math.round((200 + 37.5 + 46 + 2.3 * SILVER_PER_GRAM) * 2.8)
+  },
+  {
+    id:'Gold 18K', nm:'Gold 18K', sub:'Solid 18K Gold · Lost-Wax Cast',
+    desc:'The pinnacle of grillz. Hypoallergenic, tarnish-free, holds its value. Karat purity certified at point of sale.',
+    precious:true,
+    img:_BASE+'materials/GOLD.png',
+    calcBase: ()=> Math.round((200 + 60 + 50 + 1.15 * GOLD18K_PER_GRAM) * 2.8)
+  },
+  {
+    id:'Cobalt Chrome', nm:'Cobalt Chrome', sub:'Gunmetal Alloy · 3D Printed (DMLS)',
+    desc:'Ultra-durable, scratch-resistant. Distinctive dark silver appearance. Fixed production cost — no metal market fluctuation.',
+    precious:false,
+    img:_BASE+'materials/CHROME.png',
+    calcBase: ()=> 1000
+  },
+  {
+    id:'Titanium', nm:'Titanium', sub:'Aerospace Grade · 3D Printed (DMLS)',
+    desc:'Lightest material, fully biocompatible (used in dental implants). Stronger than steel. Anodize-ready for permanent vivid colors.',
+    precious:false,
+    img:_BASE+'materials/TITANUM.png',
+    calcBase: ()=> 2000
+  }
+];
+
+/* ── LEVELS ── */
+const CPLX = [
+  {id:'L1', nm:'Level 1 — The Bar',      sub:'Simple solid bar — no cuts, no detail.',             mult:1.00, img:_BASE+'levels/LEVEL 1.png'},
+  {id:'L2', nm:'Level 2 — Solid Cap',    sub:'Seamless polished plain cap. Standard base.',        mult:1.05, img:_BASE+'levels/LEVEL 2.png'},
+  {id:'L3', nm:'Level 3 — Medium',       sub:'Texture work or shaped framing (drip / flame).',     mult:1.10, img:_BASE+'levels/LEVEL 3.png'},
+  {id:'L4', nm:'Level 4 — Hard',         sub:'Intricate manual detail (e.g. flower).',             mult:1.15, img:_BASE+'levels/LEVEL 4.png'},
+  {id:'L5', nm:'Level 5 — Complex',      sub:'Advanced layering, multi-step (snake / scorpion).',  mult:1.25, img:_BASE+'levels/LEVEL 5.png'},
+  {id:'L6', nm:'Level 6 — Master',       sub:'Full artistic sculpting, expert modeling (mermaid).',mult:1.40, img:_BASE+'levels/LEVEL 6.png'},
+  {id:'L7', nm:'Level 7 — Masterpiece',  sub:'Maximum complexity. One-of-a-kind commission.',      mult:1.60, img:_BASE+'levels/LEVEL 7.png'}
+];
+
+/* ── PLATES ── */
+const PLATES = [
+  {id:'Yellow Gold', nm:'Yellow Gold Plating', sub:'Classic warm gold tone',    price:300, img:_BASE+'plating/YELLOW GOLD PLATING.png'},
+  {id:'Rose Gold',   nm:'Rose Gold Plating',   sub:'Romantic pink-gold tone',   price:300, img:_BASE+'plating/ROSE GOLD PLATING.png'},
+  {id:'White Gold',  nm:'White Gold Plating',  sub:'Cool bright silver-white',  price:400, img:_BASE+'plating/WHITE GOLD PLATING.png'},
+  {id:'Black Gold',  nm:'Black Gold Plating',  sub:'Dark edgy gunmetal finish',  price:400, img:_BASE+'plating/BLACK GOLD PLATING.png'},
+  {id:'Silver',      nm:'Silver Plating',       sub:'Bright mirror silver coat',  price:200, img:_BASE+'plating/SILVER PLATING.png'}
+];
+
+/* ── PRICING TABLES ── */
+const ENAMEL_PRICES  = {'Single Tone':200,'Multi-Tone':350,'Master Color':750};
+const LASER_PRICES   = {'Small':200,'Medium':450,'Large':700};
+const ANOD_PRICES    = {'Single':300,'Dual':350,'Multi':450};
+const SETTING_PRICE  = {Flush:150,Prong:200,Bezel:250};
+const GEM_SINGLE     = {CZ:50,Moissanite:360,Natural:0};
+const ICED_SETTING   = {Pave:1000,Channel:1500};
+const ICED_GEM_EXTRA = {CZ:0,Moissanite:1800,Natural:5000};
+
+/* ── FAQ ── */
+const FAQ_DATA = [
+  {q:'How much does it cost?',a:'Prices depend on material, number of teeth, and design level. Cobalt Chrome starts at 1,000 EGP per tooth and Titanium at 2,000 EGP at Level 1. Silver 925 and Gold 18K are calculated from live metal rates. Use the builder above to get your exact estimate — the price updates in real time as you configure your set.'},
+  {q:'How does payment work?',a:'A 50% deposit is required to confirm your order and begin production. No changes can be made after the deposit is received. The remaining 50% is due in full before the finished piece is released or shipped. We accept cash, bank transfer, and Vodafone Cash. All deposits are 100% non-refundable.'},
+  {q:'Is my price locked after I get a quote?',a:'Price quotations are valid for 7 calendar days from the date of issue. Gold 18K prices in particular fluctuate with the live gold market. Your quoted price is only locked once you pay the deposit — not before. A fresh quote will be issued if the 7-day window expires.'},
+  {q:'What is your refund and return policy?',a:'All products are custom-made to your exact dental measurements and are strictly non-refundable and non-exchangeable under any circumstance. Used dental jewelry cannot be returned for hygiene reasons. The only exception is if EGYGRILLZ cancels your order — in that case a full deposit refund is issued.'},
+  {q:'What are the design levels?',a:'We offer 7 design levels. Level 1 is a simple solid bar. Level 2 is a seamless polished solid cap. Levels 3 through 6 increase in complexity from texture work up to full artistic sculpting. Level 7 is a one-of-a-kind masterpiece commission priced individually on consultation.'},
+  {q:'What materials do you work with?',a:'We work with four materials: Sterling Silver 925 and Gold 18K (both made by lost-wax casting), and Cobalt Chrome and Titanium (both 3D printed using DMLS). Diamond setting is only available on Silver 925 and Gold 18K — not on Chrome or Titanium.'},
+  {q:'Are diamonds available on all materials?',a:'No. Diamond setting is only available for precious metals — Silver 925 and Gold 18K. We offer CZ (AAAAA cubic zirconia), Moissanite (GRA-certified VVS1 / D color), and Natural Diamonds (SI or VS grade).'},
+  {q:'How do I care for my grillz?',a:'Rinse with cold water immediately after every wear. Use a soft-bristle toothbrush only. Do not use whitening or abrasive toothpaste on plated pieces. Pat dry with a microfiber cloth and store in the provided EGYGRILLZ case. Avoid all chemicals including bleach, chlorine, perfume, and hairspray.'},
+  {q:'Can I eat, drink, or sleep wearing my grillz?',a:'No. Remove your grillz before eating, drinking anything other than plain water, smoking, or sleeping. Food trapped under the piece causes hygiene issues. Sleeping with grillz in can cause dental shifting.'},
+  {q:'Does it hurt to get grillz or wear them?',a:'Not at all. The impression process takes 3–5 minutes using dental-grade impression material. There is no discomfort. When properly fitted, grillz rest snugly over your teeth with no adhesive, no drilling, and no permanent alteration.'},
+  {q:'What if my grillz don\'t fit properly?',a:'Fit-related complaints must be reported within 48 hours of receiving your piece, with clear photo or video evidence. Requests submitted after that 48-hour window will incur a service fee.'},
+  {q:'How do you ship orders?',a:'Our official carrier is FedEx. All FedEx shipments are fully tracked and tracking numbers are sent via WhatsApp or email immediately upon dispatch. Domestic delivery within Egypt takes 2–4 business days.'},
+  {q:'Can I collect my order in person?',a:'Yes — in-person collection is by confirmed appointment only. Proof of identity is required for all high-value orders at the time of collection. Items not collected within 30 days may incur storage fees.'},
+  {q:'What is the minimum order?',a:'There is no minimum. You can order a single tooth or a full-mouth set. Each piece is priced individually so you only pay for exactly what you want.'},
+  {q:'Is my personal data kept private?',a:'Yes. Your name, contact details, and dental impressions are kept strictly confidential. Physical moulds are classified as private health data and are destroyed after order completion. Contact: egygrillz@gmail.com.'}
+];
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+const S = {
+  teeth: new Set(),
+  matIdx:0, cplxIdx:0, plateIdx:0,
+  enamel:false, plate:false, laser:false, anod:false, stones:false,
+  en:'Single Tone', ls:'Small', an:'Single',
+  sg:'None', set:'Flush', gem:'CZ', stoneN:1,
+  ios:'Pave', iog:'CZ'
+};
+
+/* ════════════════════════════════════════
+   CURRENCY FUNCTIONS
+════════════════════════════════════════ */
+function setCurrency(cur, btn) {
+  activeCurrency = cur;
+  // Sync all currency switchers
+  document.querySelectorAll('.cur-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.cur === cur);
+  });
+  updatePrice();
+}
+
+function convertEGP(egpAmount) {
+  const cfg = CURRENCIES[activeCurrency];
+  if (!cfg) return { amount: egpAmount, symbol: 'EGP', sign: '' };
+  let rate = cfg.rate;
+  // If currency is USD, use the live-fetched rate
+  if (activeCurrency === 'USD') rate = EGP_TO_USD;
+  // Derive other currencies from USD cross-rates
+  if (activeCurrency === 'EUR') rate = EGP_TO_USD * 0.92;
+  if (activeCurrency === 'SAR') rate = EGP_TO_USD * 3.75;
+  if (activeCurrency === 'AED') rate = EGP_TO_USD * 3.67;
+  return {
+    amount: Math.round(egpAmount * rate),
+    symbol: cfg.symbol,
+    sign: cfg.sign
+  };
+}
+
+function formatCurrency(egpAmount) {
+  if (!egpAmount) return '0';
+  const { amount, symbol, sign } = convertEGP(egpAmount);
+  return `${amount.toLocaleString()} <span class="curr">${symbol}</span>`;
+}
+
+function formatSecondary(egpAmount) {
+  if (!egpAmount || activeCurrency === 'EGP') return '';
+  // Always show EGP equivalent when displaying non-EGP
+  return `≈ ${egpAmount.toLocaleString()} EGP`;
+}
+
+/* ════════════════════════════════════════
+   LIVE GOLD PRICE — Multiple fallback APIs
+════════════════════════════════════════ */
+async function fetchGoldPrice() {
+  const apis = [
+    tryGoldPriceOrg,
+    tryMetalsPriceAPI,
+  ];
+  for (const fn of apis) {
+    try {
+      const result = await fn();
+      if (result) {
+        GOLD18K_PER_GRAM = result;
+        goldFetchedAt = Date.now();
+        updateGoldUI();
+        updatePrice();
+        return;
+      }
+    } catch(e) { /* try next */ }
+  }
+  /* All APIs failed — use fallback */
+  GOLD18K_PER_GRAM = 6250;
+  goldFetchedAt = Date.now();
+  updateGoldUI();
+  updatePrice();
+}
+
+async function tryGoldPriceOrg() {
+  const res = await fetch('https://data-asg.goldprice.org/dbXRates/EGP', {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(6000)
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data && data.items && data.items[0] && data.items[0].xauPrice) {
+    const perOzEGP = data.items[0].xauPrice;
+    const perGram24K = perOzEGP / 31.1035;
+    const gold18k = Math.round(perGram24K * 0.75);
+    // Also extract USD rate for currency conversion
+    if (data.items[0].xauPrice && data.items[0].chgVnit) {
+      // Derive EGP/USD rate: if we know gold oz in EGP and oz in USD (~3300 USD/oz)
+      // Use a conservative estimate
+      const goldUSDoz = 3300;
+      EGP_TO_USD = goldUSDoz / perOzEGP;
+      // Clamp to reasonable range
+      EGP_TO_USD = Math.max(0.015, Math.min(0.03, EGP_TO_USD));
+    }
+    return gold18k;
+  }
+  return null;
+}
+
+async function tryMetalsPriceAPI() {
+  /* Backup: metals-api free tier or similar CORS endpoint */
+  const res = await fetch('https://api.gold-api.com/price/XAU', {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(6000)
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data && data.price) {
+    // data.price is in USD per troy oz
+    const goldUSDoz = data.price;
+    // Convert to EGP using our current rate
+    const perOzEGP = goldUSDoz / EGP_TO_USD;
+    const perGram24K = perOzEGP / 31.1035;
+    return Math.round(perGram24K * 0.75);
+  }
+  return null;
+}
+
+function updateGoldUI() {
+  const txt = `${GOLD18K_PER_GRAM.toLocaleString()} EGP/g`;
+  const el1 = document.getElementById('hero-gold-price');
+  const el2 = document.getElementById('gold-badge-text');
+  const t   = document.getElementById('hero-gold-time');
+  const badge = document.getElementById('gold-badge');
+  if(el1) el1.textContent = txt;
+  if(el2) el2.textContent = `18K: ${txt}`;
+  if(badge) badge.style.display = MATS[S.matIdx].id === 'Gold 18K' ? 'flex' : 'none';
+  if(t) {
+    const d = new Date();
+    t.textContent = `(${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')})`;
+  }
+  updateMatDesc();
+}
+
+function maybeRefreshGold() {
+  if(Date.now() - goldFetchedAt > GOLD_REFRESH_MS) fetchGoldPrice();
+}
+setInterval(maybeRefreshGold, 60000);
+
+/* ════════════════════════════════════════
+   CAROUSEL REGISTRY
+════════════════════════════════════════ */
+const CR = {
+  'mat-track':   {key:'matIdx',   dots:'mat-dots',   data:MATS},
+  'cplx-track':  {key:'cplxIdx',  dots:'cplx-dots',  data:CPLX},
+  'plate-track': {key:'plateIdx', dots:'plate-dots',  data:PLATES}
+};
+const TT = {mat:'mat-track', cplx:'cplx-track', plate:'plate-track'};
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+function init() {
+  buildDiagram();
+  buildTeeth();
+  buildCarousel('mat-track','mat-dots',MATS);
+  buildCarousel('cplx-track','cplx-dots',CPLX);
+  buildCarousel('plate-track','plate-dots',PLATES);
+  buildFAQ();
+  centerAll();
+  updateMatDesc();
+  updatePrice();
+  initScrollBehavior();
+  initReveal();
+  initCursor();
+  initSplineOpacity();
+  fetchGoldPrice();
+}
+
+/* ── DIAGRAM ── */
+function buildDiagram() {
+  ['diag-upper','diag-lower'].forEach((id,isL) => {
+    const row = document.getElementById(id);
+    row.innerHTML = '';
+    const pre = isL ? 'L' : 'U';
+    for(let i=8;i>=1;i--) {
+      if(i===4){ const s=document.createElement('div');s.className='diagram-sep';row.appendChild(s); }
+      const d=document.createElement('div');
+      d.className='diagram-tooth';d.textContent=i;
+      d.title=`${pre}${i} — ${isL?'Lower':'Upper'} tooth ${i} from center`;
+      row.appendChild(d);
+    }
+  });
+}
+
+/* ── TEETH ── */
+function buildTeeth() {
+  buildJawRow('upper-row', 'U');
+  buildJawRow('lower-row', 'L');
+}
+
+function buildJawRow(containerId, prefix) {
+  const row = document.getElementById(containerId);
+  row.innerHTML = '';
+  const n = 8;
+  for(let i=n;i>=1;i--) {
+    const id = `${prefix}R${i}`;
+    row.appendChild(makeToothBtn(id, i, prefix, i));
+  }
+  const sep = document.createElement('div');
+  sep.className='jaw-sep';
+  sep.innerHTML='<div class="jaw-sep-line"></div>';
+  row.appendChild(sep);
+  for(let i=1;i<=n;i++) {
+    const id = `${prefix}L${i}`;
+    row.appendChild(makeToothBtn(id, i, prefix, i));
+  }
+}
+
+function makeToothBtn(id, num, prefix, pos) {
+  const btn = document.createElement('button');
+  btn.className = 'tooth-btn' + (S.teeth.has(id) ? ' on' : '');
+  btn.type = 'button';
+  btn.innerHTML = `${num}<span class="tn">${prefix}${num}</span>`;
+  let lastTouch = 0;
+  btn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const now = Date.now();
+    if(now - lastTouch < 300) return;
+    lastTouch = now;
+    toggleTooth(id, btn);
+  }, {passive:false});
+  btn.addEventListener('click', (e) => {
+    const now = Date.now();
+    if(now - lastTouch < 400) return;
+    toggleTooth(id, btn);
+  });
+  return btn;
+}
+
+function toggleTooth(id, btn) {
+  if(S.teeth.has(id)) {
+    S.teeth.delete(id);
+    btn.classList.remove('on');
+  } else {
+    S.teeth.add(id);
+    btn.classList.add('on');
+  }
+  document.getElementById('tooth-cnt').textContent = S.teeth.size;
+  updateProgress();
+  updatePrice();
+}
+
+/* ── CAROUSELS ── */
+function buildCarousel(trackId, dotsId, data) {
+  const track = document.getElementById(trackId);
+  const dots  = document.getElementById(dotsId);
+  if(!track||!dots) return;
+  track.innerHTML = ''; dots.innerHTML = '';
+  data.forEach((d,i) => {
+    const item = document.createElement('div');
+    item.className = 'c-item';
+    item.innerHTML = `<div class="c-img-wrap"><img src="${d.img}" alt="${d.nm}" loading="lazy"></div><div class="c-name">${d.nm}</div><div class="c-sub">${d.sub}</div>`;
+    item.onclick = () => carouselClick(trackId, i);
+    track.appendChild(item);
+    const dot = document.createElement('button');
+    dot.className = 'c-dot';
+    dot.onclick = () => carouselClick(trackId, i);
+    dots.appendChild(dot);
+  });
+}
+
+function moveCarousel(type, dir) {
+  const trackId = TT[type];
+  const cfg = CR[trackId];
+  S[cfg.key] = (S[cfg.key] + dir + cfg.data.length) % cfg.data.length;
+  updateCarouselUI(trackId, cfg.dots, S[cfg.key]);
+  if(type==='mat') { onMatChange(); updateMatDesc(); }
+  updatePrice();
+}
+
+function carouselClick(trackId, idx) {
+  const cfg = CR[trackId];
+  S[cfg.key] = idx;
+  updateCarouselUI(trackId, cfg.dots, idx);
+  if(trackId==='mat-track') { onMatChange(); updateMatDesc(); }
+  updatePrice();
+}
+
+function updateCarouselUI(trackId, dotsId, activeIdx) {
+  const track = document.getElementById(trackId);
+  const dots  = document.getElementById(dotsId);
+  if(!track) return;
+  const items = track.querySelectorAll('.c-item');
+  items.forEach((el,i) => {
+    el.classList.remove('active','near');
+    const d = Math.abs(i-activeIdx);
+    if(d===0) el.classList.add('active');
+    else if(d===1) el.classList.add('near');
+  });
+  const outerW = track.parentElement.offsetWidth || 600;
+  const itemW = 220;
+  track.style.transform = `translateX(${-(activeIdx*itemW)+(outerW/2)-(itemW/2)}px)`;
+  if(dots) dots.querySelectorAll('.c-dot').forEach((d,i) => d.classList.toggle('on', i===activeIdx));
+}
+
+function centerAll() {
+  updateCarouselUI('mat-track','mat-dots',S.matIdx);
+  updateCarouselUI('cplx-track','cplx-dots',S.cplxIdx);
+  updateCarouselUI('plate-track','plate-dots',S.plateIdx);
+}
+
+/* ── MATERIAL DESC ── */
+function updateMatDesc() {
+  const m = MATS[S.matIdx];
+  const box = document.getElementById('mat-single-desc');
+  if(!box) return;
+  let extraLine = '';
+  if(m.id === 'Gold 18K') {
+    extraLine = `<div class="mg"><span class="gold-dot" style="display:inline-block;margin-right:4px;"></span>Live 18K rate: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g</div>`;
+  }
+  box.innerHTML = `<div class="mn">${m.nm}</div><div class="md">${m.desc}</div>${extraLine}`;
+  const badge = document.getElementById('gold-badge');
+  if(badge) badge.style.display = m.id === 'Gold 18K' ? 'flex' : 'none';
+}
+
+function onMatChange() {
+  document.getElementById('ao-anod').style.display = MATS[S.matIdx].id === 'Titanium' ? '' : 'none';
+  const isPrecious = MATS[S.matIdx].precious;
+  document.getElementById('stones-avail-note').classList.toggle('show', !isPrecious);
+}
+
+/* ── INFO PANELS ── */
+function toggleInfo(id) {
+  const panel = document.getElementById(id);
+  const trigger = panel.previousElementSibling;
+  panel.classList.toggle('open');
+  if(trigger && trigger.classList.contains('info-trigger'))
+    trigger.classList.toggle('active', panel.classList.contains('open'));
+}
+
+/* ── ADDON TOGGLE ── */
+function toggleAO(key, el) {
+  S[key] = !S[key];
+  el.classList.toggle('open', S[key]);
+  updateProgress();
+  updatePrice();
+}
+
+/* ── PILLS ── */
+function pp(e, btn, group) {
+  e.stopPropagation();
+  btn.closest('.pills').querySelectorAll('.pill').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  S[group] = btn.dataset.v;
+  if(group === 'sg') {
+    document.getElementById('single-wrap').style.display = S.sg==='Single' ? 'block' : 'none';
+    document.getElementById('iced-wrap').style.display   = S.sg==='Iced'   ? 'block' : 'none';
+  }
+  updatePrice();
+}
+
+/* ── STEPPER ── */
+function adjS(e, dir) {
+  e.stopPropagation();
+  S.stoneN = Math.max(1, Math.min(20, S.stoneN+dir));
+  document.getElementById('stn').textContent = S.stoneN;
+  updatePrice();
+}
+
+/* ── PROGRESS ── */
+function updateProgress() {
+  const done = [
+    S.teeth.size > 0,
+    true,
+    true,
+    S.enamel || S.plate || S.laser || S.anod || S.stones
+  ];
+  done.forEach((d,i) => {
+    const el = document.getElementById(`ps${i+1}`);
+    if(el) el.classList.toggle('done', d);
+  });
+}
+
+/* ════════════════════════════════════════
+   PRICE CALCULATION
+════════════════════════════════════════ */
+function calcBreakdown() {
+  const n = S.teeth.size;
+  if(!n) return {rows:[], total:0};
+  const rows = [];
+  let total = 0;
+  const mat   = MATS[S.matIdx];
+  const cplx  = CPLX[S.cplxIdx];
+
+  const basePer = mat.calcBase();
+  const baseTotal = Math.round(basePer * cplx.mult * n);
+  rows.push({label:`${mat.nm} × ${n} piece${n>1?'s':''} (${cplx.nm})`, val:baseTotal});
+  total += baseTotal;
+
+  if(S.plate) {
+    const pv = PLATES[S.plateIdx].price * n;
+    rows.push({label:`${PLATES[S.plateIdx].nm} × ${n}`, val:pv});
+    total += pv;
+  }
+  if(S.enamel) {
+    const ev = (ENAMEL_PRICES[S.en] || 200) * n;
+    rows.push({label:`Enamel (${S.en}) × ${n}`, val:ev});
+    total += ev;
+  }
+  if(S.laser) {
+    const lv = (LASER_PRICES[S.ls] || 200) * n;
+    rows.push({label:`Laser Engraving (${S.ls}) × ${n}`, val:lv});
+    total += lv;
+  }
+  if(S.anod) {
+    const av = (ANOD_PRICES[S.an] || 300) * n;
+    rows.push({label:`Anodize (${S.an}) × ${n}`, val:av});
+    total += av;
+  }
+  if(S.stones && S.sg !== 'None') {
+    const isPrecious = mat.precious;
+    if(!isPrecious) {
+      rows.push({label:'⚠️ Stones (not available for this material)', val:0});
+    } else if(S.sg === 'Single') {
+      const settingFee = (SETTING_PRICE[S.set] || 150) * S.stoneN;
+      const gemFee     = S.gem === 'Natural' ? 0 : (GEM_SINGLE[S.gem] || 0) * S.stoneN;
+      const sv = settingFee + gemFee;
+      const label = S.gem === 'Natural'
+        ? `${S.stoneN}× Natural Diamond (${S.set}) — contact for stone price`
+        : `${S.stoneN}× ${S.gem} (${S.set} setting)`;
+      rows.push({label, val:sv});
+      total += sv;
+    } else if(S.sg === 'Iced') {
+      const settingFlat = (ICED_SETTING[S.ios] || 1000) * n;
+      const gemExtra    = S.iog === 'CZ' ? 0 : (ICED_GEM_EXTRA[S.iog] || 0) * n;
+      const iv = settingFlat + gemExtra;
+      rows.push({label:`Iced Out — ${S.ios} (${S.iog}) × ${n}`, val:iv});
+      total += iv;
+    }
+  }
+
+  return {rows, total: Math.round(total)};
+}
+
+/* ════════════════════════════════════════
+   ANIMATED NUMBER
+════════════════════════════════════════ */
+let _af = null, _lastTotalEGP = 0;
+function animateNum(fromEGP, toEGP, el) {
+  if(_af) cancelAnimationFrame(_af);
+  const dur = 380, start = performance.now();
+  function step(now) {
+    const p = Math.min((now-start)/dur, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    const cur = Math.round(fromEGP + (toEGP-fromEGP)*ease);
+    el.innerHTML = formatCurrency(cur);
+    if(p < 1) _af = requestAnimationFrame(step);
+    else el.innerHTML = formatCurrency(toEGP);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ════════════════════════════════════════
+   UPDATE UI
+════════════════════════════════════════ */
+function updatePrice() {
+  const {rows, total} = calcBreakdown();
+
+  /* price bar main */
+  const priceEl = document.getElementById('pb-price');
+  animateNum(_lastTotalEGP, total, priceEl);
+  priceEl.classList.remove('pop'); void priceEl.offsetWidth; priceEl.classList.add('pop');
+
+  /* price bar secondary (shows EGP if non-EGP selected) */
+  const pbSec = document.getElementById('pb-secondary');
+  if(pbSec) pbSec.textContent = total > 0 ? formatSecondary(total) : '';
+
+  /* mini bar */
+  document.getElementById('pb-mini-price').innerHTML = formatCurrency(total);
+
+  /* footer big price */
+  const sfEl = document.getElementById('sf-price');
+  if(activeCurrency === 'EGP') {
+    sfEl.innerHTML = `<sup>EGP</sup>${total.toLocaleString()}`;
+  } else {
+    const { amount, symbol } = convertEGP(total);
+    sfEl.innerHTML = `<sup>${symbol}</sup>${amount.toLocaleString()}`;
+  }
+  const sfSec = document.getElementById('sf-secondary');
+  if(sfSec) sfSec.textContent = total > 0 ? formatSecondary(total) : '';
+
+  _lastTotalEGP = total;
+
+  /* breakdown btn */
+  document.getElementById('breakdown-btn').style.display = total > 0 ? '' : 'none';
+
+  /* config tags */
+  const tags = [
+    `${S.teeth.size} teeth`,
+    MATS[S.matIdx].nm,
+    CPLX[S.cplxIdx].nm
+  ];
+  if(S.plate)  tags.push(PLATES[S.plateIdx].nm);
+  if(S.enamel) tags.push(`Enamel (${S.en})`);
+  if(S.laser)  tags.push(`Laser (${S.ls})`);
+  if(S.anod)   tags.push(`Anodize (${S.an})`);
+  if(S.stones && S.sg !== 'None') tags.push(`Stones: ${S.sg}`);
+
+  document.getElementById('sf-config').innerHTML = tags.map(t => `<span class="sf-tag">${t}</span>`).join('');
+  updateShareText(tags, total);
+}
+
+/* ════════════════════════════════════════
+   SCROLL BEHAVIOR
+════════════════════════════════════════ */
+function initScrollBehavior() {
+  const header   = document.getElementById('site-header');
+  const priceBar = document.getElementById('price-bar');
+  let lastY = window.scrollY;
+  let pbCollapsed = false;
+
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    const scrollingDown = y > lastY;
+
+    if(y > 80) {
+      header.classList.add('hidden');
+      priceBar.classList.add('pb-visible');
+      if(y > 250 && scrollingDown && !pbCollapsed) {
+        priceBar.classList.add('pb-collapsed');
+        priceBar.classList.remove('pb-expanded');
+        pbCollapsed = true;
+      }
+    } else {
+      header.classList.remove('hidden');
+      priceBar.classList.remove('pb-visible');
+      priceBar.classList.remove('pb-collapsed');
+      priceBar.classList.add('pb-expanded');
+      pbCollapsed = false;
+    }
+    lastY = y;
+  }, {passive:true});
+}
+
+function expandPriceBar() {
+  const priceBar = document.getElementById('price-bar');
+  priceBar.classList.remove('pb-collapsed');
+  priceBar.classList.add('pb-expanded');
+}
+
+/* ════════════════════════════════════════
+   SPLINE BG — fade on scroll
+════════════════════════════════════════ */
+function initSplineOpacity() {
+  const splineBg = document.getElementById('spline-bg');
+  const heroH = window.innerHeight;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    const fade = Math.max(0, 1 - (y / (heroH * 0.7)));
+    if(splineBg) splineBg.style.opacity = fade;
+  }, {passive:true});
+}
+
+/* ════════════════════════════════════════
+   SCROLL REVEAL
+════════════════════════════════════════ */
+function initReveal() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+}
+
+/* ════════════════════════════════════════
+   CUSTOM CURSOR
+════════════════════════════════════════ */
+function initCursor() {
+  if(window.matchMedia('(hover:none)').matches) return;
+  const cursor = document.getElementById('cursor');
+  let cx = 0, cy = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+  function tick() {
+    rx += (cx-rx) * 0.14;
+    ry += (cy-ry) * 0.14;
+    cursor.style.transform = `translate(${rx}px,${ry}px)`;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  document.querySelectorAll('button,a,.tooth-btn,.addon-tile,.c-item').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+  });
+}
+
+/* ════════════════════════════════════════
+   MODAL
+════════════════════════════════════════ */
+function openModal() {
+  const {rows, total} = calcBreakdown();
+  if(!total) return;
+  const { amount: convAmount, symbol } = convertEGP(total);
+  const convStr = activeCurrency !== 'EGP' ? `<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">≈ ${convAmount.toLocaleString()} ${symbol}</div>` : '';
+  document.getElementById('modal-body').innerHTML =
+    rows.map(r => `<div class="breakdown-row"><span class="br-label">${r.label}</span><span class="br-val">${r.val > 0 ? r.val.toLocaleString()+' EGP' : '—'}</span></div>`).join('') +
+    `<div class="breakdown-total"><span>Total Estimate</span><span>${total.toLocaleString()} EGP</span></div>` +
+    convStr;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+/* ════════════════════════════════════════
+   SHARE
+════════════════════════════════════════ */
+function updateShareText(tags, total) {
+  const { amount, symbol } = convertEGP(total);
+  const priceStr = activeCurrency === 'EGP'
+    ? `${total.toLocaleString()} EGP`
+    : `${amount.toLocaleString()} ${symbol} (${total.toLocaleString()} EGP)`;
+  const txt = [
+    'EGYGRILLZ — My Custom Estimate',
+    '─────────────────────',
+    ...tags.map(t => `• ${t}`),
+    '─────────────────────',
+    `Total: ${priceStr}`,
+    '',
+    'Estimate only — final price confirmed at studio.',
+    'Book: egygrillz.com/booking.html'
+  ].join('\n');
+  const el = document.getElementById('share-text');
+  if(el) el.textContent = txt;
+}
+
+function toggleShare() {
+  document.getElementById('share-panel').classList.toggle('show');
+}
+
+function copyEstimate() {
+  navigator.clipboard.writeText(document.getElementById('share-text').textContent).then(() => {
+    const btn = event.target.closest('.share-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+
+function shareWhatsApp() {
+  window.open(`https://wa.me/?text=${encodeURIComponent(document.getElementById('share-text').textContent)}`, '_blank');
+}
+
+/* ════════════════════════════════════════
+   FAQ
+════════════════════════════════════════ */
+function buildFAQ() {
+  document.getElementById('faq-list').innerHTML = FAQ_DATA.map((f,i) =>
+    `<div class="faq-item" id="faq_${i}">
+      <div class="faq-q" onclick="document.getElementById('faq_${i}').classList.toggle('open')">
+        <span>${f.q}</span>
+        <span class="faq-chev"><i class="fas fa-chevron-down"></i></span>
+      </div>
+      <div class="faq-a"><p>${f.a}</p></div>
+    </div>`
+  ).join('');
+}
+
+/* ════════════════════════════════════════
+   BOOT
+════════════════════════════════════════ */
+window.addEventListener('load', init);
+window.addEventListener('resize', centerAll);
+</script>
 </body>
 </html>
