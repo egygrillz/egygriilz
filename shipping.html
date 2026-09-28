@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-elem 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://raw.githubusercontent.com https://api.gold-api.com https://data-asg.goldprice.org; frame-src https://www.google.com https://www.recaptcha.net https://*.firebaseapp.com; worker-src 'self' blob:; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Care &amp; Shipping | EGYGRILLZ</title>
   <meta name="description" content="Official care instructions and shipping policy for EGYGRILLZ luxury dental jewelry.">
@@ -154,7 +156,7 @@
     .info-strip p strong { color: #000; }
   </style>
 </head>
-<body oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
+<body ondragstart="return false;" onselectstart="return false;">
 
   <!-- FLOATING LOGO -->
   <div class="floating-logo" id="floating-logo">
@@ -268,8 +270,8 @@
     </div>
     <div class="footer-bottom">
       <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
-        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a>
+        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
       <div class="ceo-wrap">
@@ -281,42 +283,8 @@
   </footer>
 
 
-  <script>
-    // ── Header hide/show on scroll + floating logo ──
-    (function(){
-      const header = document.querySelector('header');
-      const floatLogo = document.getElementById('floating-logo');
-      let lastY = window.scrollY;
-      window.addEventListener('scroll', () => {
-        const y = window.scrollY;
-        const hiding = y > lastY && y > 80;
-        header.classList.toggle('hidden', hiding);
-        if (floatLogo) floatLogo.classList.toggle('visible', hiding);
-        lastY = y;
-      }, { passive: true });
-    })();
-    document.querySelector('.menu-toggle').addEventListener('click', () => {
-      document.querySelector('.main-nav').classList.toggle('active');
-      document.body.classList.toggle('menu-open');
-    });
-  </script>
+  <script src="secure/pages/shipping-1.js"></script>
 
-  <script>
-    // ── Security: block right-click, F12, Ctrl+Shift+I, Ctrl+U, etc. ──
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('dragstart',   e => e.preventDefault());
-    document.addEventListener('selectstart', e => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault(); });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'F12') { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','J','C','K'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === 'U') { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === 'S') { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === 'A' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); return false; }
-    });
-    // Disable print screen
-    document.addEventListener('keyup', e => {
-      if (e.key === 'PrintScreen') { navigator.clipboard?.writeText('').catch(()=>{}); }
-    });
-  </script>
+  <script src="secure/pages/shipping-2.js"></script>
 </body>
 </html>

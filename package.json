@@ -1,0 +1,39 @@
+{
+  "name": "egygrillz-production",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/validation.test.js",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-egygrillz 'node --test tests/rules.test.cjs'",
+    "test:backend": "firebase emulators:exec --only firestore,auth --project demo-egygrillz \"node --test --test-concurrency=1 tests/production.test.cjs\"",
+    "check": "node scripts/check-syntax.cjs",
+    "build:runtime": "esbuild scripts/firebase-entry.js --bundle --minify --format=iife --outfile=secure/vendor/firebase-runtime.js --legal-comments=linked",
+    "test:browser": "firebase emulators:exec --only firestore,auth --project demo-egygrillz \"node tests/browser-integration.cjs\"",
+    "build": "node scripts/build-site.cjs",
+    "test:build": "node --test tests/build.test.cjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "acorn": "^8.15.0",
+    "esbuild": "^0.25.12",
+    "firebase": "12.19.0",
+    "firebase-tools": "15.31.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "playwright": "^1.55.0",
+    "dompurify": "3.4.16"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "gaxios": {
+      "uuid": "11.1.1"
+    },
+    "universal-analytics": {
+      "uuid": "11.1.1"
+    },
+    "@google-cloud/pubsub": {
+      "@opentelemetry/core": "2.11.0"
+    }
+  }
+}

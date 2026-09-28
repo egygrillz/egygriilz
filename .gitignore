@@ -1,0 +1,10 @@
+node_modules/
+*-debug.log
+.env*
+*.local
+*service-account*.json
+*credentials*.json
+
+dist/
+.private/
+test-artifacts/
