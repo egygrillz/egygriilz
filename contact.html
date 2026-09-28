@@ -10,6 +10,7 @@
   <!-- Firebase Compat SDK -->
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
 
   <script data-cfasync="false">
     function toggleMenu() {
@@ -211,7 +212,8 @@
         messagingSenderId: "1022362401463",
         appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
       });
-      db = firebase.firestore();
+      firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true);
+    db = firebase.firestore();
     } catch(e) { console.error('Firebase init failed:', e); }
 
     // ── HEADER SCROLL ──
