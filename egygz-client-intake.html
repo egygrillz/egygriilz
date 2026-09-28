@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0a0a">
+<title>EGYGRILLZ — Design Details</title>
+<script>
+    // theme before first paint (no flash)
+    (function () {
+        try {
+            var t = localStorage.getItem("egygz_intake_theme") || "auto";
+            var dark = t === "dark" || (t === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+    })();
+</script>
+<style>
+    :root {
+        --ink: #0a0a0a;
+        --paper: #ffffff;
+        --card: #ffffff;
+        --soft: #f6f6f7;
+        --line: #e8e8ea;
+        --text: #0a0a0a;
+        --sub: #6b7280;
+        --faint: #9ca3af;
+        --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+    }
+    html.dark {
+        --ink: #f4f4f5;
+        --paper: #0b0b0c;
+        --card: #141416;
+        --soft: #1a1a1e;
+        --line: #26262b;
+        --text: #f4f4f5;
+        --sub: #a1a1aa;
+        --faint: #71717a;
+        --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.45);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: var(--paper); color: var(--text); line-height: 1.5;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        position: relative; overflow-x: hidden;
+    }
+    body::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background:
+            radial-gradient(900px 420px at 50% -12%, rgba(0,0,0,.05), transparent 70%),
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,.05) 1px, transparent 0);
+        background-size: auto, 22px 22px;
+    }
+    html.dark body::before {
+        background:
+            radial-gradient(900px 420px at 50% -12%, rgba(255,255,255,.06), transparent 70%),
+            radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0);
+        background-size: auto, 22px 22px;
+    }
+    .wrap { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 20px 18px 44px; }
+
+    /* ---------- hero ---------- */
+    .hero { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .hero .mark { width: 52px; height: 52px; object-fit: contain; }
+    .brand { font-weight: 800; letter-spacing: .2em; font-size: 14px; text-transform: uppercase; }
+    .brand small { display: block; font-weight: 600; letter-spacing: .16em; color: var(--sub); font-size: 9.5px; margin-top: 3px; }
+    .tools { margin-inline-start: auto; display: flex; gap: 8px; }
+    .tool {
+        border: 1px solid var(--line); background: var(--card); color: var(--text);
+        width: 38px; height: 38px; border-radius: 12px; cursor: pointer; display: grid; place-items: center;
+        font-size: 12px; font-weight: 700; transition: transform .15s, border-color .15s;
+    }
+    .tool:hover { border-color: var(--text); }
+    .tool:active { transform: scale(.94); }
+    .tool svg { width: 17px; height: 17px; }
+    .badge {
+        display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px;
+        font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--sub);
+        border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 11px;
+    }
+    .badge i { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: block; }
+    .badge.expired i { background: #f59e0b; }
+
+    /* ---------- progress ---------- */
+    .progress { height: 5px; background: var(--soft); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+    .progress > i { display: block; height: 100%; width: 0; background: var(--ink); border-radius: 99px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+    .steps { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+    .steps span { font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .14em; }
+    .dots { display: flex; gap: 5px; }
+    .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); display: block; }
+    .dots i.done { background: var(--ink); }
+    .dots i.now { background: var(--ink); transform: scale(1.35); }
+
+    /* ---------- cards ---------- */
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px 18px; box-shadow: var(--shadow); }
+    .step-enter { animation: stepIn .28s cubic-bezier(.2,.7,.3,1); }
+    @keyframes stepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    h1 { font-size: 20px; font-weight: 750; margin: 0 0 5px; letter-spacing: -.01em; }
+    .hint { font-size: 12.5px; color: var(--sub); margin: 0 0 18px; }
+    label.f { display:block; font-size:10.5px; font-weight: 750; text-transform: uppercase; letter-spacing: .12em; color: var(--sub); margin: 0 0 7px; }
+    input[type=text], input[type=number], textarea {
+        width:100%; padding: 14px 13px; border:1px solid var(--line); border-radius: 14px;
+        font-size: 16px; font-family: inherit; background: var(--soft); color: var(--text); outline:none;
+        transition: border-color .15s, background .15s;
+    }
+    input:focus, textarea:focus { border-color: var(--ink); background: var(--card); }
+    textarea { resize: none; min-height: 84px; }
+    .field { margin-bottom: 16px; }
+    .opts { display: grid; gap: 10px; }
+    .opt {
+        display: flex; gap: 13px; align-items: flex-start; text-align: start; width: 100%;
+        border: 1px solid var(--line); border-radius: 16px; padding: 14px; cursor: pointer;
+        background: var(--card); color: var(--text); font-family: inherit;
+        transition: border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .opt:hover { border-color: var(--faint); }
+    .opt:active { transform: scale(.99); }
+    .opt.sel { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) inset; }
+    .opt .glyph {
+        flex: 0 0 auto; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
+        background: linear-gradient(160deg, var(--soft), var(--card)); border: 1px solid var(--line); color: var(--ink);
+    }
+    .opt .glyph svg { width: 22px; height: 22px; }
+    .opt b { display: block; font-size: 14.5px; font-weight: 700; }
+    .opt em { display: block; font-style: normal; font-size: 12px; color: var(--sub); margin-top: 3px; }
+    .opt .check { margin-inline-start: auto; align-self: center; opacity: 0; transition: opacity .15s; color: var(--ink); }
+    .opt.sel .check { opacity: 1; }
+    .opt .check svg { width: 18px; height: 18px; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .chip { font-size:10.5px; color:var(--sub); background:var(--soft); border:1px solid var(--line); border-radius:999px; padding:3px 9px; }
+    .note { font-size: 12.5px; color:#8a6d1d; background:#fffbeb; border:1px solid #fde68a; border-radius: 14px; padding: 12px 13px; }
+    html.dark .note { color:#fcd34d; background:#2a2211; border-color:#7c5c11; }
+    select {
+        width:100%; padding: 14px 12px; border:1px solid var(--line); border-radius: 14px; font-size:16px;
+        font-family: inherit; background: var(--soft); color: var(--text); outline:none; appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+        background-repeat: no-repeat; background-position: right 12px center; background-size: 18px;
+    }
+    html[dir=rtl] select { background-position: left 12px center; }
+
+    /* ---------- nav ---------- */
+    .actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn {
+        border-radius: 16px; padding: 16px 18px; font-size: 14px; font-weight: 750; letter-spacing: .02em;
+        border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; font-family: inherit;
+        display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+        transition: transform .15s, box-shadow .15s, background .15s, border-color .15s;
+    }
+    .btn:active { transform: translateY(1px) scale(.995); }
+    .btn svg { width: 17px; height: 17px; }
+    .btn.primary {
+        flex: 1; background: var(--ink); color: var(--paper); border-color: var(--ink);
+        box-shadow: 0 10px 24px rgba(0,0,0,.16);
+    }
+    html.dark .btn.primary { box-shadow: 0 10px 26px rgba(0,0,0,.5); }
+    .btn.primary:hover { box-shadow: 0 14px 30px rgba(0,0,0,.22); }
+    .btn.ghost { flex: 0 0 auto; }
+    .btn.block { width: 100%; }
+    .btn.wa { background:#25D366; border-color:#25D366; color:#06331c; width:100%; }
+    .btn[disabled] { opacity:.45; pointer-events:none; }
+
+    /* ---------- done screen ---------- */
+    .codebox {
+        width:100%; min-height: 104px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
+        word-break: break-all; background: var(--soft); border-radius: 14px; padding: 14px;
+    }
+    .sum { border:1px solid var(--line); border-radius:16px; padding: 14px; font-size: 13px; margin: 16px 0; background: var(--card); }
+    .sum div { display:flex; justify-content:space-between; gap:14px; padding:6px 0; border-bottom:1px dashed var(--line); }
+    .sum div:last-child { border-bottom:none; }
+    .sum span:first-child { color: var(--sub); }
+    .sum span:last-child { text-align: end; }
+    footer { margin-top: 24px; font-size: 11px; color: var(--faint); text-align: center; }
+    .toast {
+        position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 140%);
+        background: var(--ink); color: var(--paper); padding: 12px 17px; border-radius: 14px;
+        font-size: 12.5px; transition: transform .28s cubic-bezier(.2,.7,.3,1); z-index: 40; max-width: 90vw; text-align:center;
+    }
+    .toast.show { transform: translate(-50%, 0); }
+    .hidden { display: none !important; }
+    .center { text-align: center; }
+    .big-emoji { font-size: 34px; line-height: 1; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="hero">
+        <img class="mark" id="brandMark" src="" alt="EGYGRILLZ">
+        <div>
+            <div class="brand">EGYGRILLZ<small id="heroSub">Design details</small></div>
+        </div>
+        <div class="tools">
+            <button class="tool" id="themeBtn" type="button" title="Theme">
+                <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+            </button>
+            <button class="tool" id="langBtn" type="button">ع</button>
+        </div>
+    </div>
+
+    <div id="badgeRow"></div>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="steps">
+        <span id="stepMeta"></span>
+        <div class="dots" id="dots"></div>
+    </div>
+
+    <main id="stage"></main>
+
+    <div class="actions" id="nav">
+        <button class="btn ghost" id="backBtn" type="button">Back</button>
+        <button class="btn primary" id="nextBtn" type="button">Continue</button>
+    </div>
+
+    <footer id="footNote">No prices are shown here — the studio confirms your quote after reviewing the details.</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =======================================================================
+   EGYGRILLZ — client intake page
+   1) Client opens a private one-time link (?k=token) sent by the studio.
+   2) Answers a few short questions (no prices shown).
+   3) Gets a short code (EGZ1:...) that the studio pastes into the panel.
+   The studio's link registry lives in the PANEL's browser, so a client's
+   browser can't see it — an unknown token is therefore treated as VALID
+   here (private link) instead of blocking the client. One-time burning is
+   still applied on the device that created the link, and the panel also
+   refuses to import the same code twice.
+   ======================================================================= */
+
+const BRAND = {
+    black: "data:image/png;base64,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",
+    white: "data:image/png;base64,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",
+    favicon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAMFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABaPxwLAAAAEHRSTlMA/Cx1rU/PjgAAAAAAAAAA14dMZAAAA5dJREFUeNrtl7+PG1UQxz/7dr227oDblUig4eK7NjrF14LE+ToiJGI6EI2hQFRR+E8i8Q9cQ2/xK62VioZo4aTohBTYnILEz9x22YvtXYr33u68ZxM3lJ7G3vHOmzfzne/MGDaykY1YCfSH2hG6o68qAPq/vSS0O7l+Uz9Fzim1/igcpXkyBtddv4lwbiV0DPIVF01cXSUNIj+0ZMkBDIXBGytykfi6n4RBsZS9ZMmBSUXUxPPJ1P6SAUECLPatKvoZGGQ2vCCB+I/2LIPKjkjFYQ51Ya80BC5lQnRaZeoyexsFqKzJgZHHAK9ITQQs+sagBjoTJ+cDCB1sZiOTGwUMgOfriu7EJEcZmMfrDGIDtjKx3F1ncGmyozTM0XoiDDXYSofy7nqDb3V6lIb5ZL3Bc4ABispEtFbGQI5agvk/5S4QoZZhNnyofZ0GO4i3Ify7Ve8D/NLd4sZ0H6BqAT/O4FZ4OwOetfgsyrIsP/jhw7OzgLIsy7JsWVXCr8pjqGbuPU4Cc8+Ri8RcfQHM7vgpHEW7YebHMAEO1BzgSz/A+7Ns19cdAEwVCTDvL/PX57nKgRrFk5VdYNxZ2QOGKGbjVVB/PTNOJxLoeEIA8TZwTYS4VwBH37xM8LRVdreAWycEQArOb2oHqIvUaRvvT4ELzbgEtxCqPhCTRJLVU9OTFHCOx9FTYDZ8ct1vz7v2y3Hm1hMpoP6RSWheCQEe96B+50wQuAf16yLX4QVQlbbzBQD3/cwOxPfdBiwFUA29sMeAmnjzKhLt/js37O4EOBAuYoCPpPuP0zR9rc15mqYp8ZVG8XmapledUfdjDxY2bPU7EDy7/cByp/MQWJTObOwBuX2hBxw9ekjPKK6VQFLIKVr1xZzVZTZvmVjY6m4NOG3nZDgBbpLAYtCOtQN3dZDg7hXAhSjJw1zXneOBwl6MQp/TYGOo5htE9t3YINtgUyNbXWPQEO8tIMzgcgTcW4I9bMB5EEP12fedp7bMDDbdR8B7GX7QOuzor73CTmhDPEs1/0qaeHNdZrnAZuoeKwzOAT4VZXYKcAzw9tIK17AKoPOnuCR4a4XHc+TMtpS7yWoP9sSmu3TMknjBag9258odbLxDnYfuFsCNacu0bbyu6Hq4HMlQbDTuoHA3tSAxa5Rss47C9UDgT9RzVmyLUg5FK9DYpFdeOLyj1NuDgvTOi8d96iuu+pPLe37VN3hz8w9oIxv5/+Rf6ej4LvrCjvIAAAAASUVORK5CYII="
+};
+
+const I18N = {
+    en: {
+        dir: "ltr", sub: "Design details", back: "Back", next: "Continue",
+        footer: "No prices are shown here — the studio confirms your quote after reviewing the details.",
+        step: "Step {a} / {b}",
+        badgeLive: "Private one-time link", badgePlain: "Design details", badgeExpired: "Link already used",
+        expiredT: "This link has already been used", expiredH: "One-time links stop working after the first use — that keeps your details private. Ask the studio for a fresh link and it will take a minute.",
+        expiredBtn: "Request a new link",
+        name: { t: "Your details", h: "So we know who this is for.", c: "Your name", d: "Design name (optional)", dp: "e.g. top grillz, bottom bars, left fang" },
+        mat: { t: "Material", h: "What should the piece be made of?" },
+        karat: "Gold karat", goldRate: "Today's gold price per gram in Egypt (EGP) — optional",
+        goldRateHint: "If you don't know it, leave it empty — the studio will confirm it with you.",
+        teethT: "Number of teeth", teethH: "How many teeth should the piece cover?", teethL: "Teeth (1–16)",
+        lvlT: "Design style", lvlH: "Pick the closest style — the studio will confirm with you.",
+        stT: "Stones", stH: "Do you want stones?",
+        noStones: "Chrome and Titanium don't take stones — choose Silver or Gold if you want stones.",
+        aCount: "How many stones?", aType: "Stone type", aSetting: "Setting style",
+        fType: "Stone type", fCover: "Coverage style",
+        stRate: "Today's price per stone (EGP) — optional",
+        stRateFull: "Today's price per tooth (EGP) — optional",
+        barsFull: "Full iced on Bars uses a fixed studio price — nothing else to choose.",
+        finT: "Finishing", finH: "Optional extras — pick “none” if you don't want them.",
+        plating: "Plating", enamel: "Enamel colors", engraving: "Engraving",
+        timeT: "Timing & mold", timeH: "Almost done.",
+        timeline: "How soon do you need it?", mold: "Mold / scan",
+        notesT: "Anything else?", notesH: "Allergies, references, deadline, questions — anything you want us to know.",
+        notesL: "Your note (optional)",
+        doneT: "You're all set", doneH: "Send us the code below on WhatsApp or Instagram — the studio takes it from there.",
+        codeL: "Your design code", copyCode: "Copy code", copyMsg: "Copy message", wa: "Send on WhatsApp",
+        burned: "Link used — your code was created. Ask the studio if you need another link.",
+        sum: { n: "Design", m: "Material", t: "Teeth", l: "Style", s: "Stones", f: "Finishing", tl: "Timing", md: "Mold", nt: "Note" },
+        stAccent: "Accent",
+        needName: "Please write your name.", needMat: "Please choose a material.", needTeeth: "Enter a number between 1 and 16.",
+        copied: "Copied ✓", copyFail: "Copy failed — long-press the code and copy it manually.",
+        none: "None"
+    },
+    ar: {
+        dir: "rtl", sub: "تفاصيل التصميم", back: "رجوع", next: "التالي",
+        footer: "مفيش أسعار هنا — الاستوديو يأكد لك السعر بعد مراجعة التفاصيل.",
+        step: "خطوة {a} / {b}",
+        badgeLive: "لينك خاص لمرة واحدة", badgePlain: "تفاصيل التصميم", badgeExpired: "اللينك مستخدم",
+        expiredT: "اللينك ده اتستخدم خلاص", expiredH: "اللينكات عندنا بتشتغل مرة واحدة بس عشان خصوصيتك. اطلب من الاستوديو لينك جديد وهياخد دقيقة.",
+        expiredBtn: "اطلب لينك جديد",
+        name: { t: "بياناتك", h: "عشان نعرف الطلب ده لمين.", c: "اسمك", d: "اسم التصميم (اختياري)", dp: "مثال: توب جريلز، بتوم بارز، ناب شمال" },
+        mat: { t: "المادة", h: "تحب القطعة تكون من إيه؟" },
+        karat: "عيار الذهب", goldRate: "سعر جرام الذهب النهارده في مصر (جنيه) — اختياري",
+        goldRateHint: "لو مش عارفه سيبه فاضي — الاستوديو يأكده معاك.",
+        teethT: "عدد الضروس", teethH: "القطعة تغطي كام ضرس؟", teethL: "عدد الضروس (1–16)",
+        lvlT: "ستايل التصميم", lvlH: "اختار الأقرب ليك — والاستوديو يأكد معاك.",
+        stT: "الأحجار", stH: "عايز أحجار؟",
+        noStones: "الكروم والتيتانيوم مبياخدوش أحجار — اختار فضة أو ذهب لو عايز أحجار.",
+        aCount: "كام حجر؟", aType: "نوع الحجر", aSetting: "طريقة التثبيت",
+        fType: "نوع الحجر", fCover: "طريقة التغطية",
+        stRate: "سعر الحجر النهارده (جنيه) — اختياري",
+        stRateFull: "سعر الضرس النهارده (جنيه) — اختياري",
+        barsFull: "الفولي آيسد مع البارز بسعر ثابت من الاستوديو — مفيش اختيارات تانية.",
+        finT: "التشطيب", finH: "إضافات اختيارية — اختار «بدون» لو مش عايزها.",
+        plating: "الطلاء", enamel: "ألوان الإيناميل", engraving: "النقش",
+        timeT: "الوقت والمقاس", timeH: "فاضل خطوة صغيرة.",
+        timeline: "محتاجه إمتى؟", mold: "المقاس / السكان",
+        notesT: "أي حاجة تانية؟", notesH: "حساسية، صور مرجعية، ميعاد، أسئلة — أي حاجة تحب نعرفها.",
+        notesL: "ملاحظتك (اختياري)",
+        doneT: "كله تمام", doneH: "ابعتلنا الكود اللي تحت على واتساب أو إنستجرام — والاستوديو يكمّل.",
+        codeL: "كود التصميم", copyCode: "انسخ الكود", copyMsg: "انسخ الرسالة", wa: "ابعت على واتساب",
+        burned: "اللينك اتستخدم — الكود اتعمل. اطلب لينك جديد لو محتاج.",
+        sum: { n: "التصميم", m: "المادة", t: "الضروس", l: "الستايل", s: "الأحجار", f: "التشطيب", tl: "الوقت", md: "المقاس", nt: "ملاحظة" },
+        stAccent: "أكسنت",
+        needName: "اكتب اسمك من فضلك.", needMat: "اختار المادة من فضلك.", needTeeth: "اكتب رقم من 1 لـ 16.",
+        copied: "اتنسخ ✓", copyFail: "النسخ فشل — اضغط مطوّل على الكود وانسخه بنفسك.",
+        none: "بدون"
+    }
+};
+
+const OPT = {
+    material: [
+        { v: "chrome", en: "Cobalt Chrome", ar: "كوبالت كروم", icon: "hex" },
+        { v: "titanium", en: "Titanium", ar: "تيتانيوم", icon: "layers" },
+        { v: "silver", en: "Sterling Silver 925", ar: "فضة إسترليني 925", icon: "ring" },
+        { v: "gold", en: "Gold", ar: "ذهب", icon: "sun" }
+    ],
+    karat: [{ v: "10", en: "10K" }, { v: "14", en: "14K" }, { v: "18", en: "18K" }, { v: "21", en: "21K" }, { v: "22", en: "22K" }],
+    level: [
+        { v: "0.5", en: "Bars", ar: "بارز", icon: "bars", dEn: "Open metal bars across the front, teeth visible behind.", dAr: "قضبان معدنية في المقدمة والضروس باينة من وراها.", exEn: ["single bar", "bars + windows"], exAr: ["بار واحد", "بارز + شبابيك"] },
+        { v: "1", en: "Solid", ar: "سوليد", icon: "solid", dEn: "Fully solid metal, no cuts — one clean surface.", dAr: "معدن سوليد بالكامل من غير فتحات.", exEn: ["full cover", "mirror finish"], exAr: ["تغطية كاملة", "تشطيب مرايا"] },
+        { v: "2", en: "Open face", ar: "أوبن فيس", icon: "open", dEn: "Solid base with openings cut over the face of the teeth.", dAr: "قاعدة سوليد مع فتحات على وش الضروس.", exEn: ["window on front teeth"], exAr: ["فتحة على الضروس الأمامية"] },
+        { v: "3", en: "Mid detail", ar: "ديتيل متوسط", icon: "lines", dEn: "Moderate detail — lettering, outlines, a few cuts.", dAr: "تفاصيل متوسطة — كتابة، خطوط، كم قطعة.", exEn: ["name / lettering", "diamond-cut outlines"], exAr: ["اسم أو كتابة", "خطوط ديموند كت"] },
+        { v: "4", en: "Complex", ar: "كومبليكس", icon: "grid", dEn: "Dense, intricate detail across most of the piece.", dAr: "تفاصيل كثيفة على أغلب القطعة.", exEn: ["full deep engraving", "many cuts"], exAr: ["نقش غويط كامل", "قطع كتير"] },
+        { v: "5", en: "Scorpion / heavy detail", ar: "سكوربيون / تفاصيل تقيلة", icon: "bolt", dEn: "Heavy 3D sculpted detail — scorpion, animal, logo.", dAr: "نحت 3D تقيل — عقرب، حيوان، لوجو.", exEn: ["scorpion shape", "3D logo"], exAr: ["شكل عقرب", "لوجو 3D"] },
+        { v: "6", en: "Ultimate", ar: "ألتيميت", icon: "crown", dEn: "Fully sculpted, multi-layer, maximum custom detail.", dAr: "نحت كامل، طبقات، أعلى مستوى تفاصيل.", exEn: ["full sculpture piece"], exAr: ["قطعة منحوتة بالكامل"] }
+    ],
+    stones: [
+        { v: "none", en: "No stones", ar: "بدون أحجار", icon: "nostone", dEn: "Clean metal only.", dAr: "معدن بس." },
+        { v: "accent", en: "A few stone accents", ar: "شوية أحجار", icon: "dots3", dEn: "Stones in specific spots.", dAr: "أحجار في أماكن محددة." },
+        { v: "fulliced", en: "Full iced", ar: "فولي آيسد", icon: "iced", dEn: "Stones across the whole piece.", dAr: "أحجار على القطعة كلها." }
+    ],
+    stoneType: [
+        { v: "cz", en: "CZ (zirconia)", ar: "زركون CZ" },
+        { v: "moissanite", en: "Moissanite", ar: "مويسانيت" },
+        { v: "labgrown", en: "Lab-grown diamond", ar: "ألماس معملي" },
+        { v: "natural", en: "Natural diamond", ar: "ألماس طبيعي" }
+    ],
+    setting: [
+        { v: "flush", en: "Flush", ar: "فلاش (مسطح)" },
+        { v: "twoprong", en: "2-prong", ar: "برغيين" },
+        { v: "threeprong", en: "3-prong", ar: "3 براغي" },
+        { v: "fourprong", en: "4-prong", ar: "4 براغي" },
+        { v: "sixprong", en: "6-prong", ar: "6 براغي" },
+        { v: "bezelfull", en: "Bezel full", ar: "بزيل كامل" },
+        { v: "bezelhalf", en: "Bezel half", ar: "بزيل نص" },
+        { v: "bar", en: "Bar setting", ar: "تثبيت بقضبان" }
+    ],
+    coverage: [
+        { v: "standardpave", en: "Standard pave", ar: "بافيه عادي" },
+        { v: "frenchpave", en: "French pave", ar: "بافيه فرنسي" },
+        { v: "micropave", en: "Micro-pavé", ar: "مايكرو بافيه" },
+        { v: "channel", en: "Channel", ar: "قناة (شانيل)" },
+        { v: "invisible", en: "Invisible", ar: "إنفزيبل" }
+    ],
+    plating: [
+        { v: "none", en: "None", ar: "بدون" }, { v: "blackgold", en: "Black gold", ar: "ذهب أسود" },
+        { v: "whitegold", en: "White gold", ar: "ذهب أبيض" }, { v: "rosegold", en: "Rose gold", ar: "ذهب وردي" },
+        { v: "silverplating", en: "Silver plating", ar: "طلاء فضة" }
+    ],
+    enamel: [
+        { v: "none", en: "None", ar: "بدون" }, { v: "single", en: "Single color", ar: "لون واحد" },
+        { v: "multi", en: "Multi color", ar: "ألوان متعددة" }, { v: "master", en: "Master artwork", ar: "تصميم ماستر" }
+    ],
+    engraving: [
+        { v: "none", en: "None", ar: "بدون" }, { v: "small", en: "Small", ar: "صغير" },
+        { v: "medium", en: "Medium", ar: "متوسط" }, { v: "large", en: "Large", ar: "كبير" }
+    ],
+    timeline: [
+        { v: "standard", en: "Standard", ar: "عادي" }, { v: "rush", en: "Rush", ar: "سريع" },
+        { v: "emergency", en: "Emergency", ar: "طارئ" }
+    ],
+    mold: [
+        { v: "none", en: "I'll arrange it myself", ar: "هجيبه بنفسي" },
+        { v: "normalperarch", en: "Studio mold", ar: "مقاس من الاستوديو" },
+        { v: "digitalfullmouth", en: "Digital scan (full mouth)", ar: "سكان رقمي للفم كامل" }
+    ]
+};
+
+const ICONS = {
+    hex: '<path d="M12 3l7.5 4.4v8.8L12 20.6 4.5 16.2V7.4z"/>',
+    layers: '<path d="M12 4l8 4.5-8 4.5-8-4.5z"/><path d="M4 13l8 4.5 8-4.5"/>',
+    ring: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M6 6l1.5 1.5M16.5 16.5L18 18M18 6l-1.5 1.5M7.5 16.5L6 18"/>',
+    bars: '<path d="M5 6h14M5 12h14M5 18h14"/>',
+    solid: '<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/>',
+    open: '<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>',
+    lines: '<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><path d="M8 10h8M8 14h5"/>',
+    grid: '<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><path d="M9.5 4.5v15M14.5 4.5v15M4.5 9.5h15M4.5 14.5h15"/>',
+    bolt: '<path d="M13.5 3L6 13.5h5L10.5 21 18 10.5h-5z"/>',
+    crown: '<path d="M4 18l1.5-9 4 4L12 6l2.5 7 4-4L20 18z"/>',
+    nostone: '<circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/>',
+    dots3: '<circle cx="8" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/>',
+    iced: '<circle cx="7" cy="7" r="1.3"/><circle cx="12" cy="7" r="1.3"/><circle cx="17" cy="7" r="1.3"/><circle cx="7" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="17" cy="12" r="1.3"/><circle cx="7" cy="17" r="1.3"/><circle cx="12" cy="17" r="1.3"/><circle cx="17" cy="17" r="1.3"/>'
+};
+function svgIcon(name) {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ICONS.hex}</svg>`;
+}
+
+const params = new URLSearchParams(location.search);
+const WA_NUMBER = (params.get("wa") || "").replace(/[^0-9]/g, "");
+const TOKEN = params.get("k") || "";
+
+/* ---------------- one-time link handling ----------------
+   The token registry is created in the PANEL's browser (localStorage), so on a
+   client's phone it is always empty. Unknown token  ->  treat as valid private
+   link (never block a real client). Only a token this device KNOWS and already
+   used shows the "already used" screen.                                  */
+const TOKENS_KEY = "egygz_intake_tokens";
+function readTokens() { try { return JSON.parse(localStorage.getItem(TOKENS_KEY) || "{}") || {}; } catch (e) { return {}; } }
+function writeTokens(t) { try { localStorage.setItem(TOKENS_KEY, JSON.stringify(t)); } catch (e) {} }
+function tokenStatus() {
+    if (!TOKEN) return "none";
+    const t = readTokens()[TOKEN];
+    if (!t) return "unverified";   // created on another device — allow the flow
+    return t.used ? "used" : "live";
+}
+function burnToken() {
+    if (!TOKEN) return;
+    const t = readTokens();
+    if (t[TOKEN]) { t[TOKEN].used = true; t[TOKEN].usedAt = Date.now(); writeTokens(t); }
+}
+
+const state = {
+    lang: params.get("lang") === "ar" ? "ar" : "en",
+    step: 0,
+    burned: false,
+    answers: { c: "", n: "", m: "", karat: "18", goldRate: "", t: "6", l: "1", s: "none", at: "cz", sc: "1", ss: "flush", ft: "cz", cv: "standardpave", rf: "", pl: "none", en: "none", eg: "none", tl: "standard", md: "none", nt: "" }
+};
+
+/* ---------------- helpers ---------------- */
+const $ = sel => document.querySelector(sel);
+const t = k => I18N[state.lang][k];
+function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+function toast(msg) {
+    const el = $("#toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2200);
+}
+function applyBrand() {
+    const dark = document.documentElement.classList.contains("dark");
+    $("#brandMark").src = dark ? BRAND.white : BRAND.black;
+    const link = document.querySelector("link[rel=icon]") || document.createElement("link");
+    link.rel = "icon"; link.href = BRAND.favicon; document.head.appendChild(link);
+}
+function setTheme(mode) {
+    const dark = mode === "dark" || (mode === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.toggle("dark", dark);
+    $("#themeIcon").innerHTML = dark
+        ? '<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.95-6.95l-1.414 1.414M7.464 16.536L6.05 17.95m11.486 0l-1.414-1.414M7.464 7.464L6.05 6.05M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>'
+        : '<path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>';
+    applyBrand();
+}
+function getTheme() { try { return localStorage.getItem("egygz_intake_theme") || "auto"; } catch (e) { return "auto"; } }
+
+/* ---------------- option renderers ---------------- */
+function optsHtml(key, current, withGlyph) {
+    return `<div class="opts">` + OPT[key].map(o => `
+        <button type="button" class="opt ${current === o.v ? "sel" : ""}" data-opt="${key}" data-val="${o.v}">
+            ${withGlyph && o.icon ? `<span class="glyph">${svgIcon(o.icon)}</span>` : ""}
+            <span class="txt">
+                <b>${esc(o[state.lang] || o.en)}</b>
+                ${o.d ? `<em>${esc(state.lang === "ar" ? o.dAr : o.dEn)}</em>` : ""}
+                ${o.exEn ? `<span class="chips">${(state.lang === "ar" ? o.exAr : o.exEn).map(x => `<span class="chip">${esc(x)}</span>`).join("")}</span>` : ""}
+            </span>
+            <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+        </button>`).join("") + `</div>`;
+}
+function selHtml(key, current) {
+    return `<select data-input="${key}">` + OPT[key].map(o =>
+        `<option value="${o.v}" ${current === o.v ? "selected" : ""}>${esc(o[state.lang] || o.en)}</option>`).join("") + `</select>`;
+}
+function labelFor(key, val) {
+    const o = (OPT[key] || []).find(x => x.v === val);
+    return o ? (o[state.lang] || o.en) : val;
+}
+
+/* ---------------- steps ---------------- */
+function currentSteps() {
+    const list = ["name", "mat", "teeth", "lvl", "st"];
+    const a = state.answers;
+    const noStones = a.m === "chrome" || a.m === "titanium";
+    if (!noStones && a.s !== "none") list.push("stdet");
+    list.push("fin", "time", "notes", "done");
+    return list;
+}
+
+function renderExpired() {
+    const L = I18N[state.lang];
+    $("#badgeRow").innerHTML = `<span class="badge expired"><i></i>${esc(L.badgeExpired)}</span>`;
+    $("#bar").style.width = "100%";
+    $("#stepMeta").textContent = "";
+    $("#dots").innerHTML = "";
+    $("#nav").classList.add("hidden");
+    $("#footNote").textContent = L.footer;
+    $("#stage").innerHTML = `<div class="card step-enter center">
+        <div class="big-emoji">🔒</div>
+        <h1>${esc(L.expiredT)}</h1>
+        <p class="hint" style="margin-bottom:16px">${esc(L.expiredH)}</p>
+        ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(state.lang === "ar" ? "مرحباً EGYGRILLZ — محتاج لينك جديد لتفاصيل التصميم 🙏" : "Hi EGYGRILLZ — I need a fresh design-details link please 🙏")}" target="_blank" rel="noopener">${esc(L.expiredBtn)}</a>` : ""}
+    </div>`;
+}
+
+function render() {
+    const L = I18N[state.lang];
+    document.documentElement.lang = state.lang;
+    document.documentElement.dir = L.dir;
+    $("#heroSub").textContent = L.sub;
+    $("#footNote").textContent = L.footer;
+    $("#langBtn").textContent = state.lang === "en" ? "ع" : "EN";
+    $("#backBtn").textContent = L.back;
+    $("#nextBtn").textContent = L.next;
+    $("#themeBtn").title = "Theme";
+
+    const status = tokenStatus();
+    // "unknown"/"unverified" = the link was created on the studio's device — let the client in.
+    if (status === "used") { renderExpired(); return; }
+    $("#badgeRow").innerHTML = `<span class="badge"><i></i>${esc((status === "live" || status === "unverified") ? L.badgeLive : L.badgePlain)}</span>`;
+
+    const steps = currentSteps();
+    const key = steps[state.step];
+    const a = state.answers;
+    const noStones = a.m === "chrome" || a.m === "titanium";
+
+    $("#bar").style.width = Math.round(((state.step + 1) / steps.length) * 100) + "%";
+    $("#stepMeta").textContent = L.step.replace("{a}", state.step + 1).replace("{b}", steps.length);
+    $("#dots").innerHTML = steps.map((_, i) => `<i class="${i === state.step ? "now" : i < state.step ? "done" : ""}"></i>`).join("");
+    $("#nav").classList.toggle("hidden", key === "done");
+    $("#backBtn").disabled = state.step === 0;
+
+    let html = "";
+    if (key === "name") {
+        html = `<div class="card step-enter"><h1>${esc(L.name.t)}</h1><p class="hint">${esc(L.name.h)}</p>
+            <div class="field"><label class="f">${esc(L.name.c)}</label><input type="text" data-input="c" value="${esc(a.c)}" maxlength="40" autocomplete="name" autofocus></div>
+            <div class="field" style="margin-bottom:0"><label class="f">${esc(L.name.d)}</label><input type="text" data-input="n" value="${esc(a.n)}" maxlength="30" placeholder="${esc(L.name.dp)}"></div></div>`;
+    }
+    if (key === "mat") {
+        html = `<div class="card step-enter"><h1>${esc(L.mat.t)}</h1><p class="hint">${esc(L.mat.h)}</p>${optsHtml("material", a.m, true)}`;
+        if (a.m === "gold") {
+            html += `<div class="field" style="margin:16px 0 0"><label class="f">${esc(L.karat)}</label>${selHtml("karat", a.karat)}</div>
+                     <div class="field" style="margin:16px 0 0"><label class="f">${esc(L.goldRate)}</label><input type="number" data-input="rl_gold" value="${esc(a.goldRate || "")}" inputmode="numeric">
+                     <p class="hint" style="margin:8px 0 0">${esc(L.goldRateHint)}</p></div>`;
+        }
+        html += `</div>`;
+    }
+    if (key === "teeth") {
+        html = `<div class="card step-enter"><h1>${esc(L.teethT)}</h1><p class="hint">${esc(L.teethH)}</p>
+            <div class="field" style="margin-bottom:0"><label class="f">${esc(L.teethL)}</label><input type="number" data-input="t" min="1" max="16" value="${esc(a.t)}" inputmode="numeric" autofocus></div></div>`;
+    }
+    if (key === "lvl") {
+        html = `<div class="card step-enter"><h1>${esc(L.lvlT)}</h1><p class="hint">${esc(L.lvlH)}</p>${optsHtml("level", a.l, true)}</div>`;
+    }
+    if (key === "st") {
+        html = noStones
+            ? `<div class="card step-enter"><h1>${esc(L.stT)}</h1><div class="note">${esc(L.noStones)}</div></div>`
+            : `<div class="card step-enter"><h1>${esc(L.stT)}</h1><p class="hint">${esc(L.stH)}</p>${optsHtml("stones", a.s, true)}</div>`;
+    }
+    if (key === "stdet") {
+        if (a.s === "accent") {
+            const needsRate = a.at === "labgrown" || a.at === "natural";
+            html = `<div class="card step-enter"><h1>${esc(L.stT)}</h1>
+                <div class="field"><label class="f">${esc(L.aCount)}</label><input type="number" data-input="sc" min="1" value="${esc(a.sc)}" inputmode="numeric"></div>
+                <div class="field"><label class="f">${esc(L.aType)}</label>${selHtml("stoneType", a.at)}</div>
+                <div class="field" style="margin-bottom:0"><label class="f">${esc(L.aSetting)}</label>${selHtml("setting", a.ss)}</div>
+                ${needsRate ? `<div class="field" style="margin:16px 0 0"><label class="f">${esc(L.stRate)}</label><input type="number" data-input="rl" value="${esc(a.rl)}" inputmode="numeric" placeholder="—"></div>` : ""}</div>`;
+        } else {
+            const bars = a.l === "0.5";
+            const needsRate = a.ft === "labgrown" || a.ft === "natural";
+            html = `<div class="card step-enter"><h1>${esc(L.stT)}</h1>` + (bars ? `<div class="note">${esc(L.barsFull)}</div>` : `
+                <div class="field"><label class="f">${esc(L.fType)}</label>${selHtml("stoneType", a.ft)}</div>
+                <div class="field" style="margin-bottom:0"><label class="f">${esc(L.fCover)}</label>${selHtml("coverage", a.cv)}</div>
+                ${needsRate ? `<div class="field" style="margin:16px 0 0"><label class="f">${esc(L.stRateFull)}</label><input type="number" data-input="rf" value="${esc(a.rf)}" inputmode="numeric" placeholder="—"></div>` : ""}`) + `</div>`;
+        }
+    }
+    if (key === "fin") {
+        html = `<div class="card step-enter"><h1>${esc(L.finT)}</h1><p class="hint">${esc(L.finH)}</p>
+            <div class="field"><label class="f">${esc(L.plating)}</label>${selHtml("plating", a.pl)}</div>
+            <div class="field"><label class="f">${esc(L.enamel)}</label>${selHtml("enamel", a.en)}</div>
+            <div class="field" style="margin-bottom:0"><label class="f">${esc(L.engraving)}</label>${selHtml("engraving", a.eg)}</div></div>`;
+    }
+    if (key === "time") {
+        html = `<div class="card step-enter"><h1>${esc(L.timeT)}</h1><p class="hint">${esc(L.timeH)}</p>
+            <div class="field"><label class="f">${esc(L.timeline)}</label>${selHtml("timeline", a.tl)}</div>
+            <div class="field" style="margin-bottom:0"><label class="f">${esc(L.mold)}</label>${selHtml("mold", a.md)}</div></div>`;
+    }
+    if (key === "notes") {
+        html = `<div class="card step-enter"><h1>${esc(L.notesT)}</h1><p class="hint">${esc(L.notesH)}</p>
+            <div class="field" style="margin-bottom:0"><label class="f">${esc(L.notesL)}</label><textarea data-input="nt" maxlength="300">${esc(a.nt)}</textarea></div></div>`;
+    }
+    if (key === "done") {
+        const code = makeCode();
+        html = `<div class="card step-enter"><div class="center" style="margin-bottom:14px">
+                <div class="big-emoji">✨</div>
+                <h1>${esc(L.doneT)}</h1><p class="hint" style="margin-bottom:0">${esc(L.doneH)}</p>
+            </div>
+            <label class="f">${esc(L.codeL)}</label>
+            <textarea class="codebox" id="codeBox" readonly>${esc(code)}</textarea>
+            ${summaryHtml()}
+            <div style="display:flex;flex-direction:column;gap:10px">
+                ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(messageText())}" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5.1-1.3A10 10 0 1012 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-1.6-.5-3.4-2-4.5-3.7-.6-.9-1-2-1-2.7 0-.7.4-1.5.9-1.8.2-.1.4-.1.6-.1h.4c.2 0 .3 0 .5.4l.7 1.7c.1.2 0 .4-.1.5l-.4.5c-.1.2-.2.3 0 .6.5.8 1 1.4 1.9 2 .3.2.5.2.7 0l.6-.7c.2-.2.4-.2.6-.1l1.6.8c.4.2.4.3.4.5s0 .6-.2 1z"/></svg>
+                    ${esc(L.wa)}</a>` : ""}
+                <button class="btn primary block" type="button" id="copyMsgBtn">${esc(L.copyMsg)}</button>
+                <button class="btn block" type="button" id="copyCodeBtn">${esc(L.copyCode)}</button>
+            </div></div>`;
+        if (!state.burned) { burnToken(); state.burned = true; }
+    }
+    const stage = $("#stage");
+    stage.innerHTML = html;
+    $("#nextBtn").textContent = L.next;
+
+    if (key === "done") {
+        if ($("#copyCodeBtn")) $("#copyCodeBtn").onclick = () => copy(code, L.copied, L.copyFail);
+        if ($("#copyMsgBtn")) $("#copyMsgBtn").onclick = () => copy(messageText(), L.copied, L.copyFail);
+    }
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click", e => {
+    const optBtn = e.target.closest("[data-opt]");
+    if (optBtn) {
+        const key = optBtn.dataset.opt, val = optBtn.dataset.val;
+        if (key === "material") {
+            state.answers.m = val;
+            if (val === "chrome" || val === "titanium") state.answers.s = "none";
+            if (val !== "gold") state.answers.goldRate = "";
+        } else if (key === "level") state.answers.l = val;
+        else if (key === "stones") state.answers.s = val;
+        render();
+        return;
+    }
+});
+document.addEventListener("input", e => {
+    const el = e.target.closest("[data-input]");
+    if (!el) return;
+    const key = el.dataset.input;
+    if (key === "rl_gold") state.answers.goldRate = el.value;
+    else if (key === "sc" || key === "t") state.answers[key] = el.value.replace(/[^0-9]/g, "");
+    else state.answers[key] = el.value;
+});
+document.addEventListener("change", e => {
+    const el = e.target.closest("[data-input]");
+    if (!el || el.tagName !== "SELECT") return;
+    const key = el.dataset.input;
+    if (key === "stoneType") state.answers[state.answers.s === "accent" ? "at" : "ft"] = el.value;
+    else if (key === "karat") state.answers.karat = el.value;
+    else if (key === "setting") state.answers.ss = el.value;
+    else if (key === "coverage") state.answers.cv = el.value;
+    else if (["plating", "enamel", "engraving", "timeline", "mold"].includes(key)) state.answers[{ plating: "pl", enamel: "en", engraving: "eg", timeline: "tl", mold: "md" }[key]] = el.value;
+    render();
+});
+
+function validate() {
+    const steps = currentSteps();
+    const key = steps[state.step];
+    const a = state.answers;
+    const L = I18N[state.lang];
+    if (key === "name" && !a.c.trim()) { toast(L.needName); return false; }
+    if (key === "mat" && !a.m) { toast(L.needMat); return false; }
+    if (key === "teeth") {
+        const n = parseInt(a.t, 10);
+        if (!n || n < 1 || n > 16) { toast(L.needTeeth); return false; }
+    }
+    return true;
+}
+$("#nextBtn").onclick = () => {
+    if (!validate()) return;
+    state.step = Math.min(state.step + 1, currentSteps().length - 1);
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+};
+$("#backBtn").onclick = () => {
+    state.step = Math.max(0, state.step - 1);
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+};
+$("#langBtn").onclick = () => {
+    state.lang = state.lang === "en" ? "ar" : "en";
+    render();
+};
+$("#themeBtn").onclick = () => {
+    const order = ["auto", "light", "dark"];
+    const next = order[(order.indexOf(getTheme()) + 1) % order.length];
+    try { localStorage.setItem("egygz_intake_theme", next); } catch (e) {}
+    setTheme(next);
+    toast("Theme: " + next);
+};
+if (window.matchMedia) {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => { if (getTheme() === "auto") setTheme("auto"); };
+    mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange);
+}
+
+/* ---------------- code + message ---------------- */
+function b64urlEncode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = "";
+    bytes.forEach(b => bin += String.fromCharCode(b));
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function makeCode() {
+    const a = state.answers;
+    const p = new URLSearchParams();
+    p.set("c", a.c.trim());
+    p.set("n", a.n.trim());
+    p.set("m", a.m || "chrome");
+    if (a.m === "gold") { p.set("k", a.karat); if (a.goldRate) p.set("gr", a.goldRate); }
+    p.set("t", String(parseInt(a.t, 10) || 6));
+    p.set("l", a.l);
+    p.set("s", a.s);
+    if (a.s === "accent") { p.set("sc", a.sc); p.set("at", a.at); p.set("ss", a.ss); if (a.rl) p.set("ra", a.rl); }
+    if (a.s === "fulliced") { p.set("ft", a.ft); if (a.l !== "0.5") p.set("cv", a.cv); if (a.rf) p.set("rf", a.rf); }
+    p.set("pl", a.pl); p.set("en", a.en); p.set("eg", a.eg);
+    p.set("tl", a.tl); p.set("md", a.md);
+    if (a.nt.trim()) p.set("nt", a.nt.trim());
+    return "EGZ1:" + b64urlEncode(p.toString());
+}
+function summaryRows() {
+    const a = state.answers;
+    const L = I18N[state.lang];
+    const rows = [];
+    rows.push([L.sum.n, [a.c, a.n].filter(Boolean).join(" — ")]);
+    rows.push([L.sum.m, a.m === "gold" ? `${labelFor("material", "gold")} ${a.karat}K` : labelFor("material", a.m)]);
+    rows.push([L.sum.t, a.t]);
+    rows.push([L.sum.l, labelFor("level", a.l)]);
+    let stonesTxt = labelFor("stones", a.s);
+    if (a.s === "accent") stonesTxt = `${L.stAccent} · ${a.sc}× ${labelFor("stoneType", a.at)} · ${labelFor("setting", a.ss)}`;
+    if (a.s === "fulliced") stonesTxt = a.l === "0.5" ? labelFor("stones", "fulliced") : `${labelFor("stones", "fulliced")} · ${labelFor("stoneType", a.ft)} · ${labelFor("coverage", a.cv)}`;
+    rows.push([L.sum.s, stonesTxt]);
+    const fin = [a.pl !== "none" && labelFor("plating", a.pl), a.en !== "none" && labelFor("enamel", a.en), a.eg !== "none" && labelFor("engraving", a.eg)].filter(Boolean);
+    rows.push([L.sum.f, fin.length ? fin.join(" · ") : L.none]);
+    rows.push([L.sum.tl, labelFor("timeline", a.tl)]);
+    rows.push([L.sum.md, labelFor("mold", a.md)]);
+    if (a.nt.trim()) rows.push([L.sum.nt, a.nt.trim()]);
+    return rows;
+}
+function summaryHtml() {
+    return `<div class="sum">` + summaryRows().map(r =>
+        `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join("") + `</div>`;
+}
+function messageText() {
+    const L = I18N[state.lang];
+    const rows = summaryRows().map(r => `${r[0]}: ${r[1]}`).join("\n");
+    const intro = state.lang === "ar" ? "أهلاً EGYGRILLZ 👋\nدي تفاصيل التصميم بتاعي:\n\n" : "Hi EGYGRILLZ 👋\nHere are my design details:\n\n";
+    return `${intro}${rows}\n\n${L.codeL}: ${makeCode()}`;
+}
+async function copy(text, okMsg, failMsg) {
+    try {
+        await navigator.clipboard.writeText(text);
+        toast(okMsg);
+    } catch (e) {
+        try {
+            const ta = document.createElement("textarea");
+            ta.value = text; ta.style.position = "fixed"; ta.style.left = "-9999px";
+            document.body.appendChild(ta); ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            toast(okMsg);
+        } catch (e2) { toast(failMsg); }
+    }
+}
+
+/* ---------------- boot ---------------- */
+setTheme(getTheme());
+render();
+</script>
+</body>
+</html>
