@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0a0a0a">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <title>EGYGRILLZ — Design Details</title>
 <script>
     // theme before first paint (no flash)
@@ -98,7 +99,7 @@
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px 18px; box-shadow: var(--shadow); }
     .step-enter { animation: stepIn .28s cubic-bezier(.2,.7,.3,1); }
     @keyframes stepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-    h1 { font-size: 20px; font-weight: 750; margin: 0 0 5px; letter-spacing: -.01em; }
+    h1 { font-family: "Cormorant Garamond", Georgia, serif; font-size: 28px; font-weight: 600; margin: 0 0 6px; letter-spacing: .01em; line-height: 1.15; }
     .hint { font-size: 12.5px; color: var(--sub); margin: 0 0 18px; }
     label.f { display:block; font-size:10.5px; font-weight: 750; text-transform: uppercase; letter-spacing: .12em; color: var(--sub); margin: 0 0 7px; }
     input[type=text], input[type=number], textarea {
@@ -142,7 +143,7 @@
     html[dir=rtl] select { background-position: left 12px center; }
 
     /* ---------- nav ---------- */
-    .actions { display: flex; gap: 10px; margin-top: 20px; }
+    .actions { position: sticky; bottom: 0; z-index: 5; display: flex; gap: 10px; margin-top: 18px; padding: 14px 0 14px; background: linear-gradient(to bottom, transparent, var(--paper) 30%); }
     .btn {
         border-radius: 16px; padding: 16px 18px; font-size: 14px; font-weight: 750; letter-spacing: .02em;
         border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; font-family: inherit;
@@ -181,7 +182,21 @@
     .toast.show { transform: translate(-50%, 0); }
     .hidden { display: none !important; }
     .center { text-align: center; }
-    .big-emoji { font-size: 34px; line-height: 1; margin-bottom: 12px; }
+    .seal { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--ink); display: grid; place-items: center; margin: 0 auto 14px; }
+    .seal svg { width: 24px; height: 24px; }
+    :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .thumb { position: relative; flex: 0 0 auto; width: 68px; height: 68px; border-radius: 14px; overflow: hidden; display: grid; place-items: center; background: var(--soft); border: 1px solid var(--line); color: var(--ink); }
+    .thumb svg { width: 24px; height: 24px; opacity: .5; }
+    .thumb .ri { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .opts.tiles { grid-template-columns: 1fr 1fr; }
+    .opts.tiles.t3 { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .tiles .opt { flex-direction: column; gap: 10px; padding: 10px; position: relative; }
+    .tiles .thumb { width: 100%; height: auto; aspect-ratio: 4 / 3; }
+    .tiles.t3 .thumb { aspect-ratio: 1 / 1; }
+    .tiles .opt .txt { width: 100%; }
+    .tiles .opt .check { position: absolute; top: 16px; inset-inline-end: 16px; background: var(--ink); color: var(--paper); border-radius: 50%; padding: 3px; align-self: auto; margin: 0; }
+    .tiles.t3 .opt b { font-size: 12px; }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
@@ -269,7 +284,7 @@ const I18N = {
         sum: { n: "Design", m: "Material", t: "Teeth", l: "Style", s: "Stones", f: "Finishing", tl: "Timing", md: "Mold", nt: "Note" },
         stAccent: "Accent",
         needName: "Please write your name.", needMat: "Please choose a material.", needTeeth: "Enter a number between 1 and 16.",
-        copied: "Copied ✓", copyFail: "Copy failed — long-press the code and copy it manually.",
+        copied: "Copied", copyFail: "Copy failed — long-press the code and copy it manually.",
         none: "None"
     },
     ar: {
@@ -304,7 +319,7 @@ const I18N = {
         sum: { n: "التصميم", m: "المادة", t: "الضروس", l: "الستايل", s: "الأحجار", f: "التشطيب", tl: "الوقت", md: "المقاس", nt: "ملاحظة" },
         stAccent: "أكسنت",
         needName: "اكتب اسمك من فضلك.", needMat: "اختار المادة من فضلك.", needTeeth: "اكتب رقم من 1 لـ 16.",
-        copied: "اتنسخ ✓", copyFail: "النسخ فشل — اضغط مطوّل على الكود وانسخه بنفسك.",
+        copied: "اتنسخ", copyFail: "النسخ فشل — اضغط مطوّل على الكود وانسخه بنفسك.",
         none: "بدون"
     }
 };
@@ -398,6 +413,59 @@ function svgIcon(name) {
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ICONS.hex}</svg>`;
 }
 
+
+/* ---------- repo images: materials/ levels/ plating/ (auto-matched by file name) ---------- */
+const IMG = (() => {
+    const BASES = ["https://egygrillz.com/", "https://raw.githubusercontent.com/egygrillz/egygriilz/main/"];
+    const A = {
+        materials: { chrome: ["chrome", "cobalt"], titanium: ["titanium"], silver: ["silver", "sterling", "925"], gold: ["gold"] },
+        levels: { "0.5": ["0.5", "05", "bars", "bar"], "1": ["1", "solid"], "2": ["2", "open", "openface"], "3": ["3", "mid", "middetail"], "4": ["4", "complex"], "5": ["5", "scorpion", "heavy"], "6": ["6", "ultimate"] },
+        plating: { none: ["none", "no", "without"], blackgold: ["black", "blackgold"], whitegold: ["white", "whitegold"], rosegold: ["rose", "rosegold", "pink"], silverplating: ["silver", "silverplating"] }
+    };
+    const KEY = "egygz_img_index_v2";
+    let files = {};
+    const ready = (async () => {
+        try { const c = JSON.parse(localStorage.getItem(KEY) || "null"); if (c && Date.now() - c.t < 6 * 3600e3) { files = c.f; return; } } catch (e) {}
+        try {
+            const out = {};
+            await Promise.all(Object.keys(A).map(async f => {
+                const r = await fetch("https://api.github.com/repos/egygrillz/egygriilz/contents/" + f + "?ref=main");
+                if (r.ok) out[f] = (await r.json()).filter(x => x.type === "file" && /\.(jpe?g|png|webp|avif|gif)$/i.test(x.name)).map(x => x.name);
+            }));
+            if (Object.keys(out).length) { files = out; try { localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), f: out })); } catch (e) {} }
+        } catch (e) {}
+    })();
+    const test = (b, a) => /^[0-9.]+$/.test(a) ? new RegExp("(^|[^0-9.])" + a.replace(/\./g, "\\.") + "($|[^0-9.])").test(b) : b.replace(/[^a-z]/g, "").includes(a);
+    const find = (f, k) => (files[f] || []).find(n => { const b = n.toLowerCase().replace(/\.[a-z0-9]+$/, ""); return (A[f][k] || [k]).some(a => test(b, a)); });
+    function hydrate(root) {
+        (root || document).querySelectorAll("img[data-rf]").forEach(im => {
+            if (im.dataset.on) return; im.dataset.on = 1;
+            const f = im.dataset.rf, k = im.dataset.rk, n = find(f, k), c = [];
+            const names = n ? [n] : ["jpg", "jpeg", "png", "webp"].map(e => k + "." + e);
+            BASES.forEach(b => names.forEach(x => c.push(b + f + "/" + encodeURIComponent(x))));
+            let i = 0;
+            im.onload = () => { im.hidden = false; };
+            im.onerror = () => { if (++i < c.length) im.src = c[i]; else im.remove(); };
+            im.src = c[0];
+        });
+    }
+    return { ready, hydrate };
+})();
+
+/* ---------- reliable copy (clipboard API, then iOS/WebView-safe fallback) ---------- */
+async function robustCopy(text) {
+    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; } } catch (e) {}
+    try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.setAttribute("readonly", "");
+        ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+        document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+    } catch (e) { return false; }
+}
+
 const params = new URLSearchParams(location.search);
 const WA_NUMBER = (params.get("wa") || "").replace(/[^0-9]/g, "");
 const TOKEN = params.get("k") || "";
@@ -456,10 +524,13 @@ function setTheme(mode) {
 function getTheme() { try { return localStorage.getItem("egygz_intake_theme") || "auto"; } catch (e) { return "auto"; } }
 
 /* ---------------- option renderers ---------------- */
+const IMG_FOLDER = { material: "materials", level: "levels", plating: "plating" };
 function optsHtml(key, current, withGlyph) {
-    return `<div class="opts">` + OPT[key].map(o => `
+    const folder = IMG_FOLDER[key];
+    const cls = key === "material" ? " tiles" : key === "plating" ? " tiles t3" : "";
+    return `<div class="opts${cls}">` + OPT[key].map(o => `
         <button type="button" class="opt ${current === o.v ? "sel" : ""}" data-opt="${key}" data-val="${o.v}">
-            ${withGlyph && o.icon ? `<span class="glyph">${svgIcon(o.icon)}</span>` : ""}
+            ${folder ? `<span class="thumb">${svgIcon(o.icon || "hex")}<img class="ri" data-rf="${folder}" data-rk="${o.v}" alt="" hidden></span>` : withGlyph && o.icon ? `<span class="glyph">${svgIcon(o.icon)}</span>` : ""}
             <span class="txt">
                 <b>${esc(o[state.lang] || o.en)}</b>
                 ${o.d ? `<em>${esc(state.lang === "ar" ? o.dAr : o.dEn)}</em>` : ""}
@@ -496,10 +567,10 @@ function renderExpired() {
     $("#nav").classList.add("hidden");
     $("#footNote").textContent = L.footer;
     $("#stage").innerHTML = `<div class="card step-enter center">
-        <div class="big-emoji">🔒</div>
+        <div class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div>
         <h1>${esc(L.expiredT)}</h1>
         <p class="hint" style="margin-bottom:16px">${esc(L.expiredH)}</p>
-        ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(state.lang === "ar" ? "مرحباً EGYGRILLZ — محتاج لينك جديد لتفاصيل التصميم 🙏" : "Hi EGYGRILLZ — I need a fresh design-details link please 🙏")}" target="_blank" rel="noopener">${esc(L.expiredBtn)}</a>` : ""}
+        ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(state.lang === "ar" ? "مرحباً EGYGRILLZ — محتاج لينك جديد لتفاصيل التصميم" : "Hi EGYGRILLZ — I need a fresh design-details link please")}" target="_blank" rel="noopener">${esc(L.expiredBtn)}</a>` : ""}
     </div>`;
 }
 
@@ -576,7 +647,7 @@ function render() {
     }
     if (key === "fin") {
         html = `<div class="card step-enter"><h1>${esc(L.finT)}</h1><p class="hint">${esc(L.finH)}</p>
-            <div class="field"><label class="f">${esc(L.plating)}</label>${selHtml("plating", a.pl)}</div>
+            <div class="field"><label class="f">${esc(L.plating)}</label>${optsHtml("plating", a.pl, true)}</div>
             <div class="field"><label class="f">${esc(L.enamel)}</label>${selHtml("enamel", a.en)}</div>
             <div class="field" style="margin-bottom:0"><label class="f">${esc(L.engraving)}</label>${selHtml("engraving", a.eg)}</div></div>`;
     }
@@ -592,7 +663,7 @@ function render() {
     if (key === "done") {
         const code = makeCode();
         html = `<div class="card step-enter"><div class="center" style="margin-bottom:14px">
-                <div class="big-emoji">✨</div>
+                <div class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
                 <h1>${esc(L.doneT)}</h1><p class="hint" style="margin-bottom:0">${esc(L.doneH)}</p>
             </div>
             <label class="f">${esc(L.codeL)}</label>
@@ -609,6 +680,9 @@ function render() {
     }
     const stage = $("#stage");
     stage.innerHTML = html;
+    if (state._shown === key) stage.querySelectorAll(".step-enter").forEach(e => e.classList.remove("step-enter"));
+    state._shown = key;
+    IMG.ready.then(() => IMG.hydrate(stage));
     $("#nextBtn").textContent = L.next;
 
     if (key === "done") {
@@ -627,6 +701,7 @@ document.addEventListener("click", e => {
             if (val === "chrome" || val === "titanium") state.answers.s = "none";
             if (val !== "gold") state.answers.goldRate = "";
         } else if (key === "level") state.answers.l = val;
+        else if (key === "plating") state.answers.pl = val;
         else if (key === "stones") state.answers.s = val;
         render();
         return;
@@ -741,25 +816,15 @@ function summaryHtml() {
         `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join("") + `</div>`;
 }
 function messageText() {
-    const L = I18N[state.lang];
+    const L = I18N[state.lang], ar = state.lang === "ar";
+    const rule = "\u2500".repeat(16);
     const rows = summaryRows().map(r => `${r[0]}: ${r[1]}`).join("\n");
-    const intro = state.lang === "ar" ? "أهلاً EGYGRILLZ 👋\nدي تفاصيل التصميم بتاعي:\n\n" : "Hi EGYGRILLZ 👋\nHere are my design details:\n\n";
-    return `${intro}${rows}\n\n${L.codeL}: ${makeCode()}`;
+    const intro = ar ? "مرحبًا، تفاصيل التصميم الخاصة بي كما يلي." : "Good day. Please find my design details below.";
+    return `EGYGRILLZ\nBeyond Jewelry\n${rule}\n\n${intro}\n\n${rows}\n\n${rule}\n${L.codeL}\n${makeCode()}`;
 }
 async function copy(text, okMsg, failMsg) {
-    try {
-        await navigator.clipboard.writeText(text);
-        toast(okMsg);
-    } catch (e) {
-        try {
-            const ta = document.createElement("textarea");
-            ta.value = text; ta.style.position = "fixed"; ta.style.left = "-9999px";
-            document.body.appendChild(ta); ta.select();
-            document.execCommand("copy");
-            document.body.removeChild(ta);
-            toast(okMsg);
-        } catch (e2) { toast(failMsg); }
-    }
+    if (await robustCopy(text)) toast(okMsg);
+    else { const b = $("#codeBox"); if (b) { b.focus(); b.select(); } toast(failMsg); }
 }
 
 /* ---------------- boot ---------------- */
