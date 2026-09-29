@@ -63,7 +63,7 @@
         .lvl-chip { transition: background-color .15s, border-color .15s, color .15s; }
         .lvl-chip.active { background: #000; border-color: #000; color: #fff; }
         .lvl-chip.active .lvl-sub { color: #b9b9b9; }
-        .example-thumb { width: 100%; height: 78px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .example-thumb { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; }
         .line-card { transition: border-color .15s; }
         .line-card:hover { border-color: #9ca3af; }
         #calcLevelStrip::-webkit-scrollbar { height: 4px; }
@@ -400,7 +400,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                     <!-- Restrictions & Privacy -->
                     <div class="border border-red-200 bg-red-50 rounded-lg p-3">
                         <div class="flex items-center justify-between mb-1.5">
-                            <label class="block text-[11px] font-semibold text-red-600 uppercase tracking-wider">⚠️ Restrictions &amp; Privacy</label>
+                            <label class="block text-[11px] font-semibold text-red-600 uppercase tracking-wider">Restrictions &amp; Privacy</label>
                             <button onclick="document.getElementById('uploadRestrictions').click()" class="text-[10px] text-red-600 hover:text-red-800 underline">Upload .md</button>
                             <input type="file" id="uploadRestrictions" accept=".md,text/markdown,text/plain" class="hidden" onchange="handleMdUpload(event,'settingRestrictions')">
                         </div>
@@ -483,44 +483,6 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                 <div id="pricingTabCalc" class="hidden flex-1 overflow-y-auto px-6 py-4 space-y-4">
                     <p class="text-[10px] text-gray-400">Deterministic — follows the pricing spec exactly, every time. Use this for the number you actually quote.</p>
 
-                    <!-- Today's rates -->
-                    <div class="border border-gray-200 rounded-lg">
-                        <button type="button" onclick="toggleRatesPanel()" class="w-full flex items-center justify-between px-3 py-2">
-                            <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Today's rates <span id="ratesStatus" class="text-gray-300 normal-case font-normal tracking-normal"></span></span>
-                            <span id="ratesChevron" class="text-gray-400 text-[10px]">▾</span>
-                        </button>
-                        <div id="ratesPanel" class="px-3 pb-3 space-y-2">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Gold EGP / gram</label>
-                                    <input type="number" id="rateGold" oninput="onTodayRatesInput()" placeholder="Today's rate" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                </div>
-                                <div class="flex items-end">
-                                    <button type="button" onclick="applyGoldRateToAllLines()" class="w-full py-1.5 border border-gray-300 rounded text-[10px] uppercase tracking-wider hover:bg-white">Apply to gold lines</button>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Lab-grown · per stone</label>
-                                    <input type="number" id="rateLabAccent" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Natural · per stone</label>
-                                    <input type="number" id="rateNatAccent" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Lab-grown · per tooth (full iced)</label>
-                                    <input type="number" id="rateLabFull" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Natural · per tooth (full iced)</label>
-                                    <input type="number" id="rateNatFull" oninput="onTodayRatesInput()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                </div>
-                            </div>
-                            <p class="text-[10px] text-gray-400">Saved on this device for today and auto-filled into the lines below. You can still override any line by hand.</p>
-                        </div>
-                    </div>
-
                     <!-- Client intake -->
                     <div class="border border-gray-200 rounded-lg overflow-hidden">
                         <div class="px-3 py-2.5 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center justify-between gap-2">
@@ -530,8 +492,8 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                         <div class="p-3 space-y-2.5">
                             <p class="text-[10px] text-gray-400 leading-relaxed">Send the client a private link — they answer the design questions once and get a short code. Paste the code here and the line fills itself. Links are single-use, so forwarded links stop working.</p>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="copyIntakeLink()" class="flex-1 min-w-[140px] px-3 py-2 border border-black rounded-lg text-[10px] font-medium uppercase tracking-wider hover:bg-black hover:text-white transition">＋ New one-time link</button>
-                                <button type="button" onclick="copyIntakeInvite()" class="flex-1 min-w-[140px] px-3 py-2 bg-black text-white rounded-lg text-[10px] font-medium uppercase tracking-wider hover:bg-gray-800 transition">Copy invite message</button>
+                                <button type="button" onclick="copyIntakeLink()" class="flex-1 min-w-[140px] px-3 py-2.5 border border-black rounded-lg text-[10px] font-medium uppercase tracking-wider hover:bg-black hover:text-white transition">Copy link only</button>
+                                <button type="button" onclick="copyIntakeInvite()" class="flex-1 min-w-[140px] px-3 py-2.5 bg-black text-white rounded-lg text-[10px] font-medium uppercase tracking-wider hover:bg-gray-800 transition">Copy invitation message</button>
                             </div>
                             <div class="flex items-center justify-between gap-2">
                                 <span id="intakeLinkStatus" class="text-[10px] text-gray-400"></span>
@@ -539,7 +501,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             </div>
                             <p id="intakeLinkPreview" class="text-[10px] text-gray-400 font-mono break-all bg-gray-50 border border-gray-100 rounded px-2 py-1.5"></p>
                             <div class="flex items-start gap-2 pt-1 border-t border-gray-100">
-                                <textarea id="intakePaste" rows="2" placeholder="Paste the client's code here (starts with EGZ1:)" class="flex-1 mt-2 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs resize-none font-mono"></textarea>
+                                <textarea id="intakePaste" rows="2" placeholder="Paste the client's message or code here" class="flex-1 mt-2 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs resize-none font-mono"></textarea>
                                 <button type="button" onclick="applyIntakeCode()" class="shrink-0 mt-2 px-3 py-2 border border-black rounded-lg text-[10px] uppercase tracking-wider hover:bg-black hover:text-white transition">Fill line</button>
                             </div>
                         </div>
@@ -576,7 +538,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Material</label>
-                                <select id="calcMaterial" onchange="onCalcMaterialChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                                <select id="calcMaterial" onchange="onCalcMaterialChange(true)" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
                                     <option value="chrome">Cobalt Chrome</option>
                                     <option value="titanium">Titanium</option>
                                     <option value="silver">Sterling Silver 925</option>
@@ -604,7 +566,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                                 <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Gold EGP/g</label>
                                 <input type="number" id="calcGoldPrice" placeholder="Type today's rate here" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
                             </div>
-                            <div class="col-span-2 text-[10px] text-gray-400">Only needed for gold lines. If today's rate is saved in the <b>Today's rates</b> panel above, it fills in automatically.</div>
+                            <div class="col-span-2 text-[10px] text-gray-400">Asked once per day when you choose Gold, then saved on this device. You can still edit it here.</div>
                         </div>
 
                         <div>
@@ -641,7 +603,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                                 </div>
                                 <div>
                                     <label class="block text-[10px] text-gray-500 mb-1">Type</label>
-                                    <select id="calcAccentType" onchange="onCalcAccentTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                    <select id="calcAccentType" onchange="onCalcAccentTypeChange(true)" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
                                         <option value="cz">CZ</option>
                                         <option value="moissanite">Moissanite</option>
                                         <option value="labgrown">Lab-Grown</option>
@@ -665,7 +627,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             <div id="calcAccentCustomPriceWrap" class="hidden">
                                 <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/stone)</label>
                                 <input type="number" id="calcAccentCustomPrice" placeholder="Type today's rate" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                <p class="text-[10px] text-gray-400 mt-1">Only for Lab-Grown / Natural — filled from <b>Today's rates</b> when saved.</p>
+                                <p class="text-[10px] text-gray-400 mt-1">Asked once per day for Lab-Grown / Natural, then saved on this device.</p>
                             </div>
                         </div>
 
@@ -674,7 +636,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             <div id="calcFullIcedNormalFields" class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="block text-[10px] text-gray-500 mb-1">Type</label>
-                                    <select id="calcFullType" onchange="onCalcFullTypeChange()" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
+                                    <select id="calcFullType" onchange="onCalcFullTypeChange(true)" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
                                         <option value="cz">CZ</option>
                                         <option value="moissanite">Moissanite</option>
                                         <option value="labgrown">Lab-Grown</option>
@@ -695,7 +657,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             <div id="calcFullCustomPriceWrap" class="hidden">
                                 <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/tooth)</label>
                                 <input type="number" id="calcFullCustomPrice" placeholder="Type today's rate" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                <p class="text-[10px] text-gray-400 mt-1">Only for Lab-Grown / Natural — filled from <b>Today's rates</b> when saved.</p>
+                                <p class="text-[10px] text-gray-400 mt-1">Asked once per day for Lab-Grown / Natural, then saved on this device.</p>
                             </div>
                         </div>
 
@@ -730,7 +692,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             </div>
                         </div>
 
-                        <button type="button" id="addLineBtn" onclick="addDesignLine()" class="w-full py-2.5 border border-black text-black rounded-lg hover:bg-black hover:text-white transition text-[10px] font-medium uppercase tracking-wider">＋ Add design line to quote</button>
+                        <button type="button" id="addLineBtn" onclick="addDesignLine()" class="w-full py-2.5 border border-black text-black rounded-lg hover:bg-black hover:text-white transition text-[10px] font-medium uppercase tracking-wider">+ Add design line to quote</button>
                     </div>
 
                     <!-- Order level settings -->
@@ -783,6 +745,22 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                             <button onclick="insertCalcResultIntoPricingChat()" class="flex-1 py-2 bg-black text-white rounded-lg text-[10px] uppercase tracking-wider hover:bg-gray-800">Add to AI Chat</button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's rate window (opens only when a rate is needed) -->
+    <div id="rateModal" class="fixed inset-0 z-[70] hidden">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeRate()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div class="bg-white w-full max-w-xs rounded-xl shadow-2xl p-5 pointer-events-auto">
+                <h3 id="rateTitle" class="font-semibold text-sm"></h3>
+                <p id="rateHint" class="text-[11px] text-gray-400 mt-1"></p>
+                <input id="rateInput" type="number" inputmode="decimal" onkeydown="if(event.key==='Enter')saveRate()" class="w-full mt-3 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400">
+                <div class="flex gap-2 mt-4">
+                    <button type="button" onclick="closeRate()" class="flex-1 py-2.5 border border-gray-300 rounded-lg text-[11px] uppercase tracking-wider">Cancel</button>
+                    <button type="button" onclick="saveRate()" class="flex-1 py-2.5 bg-black text-white rounded-lg text-[11px] uppercase tracking-wider">Save</button>
                 </div>
             </div>
         </div>
@@ -914,7 +892,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
         };
         (function preloadBrand() {
             const img = new Image();
-            img.onload = () => { BRAND.ready = true; };
+            img.onload = () => { try { const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0); BRAND.flat = c.toDataURL("image/png"); } catch (e) {} BRAND.ready = true; };
             img.src = BRAND.black;
             BRAND.img = img;
             const link = document.createElement("link");
@@ -922,6 +900,62 @@ List every rule explicitly with real numbers — the AI can only calculate corre
             link.href = BRAND.favicon;
             document.head.appendChild(link);
         })();
+
+
+/* ---------- repo images: materials/ levels/ plating/ (auto-matched by file name) ---------- */
+const IMG = (() => {
+    const BASES = ["https://egygrillz.com/", "https://raw.githubusercontent.com/egygrillz/egygriilz/main/"];
+    const A = {
+        materials: { chrome: ["chrome", "cobalt"], titanium: ["titanium"], silver: ["silver", "sterling", "925"], gold: ["gold"] },
+        levels: { "0.5": ["0.5", "05", "bars", "bar"], "1": ["1", "solid"], "2": ["2", "open", "openface"], "3": ["3", "mid", "middetail"], "4": ["4", "complex"], "5": ["5", "scorpion", "heavy"], "6": ["6", "ultimate"] },
+        plating: { none: ["none", "no", "without"], blackgold: ["black", "blackgold"], whitegold: ["white", "whitegold"], rosegold: ["rose", "rosegold", "pink"], silverplating: ["silver", "silverplating"] }
+    };
+    const KEY = "egygz_img_index_v2";
+    let files = {};
+    const ready = (async () => {
+        try { const c = JSON.parse(localStorage.getItem(KEY) || "null"); if (c && Date.now() - c.t < 6 * 3600e3) { files = c.f; return; } } catch (e) {}
+        try {
+            const out = {};
+            await Promise.all(Object.keys(A).map(async f => {
+                const r = await fetch("https://api.github.com/repos/egygrillz/egygriilz/contents/" + f + "?ref=main");
+                if (r.ok) out[f] = (await r.json()).filter(x => x.type === "file" && /\.(jpe?g|png|webp|avif|gif)$/i.test(x.name)).map(x => x.name);
+            }));
+            if (Object.keys(out).length) { files = out; try { localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), f: out })); } catch (e) {} }
+        } catch (e) {}
+    })();
+    const test = (b, a) => /^[0-9.]+$/.test(a) ? new RegExp("(^|[^0-9.])" + a.replace(/\./g, "\\.") + "($|[^0-9.])").test(b) : b.replace(/[^a-z]/g, "").includes(a);
+    const find = (f, k) => (files[f] || []).find(n => { const b = n.toLowerCase().replace(/\.[a-z0-9]+$/, ""); return (A[f][k] || [k]).some(a => test(b, a)); });
+    function hydrate(root) {
+        (root || document).querySelectorAll("img[data-rf]").forEach(im => {
+            if (im.dataset.on) return; im.dataset.on = 1;
+            const f = im.dataset.rf, k = im.dataset.rk, n = find(f, k), c = [];
+            const names = n ? [n] : ["jpg", "jpeg", "png", "webp"].map(e => k + "." + e);
+            BASES.forEach(b => names.forEach(x => c.push(b + f + "/" + encodeURIComponent(x))));
+            let i = 0;
+            im.onload = () => { im.hidden = false; };
+            im.onerror = () => { if (++i < c.length) im.src = c[i]; else im.remove(); };
+            im.src = c[0];
+        });
+    }
+    return { ready, hydrate };
+})();
+
+/* ---------- reliable copy (clipboard API, then iOS/WebView-safe fallback) ---------- */
+async function robustCopy(text) {
+    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; } } catch (e) {}
+    try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.setAttribute("readonly", "");
+        ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+        document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+    } catch (e) { return false; }
+}
+
+const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+const stripEmoji = t => String(t == null ? "" : t).replace(EMOJI_RE, "");
 
         // ==================== THEME (light / dark / auto) ====================
         const THEME_KEY = "egygz_theme";
@@ -1416,7 +1450,7 @@ ${currentSettings.materials || ""}
 
         function clientFacingText(raw) {
             // Strip moderator-only notes so paste to Instagram/WhatsApp is clean
-            return String(raw || "")
+            return stripEmoji(raw)
                 .split("\n")
                 .filter(line => !/^\s*\[MODERATOR:/i.test(line))
                 .join("\n")
@@ -1426,25 +1460,8 @@ ${currentSettings.materials || ""}
         async function copyText(text, label) {
             const t = String(text || "");
             if (!t) { showToast("Nothing to copy", true); return; }
-            try {
-                await navigator.clipboard.writeText(t);
-                showToast(label || "Copied");
-            } catch {
-                // Fallback for older WebViews
-                const ta = document.createElement("textarea");
-                ta.value = t;
-                ta.style.position = "fixed";
-                ta.style.left = "-9999px";
-                document.body.appendChild(ta);
-                ta.select();
-                try {
-                    document.execCommand("copy");
-                    showToast(label || "Copied");
-                } catch {
-                    showToast("Copy failed — long-press the message", true);
-                }
-                document.body.removeChild(ta);
-            }
+            if (await robustCopy(t)) showToast(label || "Copied");
+            else showToast("Copy failed - select the text and copy it manually", true);
         }
 
         function renderMessage(data) {
@@ -2039,11 +2056,11 @@ ${kb || "(not configured)"}
             const cancelBtn = document.getElementById("editorCancelEdit");
             if (mode === "edit") {
                 title.innerText = "Editing line";
-                btn.innerText = "✓ Update this line";
+                btn.innerText = "Update this line";
                 cancelBtn.classList.remove("hidden");
             } else {
                 title.innerText = "Line editor";
-                btn.innerText = "＋ Add design line to quote";
+                btn.innerText = "+ Add design line to quote";
                 cancelBtn.classList.add("hidden");
             }
         }
@@ -2108,7 +2125,7 @@ ${kb || "(not configured)"}
             if (material === "gold") {
                 line.karat = document.getElementById("calcKarat").value;
                 const gp = parseFloat(document.getElementById("calcGoldPrice").value);
-                if (!gp || gp <= 0) return { error: "Enter today's gold EGP/g for the gold line" };
+                if (!gp || gp <= 0) return { needRates: "GOLD", error: "Enter today's gold EGP/g for the gold line" };
                 line.goldPrice = gp;
                 const k = CALC_GOLD_KARAT[line.karat];
                 base = (310 + 1.15 * gp * k.purity) * k.margin;
@@ -2166,8 +2183,9 @@ ${kb || "(not configured)"}
             const r = computeLineFromEditor();
             if (r.error) {
                 showToast(r.error, true);
-                if (r.needRates === "LAB_ACCENT") { focusRatesPanel("#rateLabAccent"); applyTodayRatesToEditor("accent"); }
-                if (r.needRates === "LAB_FULL") { focusRatesPanel("#rateLabFull"); applyTodayRatesToEditor("full"); }
+                if (r.needRates === "GOLD") askRate("gold");
+                if (r.needRates === "LAB_ACCENT") askRate(document.getElementById("calcAccentType").value === "natural" ? "natAccent" : "labAccent");
+                if (r.needRates === "LAB_FULL") askRate(document.getElementById("calcFullType").value === "natural" ? "natFull" : "labFull");
                 return null;
             }
             return r.line;
@@ -2274,7 +2292,7 @@ ${kb || "(not configured)"}
                         </div>
                         <span class="text-[10px] text-gray-400 shrink-0">${info.pct ? "+" + info.pct + "%" : "half base"}</span>
                     </div>
-                    ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(info.name)} example" class="example-thumb mt-2">` : ""}
+                    <img data-rf="levels" data-rk="${key}" alt="${escapeHtml(info.name)} example" class="example-thumb mt-2" hidden>
                     <div class="flex flex-wrap gap-1 mt-2">
                         ${info.examples.map(ex => `<span class="text-[9px] text-gray-500 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">${escapeHtml(ex)}</span>`).join("")}
                     </div>
@@ -2293,17 +2311,18 @@ ${kb || "(not configured)"}
         function toggleLevelGuide() {
             const el = document.getElementById("calcLevelGuide");
             const willShow = el.classList.contains("hidden");
-            if (willShow) renderLevelGuide();
+            if (willShow) { renderLevelGuide(); IMG.ready.then(() => IMG.hydrate(el)); }
             el.classList.toggle("hidden", !willShow);
         }
 
-        function onCalcMaterialChange() {
+        function onCalcMaterialChange(user) {
             const material = document.getElementById("calcMaterial").value;
             const isGold = material === "gold";
             document.getElementById("calcGoldWrap").classList.toggle("hidden", !isGold);
 
             if (isGold) {
                 autoFillGoldPriceIfEmpty();
+                if (user === true && !getTodayRates().gold) askRate("gold");
             }
 
             const noStones = material === "chrome" || material === "titanium";
@@ -2337,16 +2356,18 @@ ${kb || "(not configured)"}
             }
         }
 
-        function onCalcAccentTypeChange() {
+        function onCalcAccentTypeChange(user) {
             const type = document.getElementById("calcAccentType").value;
             document.getElementById("calcAccentCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
             autoFillStonePrice("accent");
+            if (user === true && (type === "labgrown" || type === "natural")) { const k = type === "labgrown" ? "labAccent" : "natAccent"; if (!getTodayRates()[k]) askRate(k); }
         }
 
-        function onCalcFullTypeChange() {
+        function onCalcFullTypeChange(user) {
             const type = document.getElementById("calcFullType").value;
             document.getElementById("calcFullCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
             autoFillStonePrice("full");
+            if (user === true && (type === "labgrown" || type === "natural")) { const k = type === "labgrown" ? "labFull" : "natFull"; if (!getTodayRates()[k]) askRate(k); }
         }
 
         function readOrderSettings() {
@@ -2460,87 +2481,42 @@ ${kb || "(not configured)"}
         const LS_PREFIX = "egygz_pricing_v1_";
         function lsQuoteKey() { return LS_PREFIX + todayKey(); }
 
-        function getTodayRates() {
-            const val = id => {
-                const el = document.getElementById(id);
-                if (!el) return "";
-                return el.value === "" ? "" : parseFloat(el.value);
-            };
-            return {
-                gold: val("rateGold"),
-                labAccent: val("rateLabAccent"),
-                natAccent: val("rateNatAccent"),
-                labFull: val("rateLabFull"),
-                natFull: val("rateNatFull")
-            };
+        let RATES = { gold: "", labAccent: "", natAccent: "", labFull: "", natFull: "" };
+        function getTodayRates() { return { ...RATES }; }
+        function setRateInputs(r) { if (r) RATES = { ...RATES, ...r }; }
+        function renderTodayRatesPanel() {}
+        const RATE_META = {
+            gold: { t: "Today's gold rate", h: "EGP per gram", el: "calcGoldPrice" },
+            labAccent: { t: "Today's lab-grown stone rate", h: "EGP per stone", el: "calcAccentCustomPrice" },
+            natAccent: { t: "Today's natural stone rate", h: "EGP per stone", el: "calcAccentCustomPrice" },
+            labFull: { t: "Today's lab-grown rate, full iced", h: "EGP per tooth", el: "calcFullCustomPrice" },
+            natFull: { t: "Today's natural rate, full iced", h: "EGP per tooth", el: "calcFullCustomPrice" }
+        };
+        let rateKind = null;
+        function askRate(kind) {
+            rateKind = kind;
+            const m = RATE_META[kind], inp = document.getElementById("rateInput");
+            document.getElementById("rateTitle").innerText = m.t;
+            document.getElementById("rateHint").innerText = m.h + " - saved on this device for today.";
+            inp.value = RATES[kind] || "";
+            document.getElementById("rateModal").classList.remove("hidden");
+            setTimeout(() => inp.focus(), 60);
         }
-
-        function setRateInputs(rates) {
-            if (!rates) return;
-            const set = (id, v) => {
-                const el = document.getElementById(id);
-                if (el && v !== undefined && v !== null && v !== "") el.value = v;
-            };
-            set("rateGold", rates.gold);
-            set("rateLabAccent", rates.labAccent);
-            set("rateNatAccent", rates.natAccent);
-            set("rateLabFull", rates.labFull);
-            set("rateNatFull", rates.natFull);
-        }
-
-        function toggleRatesPanel() {
-            const panel = document.getElementById("ratesPanel");
-            const willShow = panel.classList.contains("hidden");
-            panel.classList.toggle("hidden", !willShow);
-            document.getElementById("ratesChevron").innerText = willShow ? "▴" : "▾";
-        }
-
-        function focusRatesPanel(selector) {
-            const panel = document.getElementById("ratesPanel");
-            if (panel.classList.contains("hidden")) toggleRatesPanel();
-            const el = document.querySelector(selector);
-            if (el) {
-                el.focus();
-                el.classList.add("ring-2", "ring-black/20");
-                setTimeout(() => el.classList.remove("ring-2", "ring-black/20"), 1500);
+        function closeRate() { document.getElementById("rateModal").classList.add("hidden"); }
+        function saveRate() {
+            const v = parseFloat(document.getElementById("rateInput").value);
+            if (!v || v <= 0) { showToast("Enter a valid rate", true); return; }
+            RATES[rateKind] = v;
+            const el = document.getElementById(RATE_META[rateKind].el);
+            if (el) el.value = v;
+            if (rateKind === "gold") {
+                let n = 0;
+                calcLines.forEach(l => { if (l.material === "gold") { l.goldPrice = v; recalcLineObject(l); n++; } });
+                if (n) renderLinesList();
             }
-        }
-
-        function renderTodayRatesPanel(changed) {
-            const r = getTodayRates();
-            const bits = [];
-            if (r.gold) bits.push(`gold ${r.gold} EGP/g`);
-            if (r.labAccent || r.natAccent || r.labFull || r.natFull) bits.push("stone rates set");
-            const el = document.getElementById("ratesStatus");
-            if (el) el.innerText = bits.length ? `· ${bits.join(" · ")}` : "· not set";
-            if (changed) showToast("Rates updated");
-        }
-
-        function onTodayRatesInput() {
-            const r = getTodayRates();
-            // Keep gold lines in sync with the day's rate automatically.
-            let touched = false;
-            calcLines.forEach(l => {
-                if (l.material === "gold" && r.gold) {
-                    l.goldPrice = r.gold;
-                    recalcLineObject(l);
-                    touched = true;
-                }
-            });
-            if (touched) renderLinesList();
-            renderTodayRatesPanel(false);
             persistQuoteState();
-        }
-
-        function applyGoldRateToAllLines() {
-            const r = getTodayRates();
-            if (!r.gold) { showToast("Enter today's gold price first", true); focusRatesPanel("#rateGold"); return; }
-            let count = 0;
-            calcLines.forEach(l => {
-                if (l.material === "gold") { l.goldPrice = r.gold; recalcLineObject(l); count++; }
-            });
-            refreshLinesUI();
-            showToast(count ? `Gold rate applied to ${count} line${count > 1 ? "s" : ""}` : "No gold lines in this quote", count === 0);
+            closeRate();
+            showToast("Rate saved for today");
         }
 
         function autoFillGoldPriceIfEmpty() {
@@ -2695,7 +2671,7 @@ ${kb || "(not configured)"}
 
         // jsPDF's built-in fonts are Latin-only: Arabic/special characters would come out
         // as garbage. Map what we can, drop the rest, and warn staff once.
-        const PDF_CHAR_MAP = { "—": "-", "–": "-", "·": "-", "×": "x", "’": "'", "‘": "'", "“": '"', "”": '"', "…": "...", "•": "-", "✓": "v", "،": ",", "؟": "?" };
+        const PDF_CHAR_MAP = { "—": "-", "–": "-", "·": "-", "×": "x", "’": "'", "‘": "'", "“": '"', "”": '"', "…": "...", "•": "-", "،": ",", "؟": "?" };
         let pdfStrippedChars = 0;
         function pdfSafe(str) {
             const src = String(str == null ? "" : str);
@@ -2734,14 +2710,14 @@ ${kb || "(not configured)"}
                 try {
                     // keep the mark's aspect ratio
                     const iw = BRAND.img.naturalWidth || 480, ih = BRAND.img.naturalHeight || 314;
-                    const lh = 30, lw = Math.min(64, lh * (iw / ih));
-                    doc.addImage(BRAND.black, "PNG", M, y - 22, lw, lh);
+                    const lh = 38, lw = Math.min(70, lh * (iw / ih));
+                    doc.addImage(BRAND.flat || BRAND.black, "PNG", M, y - 26, lw, lh);
                     logoDrawn = true;
                 } catch (e) { logoDrawn = false; }
             }
             if (!logoDrawn) drawPdfLogo(doc, M, y - 20, 34);
             doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(0);
-            const brandX = logoDrawn ? M + 74 : M + 46;
+            const brandX = logoDrawn ? M + 80 : M + 46;
             T("EGYGRILLZ", brandX, y - 6);
             doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(130);
             T("Beyond Jewelry.", brandX, y + 6);
@@ -2955,18 +2931,18 @@ ${kb || "(not configured)"}
             return parts.length ? `${base}${base.includes("?") ? "&" : "?"}${parts.join("&")}` : base;
         }
 
-        // Copies a fresh one-time link (the intake page burns it after one use).
+        // Link only - nothing else in the clipboard.
         function copyIntakeLink() {
             const oneTime = currentSettings.oneTimeLinks !== false;
             const token = oneTime ? newIntakeToken() : null;
             renderIntakeLinkStatus();
             const url = intakePageUrl(token);
-            copyText(url, oneTime ? "One-time link copied — it works once" : "Intake link copied");
             const preview = document.getElementById("intakeLinkPreview");
             if (preview) preview.innerText = url;
+            copyText(url, oneTime ? "Link copied (works once)" : "Link copied");
         }
 
-        // Ready-to-send WhatsApp / Instagram message — no more boring bare links.
+        // Full invitation message - no emojis.
         function copyIntakeInvite() {
             const oneTime = currentSettings.oneTimeLinks !== false;
             const token = oneTime ? newIntakeToken() : null;
@@ -2974,13 +2950,25 @@ ${kb || "(not configured)"}
             const url = intakePageUrl(token);
             const preview = document.getElementById("intakeLinkPreview");
             if (preview) preview.innerText = url;
-            const msg = `Hi 👋 — this is EGYGRILLZ.
-To prepare an accurate quote for your piece, pick your design details here (takes about a minute):
+            const rule = "\u2500".repeat(16);
+            const msg = `EGYGRILLZ
+Beyond Jewelry
+${rule}
+
+Welcome. It would be our pleasure to create your piece.
+
+To prepare an accurate quotation, please share your design details through your private link. It takes about a minute.
+
 ${url}
 
-Once you finish you'll get a short code — just send it back here and we'll take it from there.
-Your answers stay with the studio only.`;
-            copyText(msg, "Invite message copied — paste it in the chat");
+When you have finished, you will receive a short code. Kindly send it back to us here and we will take it from there.
+
+Your details remain private to the studio.
+
+With appreciation,
+EGYGRILLZ
+Custom Dental Jewelry, Cairo`;
+            copyText(msg, "Invitation copied");
         }
 
         function b64urlDecode(str) {
@@ -2996,6 +2984,8 @@ Your answers stay with the studio only.`;
         function decodeIntakeCode(raw) {
             let s = String(raw || "").trim();
             if (!s) return null;
+            const em = s.match(/EGZ1[:\uff1a]\s*([A-Za-z0-9\-_=+\/]+)/i);
+            if (em) s = em[1];
             const hashMatch = s.match(/[#?&]d=([A-Za-z0-9\-_=+\/%]+)/);
             if (hashMatch) s = decodeURIComponent(hashMatch[1]);
             s = s.replace(/^EGZ1[:\uff1a]\s*/i, "");
@@ -3083,7 +3073,8 @@ Your answers stay with the studio only.`;
                 showToast("Couldn't read that code — copy it exactly as the client sent it", true);
                 return;
             }
-            const code = box.value.trim().replace(/\s+/g, "");
+            const em = box.value.match(/EGZ1[:\uff1a]\s*([A-Za-z0-9\-_=+\/]+)/i);
+            const code = em ? em[1] : box.value.trim().replace(/\s+/g, "");
             if (calcLines.some(l => l.importedCode === code)) {
                 showToast("This intake code is already in the quote");
                 return;
@@ -3186,6 +3177,7 @@ Your answers stay with the studio only.`;
 
         /** Clean spacing + safe HTML for chat bubbles */
         function formatMessageHtml(text) {
+            text = stripEmoji(text);
             let t = String(text == null ? "" : text);
             t = t.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
             // trim outer whitespace
