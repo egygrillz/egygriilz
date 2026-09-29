@@ -441,7 +441,9 @@ const IMG = (() => {
         (root || document).querySelectorAll("img[data-rf]").forEach(im => {
             if (im.dataset.on) return; im.dataset.on = 1;
             const f = im.dataset.rf, k = im.dataset.rk, n = find(f, k), c = [];
-            const names = n ? [n] : ["jpg", "jpeg", "png", "webp"].map(e => k + "." + e);
+            const cap = w => w.charAt(0).toUpperCase() + w.slice(1);
+            const al = (A[f][k] || [k]).slice(0, 3);
+            const names = n ? [n] : al.flatMap(a => [a, cap(a)]).flatMap(a => ["jpg", "jpeg", "png", "webp"].map(e => a + "." + e));
             BASES.forEach(b => names.forEach(x => c.push(b + f + "/" + encodeURIComponent(x))));
             let i = 0;
             im.onload = () => { im.hidden = false; };
