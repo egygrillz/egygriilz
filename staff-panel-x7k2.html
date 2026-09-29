@@ -929,7 +929,9 @@ const IMG = (() => {
         (root || document).querySelectorAll("img[data-rf]").forEach(im => {
             if (im.dataset.on) return; im.dataset.on = 1;
             const f = im.dataset.rf, k = im.dataset.rk, n = find(f, k), c = [];
-            const names = n ? [n] : ["jpg", "jpeg", "png", "webp"].map(e => k + "." + e);
+            const cap = w => w.charAt(0).toUpperCase() + w.slice(1);
+            const al = (A[f][k] || [k]).slice(0, 3);
+            const names = n ? [n] : al.flatMap(a => [a, cap(a)]).flatMap(a => ["jpg", "jpeg", "png", "webp"].map(e => a + "." + e));
             BASES.forEach(b => names.forEach(x => c.push(b + f + "/" + encodeURIComponent(x))));
             let i = 0;
             im.onload = () => { im.hidden = false; };
@@ -1229,7 +1231,7 @@ CRITICAL:
 - If staff paste a client intake code, treat every value in it as answered — never re-ask those.
 - Never re-ask what was already answered in this thread.
 - Gold EGP/g and lab-grown/natural diamond rates: ASK for today's numbers before a final total.
-- Same math every time. Round final totals UP to nearest 50 EGP.
+- Same math every time. Round final totals UP to nearest 50 EGP, but NEVER mention rounding to the client - just state the final total.
 - IMPORTANT: once you have all the details, give your best breakdown and total, but also explicitly tell staff to confirm the exact total on the built-in "Exact Calculator" tab (deterministic, never wrong) before quoting the client — your arithmetic is a draft, the calculator is the source of truth.
 - If a message starts with "[Exact Calculator result — use this number]", that number is already verified — restate it as the confirmed quote instead of recalculating.
 
@@ -2435,9 +2437,8 @@ ${kb || "(not configured)"}
             out.push(`Lines subtotal: ${formatMoney(linesSubtotal)} EGP`);
             out.push(`Timeline: ${CALC_LABELS.timeline[timeline]} (+${tlPct}%) = ${formatMoney(tlAmount)} EGP`);
             out.push(`Mold: ${CALC_LABELS.mold[mold]} → ${moldCost} EGP`);
-            out.push(`Pre-round: ${formatMoney(preRound)} EGP`);
             out.push("");
-            out.push(`QUOTE TOTAL (rounded up to 50): ${total.toLocaleString()} EGP`);
+            out.push(`QUOTE TOTAL: ${total.toLocaleString()} EGP`);
             const depositPct = parseInt(document.getElementById("calcDepositPct").value, 10) || 0;
             if (depositPct) {
                 const dep = Math.round(total * depositPct / 100);
@@ -2791,8 +2792,6 @@ ${kb || "(not configured)"}
             row(q.lines.length > 1 ? `Subtotal (${q.lines.length} designs)` : "Subtotal", `${formatMoney(q.sub)} EGP`, { indent: M });
             row(`Timeline \u2014 ${q.timeline}${q.tlPct ? ` (+${q.tlPct}%)` : " (no surcharge)"}`, `${formatMoney(q.tlAmount)} EGP`, { indent: M });
             row(`Mold \u2014 ${q.mold}`, `${formatMoney(q.moldCost)} EGP`, { indent: M });
-            const rounding = q.total - (q.sub + q.tlAmount + q.moldCost);
-            if (rounding > 0.001) row("Rounding to nearest 50", `${formatMoney(rounding)} EGP`, { indent: M });
             y += 6;
 
             if (y > pageH - 130) { doc.addPage(); y = 60; }
