@@ -72,30 +72,73 @@
 
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
+
+    /* ===============================================================
+       FUTURE LIGHT THEME — خلفية شفافة، ألوان فاتحة، زجاج مصنفر
+       =============================================================== */
+    :root{
+      --bg:      #fbfaf7;   --bg-2:    #f5f3ee;
+      --ink:     #2b2b2b;   --ink-2:   #6b6b6b;
+      --line:    rgba(43,43,43,0.10);
+      --line-2:  rgba(43,43,43,0.06);
+      --glass:   rgba(255,255,255,0.55);
+      --glass-2: rgba(255,255,255,0.78);
+      --gold:    #b08d4f;   --gold-l:  #e8dcc4;
+      --sage:    #6f8f7a;   --sage-l:  #dfe9e2;
+      --rose:    #b0736b;   --rose-l:  #f0e0dd;
+      --sky:     #7a91ab;   --sky-l:   #e0e8f0;
+      --shadow:  0 1px 2px rgba(43,43,43,0.04), 0 8px 24px rgba(43,43,43,0.06);
+      --shadow-l:0 1px 2px rgba(43,43,43,0.03), 0 20px 60px rgba(43,43,43,0.08);
+      --r:       14px;
+    }
+
+    /* شبكة خفيفة + وهجين — الخلفية "شفافة" بمعنى إنها مش لون مصمت */
+    body::before{
+      content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+      background:
+        radial-gradient(1100px 620px at 12% -8%,  rgba(176,141,79,0.10), transparent 62%),
+        radial-gradient(900px  520px at 92% 4%,   rgba(122,145,171,0.10), transparent 60%),
+        radial-gradient(900px  700px at 50% 108%, rgba(111,143,122,0.08), transparent 64%),
+        linear-gradient(#fbfaf7, #f7f5f0);
+    }
+    body::after{
+      content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.55;
+      background-image:
+        linear-gradient(rgba(43,43,43,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(43,43,43,0.035) 1px, transparent 1px);
+      background-size:64px 64px, 64px 64px;
+      mask-image:radial-gradient(circle at 50% 0%, #000 0%, transparent 78%);
+      -webkit-mask-image:radial-gradient(circle at 50% 0%, #000 0%, transparent 78%);
+    }
+
+    body{background:transparent;color:var(--ink);}
+
+
     body{font-family:'Arimo',sans-serif;background:#f4f4f2;color:#000;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;}
 
-    /* ── LOGIN ── */
-    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff;}
+    /* ‑‑ LOGIN ‑‑ */
+    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:transparent;}
+    .login-wrap{background:var(--glass-2);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border:1px solid var(--line);border-radius:var(--r);padding:52px 44px;box-shadow:var(--shadow-l);}
     .login-wrap{max-width:420px;width:100%;padding:0 24px;}
     .login-heading{font-family:'Playfair Display',serif;font-size:clamp(32px,6vw,48px);text-transform:uppercase;letter-spacing:4px;margin-bottom:6px;}
     .login-sub{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#888;font-style:italic;margin-bottom:40px;}
     .form-label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:8px;}
-    .form-input{width:100%;border:1px solid #ddd;background:#fff;color:#000;padding:12px 14px;font-family:'Arimo',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;border-radius:2px;}
-    .form-input:focus{border-color:#000;}
+    .form-input{width:100%;border:1px solid var(--line);background:rgba(255,255,255,0.9);color:var(--ink);border-radius:10px;padding:12px 14px;font-family:'Arimo',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;border-radius:2px;}
+    .form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(176,141,79,0.12);}
     .form-group{margin-bottom:22px;}
     .err-msg{font-size:11px;color:#c0392b;margin-bottom:14px;min-height:16px;}
     .lockout-msg{font-size:11px;color:#c0392b;background:#fff5f5;border:1px solid #f5c6c2;padding:12px 14px;margin-bottom:20px;display:none;}
-    .btn-black{background:#000;color:#fff;border:1px solid #000;padding:13px 28px;font-family:'Arimo',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:0.25s;border-radius:2px;}
-    .btn-black:hover:not(:disabled){background:#fff;color:#000;}
+    .btn-black{background:linear-gradient(135deg,#c4a468,#b08d4f);color:#fff;border:1px solid #a8874a;border-radius:10px;box-shadow:0 3px 12px rgba(176,141,79,0.28);letter-spacing:2.4px;padding:13px 28px;font-family:'Arimo',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:0.25s;border-radius:2px;}
+    .btn-black:hover:not(:disabled){background:#fff;color:var(--gold);border-color:var(--gold);box-shadow:0 4px 16px rgba(176,141,79,0.18);}
     .btn-black:disabled{background:#ccc;border-color:#ccc;cursor:not-allowed;}
 
-    /* ── APP LAYOUT ── */
+    /* ‑‑ APP LAYOUT ‑‑ */
     #app{display:none;}
     .app-layout{display:flex;min-height:100vh;}
 
     /* SIDEBAR */
-    .sidebar{width:240px;background:#fff;border-right:1px solid #eee;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:200;display:flex;flex-direction:column;transition:left 0.3s;}
-    .sidebar-logo{padding:22px 20px 16px;border-bottom:1px solid #eee;}
+    .sidebar{width:250px;background:linear-gradient(180deg,rgba(252,251,248,0.97),rgba(248,246,241,0.97));backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border-right:1px solid var(--line-2);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:200;display:flex;flex-direction:column;transition:left 0.3s;}
+    .sidebar-logo{padding:26px 22px 18px;border-bottom:1px solid var(--line-2);}
     .sidebar-logo a{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;letter-spacing:2px;text-decoration:none;color:#000;}
     .sidebar-nav{flex:1;padding:12px 0;overflow-y:auto;}
     .nav-section{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#bbb;padding:14px 20px 6px;}
@@ -110,15 +153,15 @@
     .logout-btn:hover{color:#000;}
 
     /* TOPBAR */
-    .main-area{margin-left:240px;display:flex;flex-direction:column;min-height:100vh;}
-    .topbar{position:sticky;top:0;height:56px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;padding:0 30px;z-index:100;gap:16px;}
+    .main-area{margin-left:250px;display:flex;flex-direction:column;min-height:100vh;width:calc(100% - 250px);}
+    .topbar{position:sticky;top:0;height:58px;background:var(--glass);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 42px;z-index:100;gap:16px;}
     .topbar-title{font-family:'Playfair Display',serif;font-size:18px;letter-spacing:2px;text-transform:uppercase;flex:1;}
     .hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;}
     .hamburger span{width:22px;height:1.5px;background:#000;display:block;}
     .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:190;}
 
     /* CONTENT */
-    .content{flex:1;padding:30px;max-width:1400px;}
+    .content{flex:1;padding:30px;width:100%;max-width:none;}
     .panel{display:none;}
     .panel.active{display:block;}
 
@@ -200,6 +243,14 @@
     .btn-edit:hover{border-color:#000;}
     .btn-del{background:#fff;color:#c0392b;border-color:#f5c6c2;}
     .btn-del:hover{background:#c0392b;color:#fff;border-color:#c0392b;}
+    .btn-rem{background:#fff;color:#1a6b3c;border-color:#bfe3cd;}
+    .btn-rem:hover{background:#1a6b3c;color:#fff;border-color:#1a6b3c;}
+    .btn-rem.sent{background:#e8f5ee;color:#1a6b3c;border-color:#bfe3cd;cursor:default;}
+    .btn-rem:disabled{opacity:.55;cursor:not-allowed;}
+    .rem-tag{display:inline-block;font-size:9px;letter-spacing:1px;text-transform:uppercase;
+             color:#1a6b3c;background:#e8f5ee;border:1px solid #bfe3cd;padding:2px 6px;border-radius:2px;margin-top:4px;}
+    .rem-tag.no{color:#999;background:#f7f7f7;border-color:#eee;}
+    .rem-tag.never{color:#c0392b;background:#fdf0ee;border-color:#f5c6c2;}
     .btn-outline{background:#fff;color:#000;border:1px solid #000;padding:9px 20px;font-family:'Arimo',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:0.2s;border-radius:2px;}
     .btn-outline:hover{background:#000;color:#fff;}
     .btn-outline-sm{background:#fff;color:#000;border:1px solid #000;padding:9px 20px;font-family:'Arimo',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:0.2s;border-radius:2px;}
@@ -461,6 +512,99 @@
       .grid{grid-template-columns:repeat(2,1fr) !important;}.days-grid{grid-template-columns:repeat(4,1fr);}
     }
     @media(max-width:380px){.stat-grid{grid-template-columns:1fr 1fr;}.grid{grid-template-columns:repeat(2,1fr) !important;}.clients-grid{grid-template-columns:1fr 1fr;}}
+
+    /* === الكروت والجداول — زجاج فاتح === */
+    .card,.stat-card,.panel-card,.table-wrap{
+      background:var(--glass-2);backdrop-filter:blur(16px) saturate(1.25);
+      -webkit-backdrop-filter:blur(16px) saturate(1.25);
+      border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    }
+    table{border-collapse:separate;border-spacing:0;}
+    table thead th{
+      background:rgba(43,43,43,0.025);color:var(--ink-2);
+      font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:700;
+      border-bottom:1px solid var(--line);padding:14px 14px;
+    }
+    table tbody tr{transition:background .18s ease;}
+    table tbody tr:hover{background:rgba(176,141,79,0.055);}
+    table tbody td{border-bottom:1px solid var(--line-2);padding:14px;color:var(--ink);}
+    table tbody tr:last-child td{border-bottom:none;}
+
+    /* === الأزرار === */
+    .btn-sm{border-radius:8px;padding:7px 14px;transition:all .18s ease;letter-spacing:1.2px;}
+    .btn-edit{background:rgba(255,255,255,0.9);border-color:var(--line);color:var(--ink);}
+    .btn-edit:hover{border-color:var(--gold);color:var(--gold);background:#fff;transform:translateY(-1px);}
+    .btn-del{background:transparent;border-color:var(--rose-l);color:var(--rose);}
+    .btn-del:hover{background:var(--rose);border-color:var(--rose);color:#fff;}
+    .btn-rem{background:var(--sky-l);border-color:#c9d8e6;color:var(--sky);font-weight:700;}
+    .btn-rem:hover{background:var(--sky);border-color:var(--sky);color:#fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(122,145,171,0.30);}
+
+    /* === شارات الحالة — ألوان فاتحة === */
+    .status-badge{border-radius:6px;padding:4px 10px;font-weight:700;letter-spacing:1.2px;}
+    .badge-confirmed{background:var(--sage-l);color:var(--sage);}
+    .badge-noshow{background:var(--rose-l);color:var(--rose);}
+    .badge-pending{background:var(--gold-l);color:#8a6d34;}
+    .rem-tag{border-radius:6px;padding:3px 8px;letter-spacing:1px;}
+    .rem-tag.sent-tag{background:var(--sage-l);border-color:#c5d9cc;color:var(--sage);font-weight:700;}
+    .rem-tag.no{background:rgba(43,43,43,0.03);border-color:var(--line-2);color:var(--ink-2);}
+    .rem-tag.never{background:var(--rose-l);border-color:#e8cfc9;color:var(--rose);}
+
+    /* === التنقل === */
+    .nav-item{transition:all .18s ease;border-radius:9px;margin:1px 10px;}
+    .nav-item:hover{background:rgba(176,141,79,0.07);color:var(--ink);}
+    .nav-item.active{background:linear-gradient(135deg,rgba(196,164,104,0.20),rgba(176,141,79,0.12));color:#8a6d34;font-weight:700;box-shadow:inset 0 0 0 1px rgba(176,141,79,0.22);}
+    .nav-section{letter-spacing:2.5px;}
+
+    /* === توست === */
+    .toast{border-radius:10px;box-shadow:var(--shadow-l);}
+
+    /* === المودالات === */
+    .modal{border-radius:var(--r);border:1px solid var(--line);box-shadow:var(--shadow-l);background:var(--glass-2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+    .modal-overlay{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);background:rgba(43,43,43,0.28);}
+
+    /* === التبويبات === */
+    .filter-tab{border-radius:8px;transition:all .18s ease;}
+    .filter-tab.active{background:var(--ink);color:#fff;box-shadow:0 2px 10px rgba(43,43,43,0.15);}
+
+    /* === العناوين === */
+    .topbar{background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line);}
+    .page-title{letter-spacing:3px;}
+
+    /* === ريشة صغيرة: خط ذهبي تحت عناوين الصفحات === */
+    .panel h1::after{
+      content:'';display:block;width:34px;height:2px;margin-top:12px;
+      background:linear-gradient(90deg,var(--gold),transparent);border-radius:2px;
+    }
+
+    /* === إصلاحات الكمال: خلفية موحّدة + تباعد أفضل === */
+    .topbar{background:var(--glass);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--line);}
+    .main-area,.content{background:transparent;}
+    .content{padding:34px 42px;width:100%;max-width:none;margin:0;}
+    .table-wrap{overflow-x:auto;}
+    table{min-width:100%;}
+    table thead th{white-space:nowrap;}
+    table tbody td{white-space:nowrap;vertical-align:middle;}
+    table tbody td:nth-child(3){white-space:normal;}
+    .show-toggle{border-radius:8px;overflow:hidden;border:1px solid var(--line);display:inline-flex;}
+    .show-btn{transition:all .16s ease;}
+    .show-btn.yes{color:var(--sage);}
+    .show-btn.no{color:var(--rose);}
+    /* فواصل ناعمة */
+    .panel > h1,.page-title{letter-spacing:3.5px;}
+    /* تمرير أنيق */
+    ::-webkit-scrollbar{width:10px;height:10px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:rgba(43,43,43,0.14);border-radius:6px;border:3px solid transparent;background-clip:content-box;}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(43,43,43,0.26);background-clip:content-box;}
+    /* السايدبار يغطي كامل الطول ومن غير حافة بيضا */
+    .sidebar{box-shadow:1px 0 0 var(--line-2), 12px 0 40px rgba(43,43,43,0.03);}
+    /* الموبايل */
+    @media(max-width:900px){
+      .content{padding:18px 16px;}
+      .sidebar{background:rgba(251,250,247,0.96);backdrop-filter:blur(24px);}
+      .table-wrap{border-radius:12px;}
+      table tbody td,table thead th{padding:11px 12px;}
+    }
   </style>
   <link rel="canonical" href="https://egygrillz.com/editx">
 </head>
@@ -533,12 +677,12 @@
           <div class="overview-row-2">
             <!-- Today's Appointments -->
             <div class="section-card">
-              <div class="section-card-header"><span class="section-card-title">📅 Today's Appointments</span><span id="today-date" style="font-size:11px;color:#aaa;"></span></div>
+              <div class="section-card-header"><span class="section-card-title"><i class="fas fa-calendar-day"></i> Today's Appointments</span><span id="today-date" style="font-size:11px;color:#aaa;"></span></div>
               <div id="today-appts-list"></div>
             </div>
             <!-- This Week -->
             <div class="section-card">
-              <div class="section-card-header"><span class="section-card-title">📆 This Week</span><span id="week-range" style="font-size:11px;color:#aaa;"></span></div>
+              <div class="section-card-header"><span class="section-card-title"><i class="fas fa-calendar-days"></i> This Week</span><span id="week-range" style="font-size:11px;color:#aaa;"></span></div>
               <div id="week-appts-list"></div>
             </div>
           </div>
@@ -546,11 +690,11 @@
           <!-- Calendar -->
           <div class="overview-grid">
             <div class="section-card">
-              <div class="section-card-header"><span class="section-card-title">📋 All Appointments</span></div>
+              <div class="section-card-header"><span class="section-card-title"><i class="fas fa-clipboard-list"></i> All Appointments</span></div>
               <div class="table-wrap"><table id="upcoming-table"><thead><tr><th>Date</th><th>Time</th><th>Name</th><th>Phone</th><th>Service</th><th>Status</th></tr></thead><tbody id="upcoming-tbody"></tbody></table></div>
             </div>
             <div class="section-card" style="height:fit-content;">
-              <div class="section-card-header"><span class="section-card-title">🗓 Calendar</span></div>
+              <div class="section-card-header"><span class="section-card-title"><i class="fas fa-calendar"></i> Calendar</span></div>
               <div class="mini-cal">
                 <div class="cal-nav">
                   <button class="cal-nav-btn" onclick="calPrev()">‹</button>
@@ -570,8 +714,8 @@
             <div><p class="ph-title">Appointments</p><p class="ph-sub">Manage all bookings</p></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn-outline-sm" onclick="openApptModal()">+ Add</button>
-              <button class="btn-muted2" onclick="importCSV()">⬆ Import CSV</button>
-              <button class="btn-muted2" onclick="exportApptCSV()">⬇ Export CSV</button>
+              <button class="btn-muted2" onclick="importCSV()"><i class="fas fa-arrow-up"></i> Import CSV</button>
+              <button class="btn-muted2" onclick="exportApptCSV()"><i class="fas fa-arrow-down"></i> Export CSV</button>
             </div>
           </div>
           <div class="section-card">
@@ -584,7 +728,11 @@
               </div>
               <div class="search-box"><i class="fas fa-search"></i><input placeholder="Search…" oninput="filterAppts(this.value)"></div>
             </div>
-            <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Name / Phone</th><th>Service</th><th>Showed Up</th><th>Status</th><th>Actions</th></tr></thead><tbody id="appt-tbody"></tbody></table></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+              <button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="sendAllTomorrow()"><i class="fas fa-envelope-open-text"></i> Reminders for tomorrow</button>
+              <button class="btn-muted2" onclick="loadAppointments()"><i class="fas fa-rotate"></i> Refresh</button>
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Name / Phone</th><th>Service</th><th>Showed Up</th><th>Status</th><th>Reminder</th><th>Actions</th></tr></thead><tbody id="appt-tbody"></tbody></table></div>
           </div>
           <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleCSVImport(this.files[0])">
         </div>
@@ -596,8 +744,8 @@
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
               <div class="search-box" style="min-width:180px;"><i class="fas fa-search"></i><input id="client-search" placeholder="Search…" oninput="filterClients(this.value)"></div>
               <button class="btn-outline-sm" onclick="openAddClientModal()">+ Add</button>
-              <button class="btn-muted2" onclick="importClientsCSV()">⬆ Import CSV</button>
-              <button class="btn-muted2" onclick="exportClientsCSV()">⬇ Export CSV</button>
+              <button class="btn-muted2" onclick="importClientsCSV()"><i class="fas fa-arrow-up"></i> Import CSV</button>
+              <button class="btn-muted2" onclick="exportClientsCSV()"><i class="fas fa-arrow-down"></i> Export CSV</button>
             </div>
           </div>
           <div class="clients-grid" id="clients-grid"></div>
@@ -694,6 +842,7 @@
           </div>
           <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search golds…" oninput="filterGrid('golds',this.value,document.getElementById('sort-golds').value)"></div><select class="filter-select-orig" id="sort-golds" onchange="filterGrid('golds',document.querySelector('#panel-golds .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-golds"></span></div>
           <div class="bulk-bar" id="bulk-golds"><span class="bulk-count" id="bulk-count-golds">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('golds')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('golds')">Clear</button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('golds')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">غيّر أي سعر في الكروت تحت، وبعدين دوس الزرار ده مرة واحدة</span></div>
           <div class="grid" id="grid-golds"></div>
         </div>
 
@@ -709,6 +858,7 @@
           </div>
           <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search silvers…" oninput="filterGrid('silvers',this.value,document.getElementById('sort-silvers').value)"></div><select class="filter-select-orig" id="sort-silvers" onchange="filterGrid('silvers',document.querySelector('#panel-silvers .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-silvers"></span></div>
           <div class="bulk-bar" id="bulk-silvers"><span class="bulk-count" id="bulk-count-silvers">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('silvers')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('silvers')">Clear</button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('silvers')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">غيّر أي سعر في الكروت تحت، وبعدين دوس الزرار ده مرة واحدة</span></div>
           <div class="grid" id="grid-silvers"></div>
         </div>
 
@@ -724,6 +874,7 @@
           </div>
           <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search diamonds…" oninput="filterGrid('diamonds',this.value,document.getElementById('sort-diamonds').value)"></div><select class="filter-select-orig" id="sort-diamonds" onchange="filterGrid('diamonds',document.querySelector('#panel-diamonds .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-diamonds"></span></div>
           <div class="bulk-bar" id="bulk-diamonds"><span class="bulk-count" id="bulk-count-diamonds">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('diamonds')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('diamonds')">Clear</button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('diamonds')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">غيّر أي سعر في الكروت تحت، وبعدين دوس الزرار ده مرة واحدة</span></div>
           <div class="grid" id="grid-diamonds"></div>
         </div>
 
@@ -739,6 +890,7 @@
           </div>
           <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search latest…" oninput="filterGrid('latest',this.value,document.getElementById('sort-latest').value)"></div><select class="filter-select-orig" id="sort-latest" onchange="filterGrid('latest',document.querySelector('#panel-latest .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-latest"></span></div>
           <div class="bulk-bar" id="bulk-latest"><span class="bulk-count" id="bulk-count-latest">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('latest')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('latest')">Clear</button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('latest')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">غيّر أي سعر في الكروت تحت، وبعدين دوس الزرار ده مرة واحدة</span></div>
           <div class="grid" id="grid-latest"></div>
         </div>
 
@@ -749,7 +901,7 @@
             <div style="border:1px solid #eee;padding:26px;margin-bottom:18px;border-radius:3px;">
               <p style="font-family:'Playfair Display',serif;font-size:18px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">Export Backup</p>
               <p style="font-size:13px;color:#666;margin-bottom:18px;line-height:1.7;">Downloads a full JSON file of all your items.</p>
-              <button class="btn-black" onclick="exportBackup()">⬇ Download Backup JSON</button>
+              <button class="btn-black" onclick="exportBackup()"><i class="fas fa-arrow-down"></i> Download Backup JSON</button>
             </div>
             <div style="border:1px solid #eee;padding:26px;border-radius:3px;">
               <p style="font-family:'Playfair Display',serif;font-size:18px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">Restore from Backup</p>
@@ -759,7 +911,7 @@
                 <i class="fas fa-file-import"></i><p><strong>Click to select backup JSON file</strong></p>
               </div>
               <div id="restore-preview" style="display:none;margin-top:14px;background:#f8f8f8;border:1px solid #eee;padding:14px;font-size:12px;line-height:1.8;border-radius:3px;"></div>
-              <button class="btn-black" id="restore-btn" style="display:none;margin-top:14px;" onclick="doRestore()">⬆ Restore to GitHub</button>
+              <button class="btn-black" id="restore-btn" style="display:none;margin-top:14px;" onclick="doRestore()"><i class="fas fa-arrow-up"></i> Restore to GitHub</button>
             </div>
           </div>
         </div>
@@ -794,9 +946,9 @@
           <div style="margin-bottom:22px;display:none;" id="custom-pages-section"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Custom Pages</p><div class="pages-grid" id="custom-pages-grid"></div></div>
           <div class="page-editor-wrap" id="page-editor-wrap">
             <div class="page-editor-header"><span class="page-editor-title" id="page-editor-title">—</span><div style="display:flex;gap:10px;"><button class="btn-muted2" onclick="closePageEditor()">Cancel</button><button class="btn-black" id="save-page-btn" onclick="savePage()">Save to GitHub</button></div></div>
-            <div class="editor-mode-toggle"><button class="mode-btn active" id="mode-fields" onclick="switchEditorMode('fields')">✏️ Text Fields</button><button class="mode-btn" id="mode-code" onclick="switchEditorMode('code')">🖥 Full HTML</button></div>
-            <div id="field-editor-panel"><p style="font-size:12px;color:#888;margin-bottom:16px;font-style:italic;">Edit text without touching HTML.</p><div id="fields-container"></div><p class="pages-hint">💡 All fields save together.</p></div>
-            <div id="code-editor-panel" style="display:none;"><textarea class="code-editor-area" id="page-editor-area" spellcheck="false"></textarea><p class="pages-hint">💡 Editing raw HTML.</p></div>
+            <div class="editor-mode-toggle"><button class="mode-btn active" id="mode-fields" onclick="switchEditorMode('fields')"><i class="fas fa-pen"></i>️ Text Fields</button><button class="mode-btn" id="mode-code" onclick="switchEditorMode('code')"><i class="fas fa-desktop"></i> Full HTML</button></div>
+            <div id="field-editor-panel"><p style="font-size:12px;color:#888;margin-bottom:16px;font-style:italic;">Edit text without touching HTML.</p><div id="fields-container"></div><p class="pages-hint"><i class="fas fa-lightbulb"></i> All fields save together.</p></div>
+            <div id="code-editor-panel" style="display:none;"><textarea class="code-editor-area" id="page-editor-area" spellcheck="false"></textarea><p class="pages-hint"><i class="fas fa-lightbulb"></i> Editing raw HTML.</p></div>
           </div>
         </div>
 
@@ -814,7 +966,7 @@
             <div class="form-group"><label class="form-label">Branch</label><input type="text" class="form-input" id="cfg-branch" placeholder="main"></div>
             <div class="form-group"><label class="form-label">GitHub Token</label><input type="password" class="form-input" id="cfg-token" placeholder="github_pat_xxxxxxxxxxxx" autocomplete="off"></div>
             <button class="btn-black" onclick="saveConfig()">Save Configuration</button>
-            <p class="saved-ok" id="saved-ok">✓ Configuration saved successfully</p>
+            <p class="saved-ok" id="saved-ok"> Configuration saved successfully</p>
           </div>
         </div>
 
@@ -836,7 +988,7 @@
         <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)"><input type="file" id="file-input" multiple accept="image/*,video/*" onchange="handleFiles(this.files)"><i class="fas fa-camera" id="upload-icon"></i><p id="upload-hint"><strong>Click or drag images here</strong><br>JPG, PNG, WEBP</p></div>
         <div class="image-previews" id="image-previews"></div>
       </div>
-      <div class="form-group"><label class="form-label">Tags</label><div class="tag-selector"><button type="button" class="tag-toggle" data-tag="new" onclick="toggleTag(this)">🆕 New</button><button type="button" class="tag-toggle" data-tag="featured" onclick="toggleTag(this)">⭐ Featured</button><button type="button" class="tag-toggle" data-tag="sold" onclick="toggleTag(this)">🔴 Sold</button><button type="button" class="tag-toggle" data-tag="sale" onclick="toggleTag(this)">💚 Sale</button></div></div>
+      <div class="form-group"><label class="form-label">Tags</label><div class="tag-selector"><button type="button" class="tag-toggle" data-tag="new" onclick="toggleTag(this)"><i class="fas fa-plus"></i> New</button><button type="button" class="tag-toggle" data-tag="featured" onclick="toggleTag(this)"><i class="fas fa-star"></i> Featured</button><button type="button" class="tag-toggle" data-tag="sold" onclick="toggleTag(this)"><i class="fas fa-circle" style="color:#b0736b;font-size:6px;"></i> Sold</button><button type="button" class="tag-toggle" data-tag="sale" onclick="toggleTag(this)"><i class="fas fa-circle" style="color:#6f8f7a;font-size:6px;"></i> Sale</button></div></div>
     </div>
     <div class="modal-footer"><button class="btn-muted2" onclick="closeModal()">Cancel</button><button class="btn-black" id="publish-btn" onclick="publishItem()">Publish to Site</button></div>
   </div>
@@ -912,7 +1064,7 @@
 
 
 <script data-cfasync="false">
-  // ── FIREBASE INIT ──
+  // ‑‑ FIREBASE INIT ‑‑
   var db;
   try {
     firebase.initializeApp({
@@ -927,7 +1079,7 @@
     db = firebase.firestore();
   } catch(e) { console.error('Firebase init failed:', e); }
 
-  // ── BOOT ──
+  // ‑‑ BOOT ‑‑
   (function bootApp() {
     document.getElementById('pw-input').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
     var until = isLockedOut();
@@ -948,9 +1100,9 @@
     populateHourSelects();
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // CALENDAR STATE
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var calYear, calMonth, allApptsDatesMap = {};
 
   function initCalendar(appts) {
@@ -1029,9 +1181,9 @@
     return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // OVERVIEW
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   async function loadOverview() {
     if(!db) return;
     try {
@@ -1127,9 +1279,9 @@
     });
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // APPOINTMENTS
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var allAppts = [], apptFilter = 'all', apptSearch = '';
 
   async function loadAppointments() {
@@ -1163,7 +1315,7 @@
       return (a.name||'').toLowerCase().includes(apptSearch)||(a.phone||'').includes(apptSearch)||(a.email||'').toLowerCase().includes(apptSearch)||(a.service||'').toLowerCase().includes(apptSearch);
     });
     var tbody = document.getElementById('appt-tbody');
-    if(!list.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#ccc;padding:40px;">No appointments found</td></tr>';return;}
+    if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center";color:#ccc;padding:40px;">No appointments found</td></tr>';return;}
     tbody.innerHTML = list.map(function(a){
       var yesActive = a.showedUp===true?'active':'';
       var noActive = a.showedUp===false?'active':'';
@@ -1173,11 +1325,85 @@
         '<td>'+escHtml(a.time||'')+'</td>'+
         '<td>'+escHtml(a.name||'')+'<br><small style="color:#aaa;">'+escHtml(a.phone||'')+'</small></td>'+
         '<td>'+escHtml(a.service||'')+'</td>'+
-        '<td><div class="show-toggle"><button class="show-btn yes '+yesActive+'" onclick="setShowedUp(\''+a.id+'\',true,this)">✓</button><button class="show-btn no '+noActive+'" onclick="setShowedUp(\''+a.id+'\',false,this)">✗</button></div></td>'+
+        '<td><div class="show-toggle"><button class="show-btn yes '+yesActive+'" onclick="setShowedUp(\''+a.id+'\',true,this)"><i class="fas fa-check"></i></button><button class="show-btn no '+noActive+'" onclick="setShowedUp(\''+a.id+'\',false,this)"><i class="fas fa-xmark"></i></button></div></td>'+
         '<td>'+statusBadge+'</td>'+
+        '<td>'+reminderCell(a)+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="editAppt(\''+a.id+'\')">Edit</button> <button class="btn-sm btn-del" onclick="confirmDeleteAppt(\''+a.id+'\')">Delete</button></td>'+
       '</tr>';
     }).join('');
+  }
+
+
+  // ===================================================================
+  //  REMINDERS — زر لكل موعد + حالة الإرسال
+  //  الرسالة بتتجهز في الموقع، وتفتح في Gmail — انت بس تدوس Send
+  // ===================================================================
+
+  /** هل الموعد لسه في المستقبل (أو النهاردة)؟ */
+  function isUpcoming(a){ return (a.date||'') >= new Date().toISOString().slice(0,10); }
+
+  /** خلية التذكير: زر + شارة الحالة */
+  function reminderCell(a){
+    if(!a.email){
+      return '<span class="rem-tag never">No email</span>';
+    }
+    if(a.reminderSentAt){
+      var when = String(a.reminderSentAt).slice(0,10);
+      return '<span class="rem-tag sent-tag"><i class="fas fa-check"></i> Sent</span>'+
+             '<br><span class="rem-tag">'+escHtml(when)+'</span>';
+    }
+    if(!isUpcoming(a)){
+      return '<button class="btn-sm btn-rem" onclick="openGmailFor(\''+a.id+'\')"><i class="fas fa-envelope"></i> Email</button>'+
+             '<br><span class="rem-tag no">past</span>';
+    }
+    return '<button class="btn-sm btn-rem" onclick="openGmailFor(\''+a.id+'\')"><i class="fas fa-envelope"></i> Email</button>';
+  }
+
+  /** يفتح Gmail جاهز — انت بس تدوس Send */
+  function gmailCompose(a){
+    var name  = a.name || 'there';
+    var subj  = 'Reminder — your EGYGRILLZ appointment is tomorrow';
+    var body  = 'Dear ' + name + ',\n\n'
+      + 'This is a friendly reminder that your appointment at EGYGRILLZ Studio is tomorrow.\n\n'
+      + 'Service: ' + (a.service||'—') + '\n'
+      + 'Date:    ' + (a.date||'—') + '\n'
+      + 'Time:    ' + (a.time||'—') + '\n\n'
+      + 'Location:\nInside Smart Smile Clinics\n38 Abou Bakr EL-Sdeek, Heliopolis\n'
+      + 'Floor 5, Apt 504 — Cairo\n\n'
+      + 'Need to reschedule? WhatsApp us: https://wa.me/201000353839\n\n'
+      + 'We\'ll see you soon.\nEGYGRILLZ';
+    return 'https://mail.google.com/mail/?view=cm&fs=1'
+      + '&to='   + encodeURIComponent(a.email||'')
+      + '&su='   + encodeURIComponent(subj)
+      + '&body=' + encodeURIComponent(body);
+  }
+
+  /** يحفظ إن التذكير اتبعت */
+  async function markReminderSent(a){
+    var now = new Date().toISOString();
+    a.reminderSentAt = now;
+    if(db){
+      try { await db.collection('appointments').doc(a.id).update({ reminderSentAt: now }); }
+      catch(e){ console.warn('تعذّر حفظ حالة التذكير:', e.message); }
+    }
+  }
+
+  /** إرسال جماعي: يفتح Gmail لكل مواعيد بكرة اللي لسه متبعتلهمش */
+  function sendAllTomorrow(){
+    var t = new Date(); t.setDate(t.getDate()+1);
+    var tomorrow = t.toISOString().slice(0,10);
+    var list = allAppts.filter(function(a){
+      return a.date===tomorrow && a.email && !a.reminderSentAt;
+    });
+    if(!list.length){ showToast('No appointments tomorrow need a reminder','error'); return; }
+    if(!confirm('Open Gmail for '+list.length+' client(s)?\n\nEvery message will be ready — you just press Send.')) return;
+    list.forEach(function(a, i){
+      setTimeout(function(){
+        window.open(gmailCompose(a), '_blank');
+        markReminderSent(a);
+      }, i * 700);
+    });
+    setTimeout(function(){ renderAppts(); showToast('Opened '+list.length+' Gmail tab(s)','success'); }, list.length*700 + 400);
   }
 
   async function setShowedUp(id, val, btn) {
@@ -1187,7 +1413,7 @@
       var appt = allAppts.find(function(a){return a.id===id;});
       if(appt) appt.showedUp = val;
       renderAppts();
-      showToast('✓ Updated','success');
+      showToast(' Updated','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
   }
 
@@ -1242,7 +1468,7 @@
       }
       renderAppts();
       closeApptModal();
-      showToast('✓ Saved','success');
+      showToast(' Saved','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
   }
 
@@ -1260,7 +1486,7 @@
       await db.collection('appointments').doc(_deleteApptId).delete();
       allAppts = allAppts.filter(function(a){return a.id!==_deleteApptId;});
       renderAppts();
-      showToast('✓ Deleted','success');
+      showToast(' Deleted','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
   }
 
@@ -1296,7 +1522,7 @@
           count++;
         } catch(err){ errs++; }
       }
-      showToast('✓ Imported '+count+' appointments'+(errs?' ('+errs+' errors)':''),'success');
+      showToast(' Imported '+count+' appointments'+(errs?' ('+errs+' errors)':''),'success');
       loadAppointments();
     };
     r.readAsText(file);
@@ -1310,12 +1536,12 @@
     var blob = new Blob([csv],{type:'text/csv'});
     var a = document.createElement('a'); a.href=URL.createObjectURL(blob);
     a.download='appointments-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-    showToast('✓ Exported','success');
+    showToast(' Exported','success');
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // CLIENTS
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var allClients = [], _viewingClientId = null;
 
   async function loadClients() {
@@ -1355,7 +1581,7 @@
     try {
       var snap = await db.collection('appointments').where('phone','==',c.phone||'').orderBy('date','desc').get();
       var rows='';
-      snap.forEach(function(d){ var a=d.data(); rows+='<tr><td>'+a.date+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.service||'')+'</td><td>'+(a.showedUp===true?'✓':a.showedUp===false?'✗':'–')+'</td></tr>'; });
+      snap.forEach(function(d){ var a=d.data(); rows+='<tr><td>'+a.date+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.service||'')+'</td><td>'+(a.showedUp===true?'':a.showedUp===false?'':'–')+'</td></tr>'; });
       apptHistory = rows?'<div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Showed</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p style="color:#ccc;font-size:13px;padding:16px 0;">No appointment history found.</p>';
     } catch(e){}
     body.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;"><div><label class="form-label">Phone</label><p style="font-size:14px;">'+escHtml(c.phone||'—')+'</p></div><div><label class="form-label">Email</label><p style="font-size:14px;">'+escHtml(c.email||'—')+'</p></div><div><label class="form-label">First Visit</label><p style="font-size:14px;">'+escHtml(c.firstVisit||'—')+'</p></div><div><label class="form-label">Last Visit</label><p style="font-size:14px;">'+escHtml(c.lastVisit||'—')+'</p></div><div><label class="form-label">Services</label><p style="font-size:14px;">'+escHtml((c.services||[]).join(', ')||'—')+'</p></div><div><label class="form-label">Notes</label><p style="font-size:14px;">'+escHtml(c.notes||'—')+'</p></div></div><label class="form-label" style="margin-bottom:10px;">Appointment History</label>'+apptHistory;
@@ -1399,7 +1625,7 @@
       await db.collection('clients').doc(_viewingClientId).delete();
       allClients = allClients.filter(function(c){return c.id!==_viewingClientId;});
       renderClients(allClients);
-      showToast('✓ Client deleted','success');
+      showToast(' Client deleted','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
   }
 
@@ -1417,12 +1643,12 @@
         await db.collection('clients').doc(id).update(data);
         var idx = allClients.findIndex(function(c){return c.id===id;});
         if(idx>-1) Object.assign(allClients[idx],data);
-        showToast('✓ Client updated','success');
+        showToast(' Client updated','success');
       } else {
         data.createdAt=firebase.firestore.FieldValue.serverTimestamp();data.totalAppointments=0;
         var ref = await db.collection('clients').add(data);
         allClients.unshift(Object.assign({id:ref.id},data));
-        showToast('✓ Client added','success');
+        showToast(' Client added','success');
       }
       renderClients(allClients);
       closeAddClientModal();
@@ -1452,7 +1678,7 @@
           count++;
         } catch(err){ errors++; }
       }
-      showToast('✓ Imported '+count+' clients'+(errors?' ('+errors+' errors)':''),'success');
+      showToast(' Imported '+count+' clients'+(errors?' ('+errors+' errors)':''),'success');
       loadClients();
     };
     r.readAsText(file);
@@ -1466,7 +1692,7 @@
     var csv=[headers.join(','),...rows].join('\n');
     var blob=new Blob([csv],{type:'text/csv'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='clients-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
-    showToast('✓ Exported '+allClients.length+' clients','success');
+    showToast(' Exported '+allClients.length+' clients','success');
   }
 
   function parseCSVLine(line){
@@ -1481,9 +1707,9 @@
     return result;
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // MESSAGES
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var allMessages=[], msgFilter='all', selectedMsgId=null;
 
   async function loadMessages() {
@@ -1546,13 +1772,13 @@
       allMessages=allMessages.filter(function(m){return m.id!==id;});
       selectedMsgId=null;
       document.getElementById('msg-detail').innerHTML='<div class="msg-empty">Select a message to read</div>';
-      renderMsgList();showToast('✓ Deleted','success');
+      renderMsgList();showToast(' Deleted','success');
     } catch(e){showToast('Error: '+e.message,'error');}
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // SCHEDULE SETTINGS
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var scheduleHolidays=[];
 
   function populateHourSelects(){
@@ -1614,13 +1840,13 @@
     };
     try{
       await db.collection('settings').doc('schedule').set(data,{merge:true});
-      showToast('✓ Schedule settings saved! Booking page will now show correct slots.','success');
+      showToast(' Schedule settings saved! Booking page will now show correct slots.','success');
     } catch(e){showToast('Error: '+e.message,'error');}
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // GITHUB CONFIG
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var GH={token:'',owner:'',repo:'',branch:'main'};
   function loadConfig(){
     GH.token=localStorage.getItem('eq_token')||'';GH.owner=localStorage.getItem('eq_owner')||'';
@@ -1639,9 +1865,9 @@
     loadAllPanels();
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // GITHUB API
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   async function ghFetch(path,method,body){
     method=method||'GET';
     var opts={method:method,headers:{'Authorization':'token '+GH.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'}};
@@ -1659,9 +1885,9 @@
     return ghFetch('contents/'+path,'PUT',body);
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // HELPERS
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
@@ -1676,9 +1902,9 @@
 </script>
 
 <script data-cfasync="false">
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // INVENTORY CATEGORIES
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var CAT = {
     sets:     {folder:'sets',           json:'assets/images/sets/sets.json',               prefix:'set'},
     golds:    {folder:'golds',          json:'assets/images/golds/golds.json',             prefix:'golds'},
@@ -1731,7 +1957,7 @@
     var countEl=document.getElementById('count-'+cat);if(countEl) countEl.textContent='';
   }
 
-  // ── BULK SELECT ──
+  // ‑‑ BULK SELECT ‑‑
   var bulkSelected={sets:new Set(),golds:new Set(),silvers:new Set(),diamonds:new Set(),latest:new Set()};
   function toggleBulkSelect(cat,id,checkbox){
     if(checkbox.checked) bulkSelected[cat].add(id);else bulkSelected[cat].delete(id);
@@ -1758,11 +1984,11 @@
       await putFile(json,btoa(JSON.stringify(newList,null,2)),'Bulk remove from '+cat);
       if(cache[cat]){cache[cat].list=newList;cache[cat].items=cache[cat].items.filter(function(i){return !ids.includes(i.id);});}
       bulkSelected[cat].clear();updateBulkBar(cat);renderGrid(cat);
-      showToast('✓ '+ids.length+' deleted','success');
+      showToast(' '+ids.length+' deleted','success');
     } catch(err){showToast('Error: '+err.message,'error');}
   }
 
-  // ── CATEGORY REORDER (drag cards) ──
+  // ‑‑ CATEGORY REORDER (drag cards) ‑‑
   var catReorderMode = {};
   var catDragSrc = null;
 
@@ -1838,12 +2064,12 @@
         cache[cat].list=newOrder;
         cache[cat].items.sort(function(a,b){return newOrder.indexOf(a.id)-newOrder.indexOf(b.id);});
       }
-      showToast('✓ Order saved to GitHub!','success');
+      showToast(' Order saved to GitHub!','success');
       toggleCatReorder(cat);
     } catch(e){showToast('Error: '+e.message,'error');}
   }
 
-  // ── FILTER + RENDER GRID ──
+  // ‑‑ FILTER + RENDER GRID ‑‑
   function filterGrid(cat,query,sort){
     var data=cache[cat]||{};var items=data.items||[];
     var filtered=items.filter(function(item){var q=(query||'').toLowerCase();if(!q) return true;return (item.name||'').toLowerCase().includes(q)||(item.desc||'').toLowerCase().includes(q);});
@@ -1866,7 +2092,7 @@
     var catInfo=cache[cat]||CAT[cat];var folder=catInfo.folder||cat;
     var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
     if(!items.length){renderEmptyInv(cat,'No items found.');return;}
-    var TAGS_MAP={new:{label:'New',cls:'tag-new'},featured:{label:'⭐ Featured',cls:'tag-featured'},sold:{label:'Sold',cls:'tag-sold'},sale:{label:'Sale',cls:'tag-sale'}};
+    var TAGS_MAP={new:{label:'New',cls:'tag-new'},featured:{label:'<i class="fas fa-star"></i> Featured',cls:'tag-featured'},sold:{label:'Sold',cls:'tag-sold'},sale:{label:'Sale',cls:'tag-sale'}};
     grid.innerHTML=items.map(function(item){
       var tags=getTags(cat,item.id);
       var tagHtml=tags.length?'<div class="tag-row">'+tags.map(function(t){return '<span class="tag '+(TAGS_MAP[t]&&TAGS_MAP[t].cls||'')+'">'+( TAGS_MAP[t]&&TAGS_MAP[t].label||t)+'</span>';}).join('')+'</div>':'';
@@ -1878,30 +2104,30 @@
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
       return '<div class="set-card '+(isChecked?'bulk-selected':'')+'" data-id="'+item.id+'" data-cat="'+cat+'">'+
         '<input type="checkbox" class="card-checkbox" '+(isChecked?'checked':'')+' onchange="toggleBulkSelect(\''+cat+'\',\''+item.id+'\',this)">'+
-        '<div class="mini-slider">'+(mediaHtml||'<div class="no-img"><i class="fas fa-camera"></i></div>')+(hasVideo?'<span class="video-badge">▶ Video</span>':'')+'</div>'+
+        '<div class="mini-slider">'+(mediaHtml||'<div class="no-img"><i class="fas fa-camera"></i></div>')+(hasVideo?'<span class="video-badge"><i class="fas fa-play"></i> Video</span>':'')+'</div>'+
         '<div class="set-info">'+
           '<div class="editable-field name" data-field="name" data-id="'+item.id+'" data-cat="'+cat+'" onclick="startInlineEdit(this)">'+
             '<div class="field-val name">'+escHtml(item.name||'(Unnamed)')+'</div>'+
             '<input type="text" value="'+escAttr(item.name||'')+'" placeholder="Item name">'+
-            '<span class="edit-hint">✏ click to edit name</span>'+
+            '<span class="edit-hint"><i class="fas fa-pen"></i> click to edit name</span>'+
           '</div>'+
           '<div class="editable-field desc" data-field="desc" data-id="'+item.id+'" data-cat="'+cat+'" onclick="startInlineEdit(this)">'+
             '<div class="field-val desc">'+escHtml(item.desc||'')+'</div>'+
             '<textarea placeholder="Description…">'+escHtml(item.desc||'')+'</textarea>'+
-            '<span class="edit-hint">✏ click to edit description</span>'+
+            '<span class="edit-hint"><i class="fas fa-pen"></i> click to edit description</span>'+
           '</div>'+
           tagHtml+
           '<div class="editable-field price" data-field="price" data-id="'+item.id+'" data-cat="'+cat+'" onclick="startInlineEdit(this)">'+
             '<div class="field-val price">'+escHtml(item.price||'')+'</div>'+
             '<input type="text" value="'+escAttr(item.price||'')+'" placeholder="Price">'+
-            '<span class="edit-hint">✏ click to edit price</span>'+
+            '<span class="edit-hint"><i class="fas fa-pen"></i> click to edit price</span>'+
           '</div>'+
           '<div class="inline-save-row" id="isave-'+cat+'-'+item.id+'">'+
             '<button class="btn-isave" onclick="saveInlineEdit(\''+cat+'\',\''+item.id+'\')">Save to Site</button>'+
             '<button class="btn-icancel" onclick="cancelInlineEdit(\''+cat+'\',\''+item.id+'\')">Cancel</button>'+
           '</div>'+
           '<div class="card-actions">'+
-            '<button class="btn-sm-card btn-reorder" onclick="openDrawer(\''+cat+'\',\''+item.id+'\')">⠿ Photos</button>'+
+            '<button class="btn-sm-card btn-reorder" onclick="openDrawer(\''+cat+'\',\''+item.id+'\')"><i class="fas fa-grip-lines"></i> Photos</button>'+
             '<button class="btn-sm-card btn-edit" onclick="editItem(\''+cat+'\',\''+item.id+'\')">Edit</button>'+
             '<button class="btn-sm-card btn-delete" onclick="confirmDelete(\''+cat+'\',\''+item.id+'\')">Delete</button>'+
           '</div>'+
@@ -1924,7 +2150,56 @@
     });
   }
 
-  // ── INLINE EDIT ──
+  // ‑‑ INLINE EDIT ‑‑
+
+  /** حفظ كل الأسعار المتغيّرة في قسم واحد — بضغطة واحدة */
+  async function saveAllPrices(cat){
+    var cardSel = '.set-card[data-cat="' + cat + '"]';
+    var cards = Array.prototype.slice.call(document.querySelectorAll(cardSel));
+    if(!cards.length){ showToast('مفيش كروت في القسم ده','error'); return; }
+
+    var pending = [];
+    cards.forEach(function(card){
+      var id = card.dataset.id;
+      var item = cache[cat] && cache[cat].items.find(function(i){ return i.id === id; });
+      if(!item) return;
+      var nameInp  = card.querySelector('.editable-field.name input');
+      var descInp  = card.querySelector('.editable-field.desc textarea');
+      var priceInp = card.querySelector('.editable-field.price input');
+      var name  = nameInp  ? nameInp.value.trim()  : (item.name  || '');
+      var desc  = descInp  ? descInp.value.trim()  : (item.desc  || '');
+      var price = priceInp ? priceInp.value.trim() : (item.price || '');
+      if(name === (item.name||'') && desc === (item.desc||'') && price === (item.price||'')) return;
+      pending.push({ id:id, item:item, name:name, desc:desc, price:price });
+    });
+
+    if(!pending.length){ showToast('مفيش تغييرات محتاجة حفظ',''); return; }
+    if(!confirm('حفظ ' + pending.length + ' تعديل في ' + cat + '؟')) return;
+
+    var ok = 0, fail = 0;
+    for(var i=0;i<pending.length;i++){
+      var u = pending[i];
+      try{
+        var folder = CAT[cat].folder;
+        var infoStr = 'name: ' + u.name + '\nprice: ' + u.price + '\ndescription: ' + u.desc + '\nimages: ' + (u.item.images||[]).join(',');
+        await putFile('assets/images/' + folder + '/' + u.id + '/info.txt',
+                      btoa(unescape(encodeURIComponent(infoStr))),
+                      'Update ' + u.id + ' price/name/desc');
+        u.item.name = u.name; u.item.desc = u.desc; u.item.price = u.price;
+        var card = document.querySelector(cardSel + '[data-id="' + u.id + '"]');
+        if(card){
+          var pad = function(sel, val){ var e = card.querySelector(sel); if(e) e.textContent = val; };
+          pad('.editable-field.name .field-val', u.name);
+          pad('.editable-field.desc .field-val', u.desc);
+          pad('.editable-field.price .field-val', u.price);
+          cancelInlineEdit(cat, u.id);
+        }
+        ok++;
+      }catch(e){ fail++; console.warn(e); }
+    }
+    showToast('اتحفظ ' + ok + (fail ? ' — فشل ' + fail : ''), fail ? 'error' : 'success');
+  }
+
   function startInlineEdit(fieldEl){
     if(fieldEl.querySelector('input.editing,textarea.editing')) return;
     var cat=fieldEl.dataset.cat;var id=fieldEl.dataset.id;
@@ -1969,14 +2244,14 @@
       card.querySelector('.editable-field.desc .field-val').textContent=descVal;
       card.querySelector('.editable-field.price .field-val').textContent=priceVal;
       cancelInlineEdit(cat,id);
-      showToast('✓ Saved!','success');
+      showToast(' Saved!','success');
     } catch(err){
       showToast('Error: '+err.message,'error');
       btn.textContent='Save to Site';btn.disabled=false;
     }
   }
 
-  // ── PHOTO REORDER DRAWER ──
+  // ‑‑ PHOTO REORDER DRAWER ‑‑
   var drawerCat='',drawerId='',drawerImages=[],drawerDragIdx=null;
   function openDrawer(cat,id){
     var item=cache[cat]&&cache[cat].items.find(function(i){return i.id===id;});
@@ -2036,7 +2311,7 @@
       r.readAsDataURL(file);
     });
   }
-  function finalizeDrawerUpload(btn){renderDrawerGrid();btn.disabled=false;btn.textContent='Save Order';showToast('✓ Photos added','success');}
+  function finalizeDrawerUpload(btn){renderDrawerGrid();btn.disabled=false;btn.textContent='Save Order';showToast(' Photos added','success');}
   async function saveDrawerOrder(){
     if(!drawerCat||!drawerId) return;
     var btn=document.getElementById('drawer-save-btn');btn.disabled=true;btn.textContent='Saving…';
@@ -2056,16 +2331,16 @@
           return '<img src="'+raw2+'assets/images/'+folder+'/'+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
         }).join('');
       }
-      showToast('✓ Order saved!','success');closeDrawer();
+      showToast(' Order saved!','success');closeDrawer();
     } catch(err){showToast('Error: '+err.message,'error');btn.disabled=false;btn.textContent='Save Order';}
   }
 
-  // ── TAGS ──
+  // ‑‑ TAGS ‑‑
   function toggleTag(btn){btn.classList.toggle('active');}
   function getActiveTags(){return [...document.querySelectorAll('.tag-toggle.active')].map(function(b){return b.dataset.tag;});}
   function setActiveTagsFromList(tags){document.querySelectorAll('.tag-toggle').forEach(function(b){b.classList.toggle('active',tags.includes(b.dataset.tag));});}
 
-  // ── ITEM MODAL (Add / Edit) ──
+  // ‑‑ ITEM MODAL (Add / Edit) ‑‑
   var pendingImages=[],existingImages=[],currentMode='add',currentEditId='',currentEditCat='';
   function resetModal(){
     pendingImages=[];existingImages=[];currentEditId='';currentEditCat='';
@@ -2138,14 +2413,14 @@
       existingImages.forEach(function(img,i){
         var isVid=isVideoFile(img);
         html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'existing\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'existing\')">'+
-          (isVid?'<video src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge">▶ Video</span>':'<img src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" alt="" loading="lazy" decoding="async">')+
+          (isVid?'<video src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge"><i class="fas fa-play"></i> Video</span>':'<img src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" alt="" loading="lazy" decoding="async">')+
           '<button class="remove-img" onclick="removeExisting('+i+')">×</button><span class="img-order">#'+(i+1)+'</span></div>';
       });
     }
     pendingImages.forEach(function(p,i){
       var isVid=p.file.type.startsWith('video/');
       html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'pending\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'pending\')">'+
-        (isVid?'<video src="'+p.dataUrl+'" muted playsinline></video><span class="media-type-badge">▶ Video</span>':'<img src="'+p.dataUrl+'" alt="" loading="lazy" decoding="async">')+
+        (isVid?'<video src="'+p.dataUrl+'" muted playsinline></video><span class="media-type-badge"><i class="fas fa-play"></i> Video</span>':'<img src="'+p.dataUrl+'" alt="" loading="lazy" decoding="async">')+
         '<button class="remove-img" onclick="removePending('+i+')">×</button><span class="img-order">New '+(i+1)+'</span></div>';
     });
     document.getElementById('image-previews').innerHTML=html;
@@ -2207,7 +2482,7 @@
       var updatedEntry={id:itemId,name:name,price:price,desc:desc,images:allImages};
       if(existingEntry) Object.assign(existingEntry,updatedEntry);else cache[cat].items.push(updatedEntry);
       renderGrid(cat);
-      showToast('✓ '+(currentMode==='edit'?'Changes saved!':'Published!'),'success');
+      showToast(' '+(currentMode==='edit'?'Changes saved!':'Published!'),'success');
       closeModal();
       setTimeout(function(){loadCategory(cat);},3000);
     } catch(err){
@@ -2216,7 +2491,7 @@
     }
   }
 
-  // ── DELETE ITEM ──
+  // ‑‑ DELETE ITEM ‑‑
   var _dCat,_dId;
   function confirmDelete(cat,id){
     _dCat=cat;_dId=id;
@@ -2231,14 +2506,14 @@
       var newList=(cache[_dCat]&&cache[_dCat].list||[]).filter(function(i){return i!==_dId;});
       await putFile(json,btoa(JSON.stringify(newList,null,2)),'Remove '+_dId);
       if(cache[_dCat]){cache[_dCat].list=newList;cache[_dCat].items=cache[_dCat].items.filter(function(i){return i.id!==_dId;});renderGrid(_dCat);}
-      showToast('✓ Item removed','success');
+      showToast(' Item removed','success');
       setTimeout(function(){loadCategory(_dCat);},2000);
     } catch(err){showToast('Error: '+err.message,'error');}
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // BACKUP
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   function exportBackup(){
     var backup={exported:new Date().toISOString(),categories:{}};
     for(var cat in CAT){
@@ -2248,7 +2523,7 @@
     var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);
     a.download='egygrillz-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
-    showToast('✓ Backup downloaded','success');
+    showToast(' Backup downloaded','success');
   }
   var restoreData=null;
   function previewRestore(file){
@@ -2278,14 +2553,14 @@
         await putFile(catInfo.json,btoa(JSON.stringify(data.list||[],null,2)),'Restore '+cat+' from backup');
         (data.items||[]).forEach(function(item){if(item.tags&&item.tags.length) setTags(cat,item.id,item.tags);});
       }
-      showToast('✓ Backup restored!','success');loadAllPanels();
+      showToast(' Backup restored!','success');loadAllPanels();
     } catch(err){showToast('Error: '+err.message,'error');}
-    btn.disabled=false;btn.textContent='⬆ Restore to GitHub';
+    btn.disabled=false;btn.textContent='<i class="fas fa-arrow-up"></i> Restore to GitHub';
   }
 
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // PAGES EDITOR
-  // ──────────────────────────────────────
+  // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var currentPageFile='',currentEditorMode='fields',currentPageHTML='';
   var PAGE_FIELDS={
     'about':[
@@ -2349,7 +2624,7 @@
     var content=currentEditorMode==='fields'?getFieldEditorHTML():document.getElementById('page-editor-area').value;
     currentPageHTML=content;
     var btn=document.getElementById('save-page-btn');btn.disabled=true;btn.textContent='Saving…';
-    try{await putFile(currentPageFile,btoa(unescape(encodeURIComponent(content))),'Update '+currentPageFile);showToast('✓ Page saved!','success');if(currentEditorMode==='fields') buildFieldEditor();}
+    try{await putFile(currentPageFile,btoa(unescape(encodeURIComponent(content))),'Update '+currentPageFile);showToast(' Page saved!','success');if(currentEditorMode==='fields') buildFieldEditor();}
     catch(err){showToast('Error: '+err.message,'error');}
     btn.disabled=false;btn.textContent='Save to GitHub';
   }
@@ -2377,7 +2652,7 @@
     try{
       await putFile(file,btoa(unescape(encodeURIComponent(html))),'Create '+file);
       var pages=getCustomPages();if(!pages.find(function(p){return p.file===file;})){pages.push({title:title,file:file});saveCustomPages(pages);}
-      loadCustomPages();closeNewPageModal();showToast('✓ '+file+' created!','success');
+      loadCustomPages();closeNewPageModal();showToast(' '+file+' created!','success');
       setTimeout(function(){selectPage(file.replace('.html',''),file,title);},800);
     } catch(err){showToast('Error: '+err.message,'error');}
   }
@@ -2390,10 +2665,11 @@
 
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <script data-cfasync="false">
 /* EGYGRILLZ – secure admin (drop-in override for editx.html) */
 (function () {
-  // ── Email field on the login screen ──
+  // ‑‑ Email field on the login screen ‑‑
   var pw = document.getElementById('pw-input');
   if (pw && !document.getElementById('email-input')) {
     var pwGroup = pw.closest('.form-group');
@@ -2409,7 +2685,7 @@
 
   try { firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION); } catch (e) {}
 
-  // ── Login / logout with Firebase Auth ──
+  // ‑‑ Login / logout with Firebase Auth ‑‑
   window.doLogin = async function () {
     var until = isLockedOut();
     if (until) {
@@ -2451,7 +2727,7 @@
     document.getElementById('pw-err').textContent = '';
   };
 
-  // ── Keep public "slots" in sync with appointments ──
+  // ‑‑ Keep public "slots" in sync with appointments ‑‑
   function normTime(t) {
     var m = String(t || '').trim().match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
     if (!m) return String(t || '').trim();
@@ -2494,7 +2770,7 @@
       return r;
     };
   });
-  // ── Fix: "today" / "this week" were computed in UTC (off by a day in Egypt) ──
+  // ‑‑ Fix: "today" / "this week" were computed in UTC (off by a day in Egypt) ‑‑
   function withLocalISO(fn) {
     return function () {
       var orig = Date.prototype.toISOString;
@@ -2508,7 +2784,7 @@
     if (typeof window[n] === 'function') window[n] = withLocalISO(window[n]);
   });
 
-  // ── Fix: re-sync slots right after add / edit / delete ──
+  // ‑‑ Fix: re-sync slots right after add / edit / delete ‑‑
   ['saveAppt', 'doDeleteAppt'].forEach(function (n) {
     var f = window[n];
     if (typeof f !== 'function') return;
