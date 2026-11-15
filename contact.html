@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact – EGYGRILLZ</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 
   <!-- Firebase Compat SDK -->
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -91,7 +93,7 @@
     .footer-col a { display:block; color:#333; font-size:12px; margin-bottom:8px; transition:0.3s; }
     .footer-col a:hover { color:#000; }
     .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
-    .footer-logo-img { height:10px; filter:brightness(0); }
+    .footer-logo-img { height:40px; width:auto; filter:brightness(0); }
     .ceo-wrap { display:flex; align-items:center; gap:8px; }
     .ceo-label { font-size:7px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
     .ceo-name { font-family:'Alex Brush'; font-size:14px; color:#666; }
@@ -132,6 +134,11 @@
         <p>Floor 5, Apt 504, Cairo, Egypt</p>
       </div>
       <div class="detail-item">
+        <h3>Call / WhatsApp</h3>
+        <a href="tel:+201000353839">+20 100 035 3839</a><br>
+        <a href="https://wa.me/201000353839" target="_blank" rel="noopener noreferrer" style="font-size:11px;letter-spacing:1px;">Message us on WhatsApp &rarr;</a>
+      </div>
+      <div class="detail-item">
         <h3>Email Inquiry</h3>
         <a href="mailto:egygrillz@gmail.com">egygrillz@gmail.com</a>
       </div>
@@ -146,6 +153,7 @@
         <h2>Send a Message</h2>
         <div class="form-group"><input type="text" id="c-name" placeholder="Your Name" required></div>
         <div class="form-group"><input type="email" id="c-email" placeholder="Email Address" required></div>
+        <div class="form-group"><input type="tel" id="c-phone" placeholder="Phone / WhatsApp (optional)"></div>
         <div class="form-group"><textarea id="c-message" rows="5" placeholder="How can we help?" required></textarea></div>
         <div class="error-msg" id="c-error">Oops! There was a problem. Please try again.</div>
         <button id="submit-btn" class="submit-btn" onclick="sendMessage()">Send Message</button>
@@ -189,6 +197,7 @@
     <div class="footer-bottom">
       <div class="footer-icons">
         <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+        <a href="https://wa.me/201000353839" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
         <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
@@ -235,6 +244,7 @@
       var name = (document.getElementById('c-name').value || '').trim();
       var email = (document.getElementById('c-email').value || '').trim();
       var message = (document.getElementById('c-message').value || '').trim();
+      var phone   = (document.getElementById('c-phone') ? document.getElementById('c-phone').value : '').trim();
       if (!name || !email || !message) { return; }
 
       var btn = document.getElementById('submit-btn');
@@ -249,6 +259,7 @@
           await db.collection('messages').add({
             name: name,
             email: email,
+            phone: phone,
             message: message,
             read: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
