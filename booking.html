@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Schedule – EGYGRILLZ</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
   <!-- Firebase Compat SDK -->
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -297,24 +296,25 @@
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
   </style>
+  <link rel="canonical" href="https://egygrillz.com/booking">
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-  <div class="floating-logo" id="floating-logo"><a href="index.html">EGYGRILLZ</a></div>
+  <div class="floating-logo" id="floating-logo"><a href="/">EGYGRILLZ</a></div>
 
   <header id="site-header">
-    <a href="index.html" class="logo-text">EGYGRILLZ</a>
+    <a href="/" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu" onclick="toggleMenu()"><span></span><span></span><span></span></button>
     <nav class="main-nav">
-      <a href="index.html">Home</a>
-      <a href="latest-designs.html">Latest</a>
-      <a href="booking.html" class="nav-active">Schedule</a>
-      <a href="grillz-gallery.html">Gallery</a>
-      <a href="golds.html">Golds</a>
-      <a href="diamonds.html">Diamonds</a>
-      <a href="silvers.html">Silvers</a>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
+      <a href="/">Home</a>
+      <a href="latest-designs">Latest</a>
+      <a href="booking" class="nav-active">Schedule</a>
+      <a href="grillz-gallery">Gallery</a>
+      <a href="golds">Golds</a>
+      <a href="diamonds">Diamonds</a>
+      <a href="silvers">Silvers</a>
+      <a href="about">About</a>
+      <a href="contact">Contact</a>
     </nav>
   </header>
 
@@ -444,7 +444,7 @@
         <div class="terms-container">
           <input type="checkbox" id="termsBox" onchange="checkStep3()">
           <label for="termsBox" class="terms-text">
-            I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>. I understand a 50% deposit is required to confirm the appointment.
+            I agree to the <a href="terms" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>. I understand a 50% deposit is required to confirm the appointment.
           </label>
         </div>
         <div class="btn-row">
@@ -481,8 +481,8 @@
     <h2>Book Your Appointment</h2>
     <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
     <div class="cta-btns">
-      <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
-      <a href="contact.html" class="cta-btn-outline">Contact Us</a>
+      <a href="booking" class="cta-btn-dark">Schedule Appointment</a>
+      <a href="contact" class="cta-btn-outline">Contact Us</a>
     </div>
   </div>
 
@@ -494,23 +494,23 @@
       </div>
       <div class="footer-col">
         <h4>Information</h4>
-        <a href="about.html">About Us</a>
-        <a href="booking.html">Schedule</a>
-        <a href="contact.html">Contact</a>
+        <a href="about">About Us</a>
+        <a href="booking">Schedule</a>
+        <a href="contact">Contact</a>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="shipping.html">Care &amp; Shipping</a>
+        <a href="privacy">Privacy Policy</a>
+        <a href="terms">Terms of Service</a>
+        <a href="shipping">Care &amp; Shipping</a>
       </div>
     </div>
     <div class="footer-bottom">
       <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
-        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a>
+        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
       </div>
-      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+      <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
       <div class="ceo-wrap">
         <span class="ceo-label">Founder</span>
         <span class="ceo-name">DR Mohamed Mahdy</span>
@@ -551,12 +551,6 @@
       }, { passive: true });
     })();
 
-    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-    document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-    document.addEventListener('keydown', function(e) {
-      if ((e.ctrlKey||e.metaKey) && ['s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
-      if (e.key === 'F12') e.preventDefault();
-    });
 
     // ── LOAD SETTINGS ──
     async function loadSettings() {
@@ -797,17 +791,12 @@
         } catch(emailErr) { console.warn('EmailJS error:', emailErr); }
 
         try {
-          var msg = encodeURIComponent(
-            '📅 New Appointment — EGYGRILLZ\n' +
-            '👤 ' + name + '\n' +
-            '📞 ' + phone + '\n' +
-            '✉️ ' + email + '\n' +
-            '💎 ' + selectedServices.join(', ') + '\n' +
-            '📆 ' + selectedDate + ' at ' + selectedTime +
-            (notes ? '\n📝 ' + notes : '')
-          );
-          await fetch('https://api.callmebot.com/whatsapp.php?phone=+201000353839&text=' + msg + '&apikey=5240719');
-        } catch(waErr) { console.warn('WhatsApp error:', waErr); }
+          await (window.EGYGZ ? EGYGZ.notify.booking({
+            name: name, phone: phone, email: email,
+            service: selectedServices.join(', '),
+            date: selectedDate, time: selectedTime, notes: notes || ''
+          }) : Promise.resolve());
+        } catch (e) { console.warn('notify skipped', e); }
 
         document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
         document.getElementById('step5').classList.add('active');
@@ -829,154 +818,9 @@
     });
   </script>
 
-<script data-cfasync="false">
-/* EGYGRILLZ – secure booking (drop-in override for booking.html) */
-(function () {
-  function slotDocId(date, time) { return date + '_' + String(time).replace(/[ :]/g, ''); }
+  <script src="/assets/booking-secure.js"></script>
 
-  // Public visitors now read only the "slots" collection (date + time, no personal data)
-  window.loadTakenSlots = async function () {
-    if (!db) return;
-    try {
-      var snap = await db.collection('slots').get();
-      takenSlots = {};
-      snap.forEach(function (doc) {
-        var d = doc.data();
-        if (d.date && d.time) {
-          if (!takenSlots[d.date]) takenSlots[d.date] = [];
-          takenSlots[d.date].push(d.time);
-        }
-      });
-    } catch (e) { console.warn('Could not load taken slots:', e); }
-  };
 
-  window.submitBooking = async function () {
-    if (!db) { alert('System error. Please try again.'); return; }
-
-    var btn = document.getElementById('confirm-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Confirming…';
-
-    var name = document.getElementById('f-name').value.trim();
-    var phone = document.getElementById('f-phone').value.trim();
-    var email = document.getElementById('f-email').value.trim();
-    var notes = document.getElementById('f-notes').value.trim();
-    var phoneId = phone.replace(/\D/g, '');
-    var FV = firebase.firestore.FieldValue;
-
-    // 1) Claim the slot (fails if someone else already took it)
-    try {
-      await db.collection('slots').doc(slotDocId(selectedDate, selectedTime)).set({ date: selectedDate, time: selectedTime });
-    } catch (slotErr) {
-      console.warn('Slot claim failed:', slotErr);
-      alert('Sorry, this time was just taken. Please pick another slot.');
-      selectedTime = null;
-      await loadTakenSlots();
-      btn.disabled = false;
-      btn.textContent = 'Confirm Appointment';
-      goStep(2);
-      renderTimeSlots(selectedDate);
-      document.getElementById('step2-next').disabled = true;
-      return;
-    }
-
-    // 2) Create the appointment
-    try {
-      await db.collection('appointments').add({
-        service: selectedServices.join(', '),
-        date: selectedDate,
-        time: selectedTime,
-        name: name,
-        phone: phone,
-        email: email,
-        notes: notes,
-        status: 'confirmed',
-        showedUp: null,
-        createdAt: FV.serverTimestamp()
-      });
-    } catch (err) {
-      console.error('Booking error:', err);
-      alert('Oops! There was a problem. Please try again.');
-      btn.disabled = false;
-      btn.textContent = 'Confirm Appointment';
-      return;
-    }
-
-    // 3) Client record (best effort, never blocks the booking)
-    try {
-      var clientRef = db.collection('clients').doc(phoneId);
-      try {
-        await clientRef.update({
-          lastVisit: selectedDate,
-          totalAppointments: FV.increment(1),
-          services: FV.arrayUnion.apply(FV, selectedServices)
-        });
-      } catch (e) {
-        await clientRef.set({
-          name: name, phone: phone, email: email,
-          totalAppointments: 1, totalNoShows: 0,
-          firstVisit: selectedDate, lastVisit: selectedDate,
-          services: selectedServices, notes: '',
-          createdAt: FV.serverTimestamp()
-        });
-      }
-    } catch (clientErr) { console.warn('Client record skipped:', clientErr); }
-
-    // 4) Notifications
-    try {
-      await emailjs.send('service_r8fhuah', 'template_d2twd6h', {
-        to_name: name, to_email: email,
-        service: selectedServices.join(', '),
-        date: selectedDate, time: selectedTime,
-        notes: notes || 'None'
-      });
-    } catch (emailErr) { console.warn('EmailJS error:', emailErr); }
-
-    try {
-      var msg = encodeURIComponent(
-        '📅 New Appointment — EGYGRILLZ\n' +
-        '👤 ' + name + '\n' +
-        '📞 ' + phone + '\n' +
-        '✉️ ' + email + '\n' +
-        '💎 ' + selectedServices.join(', ') + '\n' +
-        '📆 ' + selectedDate + ' at ' + selectedTime +
-        (notes ? '\n📝 ' + notes : '')
-      );
-      await fetch('https://api.callmebot.com/whatsapp.php?phone=+201000353839&text=' + msg + '&apikey=5240719');
-    } catch (waErr) { console.warn('WhatsApp error:', waErr); }
-
-    // 5) Success screen
-    document.querySelectorAll('.step-panel').forEach(function (p) { p.classList.remove('active'); });
-    document.getElementById('step5').classList.add('active');
-    document.querySelectorAll('.step-label-item').forEach(function (l) { l.classList.add('done'); });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  // ── Fix: real phone / email validation ──
-  window.checkStep3 = function () {
-    var name = (document.getElementById('f-name').value || '').trim();
-    var phone = (document.getElementById('f-phone').value || '').trim();
-    var email = (document.getElementById('f-email').value || '').trim();
-    var terms = document.getElementById('termsBox').checked;
-    var phoneOk = phone.replace(/\D/g, '').length >= 8;
-    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    document.getElementById('step3-next').disabled = !(name && phoneOk && emailOk && terms);
-  };
-
-  // ── Fix: escape user text in the review screen ──
-  function esc(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  window.renderReview = function () {
-    var notes = document.getElementById('f-notes').value.trim();
-    function r(k, v) { return '<div class="review-row"><span class="review-key">' + k + '</span><span class="review-val">' + esc(v) + '</span></div>'; }
-    document.getElementById('review-card').innerHTML =
-      '<h3>Appointment Summary</h3>' +
-      r('Service', selectedServices.join(', ')) + r('Date', selectedDate) + r('Time', selectedTime) +
-      r('Name', document.getElementById('f-name').value.trim()) +
-      r('Phone', document.getElementById('f-phone').value.trim()) +
-      r('Email', document.getElementById('f-email').value.trim()) +
-      (notes ? r('Notes', notes) : '');
-  };
-})();
-</script>
-
+<script src="/assets/egygz-notify.js" defer></script>
 </body>
 </html>

@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script type="module">
+    // Real Firebase Auth gate — page stays hidden until a staff session exists.
+    import { requireAuth } from '/assets/firebase-auth-gate.js';
+    try { await requireAuth(); } catch (e) { console.error(e); }
+    document.documentElement.style.visibility = 'visible';
+  </script>
+  <style>html { visibility: hidden; }</style>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EGYGRILLZ — Smart Cloudinary Migration</title>
@@ -37,6 +45,8 @@ h1 { font-family: sans-serif; font-size:22px; color:#fff; margin-bottom:4px; }
 .stat-val.err-color { color:#e74c3c; }
 .stat-val.skip-color { color:#f39c12; }
 </style>
+  <link rel="canonical" href="https://egygrillz.com/MTC">
+  <meta name="robots" content="noindex, nofollow, noarchive">
 </head>
 <body>
 

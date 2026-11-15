@@ -13,7 +13,7 @@
   <meta name="author" content="Dr. Mohamed Mahdy — EGYGRILLZ">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#000000">
-  <meta name="google-site-verification" content="YOUR_GSC_CODE_HERE">
+  <!-- Google Search Console: paste your real verification meta here -->
 
   <!-- ═══════════════════════════════════════════════════════
        OPEN GRAPH — WhatsApp, Facebook, Telegram, iMessage
@@ -23,7 +23,7 @@
   <meta property="og:title" content="EGYGRILLZ — Egypt's First Custom Grillz">
   <meta property="og:description" content="Handcrafted gold, silver & VVS diamond grillz — tailored to your smile. Egypt's first and only custom dental jewelry studio.">
   <meta property="og:url" content="https://egygrillz.com/">
-  <meta property="og:image" content="https://egygrillz.com/assets/images/hero-grillz.jpg">
+  <meta property="og:image" content="https://egygrillz.com/assets/optimized/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="EGYGRILLZ — Custom Gold, Silver and Diamond Grillz made in Egypt">
@@ -36,7 +36,7 @@
   <meta name="twitter:site" content="@egygrillz">
   <meta name="twitter:title" content="EGYGRILLZ — Egypt's First Custom Grillz">
   <meta name="twitter:description" content="Handcrafted gold, silver & VVS diamond grillz — tailored to your smile. Book your fitting in Cairo.">
-  <meta name="twitter:image" content="https://egygrillz.com/assets/images/hero-grillz.jpg">
+  <meta name="twitter:image" content="https://egygrillz.com/assets/optimized/og-image.jpg">
   <meta name="twitter:image:alt" content="EGYGRILLZ Custom Grillz">
 
   <!-- ═══════════════════════════════════════════════════════
@@ -60,8 +60,8 @@
         "alternateName": "EgyGrillz",
         "description": "Egypt's first and only custom dental jewelry studio. Handcrafted gold, silver, and VVS diamond grillz tailored to your smile.",
         "url": "https://egygrillz.com",
-        "logo": "https://egygrillz.com/logo/logo_black.png",
-        "image": "https://egygrillz.com/assets/images/hero-grillz.jpg",
+        "logo": "https://egygrillz.com//assets/optimized/logo_black-600.png",
+        "image": "https://egygrillz.com/assets/optimized/og-image.jpg",
         "foundingDate": "2021",
         "founder": { "@type": "Person", "name": "Dr. Mohamed Mahdy" },
         "address": {
@@ -90,9 +90,9 @@
           "@type": "OfferCatalog",
           "name": "EGYGRILLZ Collections",
           "itemListElement": [
-            { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Gold Grillz", "url": "https://egygrillz.com/golds.html" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Silver Grillz", "url": "https://egygrillz.com/silvers.html" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Diamond Grillz", "url": "https://egygrillz.com/diamonds.html" }}
+            { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Gold Grillz", "url": "https://egygrillz.com/golds" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Silver Grillz", "url": "https://egygrillz.com/silvers" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Diamond Grillz", "url": "https://egygrillz.com/diamonds" }}
           ]
         }
       },
@@ -114,11 +114,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-  <link rel="preload" as="image" href="assets/images/hero-grillz.jpg" fetchpriority="high">
 
   <!-- Favicons -->
   <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="shortcut icon" href="favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-title" content="EGYGRILLZ" />
@@ -129,7 +128,7 @@
 
   <!-- Font Awesome non-blocking -->
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+  <noscript></noscript>
 
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -363,34 +362,44 @@
     .reveal.visible { opacity:1; transform:translateY(0); }
   </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
   <div class="floating-logo" id="floating-logo">
-    <a href="index.html">EGYGRILLZ</a>
+    <a href="/">EGYGRILLZ</a>
   </div>
 
   <header id="site-header">
-    <a href="index.html" class="logo-text">EGYGRILLZ</a>
+    <a href="/" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="main-nav">
-      <a href="index.html" class="nav-active">Home</a>
-      <a href="latest-designs.html">Latest</a>
-      <a href="booking.html">Schedule</a>
-      <a href="grillz-gallery.html">Gallery</a>
-      <a href="golds.html">Golds</a>
-      <a href="diamonds.html">Diamonds</a>
-      <a href="silvers.html">Silvers</a>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
+      <a href="/" class="nav-active">Home</a>
+      <a href="latest-designs">Latest</a>
+      <a href="booking">Schedule</a>
+      <a href="grillz-gallery">Gallery</a>
+      <a href="golds">Golds</a>
+      <a href="diamonds">Diamonds</a>
+      <a href="silvers">Silvers</a>
+      <a href="about">About</a>
+      <a href="contact">Contact</a>
     </nav>
   </header>
 
   <!-- HERO -->
   <section class="hero">
-    <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ — Egypt's First Custom Grillz" fetchpriority="high" decoding="async">
+    <picture class="hero-picture">
+          <source type="image/webp"
+            srcset="/assets/optimized/hero-grillz-828.webp 828w,
+                    /assets/optimized/hero-grillz-1280.webp 1280w,
+                    /assets/optimized/hero-grillz-1920.webp 1920w"
+            sizes="100vw">
+          <img src="/assets/optimized/hero-grillz-1280.jpg"
+               alt="EGYGRILLZ — Egypt's First Custom Grillz"
+               width="1280" height="1707"
+               fetchpriority="high" decoding="async">
+        </picture>
     <div class="hero-content">
       <h1>BEYOND JEWELRY</h1>
-      <a href="booking.html" class="hero-schedule-btn">SCHEDULE NOW</a>
+      <a href="booking" class="hero-schedule-btn">SCHEDULE NOW</a>
     </div>
   </section>
 
@@ -399,7 +408,7 @@
     <div class="lv-new-strip-wrap reveal">
       <div class="lv-new-strip-header">
         <h2>Latest Designs</h2>
-        <a href="latest-designs.html">View All</a>
+        <a href="latest-designs">View All</a>
       </div>
       <div class="lv-new-strip" id="lv-new-strip" data-lazy="latest"></div>
     </div>
@@ -412,13 +421,13 @@
   </div>
 
   <!-- GOLDS -->
-  <div class="lv-cat-card reveal" id="golds-card" data-lazy="cat-golds" onclick="window.location='golds.html'">
+  <div class="lv-cat-card reveal" id="golds-card" data-lazy="cat-golds" onclick="window.location='golds'">
     <div id="golds-card-slides"></div>
     <div class="lv-cat-info">
       <span class="tag">Gold Collection</span>
       <h3 id="golds-card-name">Golds</h3>
       <p class="sub" id="golds-card-desc">Premium 18K and 21K solid gold, handcrafted to perfection.</p>
-      <a href="golds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Golds</a>
+      <a href="golds" class="lv-cat-link" onclick="event.stopPropagation()">Explore Golds</a>
     </div>
   </div>
 
@@ -429,7 +438,7 @@
         <h3>Gold Pieces</h3>
       </div>
       <div class="cat-row-header-right">
-        <a href="golds.html" class="cat-row-view-all">
+        <a href="golds" class="cat-row-view-all">
           View All Golds
           <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
         </a>
@@ -439,13 +448,13 @@
   </div>
 
   <!-- SILVERS -->
-  <div class="lv-cat-card reveal" id="silvers-card" data-lazy="cat-silvers" onclick="window.location='silvers.html'">
+  <div class="lv-cat-card reveal" id="silvers-card" data-lazy="cat-silvers" onclick="window.location='silvers'">
     <div id="silvers-card-slides"></div>
     <div class="lv-cat-info">
       <span class="tag">Silver Collection</span>
       <h3 id="silvers-card-name">Silvers</h3>
       <p class="sub" id="silvers-card-desc">Solid sterling silver grillz, bold and brilliantly finished.</p>
-      <a href="silvers.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Silvers</a>
+      <a href="silvers" class="lv-cat-link" onclick="event.stopPropagation()">Explore Silvers</a>
     </div>
   </div>
 
@@ -456,7 +465,7 @@
         <h3>Silver Pieces</h3>
       </div>
       <div class="cat-row-header-right">
-        <a href="silvers.html" class="cat-row-view-all">
+        <a href="silvers" class="cat-row-view-all">
           View All Silvers
           <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
         </a>
@@ -466,13 +475,13 @@
   </div>
 
   <!-- DIAMONDS -->
-  <div class="lv-cat-card reveal" id="diamonds-card" data-lazy="cat-diamonds" onclick="window.location='diamonds.html'">
+  <div class="lv-cat-card reveal" id="diamonds-card" data-lazy="cat-diamonds" onclick="window.location='diamonds'">
     <div id="diamonds-card-slides"></div>
     <div class="lv-cat-info">
       <span class="tag">Diamond Collection</span>
       <h3 id="diamonds-card-name">Diamonds</h3>
       <p class="sub" id="diamonds-card-desc">VVS-grade iced-out grillz for those who demand only the finest.</p>
-      <a href="diamonds.html" class="lv-cat-link" onclick="event.stopPropagation()">Explore Diamonds</a>
+      <a href="diamonds" class="lv-cat-link" onclick="event.stopPropagation()">Explore Diamonds</a>
     </div>
   </div>
 
@@ -483,7 +492,7 @@
         <h3>Diamond Pieces</h3>
       </div>
       <div class="cat-row-header-right">
-        <a href="diamonds.html" class="cat-row-view-all">
+        <a href="diamonds" class="cat-row-view-all">
           View All Diamonds
           <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M7 2l4 4-4 4"/></svg>
         </a>
@@ -499,7 +508,7 @@
         <div class="eyebrow-dark">Portfolio</div>
         <h2>Grillz Gallery</h2>
       </div>
-      <a href="grillz-gallery.html">View Full Gallery</a>
+      <a href="grillz-gallery">View Full Gallery</a>
     </div>
     <div class="lv-gal-scroll" id="lv-gallery-scroll" data-lazy="gallery"></div>
     <div class="lv-gallery-rule"></div>
@@ -516,7 +525,7 @@
         <div class="ig-post-user">
           <div class="ig-post-avatar">
             <div class="ig-post-avatar-inner">
-              <img src="logo/logo_black.png" alt="EGYGRILLZ" loading="lazy" decoding="async">
+              <img src="/assets/optimized/logo_black-600.png" alt="EGYGRILLZ" loading="lazy" decoding="async">
             </div>
           </div>
           <div>
@@ -526,7 +535,7 @@
         <button class="ig-post-more"><i class="fas fa-ellipsis"></i></button>
       </div>
       <div class="ig-post-img-wrap" id="ig-post-img-wrap">
-        <img src="assets/images/IMG_3749.jpg" alt="EGYGRILLZ Custom Grillz" loading="lazy" decoding="async">
+        <img src="/assets/images/IMG_3749.webp" alt="EGYGRILLZ Custom Grillz" loading="lazy" decoding="async">
         <div class="ig-post-overlay"></div>
         <i class="fas fa-heart ig-heart-anim" id="ig-heart-anim"></i>
       </div>
@@ -553,13 +562,13 @@
   <!-- STORY -->
   <div class="lv-story reveal">
     <div class="lv-story-img">
-      <img src="assets/images/hero-grillz.jpg" alt="EGYGRILLZ — Crafted in Egypt, Worn Worldwide" loading="lazy" decoding="async">
+      <img src="/assets/optimized/hero-grillz-1280.webp" alt="EGYGRILLZ — Crafted in Egypt, Worn Worldwide" loading="lazy" decoding="async" width="1280" height="1707">
     </div>
     <div class="lv-story-text">
       <span class="eyebrow">Our Craft</span>
       <h2>Crafted in Egypt.<br>Worn Worldwide.</h2>
       <p>EGYGRILLZ is Egypt's first and only custom dental jewelry studio. Every set is designed around your unique smile — combining centuries-old goldsmithing tradition with a bold, contemporary edge.</p>
-      <a href="about.html">Discover Our Story</a>
+      <a href="about">Discover Our Story</a>
     </div>
   </div>
 
@@ -568,8 +577,8 @@
     <h2>Book Your Appointment</h2>
     <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
     <div class="lv-cta-btns">
-      <a href="booking.html" class="lv-cta-btn-white">Schedule Appointment</a>
-      <a href="contact.html" class="lv-cta-btn-outline">Contact Us</a>
+      <a href="booking" class="lv-cta-btn-white">Schedule Appointment</a>
+      <a href="contact" class="lv-cta-btn-outline">Contact Us</a>
     </div>
   </div>
 
@@ -581,15 +590,15 @@
       </div>
       <div class="footer-col">
         <h4>Information</h4>
-        <a href="about.html">About Us</a>
-        <a href="booking.html">Schedule</a>
-        <a href="contact.html">Contact</a>
+        <a href="about">About Us</a>
+        <a href="booking">Schedule</a>
+        <a href="contact">Contact</a>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="shipping.html">Care &amp; Shipping</a>
+        <a href="privacy">Privacy Policy</a>
+        <a href="terms">Terms of Service</a>
+        <a href="shipping">Care &amp; Shipping</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -597,7 +606,7 @@
         <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
         <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8" target="_blank" rel="noopener" aria-label="Location"><i class="fas fa-location-dot"></i></a>
       </div>
-      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy">
+      <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy">
       <div class="ceo-wrap">
         <span class="ceo-label">Founder</span>
         <span class="ceo-name">DR Mohamed Mahdy</span>
@@ -817,7 +826,7 @@
           const card = document.createElement('div');
           card.className = 'lv-new-card';
           card.innerHTML = `<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
-          card.addEventListener('click', () => window.location = 'latest-designs.html');
+          card.addEventListener('click', () => window.location = 'latest-designs');
           frag.appendChild(card);
         }
         strip.innerHTML = '';
@@ -845,7 +854,7 @@
           const card = document.createElement('div');
           card.className = 'lv-gal-card';
           card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
-          card.addEventListener('click', () => window.location = 'grillz-gallery.html');
+          card.addEventListener('click', () => window.location = 'grillz-gallery');
           frag.appendChild(card);
         }
         scrollEl.appendChild(frag);
@@ -859,9 +868,9 @@
       'cat-golds': () => loadCategoryCard('golds','golds-card-slides','golds-card-name','golds-card-desc'),
       'cat-silvers': () => loadCategoryCard('silvers','silvers-card-slides','silvers-card-name','silvers-card-desc'),
       'cat-diamonds': () => loadCategoryCard('diamonds','diamonds-card-slides','diamonds-card-name','diamonds-card-desc'),
-      'row-golds': () => loadCategoryRow('golds','golds-row','golds.html','Gold'),
-      'row-silvers': () => loadCategoryRow('silvers','silvers-row','silvers.html','Silver'),
-      'row-diamonds': () => loadCategoryRow('diamonds','diamonds-row','diamonds.html','Diamond'),
+      'row-golds': () => loadCategoryRow('golds','golds-row','golds','Gold'),
+      'row-silvers': () => loadCategoryRow('silvers','silvers-row','silvers','Silver'),
+      'row-diamonds': () => loadCategoryRow('diamonds','diamonds-row','diamonds','Diamond'),
       'gallery': loadGallery
     };
     const loadedKeys = new Set();

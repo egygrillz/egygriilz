@@ -100,18 +100,13 @@
       });
     } catch (emailErr) { console.warn('EmailJS error:', emailErr); }
 
-    try {
-      var msg = encodeURIComponent(
-        '📅 New Appointment — EGYGRILLZ\n' +
-        '👤 ' + name + '\n' +
-        '📞 ' + phone + '\n' +
-        '✉️ ' + email + '\n' +
-        '💎 ' + selectedServices.join(', ') + '\n' +
-        '📆 ' + selectedDate + ' at ' + selectedTime +
-        (notes ? '\n📝 ' + notes : '')
-      );
-      await fetch('https://api.callmebot.com/whatsapp.php?phone=+201000353839&text=' + msg + '&apikey=5240719');
-    } catch (waErr) { console.warn('WhatsApp error:', waErr); }
+        try {
+          await (window.EGYGZ ? EGYGZ.notify.booking({
+            name: name, phone: phone, email: email,
+            service: selectedServices.join(', '),
+            date: selectedDate, time: selectedTime, notes: notes || ''
+          }) : Promise.resolve());
+        } catch (e) { console.warn('notify skipped', e); }
 
     // 5) Success screen
     document.querySelectorAll('.step-panel').forEach(function (p) { p.classList.remove('active'); });

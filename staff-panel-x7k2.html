@@ -126,6 +126,8 @@
         html.dark input, html.dark textarea, html.dark select { color: #f4f4f5; }
         html.dark input::placeholder, html.dark textarea::placeholder { color: #6b6b73; }
     </style>
+  <link rel="canonical" href="https://egygrillz.com/staff-panel-x7k2">
+  <meta name="robots" content="noindex, nofollow, noarchive">
 </head>
 <body class="bg-white text-gray-900 h-screen overflow-hidden">
 
@@ -133,7 +135,7 @@
         <!-- Sidebar -->
         <aside id="sidebar" class="sidebar-panel fixed md:static inset-y-0 left-0 z-40 w-72 bg-gray-50 border-r border-gray-200 flex flex-col transform -translate-x-full md:translate-x-0">
             <div class="h-16 flex items-center px-5 border-b border-gray-200 bg-white">
-                <img data-brand-mark src="" alt="EGYGRILLZ" class="brand-mark w-9 h-9 mr-3">
+                <img data-brand-mark src="" alt="EGYGRILLZ" class="brand-mark w-9 h-9 mr-3" loading="lazy" decoding="async">
                 <div>
                     <h1 class="font-bold text-sm tracking-widest uppercase">EGYGRILLZ</h1>
                     <p class="text-[10px] text-gray-400 tracking-wider uppercase">Support Panel</p>
@@ -206,7 +208,7 @@
             <!-- Chat Area -->
             <div id="chatArea" class="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-5">
                 <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-300">
-                    <img data-brand-mark src="" alt="" class="brand-mark empty-mark w-40 mb-5">
+                    <img data-brand-mark src="" alt="" class="brand-mark empty-mark w-40 mb-5" loading="lazy" decoding="async">
                     <svg class="w-10 h-10 mb-3 opacity-30" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                     <p class="text-xs tracking-wide uppercase">Select or enter a client to view conversation</p>
                 </div>
@@ -276,7 +278,7 @@
                         </label>
                         <div>
                             <label class="block text-[10px] text-gray-500 mb-1">Client intake page URL (the page you send to clients)</label>
-                            <input type="text" id="settingIntakeUrl" placeholder="egygz-client-intake.html"
+                            <input type="text" id="settingIntakeUrl" placeholder="egygz-client-intake"
                                 class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-gray-400">
                         </div>
                         <label class="flex items-start space-x-2 cursor-pointer">
@@ -838,7 +840,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
     <div id="loginGate" class="fixed inset-0 z-[60] bg-white flex items-center justify-center px-6">
         <div class="w-full max-w-xs">
             <div class="text-center mb-8">
-                <img data-brand-mark src="" alt="EGYGRILLZ" class="brand-mark w-14 h-14 mx-auto mb-3">
+                <img data-brand-mark src="" alt="EGYGRILLZ" class="brand-mark w-14 h-14 mx-auto mb-3" loading="lazy" decoding="async">
                 <h1 class="font-bold text-sm tracking-widest uppercase">EGYGRILLZ</h1>
                 <p class="text-[10px] text-gray-400 tracking-wider uppercase mt-1">Staff Sign In</p>
             </div>
@@ -880,9 +882,9 @@ List every rule explicitly with real numbers — the AI can only calculate corre
 
         // The self-contained intake page that ships next to this file. Staff can
         // override it in Knowledge Base Settings (e.g. a GitHub Pages URL).
-        const DEFAULT_INTAKE_URL = "egygz-client-intake.html";
+        const DEFAULT_INTAKE_URL = "egygz-client-intake";
 
-        // Official brand marks (compressed from /logo/logo_black.png + logo_white.png),
+        // Official brand marks (compressed from //assets/optimized/logo_black-600.png + logo_white.png),
         // embedded so the panel, the PDF and the intake page never miss an asset.
         const BRAND = {
             black: "data:image/png;base64,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",
@@ -1480,7 +1482,7 @@ ${currentSettings.materials || ""}
             if (isUser) {
                 div.innerHTML = `
                     <div class="max-w-[90%] sm:max-w-[85%] md:max-w-[70%]">
-                        ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-40 h-40 object-cover rounded-xl mb-1.5 ml-auto block" />` : ''}
+                        ${data.imageUrl ? `<img alt="Handcrafted custom grillz by EGYGRILLZ"` : ''}
                         <div class="msg-bubble bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm">
                             ${formatMessageHtml(raw)}
                         </div>
@@ -2294,7 +2296,7 @@ ${kb || "(not configured)"}
                         </div>
                         <span class="text-[10px] text-gray-400 shrink-0">${info.pct ? "+" + info.pct + "%" : "half base"}</span>
                     </div>
-                    <img data-rf="levels" data-rk="${key}" alt="${escapeHtml(info.name)} example" class="example-thumb mt-2" hidden>
+                    <img data-rf="levels" data-rk="${key}" alt="${escapeHtml(info.name)} example" class="example-thumb mt-2" hidden loading="lazy" decoding="async">
                     <div class="flex flex-wrap gap-1 mt-2">
                         ${info.examples.map(ex => `<span class="text-[9px] text-gray-500 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">${escapeHtml(ex)}</span>`).join("")}
                     </div>
@@ -2830,7 +2832,7 @@ ${kb || "(not configured)"}
             doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(150);
             for (let p = 1; p <= pages; p++) {
                 doc.setPage(p);
-                T("egygrillz.com \u00b7 @egygrillz \u00b7 booking: egygrillz.com/booking.html", M, pageH - 26);
+                T("egygrillz.com \u00b7 @egygrillz \u00b7 booking: egygrillz.com/booking", M, pageH - 26);
                 T(`Page ${p} of ${pages}`, pageW - M, pageH - 26, { align: "right" });
             }
 

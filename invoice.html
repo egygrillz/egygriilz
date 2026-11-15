@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EGYGRILLZ – Invoice Studio</title>
 <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="shortcut icon" href="favicon.ico" />
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -523,11 +522,13 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
 #pdf-overlay .pdf-msg { color:#fff; font-size:11px; letter-spacing:3px; text-transform:uppercase; }
 #pdf-overlay .pdf-spinner { width:36px; height:36px; border:3px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; }
 </style>
+  <link rel="canonical" href="https://egygrillz.com/invoice">
+  <meta name="robots" content="noindex, nofollow, noarchive">
 </head>
 <body>
 
 <!-- ══ LOCK SCREEN ══ -->
-<div id="lock-screen">
+<div id="lock-screen" hidden style="display:none">
   <div class="lock-box">
     <div class="lock-logo">EGYGRILLZ</div>
     <div class="lock-sub">Invoice Studio</div>
@@ -542,19 +543,19 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
 
 <!-- ══ HEADER ══ -->
 <header id="site-header">
-  <a href="index.html" class="logo-text">EGYGRILLZ</a>
+  <a href="/" class="logo-text">EGYGRILLZ</a>
   <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
   <nav class="main-nav">
-    <a href="index.html">Home</a>
-    <a href="latest-designs.html">Latest</a>
-    <a href="booking.html">Schedule</a>
-    <a href="grillz-gallery.html">Gallery</a>
-    <a href="golds.html">Golds</a>
-    <a href="diamonds.html">Diamonds</a>
-    <a href="silvers.html">Silvers</a>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
-    <a href="invoice.html" class="nav-active">Studio</a>
+    <a href="/">Home</a>
+    <a href="latest-designs">Latest</a>
+    <a href="booking">Schedule</a>
+    <a href="grillz-gallery">Gallery</a>
+    <a href="golds">Golds</a>
+    <a href="diamonds">Diamonds</a>
+    <a href="silvers">Silvers</a>
+    <a href="about">About</a>
+    <a href="contact">Contact</a>
+    <a href="invoice" class="nav-active">Studio</a>
   </nav>
 </header>
 
@@ -943,23 +944,23 @@ footer { background:#fff; color:#000; padding:50px 5% 20px; margin-top:80px; }
     </div>
     <div class="footer-col">
       <h4>Navigation</h4>
-      <a href="about.html">About Us</a>
-      <a href="booking.html">Schedule</a>
-      <a href="contact.html">Contact</a>
+      <a href="about">About Us</a>
+      <a href="booking">Schedule</a>
+      <a href="contact">Contact</a>
     </div>
     <div class="footer-col">
       <h4>Legal</h4>
-      <a href="privacy.html">Privacy Policy</a>
-      <a href="terms.html">Terms of Service</a>
-      <a href="shipping.html">Care &amp; Shipping</a>
+      <a href="privacy">Privacy Policy</a>
+      <a href="terms">Terms of Service</a>
+      <a href="shipping">Care &amp; Shipping</a>
     </div>
   </div>
   <div class="footer-bottom">
     <div class="footer-icons">
-      <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
+      <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
       <a href="#"><i class="fas fa-location-dot"></i></a>
     </div>
-    <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+    <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
     <div class="ceo-wrap">
       <span class="ceo-label">Founder</span>
       <span class="ceo-name">DR Mohamed Mahdy</span>
@@ -977,6 +978,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+
+/* ══════════════════════════════════════════════════
+   AUTH — real Firebase Authentication (no password in this file)
+══════════════════════════════════════════════════ */
+import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js';
+
 /* ══════════════════════════════════════════════════
    FIREBASE CONFIG
 ══════════════════════════════════════════════════ */
@@ -991,43 +998,6 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 
-/* ══════════════════════════════════════════════════
-   LOCK SCREEN
-══════════════════════════════════════════════════ */
-const PASSWORD = "Mmahdy712005";
-let attempts = 0;
-const MAX_ATTEMPTS = 5;
-
-function checkPassword() {
-  const val = document.getElementById('lock-input').value;
-  if (val === PASSWORD) {
-    sessionStorage.setItem('egy_invoice_auth', '1');
-    document.getElementById('lock-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    initApp();
-  } else {
-    attempts++;
-    const inp = document.getElementById('lock-input');
-    inp.classList.add('error');
-    document.getElementById('lock-error').textContent = 'Incorrect password.';
-    inp.value = '';
-    setTimeout(() => inp.classList.remove('error'), 500);
-    if (attempts >= MAX_ATTEMPTS) {
-      document.getElementById('lock-btn').disabled = true;
-      document.getElementById('lock-attempts').textContent = 'Too many attempts. Refresh the page.';
-    } else {
-      document.getElementById('lock-attempts').textContent = `${MAX_ATTEMPTS - attempts} attempt(s) remaining`;
-    }
-  }
-}
-
-if (sessionStorage.getItem('egy_invoice_auth') === '1') {
-  document.getElementById('lock-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-}
-
-document.getElementById('lock-btn').addEventListener('click', checkPassword);
-document.getElementById('lock-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
 
 /* ══════════════════════════════════════════════════
    UTILITIES
@@ -1113,6 +1083,19 @@ async function initApp() {
   setDefaultDates();
   updatePreview();
 }
+
+/* ══════════════════════════════════════════════════
+   AUTH GATE — replaces the old hardcoded-password lock screen.
+   The page never renders content until a real Firebase session exists.
+══════════════════════════════════════════════════ */
+const EGYGZ_USER = await requireAuth();
+
+// Wire the existing header "logout" affordance (if the page has one) and
+// expose it for console/debug use.
+window.egygzSignOut = fbSignOut;
+document.querySelectorAll('[data-logout],#logout-btn,#btn-logout').forEach(function (el) {
+  el.addEventListener('click', function (e) { e.preventDefault(); fbSignOut(); });
+});
 
 /* ══════════════════════════════════════════════════
    HEADER
@@ -1264,7 +1247,7 @@ function renderItemSearchDropdown(matches, q) {
     const imgSrc = d.images && d.images[0] ? `assets/images/${d.cat}/${d.folder}/${d.images[0]}` : '';
     return `
       <div class="item-search-option" data-name="${d.name||d.folder}" data-price="${d.priceNum||0}">
-        ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" onerror="this.style.display='none'">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
+        ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" onerror="this.style.display='none'" loading="lazy" decoding="async">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
         <div class="item-search-option-info">
           <div class="item-search-option-name">${d.name||d.folder}</div>
           <div class="item-search-option-meta">${d.cat} · ${d.folder}</div>
@@ -2021,13 +2004,9 @@ function setupAddClientModal() {
   });
 }
 
-/* ══════════════════════════════════════════════════
-   AUTO-INIT if already authenticated
-══════════════════════════════════════════════════ */
-if (sessionStorage.getItem('egy_invoice_auth') === '1') {
-  initApp();
-}
 
+/* boot only after a real session exists */
+await initApp();
 </script>
 </body>
 </html>

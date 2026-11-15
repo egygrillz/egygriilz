@@ -1,0 +1,25 @@
+# EGYGRILLZ — Cloudflare Pages redirects (clean URLs)
+# Old .html URLs → clean URLs (permanent, keeps your SEO)
+/home.html            /                       301
+/schedule.html        /booking                301
+/index.html           /                       301
+/booking.html         /booking                301
+/about.html           /about                  301
+/contact.html         /contact                301
+/golds.html           /golds                  301
+/diamonds.html        /diamonds               301
+/silvers.html         /silvers                301
+/grillz-gallery.html  /grillz-gallery         301
+/latest-designs.html  /latest-designs         301
+/privacy.html         /privacy                301
+/terms.html           /terms                  301
+/shipping.html        /shipping               301
+/atelier.html         /atelier                301
+/invoice.html         /invoice                301
+/editx.html           /editx                  301
+/x.html               /x                      301
+
+# Internal tools: never indexed, never linked from the public site
+
+# صفحة الخطأ
+/404                  /404.html              200

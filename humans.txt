@@ -24,10 +24,10 @@ for wearing EGYGRILLZ before it was a movement.
 
 /* SITE */
 
-Last update: 2026/06/10
+Last update: 2026/11/15
 Language: English
 Doctype: HTML5
-Hosted: GitHub Pages
+Hosted: Cloudflare Pages (edge) · source on GitHub
 Domain: egygrillz.com
 
 /* STANDARDS */

@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script type="module">
+    // Real Firebase Auth gate — page stays hidden until a staff session exists.
+    import { requireAuth } from '/assets/firebase-auth-gate.js';
+    try { await requireAuth(); } catch (e) { console.error(e); }
+    document.documentElement.style.visibility = 'visible';
+  </script>
+  <style>html { visibility: hidden; }</style>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex">
@@ -198,11 +206,12 @@
     .tiles.t3 .opt b { font-size: 12px; }
     @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
+  <link rel="canonical" href="https://egygrillz.com/egygz-client-intake">
 </head>
 <body>
 <div class="wrap">
     <div class="hero">
-        <img class="mark" id="brandMark" src="" alt="EGYGRILLZ">
+        <img class="mark" id="brandMark" src="" alt="EGYGRILLZ" loading="lazy" decoding="async">
         <div>
             <div class="brand">EGYGRILLZ<small id="heroSub">Design details</small></div>
         </div>
@@ -532,7 +541,7 @@ function optsHtml(key, current, withGlyph) {
     const cls = key === "material" ? " tiles" : key === "plating" ? " tiles t3" : "";
     return `<div class="opts${cls}">` + OPT[key].map(o => `
         <button type="button" class="opt ${current === o.v ? "sel" : ""}" data-opt="${key}" data-val="${o.v}">
-            ${folder ? `<span class="thumb">${svgIcon(o.icon || "hex")}<img class="ri" data-rf="${folder}" data-rk="${o.v}" alt="" hidden></span>` : withGlyph && o.icon ? `<span class="glyph">${svgIcon(o.icon)}</span>` : ""}
+            ${folder ? `<span class="thumb">${svgIcon(o.icon || "hex")}<img class="ri" data-rf="${folder}" data-rk="${o.v}" alt="" hidden loading="lazy" decoding="async"></span>` : withGlyph && o.icon ? `<span class="glyph">${svgIcon(o.icon)}</span>` : ""}
             <span class="txt">
                 <b>${esc(o[state.lang] || o.en)}</b>
                 ${o.d ? `<em>${esc(state.lang === "ar" ? o.dAr : o.dEn)}</em>` : ""}

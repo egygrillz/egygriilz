@@ -13,17 +13,17 @@ Founded 2021 by Dr. Mohamed Mahdy · Cairo, Egypt · Ships Worldwide.
 |Page            |URL                                        |
 |----------------|-------------------------------------------|
 |Home            |<https://egygrillz.com/>                   |
-|Latest Designs  |<https://egygrillz.com/latest-designs.html>|
-|Book Appointment|<https://egygrillz.com/booking.html>       |
-|Gallery         |<https://egygrillz.com/grillz-gallery.html>|
-|Gold Grillz     |<https://egygrillz.com/golds.html>         |
-|Silver Grillz   |<https://egygrillz.com/silvers.html>       |
-|Diamond Grillz  |<https://egygrillz.com/diamonds.html>      |
-|About Us        |<https://egygrillz.com/about.html>         |
-|Contact         |<https://egygrillz.com/contact.html>       |
-|Care & Shipping |<https://egygrillz.com/shipping.html>      |
-|Terms of Service|<https://egygrillz.com/terms.html>         |
-|Privacy Policy  |<https://egygrillz.com/privacy.html>       |
+|Latest Designs  |<https://egygrillz.com/latest-designs>|
+|Book Appointment|<https://egygrillz.com/booking>       |
+|Gallery         |<https://egygrillz.com/grillz-gallery>|
+|Gold Grillz     |<https://egygrillz.com/golds>         |
+|Silver Grillz   |<https://egygrillz.com/silvers>       |
+|Diamond Grillz  |<https://egygrillz.com/diamonds>      |
+|About Us        |<https://egygrillz.com/about>         |
+|Contact         |<https://egygrillz.com/contact>       |
+|Care & Shipping |<https://egygrillz.com/shipping>      |
+|Terms of Service|<https://egygrillz.com/terms>         |
+|Privacy Policy  |<https://egygrillz.com/privacy>       |
 
 -----
 
@@ -40,17 +40,17 @@ We are not a general jewelry store. We specialize exclusively in custom dental j
 ### Gold Grillz
 
 Premium 18K and 21K solid gold, handcrafted to perfection. Each piece is forged, set, and polished by hand for a brilliance that endures a lifetime.
-→ <https://egygrillz.com/golds.html>
+→ <https://egygrillz.com/golds>
 
 ### Silver Grillz
 
 Solid 925 sterling silver grillz, bold and brilliantly finished. The entry point to custom dental jewelry without compromising on craftsmanship.
-→ <https://egygrillz.com/silvers.html>
+→ <https://egygrillz.com/silvers>
 
 ### Diamond Grillz
 
 VVS-grade iced-out grillz for those who demand only the finest. Hand-set stones in gold settings — Egypt’s most exclusive dental jewelry.
-→ <https://egygrillz.com/diamonds.html>
+→ <https://egygrillz.com/diamonds>
 
 -----
 
@@ -58,7 +58,7 @@ VVS-grade iced-out grillz for those who demand only the finest. Hand-set stones 
 
 |Step         |What Happens                                     |Time              |
 |-------------|-------------------------------------------------|------------------|
-|1. Schedule  |Book online at egygrillz.com/booking.html        |—                 |
+|1. Schedule  |Book online at egygrillz.com/booking        |—                 |
 |2. Impression|Dental impression + design consultation at studio|30–60 min         |
 |3. Crafting  |Hand-crafted in our Cairo studio                 |12–30 working days|
 |4. Collection|Pick up in person or ship via FedEx              |—                 |
@@ -104,7 +104,7 @@ Notable clients and brand endorsers include **Marwan Pablo**, **Maged El Kedwany
 
 The brand is expanding beyond grillz into unique one-of-a-kind pieces including custom chess sets and functional art, positioning EGYGRILLZ as a creative force blurring the lines between jewelry and fine art.
 
-→ Full story: <https://egygrillz.com/about.html>
+→ Full story: <https://egygrillz.com/about>
 
 -----
 
@@ -144,7 +144,7 @@ Google Maps: <https://maps.app.goo.gl/moxe6qaKtbhKfzFD8>
 - International: varies by destination
 - Customs duties: client’s responsibility
 - Damage must be reported within 12 hours with unboxing photos
-- Full policy: <https://egygrillz.com/shipping.html>
+- Full policy: <https://egygrillz.com/shipping>
 
 -----
 

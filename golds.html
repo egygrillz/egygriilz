@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Golds – EGYGRILLZ</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;700&family=Alex+Brush&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     :root { --bg:#FAFAF9; --text:#1a1a1a; --muted:#888; --border:rgba(0,0,0,0.08); }
@@ -153,24 +152,25 @@
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
     .empty { text-align:center; padding:80px 0; font-size:14px; color:var(--muted); }
   </style>
+  <link rel="canonical" href="https://egygrillz.com/golds">
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-  <div class="floating-logo" id="floating-logo"><a href="index.html">EGYGRILLZ</a></div>
+  <div class="floating-logo" id="floating-logo"><a href="/">EGYGRILLZ</a></div>
 
   <header id="site-header">
-    <a href="index.html" class="logo-text">EGYGRILLZ</a>
+    <a href="/" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="main-nav">
-      <a href="index.html">Home</a>
-      <a href="latest-designs.html">Latest</a>
-      <a href="booking.html">Schedule</a>
-      <a href="grillz-gallery.html">Gallery</a>
-      <a href="golds.html" class="nav-active">Golds</a>
-      <a href="diamonds.html">Diamonds</a>
-      <a href="silvers.html">Silvers</a>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
+      <a href="/">Home</a>
+      <a href="latest-designs">Latest</a>
+      <a href="booking">Schedule</a>
+      <a href="grillz-gallery">Gallery</a>
+      <a href="golds" class="nav-active">Golds</a>
+      <a href="diamonds">Diamonds</a>
+      <a href="silvers">Silvers</a>
+      <a href="about">About</a>
+      <a href="contact">Contact</a>
     </nav>
   </header>
 
@@ -207,8 +207,8 @@
         <div class="modal-desc" id="modal-desc"></div>
         <div class="modal-price" id="modal-price"></div>
         <div class="modal-actions">
-          <a href="booking.html" class="modal-cta-primary">Schedule an Appointment</a>
-          <a href="contact.html" class="modal-cta-secondary">Contact Us</a>
+          <a href="booking" class="modal-cta-primary">Schedule an Appointment</a>
+          <a href="contact" class="modal-cta-secondary">Contact Us</a>
         </div>
         <div class="modal-counter" id="modal-counter"></div>
       </div>
@@ -220,20 +220,20 @@
     <h2>Book Your Appointment</h2>
     <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
     <div class="cta-btns">
-      <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
-      <a href="contact.html" class="cta-btn-outline">Contact Us</a>
+      <a href="booking" class="cta-btn-dark">Schedule Appointment</a>
+      <a href="contact" class="cta-btn-outline">Contact Us</a>
     </div>
   </div>
 
   <footer>
     <div class="footer-main">
       <div class="footer-col"><h4>EGYGRILLZ Egypt</h4><p>Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p></div>
-      <div class="footer-col"><h4>Information</h4><a href="about.html">About Us</a><a href="booking.html">Schedule</a><a href="contact.html">Contact</a></div>
-      <div class="footer-col"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="shipping.html">Care &amp; Shipping</a></div>
+      <div class="footer-col"><h4>Information</h4><a href="about">About Us</a><a href="booking">Schedule</a><a href="contact">Contact</a></div>
+      <div class="footer-col"><h4>Legal</h4><a href="privacy">Privacy Policy</a><a href="terms">Terms of Service</a><a href="shipping">Care &amp; Shipping</a></div>
     </div>
     <div class="footer-bottom">
-      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a></div>
-      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a></div>
+      <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
       <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
       <div class="legal-text">© 2026 EGYGRILLZ</div>
     </div>
@@ -250,7 +250,7 @@
     function parseInfo(text){ let name='',desc='',price='',images=[]; text.split('\n').forEach(line=>{ line=line.replace(/\r/g,'').trim(); const ci=line.indexOf(':'); if(ci===-1)return; const key=line.slice(0,ci).trim().toLowerCase(); const val=line.slice(ci+1).trim(); if(key==='name'||key==='title')name=val; else if(key==='description'||key==='desc')desc=val; else if(key==='price')price=val; else if(key==='images')images=val.split(',').map(i=>i.trim()).filter(Boolean); }); return{name,desc,price,images}; }
     const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
     let mCur=0,mTot=0;
-    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img src="'+src+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img alt="Handcrafted custom grillz by EGYGRILLZ"';
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
@@ -290,7 +290,7 @@
       // images html
       let imgsHtml='';
       images.forEach(function(s,i){
-        imgsHtml+='<img src="'+s+'" class="'+(i===0?'active':'')+'" draggable="false" loading="'+(i===0?'eager':'lazy')+'">';
+        imgsHtml+='<img alt="Handcrafted custom grillz by EGYGRILLZ"';
       });
 
       const cardImg=document.createElement('div');

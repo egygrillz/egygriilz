@@ -51,7 +51,7 @@
               "@type": "Product",
               "name": "Gold Grillz",
               "description": "Premium 18K and 21K solid gold grillz, handcrafted to perfection.",
-              "url": "https://egygrillz.com/golds.html",
+              "url": "https://egygrillz.com/golds",
               "material": "18K Gold, 21K Gold"
             }
           },
@@ -61,7 +61,7 @@
               "@type": "Product",
               "name": "Silver Grillz",
               "description": "Solid 925 sterling silver grillz, bold and brilliantly finished.",
-              "url": "https://egygrillz.com/silvers.html",
+              "url": "https://egygrillz.com/silvers",
               "material": "925 Sterling Silver"
             }
           },
@@ -71,7 +71,7 @@
               "@type": "Product",
               "name": "Diamond Grillz",
               "description": "VVS-grade iced-out diamond grillz for those who demand only the finest.",
-              "url": "https://egygrillz.com/diamonds.html",
+              "url": "https://egygrillz.com/diamonds",
               "material": "VVS Diamonds, Gold"
             }
           }
@@ -85,7 +85,7 @@
     },
     {
       "@type": "Service",
-      "@id": "https://egygrillz.com/booking.html#impression",
+      "@id": "https://egygrillz.com/booking#impression",
       "name": "Dental Impression",
       "provider": { "@id": "https://egygrillz.com/#business" },
       "description": "Precise mold of your teeth — the essential first step to crafting your custom grillz.",
@@ -98,7 +98,7 @@
     },
     {
       "@type": "Service",
-      "@id": "https://egygrillz.com/booking.html#consultation",
+      "@id": "https://egygrillz.com/booking#consultation",
       "name": "Design Consultation",
       "provider": { "@id": "https://egygrillz.com/#business" },
       "description": "Design your perfect set with our specialist — style, metal choice, stones, and fit all planned together.",
@@ -111,7 +111,7 @@
     },
     {
       "@type": "Service",
-      "@id": "https://egygrillz.com/booking.html#gems",
+      "@id": "https://egygrillz.com/booking#gems",
       "name": "Tooth Gem Application",
       "provider": { "@id": "https://egygrillz.com/#business" },
       "description": "A single crystal or diamond bonded directly to your tooth — subtle, elegant, and completely painless.",

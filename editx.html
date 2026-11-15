@@ -6,7 +6,6 @@
   <title>EGYGRILLZ — Admin</title>
   <meta name="robots" content="noindex, nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
@@ -461,6 +460,7 @@
     }
     @media(max-width:380px){.stat-grid{grid-template-columns:1fr 1fr;}.grid{grid-template-columns:repeat(2,1fr) !important;}.clients-grid{grid-template-columns:1fr 1fr;}}
   </style>
+  <link rel="canonical" href="https://egygrillz.com/editx">
 </head>
 <body>
 
@@ -485,7 +485,7 @@
 <div id="app">
   <div class="app-layout">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo"><a href="index.html">EGYGRILLZ</a></div>
+      <div class="sidebar-logo"><a href="/">EGYGRILLZ</a></div>
       <nav class="sidebar-nav">
         <div class="nav-section">Dashboard</div>
         <button class="nav-item active" data-page="overview" onclick="showPage('overview')"><i class="fas fa-chart-bar"></i> Overview</button>
@@ -767,26 +767,26 @@
           <div class="page-header-row"><div><p class="ph-title">Pages Editor</p><p class="ph-sub">Edit any page text — no coding needed</p></div><button class="btn-outline-sm" onclick="openNewPageModal()">+ Create New Page</button></div>
           <div style="margin-bottom:14px;"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Main Pages</p>
             <div class="pages-grid" id="pages-main-grid">
-              <div class="page-card" onclick="selectPage('index','index.html','Homepage')"><i class="fas fa-home"></i><div><div class="page-card-name">Homepage</div><div class="page-card-sub">index.html</div></div></div>
-              <div class="page-card" onclick="selectPage('about','about.html','About Us')"><i class="fas fa-star"></i><div><div class="page-card-name">About Us</div><div class="page-card-sub">about.html</div></div></div>
-              <div class="page-card" onclick="selectPage('contact','contact.html','Contact')"><i class="fas fa-envelope"></i><div><div class="page-card-name">Contact</div><div class="page-card-sub">contact.html</div></div></div>
-              <div class="page-card" onclick="selectPage('booking','booking.html','Schedule / Booking')"><i class="fas fa-calendar"></i><div><div class="page-card-name">Schedule</div><div class="page-card-sub">booking.html</div></div></div>
-              <div class="page-card" onclick="selectPage('grillz-gallery','grillz-gallery.html','Gallery')"><i class="fas fa-images"></i><div><div class="page-card-name">Gallery</div><div class="page-card-sub">grillz-gallery.html</div></div></div>
-              <div class="page-card" onclick="selectPage('latest-designs','latest-designs.html','Latest Designs')"><i class="fas fa-fire"></i><div><div class="page-card-name">Latest Designs</div><div class="page-card-sub">latest-designs.html</div></div></div>
+              <div class="page-card" onclick="selectPage('index','/','Homepage')"><i class="fas fa-home"></i><div><div class="page-card-name">Homepage</div><div class="page-card-sub">index.html</div></div></div>
+              <div class="page-card" onclick="selectPage('about','about','About Us')"><i class="fas fa-star"></i><div><div class="page-card-name">About Us</div><div class="page-card-sub">about.html</div></div></div>
+              <div class="page-card" onclick="selectPage('contact','contact','Contact')"><i class="fas fa-envelope"></i><div><div class="page-card-name">Contact</div><div class="page-card-sub">contact.html</div></div></div>
+              <div class="page-card" onclick="selectPage('booking','booking','Schedule / Booking')"><i class="fas fa-calendar"></i><div><div class="page-card-name">Schedule</div><div class="page-card-sub">booking.html</div></div></div>
+              <div class="page-card" onclick="selectPage('grillz-gallery','grillz-gallery','Gallery')"><i class="fas fa-images"></i><div><div class="page-card-name">Gallery</div><div class="page-card-sub">grillz-gallery.html</div></div></div>
+              <div class="page-card" onclick="selectPage('latest-designs','latest-designs','Latest Designs')"><i class="fas fa-fire"></i><div><div class="page-card-name">Latest Designs</div><div class="page-card-sub">latest-designs.html</div></div></div>
             </div>
           </div>
           <div style="margin-bottom:14px;"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Collection Pages</p>
             <div class="pages-grid">
-              <div class="page-card" onclick="selectPage('golds','golds.html','Golds Collection')"><i class="fas fa-circle-dollar-to-slot" style="color:#d4af37;"></i><div><div class="page-card-name">Golds</div><div class="page-card-sub">golds.html</div></div></div>
-              <div class="page-card" onclick="selectPage('silvers','silvers.html','Silvers Collection')"><i class="fas fa-gem" style="color:#aaa;"></i><div><div class="page-card-name">Silvers</div><div class="page-card-sub">silvers.html</div></div></div>
-              <div class="page-card" onclick="selectPage('diamonds','diamonds.html','Diamonds Collection')"><i class="fas fa-gem" style="color:#89cff0;"></i><div><div class="page-card-name">Diamonds</div><div class="page-card-sub">diamonds.html</div></div></div>
+              <div class="page-card" onclick="selectPage('golds','golds','Golds Collection')"><i class="fas fa-circle-dollar-to-slot" style="color:#d4af37;"></i><div><div class="page-card-name">Golds</div><div class="page-card-sub">golds.html</div></div></div>
+              <div class="page-card" onclick="selectPage('silvers','silvers','Silvers Collection')"><i class="fas fa-gem" style="color:#aaa;"></i><div><div class="page-card-name">Silvers</div><div class="page-card-sub">silvers.html</div></div></div>
+              <div class="page-card" onclick="selectPage('diamonds','diamonds','Diamonds Collection')"><i class="fas fa-gem" style="color:#89cff0;"></i><div><div class="page-card-name">Diamonds</div><div class="page-card-sub">diamonds.html</div></div></div>
             </div>
           </div>
           <div style="margin-bottom:22px;"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Legal Pages</p>
             <div class="pages-grid">
-              <div class="page-card" onclick="selectPage('terms','terms.html','Terms of Service')"><i class="fas fa-file-contract"></i><div><div class="page-card-name">Terms of Service</div><div class="page-card-sub">terms.html</div></div></div>
-              <div class="page-card" onclick="selectPage('privacy','privacy.html','Privacy Policy')"><i class="fas fa-shield-alt"></i><div><div class="page-card-name">Privacy Policy</div><div class="page-card-sub">privacy.html</div></div></div>
-              <div class="page-card" onclick="selectPage('shipping','shipping.html','Care & Shipping')"><i class="fas fa-box"></i><div><div class="page-card-name">Care &amp; Shipping</div><div class="page-card-sub">shipping.html</div></div></div>
+              <div class="page-card" onclick="selectPage('terms','terms','Terms of Service')"><i class="fas fa-file-contract"></i><div><div class="page-card-name">Terms of Service</div><div class="page-card-sub">terms.html</div></div></div>
+              <div class="page-card" onclick="selectPage('privacy','privacy','Privacy Policy')"><i class="fas fa-shield-alt"></i><div><div class="page-card-name">Privacy Policy</div><div class="page-card-sub">privacy.html</div></div></div>
+              <div class="page-card" onclick="selectPage('shipping','shipping','Care & Shipping')"><i class="fas fa-box"></i><div><div class="page-card-name">Care &amp; Shipping</div><div class="page-card-sub">shipping.html</div></div></div>
             </div>
           </div>
           <div style="margin-bottom:22px;display:none;" id="custom-pages-section"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Custom Pages</p><div class="pages-grid" id="custom-pages-grid"></div></div>
@@ -804,7 +804,7 @@
           <div class="setup-wrap">
             <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:10px;">The dashboard commits directly to your GitHub repo. Your token is stored only in your browser.</p>
             <div class="step-list">
-              <div class="step-item"><span class="step-num">1</span>Go to <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a>, set expiry <strong>No expiration</strong>, Fine-grained token, select your repo, grant <strong>Contents: Read &amp; Write</strong>.</div>
+              <div class="step-item"><span class="step-num">1</span>Go to <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">github.com/settings/tokens/new</a>, set expiry <strong>No expiration</strong>, Fine-grained token, select your repo, grant <strong>Contents: Read &amp; Write</strong>.</div>
               <div class="step-item"><span class="step-num">2</span>Paste token and repo details below and click Save.</div>
               <div class="step-item"><span class="step-num">3</span>Every publish commits directly to GitHub — live within seconds.</div>
             </div>
@@ -1999,7 +1999,7 @@
     var html=drawerImages.map(function(file,i){
       var src=raw+'assets/images/'+folder+'/'+drawerId+'/'+file+'?t='+Date.now();
       var isVid=isVideoFile(file);
-      var media=isVid?'<video src="'+src+'" muted playsinline></video>':'<img src="'+src+'" alt="">';
+      var media=isVid?'<video src="'+src+'" muted playsinline></video>':'<img src="'+src+'" alt="" loading="lazy" decoding="async">';
       return '<div class="reorder-item" draggable="true" data-idx="'+i+'" ondragstart="drawerDragStart('+i+')" ondragover="drawerDragOver(event,this,'+i+')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="drawerDrop(event,'+i+')" ondragend="drawerDragEnd()">'+
         media+'<span class="reorder-num">'+(i+1)+'</span>'+(i===0?'<span class="reorder-cover">Cover</span>':'')+
         '<button class="reorder-del" onclick="drawerDeleteImg('+i+')">×</button></div>';
@@ -2136,14 +2136,14 @@
       existingImages.forEach(function(img,i){
         var isVid=isVideoFile(img);
         html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'existing\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'existing\')">'+
-          (isVid?'<video src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge">▶ Video</span>':'<img src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" alt="">')+
+          (isVid?'<video src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge">▶ Video</span>':'<img src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" alt="" loading="lazy" decoding="async">')+
           '<button class="remove-img" onclick="removeExisting('+i+')">×</button><span class="img-order">#'+(i+1)+'</span></div>';
       });
     }
     pendingImages.forEach(function(p,i){
       var isVid=p.file.type.startsWith('video/');
       html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'pending\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'pending\')">'+
-        (isVid?'<video src="'+p.dataUrl+'" muted playsinline></video><span class="media-type-badge">▶ Video</span>':'<img src="'+p.dataUrl+'" alt="">')+
+        (isVid?'<video src="'+p.dataUrl+'" muted playsinline></video><span class="media-type-badge">▶ Video</span>':'<img src="'+p.dataUrl+'" alt="" loading="lazy" decoding="async">')+
         '<button class="remove-img" onclick="removePending('+i+')">×</button><span class="img-order">New '+(i+1)+'</span></div>';
     });
     document.getElementById('image-previews').innerHTML=html;
@@ -2286,17 +2286,17 @@
   // ──────────────────────────────────────
   var currentPageFile='',currentEditorMode='fields',currentPageHTML='';
   var PAGE_FIELDS={
-    'about.html':[
+    'about':[
       {id:'about-h1',label:'Page Heading',selector:'h1',type:'text'},
       {id:'about-p1',label:'First Paragraph',selector:'.story-text p:nth-child(1)',type:'textarea'},
       {id:'about-p2',label:'Second Paragraph',selector:'.story-text p:nth-child(2)',type:'textarea'},
     ],
-    'contact.html':[
+    'contact':[
       {id:'contact-h1',label:'Main Heading',selector:'.contact-info h1',type:'text'},
       {id:'contact-email',label:'Email Address',selector:'.detail-item:nth-child(2) a',type:'text'},
     ],
-    'booking.html':[{id:'booking-h1',label:'Main Heading',selector:'h1.page-heading',type:'text'}],
-    'terms.html':[{id:'terms-h1',label:'Page Title',selector:'h1',type:'text'}],
+    'booking':[{id:'booking-h1',label:'Main Heading',selector:'h1.page-heading',type:'text'}],
+    'terms':[{id:'terms-h1',label:'Page Title',selector:'h1',type:'text'}],
   };
 
   function switchEditorMode(mode){

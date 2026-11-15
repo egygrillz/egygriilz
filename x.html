@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script type="module">
+    // Real Firebase Auth gate — page stays hidden until a staff session exists.
+    import { requireAuth } from '/assets/firebase-auth-gate.js';
+    try { await requireAuth(); } catch (e) { console.error(e); }
+    document.documentElement.style.visibility = 'visible';
+  </script>
+  <style>html { visibility: hidden; }</style>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EGYGRILLZ — Price Estimator</title>
@@ -798,6 +806,8 @@ footer{
   .chat-window{width:calc(100vw - 40px);}
 }
 </style>
+  <link rel="canonical" href="https://egygrillz.com/x">
+  <meta name="robots" content="noindex, nofollow, noarchive">
 </head>
 <body>
 
@@ -813,7 +823,7 @@ footer{
 
 <!-- HEADER -->
 <header>
-  <a href="index.html" class="logo">EGYGRILLZ</a>
+  <a href="/" class="logo">EGYGRILLZ</a>
   <div class="header-status">
     <div class="status-pill">
       <div class="status-dot"></div>
@@ -822,10 +832,10 @@ footer{
     <span class="gold-live" id="hdr-gold">18K: — EGP/g</span>
   </div>
   <nav>
-    <a href="index.html">Home</a>
-    <a href="grillz-gallery.html">Gallery</a>
-    <a href="booking.html">Book</a>
-    <a href="contact.html">Contact</a>
+    <a href="/">Home</a>
+    <a href="grillz-gallery">Gallery</a>
+    <a href="booking">Book</a>
+    <a href="contact">Contact</a>
   </nav>
 </header>
 
@@ -846,7 +856,7 @@ footer{
     </div>
     <span class="pb-note">Final quote at studio</span>
     <button class="breakdown-btn" id="bd-btn" onclick="openModal()" style="display:none">BREAKDOWN</button>
-    <a href="booking.html" class="book-btn">BOOK NOW</a>
+    <a href="booking" class="book-btn">BOOK NOW</a>
   </div>
 </div>
 
@@ -1108,7 +1118,7 @@ footer{
         </div>
       </div>
       <div class="sum-actions">
-        <a href="booking.html" class="sum-cta">Book Your Appointment</a>
+        <a href="booking" class="sum-cta">Book Your Appointment</a>
         <button class="sum-ghost" onclick="openModal()">View Breakdown</button>
         <button class="sum-ghost" onclick="toggleShare()">Share Estimate</button>
       </div>
@@ -1139,8 +1149,8 @@ footer{
   <h2>Book Your Appointment</h2>
   <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
   <div class="cta-btns">
-    <a href="booking.html" class="cta-btn-solid">Schedule Appointment</a>
-    <a href="contact.html" class="cta-btn">Contact Us</a>
+    <a href="booking" class="cta-btn-solid">Schedule Appointment</a>
+    <a href="contact" class="cta-btn">Contact Us</a>
   </div>
 </div>
 
@@ -1155,21 +1165,21 @@ footer{
     </div>
     <div class="footer-col">
       <h4>Navigation</h4>
-      <a href="about.html">About Us</a>
-      <a href="booking.html">Schedule</a>
-      <a href="contact.html">Contact</a>
-      <a href="grillz-gallery.html">Gallery</a>
+      <a href="about">About Us</a>
+      <a href="booking">Schedule</a>
+      <a href="contact">Contact</a>
+      <a href="grillz-gallery">Gallery</a>
     </div>
     <div class="footer-col">
       <h4>Legal</h4>
-      <a href="privacy.html">Privacy Policy</a>
-      <a href="terms.html">Terms of Service</a>
-      <a href="shipping.html">Care & Shipping</a>
+      <a href="privacy">Privacy Policy</a>
+      <a href="terms">Terms of Service</a>
+      <a href="shipping">Care & Shipping</a>
     </div>
   </div>
   <div class="footer-bottom">
     <div class="footer-icons">
-      <a href="https://instagram.com/egygrillz" target="_blank">📷</a>
+      <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer">📷</a>
     </div>
     <span class="footer-logo">EGYGRILLZ</span>
     <span class="legal">© 2026 EGYGRILLZ · DR Mohamed Mahdy</span>
@@ -1653,7 +1663,7 @@ function openModal(){
 function updateShareText(tags,total){
   const{amount,symbol}=convertEGP(total);
   const ps=activeCurrency==='EGP'?`${total.toLocaleString()} EGP`:`${amount.toLocaleString()} ${symbol} (${total.toLocaleString()} EGP)`;
-  const txt=['EGYGRILLZ — My Custom Estimate','─────────────────────',...tags.map(t=>`• ${t}`),'─────────────────────',`Total: ${ps}`,'','Estimate only — final price confirmed at studio.','Book: egygrillz.com/booking.html'].join('\n');
+  const txt=['EGYGRILLZ — My Custom Estimate','─────────────────────',...tags.map(t=>`• ${t}`),'─────────────────────',`Total: ${ps}`,'','Estimate only — final price confirmed at studio.','Book: egygrillz.com/booking'].join('\n');
   const el=document.getElementById('share-text');
   if(el)el.textContent=txt;
 }
