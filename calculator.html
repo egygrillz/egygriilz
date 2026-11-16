@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Grillz Calculator — Design & Price Your Custom Grillz | EGYGRILLZ</title>
 <meta name="description" content="Design your custom grillz step by step — metal, teeth, complexity, stones, plating and finishes — and get an instant EGYGRILLZ estimate in EGP with a shareable design code and PDF.">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="theme-color" content="#141414">
 <link rel="canonical" href="https://egygrillz.com/calculator">
 <meta property="og:type" content="website">
@@ -14,14 +14,14 @@
 <meta property="og:description" content="Design your custom grillz and get an instant estimate. Metal, teeth, stones, plating — priced live by the Cairo studio.">
 <meta property="og:url" content="https://egygrillz.com/calculator">
 <meta property="og:image" content="https://egygrillz.com/assets/optimized/og-image.jpg">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --ink:#1a1a1a;--mut:#6e6e73;--faint:#aeaeb2;--line:rgba(0,0,0,.09);
-  --gold:#b8935a;--gold-d:#9a7a44;--ivory:#faf8f4;--card:#ffffff;--dark:#141414;
+  --ink:#191817;--mut:#77736d;--faint:#aaa49b;--line:rgba(28,25,20,.13);
+  --gold:#b8935a;--gold-d:#92713f;--ivory:#f7f4ee;--card:transparent;--dark:#171614;
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Arimo',sans-serif;background:var(--ivory);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -37,7 +37,7 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .main-nav a{color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:1px;transition:color .3s;}
 .main-nav a:hover{color:#666;}
 .main-nav a.nav-active{color:var(--gold-d);font-weight:700;}
-.lang-toggle{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;}
+.lang-toggle{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:transparent;}
 .lang-toggle button{border:none;background:transparent;font-size:11px;font-weight:700;letter-spacing:.5px;padding:7px 13px;color:var(--mut);transition:.2s;}
 .lang-toggle button.on{background:var(--ink);color:#fff;}
 .menu-toggle{display:none;flex-direction:column;gap:6px;background:none;border:none;}
@@ -56,7 +56,7 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .hero-script{font-family:'Alex Brush',cursive;font-size:34px;color:var(--gold-d);line-height:1;}
 .hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,56px);font-weight:700;letter-spacing:1px;margin:8px 0 12px;}
 .hero p{font-size:15px;color:var(--mut);line-height:1.7;max-width:640px;margin:0 auto;}
-.code-bar{max-width:640px;margin:28px auto 0;display:flex;gap:8px;background:#fff;border:1px solid var(--line);border-radius:4px;padding:6px;box-shadow:0 4px 24px rgba(0,0,0,.04);}
+.code-bar{max-width:640px;margin:28px auto 0;display:flex;gap:8px;background:rgba(255,255,255,.24);border:1px solid var(--line);border-radius:999px;padding:6px;box-shadow:0 8px 28px rgba(45,35,22,.045);}
 .code-bar input{flex:1;border:none;outline:none;font-size:13px;padding:10px 12px;color:var(--ink);background:transparent;min-width:0;}
 .code-bar input::placeholder{color:var(--faint);}
 .code-bar button{background:var(--ink);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:0 22px;border-radius:2px;transition:.2s;white-space:nowrap;}
@@ -68,7 +68,10 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 @media(max-width:980px){.calc-wrap{grid-template-columns:1fr;}}
 
 /* ── STEPS ── */
-.step{background:var(--card);border:1px solid var(--line);padding:28px;margin-bottom:22px;border-radius:4px;}
+.step{background:transparent;border:0;border-top:1px solid var(--line);padding:30px 0;margin:0 0 12px;border-radius:0;}
+.step:first-child{border-top:0;}
+.left-column{min-width:0;}
+.set-block{padding:0 0 26px;margin:0 0 18px;border-bottom:1px solid var(--line);}
 .step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;}
 .step-num{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--gold-d);border:1px solid var(--gold);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .step-head h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:.5px;}
@@ -85,10 +88,11 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 
 /* ── OPTION CARDS ── */
 .opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;}
-.opt-card{border:1px solid var(--line);background:#fff;padding:18px 12px 14px;text-align:center;cursor:pointer;position:relative;transition:.22s;border-radius:4px;}
-.opt-card:hover{border-color:var(--ink);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.06);}
-.opt-card.selected{border-color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.08);}
-.opt-card img{height:104px;width:auto;margin:0 auto 10px;object-fit:contain;}
+.opt-card{border:1px solid transparent;background:transparent;padding:14px 10px 12px;text-align:center;cursor:pointer;position:relative;transition:.28s;border-radius:12px;}
+.opt-card:hover{border-color:rgba(184,147,90,.42);transform:translateY(-4px);background:rgba(255,255,255,.3);}
+.opt-card.selected{border-color:var(--gold);background:rgba(255,255,255,.42);box-shadow:0 12px 32px rgba(67,49,20,.08);}
+.opt-card img{height:118px;width:auto;margin:0 auto 8px;object-fit:contain;filter:drop-shadow(0 15px 13px rgba(38,31,20,.14));transition:transform .3s,filter .3s;}
+.opt-card:hover img,.opt-card.selected img{transform:translateY(-3px) scale(1.035);filter:drop-shadow(0 19px 17px rgba(38,31,20,.18));}
 .opt-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
 .opt-desc{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;}
 .opt-price{font-size:11px;color:var(--gold-d);font-weight:700;margin-top:6px;}
@@ -99,38 +103,50 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 
 /* ── PILLS ── */
 .pills{display:flex;flex-wrap:wrap;gap:8px;}
-.pill{border:1px solid var(--line);background:#fff;font-size:12px;padding:9px 16px;border-radius:999px;transition:.2s;color:var(--ink);}
+.pill{border:1px solid var(--line);background:transparent;font-size:12px;padding:9px 16px;border-radius:999px;transition:.2s;color:var(--ink);}
 .pill:hover{border-color:var(--ink);}
 .pill.selected{background:var(--ink);color:#fff;border-color:var(--ink);}
 .pill small{opacity:.65;font-size:10px;margin-inline-start:4px;}
 .mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
-.mode-card{border:1px solid var(--line);background:#fff;padding:16px;text-align:center;cursor:pointer;border-radius:4px;transition:.2s;}
+.mode-card{border:1px solid var(--line);background:transparent;padding:16px;text-align:center;cursor:pointer;border-radius:12px;transition:.2s;}
 .mode-card:hover{border-color:var(--ink);}
-.mode-card.selected{border-color:var(--ink);background:var(--ivory);}
+.mode-card.selected{border-color:var(--gold);background:rgba(255,255,255,.38);box-shadow:0 8px 22px rgba(67,49,20,.06);}
 .mode-card .mc-t{font-size:13px;font-weight:700;}
 .mode-card .mc-d{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;}
 
 /* ── TEETH ── */
 .teeth-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
 .counter-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
-.counter-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1;transition:.2s;}
+.counter-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:transparent;font-size:18px;line-height:1;transition:.2s;}
 .counter-btn:hover{border-color:var(--ink);}
 .counter-num{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;min-width:56px;text-align:center;}
 .counter-lbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;}
-.smile-map{background:var(--ivory);border:1px solid var(--line);border-radius:4px;padding:18px 12px;}
+.smile-map{background:radial-gradient(ellipse at 50% 48%,rgba(255,255,255,.72),rgba(247,244,238,.12) 72%);border:1px solid rgba(28,25,20,.08);border-radius:22px;padding:22px 16px;overflow:hidden;}
+.teeth-chart{display:block;width:min(100%,760px);height:auto;margin:0 auto;color:#665f54;--tooth-selected:#b8935a;--tooth-selected-opacity:.36;}
+.teeth-chart .tooth{cursor:pointer;}
+.chart-caption{font-size:11px;color:var(--mut);text-align:center;margin-top:8px;}
 .arch{display:flex;gap:4px;justify-content:center;direction:ltr;}
 .arch + .arch{margin-top:14px;}
-.tooth{width:32px;height:42px;border:1px solid var(--line);background:#fff;border-radius:5px;font-size:9px;color:var(--mut);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;padding:0;}
-.tooth:hover{border-color:var(--ink);}
-.tooth.sel{background:var(--ink);color:#fff;border-color:var(--ink);}
-.arch-upper .tooth{border-radius:5px 5px 12px 12px;}
-.arch-lower .tooth{border-radius:12px 12px 5px 5px;}
-.mid-gap{width:14px;flex-shrink:0;}
-.arch-lbl{text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--faint);margin:10px 0 4px;}
-@media(max-width:560px){.tooth{width:24px;height:34px;font-size:8px;}.mid-gap{width:8px;}.arch{gap:2px;}}
+/* Circular, touch-friendly complexity selector. */
+.level-wheel-wrap{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin:8px auto 6px;max-width:560px;}
+.level-turn{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);font-size:15px;transition:.2s;}
+.level-turn:hover{border-color:var(--gold);background:rgba(255,255,255,.4);}
+.level-wheel{position:relative;width:min(100%,340px);aspect-ratio:1;margin:auto;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28) 0 24%,transparent 24.5% 57%,rgba(184,147,90,.12) 57.5% 58%,transparent 58.5%);}
+.level-wheel::before{content:"";position:absolute;inset:19%;border:1px solid rgba(184,147,90,.2);border-radius:50%;}
+.level-wheel-item{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px;border:1px solid transparent;background:transparent;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transform:translate(var(--x),var(--y)) scale(.82);transition:transform .38s cubic-bezier(.2,.8,.2,1),background .25s,border .25s,box-shadow .25s;z-index:1;color:var(--mut);}
+.level-wheel-item img{width:68px;height:57px;object-fit:contain;filter:drop-shadow(0 9px 9px rgba(30,24,17,.12));}
+.level-wheel-item .wheel-name{font-size:9px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.level-wheel-item.active{z-index:2;transform:translate(var(--x),var(--y)) scale(1.14);border-color:rgba(184,147,90,.65);background:rgba(255,255,255,.76);box-shadow:0 12px 30px rgba(51,38,18,.12);color:var(--ink);}
+.level-wheel-item.active img{width:76px;height:63px;}
+.level-wheel-center{position:absolute;inset:39%;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;font-family:'Playfair Display',serif;font-size:12px;color:var(--gold-d);}
+.level-picked{text-align:center;min-height:56px;margin:0 auto 10px;max-width:460px;}
+.level-picked strong{display:block;font-family:'Playfair Display',serif;font-size:18px;}
+.level-picked span{font-size:11px;color:var(--mut);line-height:1.5;display:block;margin-top:3px;}
+.level-examples{font-size:10px;color:var(--gold-d);margin-top:4px;}
+@media(max-width:560px){.smile-map{padding:14px 6px;border-radius:16px}.teeth-chart{width:100%}.level-wheel{width:min(100%,290px)}.level-wheel-item{width:72px;height:72px;margin:-36px}.level-wheel-item img{width:55px;height:46px}.level-wheel-item.active img{width:64px;height:52px}.level-wheel-center{font-size:10px}.step{padding:24px 0}.opt-card img{height:96px}.opt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
 
 /* ── GROUP BUILDER ── */
-.group-card{border:1px solid var(--line);background:#fff;border-radius:4px;padding:18px;margin-top:14px;}
+.group-card{border:1px solid var(--line);background:rgba(255,255,255,.18);border-radius:16px;padding:22px;margin-top:16px;}
 .group-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
 .group-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;}
 .group-label-inp{flex:1;min-width:140px;border:1px solid var(--line);border-radius:2px;padding:8px 10px;font-size:12px;}
@@ -139,10 +155,11 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .g-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
 .g-grid .full{grid-column:1/-1;}
 .fld label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin-bottom:5px;}
-.fld select,.fld input{width:100%;border:1px solid var(--line);border-radius:2px;padding:9px 10px;font-size:13px;background:#fff;color:var(--ink);outline:none;}
+.fld select,.fld input,.group-label-inp,.order-grid textarea{width:100%;border:1px solid rgba(28,25,20,.18);border-radius:8px;padding:11px 12px;font-size:13px;background:rgba(255,255,255,.44);color:var(--ink);outline:none;backdrop-filter:blur(8px);}
+.fld select:focus,.fld input:focus,.group-label-inp:focus,.order-grid textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,147,90,.12);}
 .fld select:focus,.fld input:focus{border-color:var(--ink);}
 .g-pills{display:flex;flex-wrap:wrap;gap:6px;}
-.g-pill{border:1px solid var(--line);background:#fff;font-size:11px;padding:6px 12px;border-radius:999px;transition:.15s;}
+.g-pill{border:1px solid var(--line);background:transparent;font-size:11px;padding:6px 12px;border-radius:999px;transition:.15s;}
 .g-pill.selected{background:var(--ink);color:#fff;border-color:var(--ink);}
 .g-add{margin-top:14px;background:none;border:1px dashed var(--gold);color:var(--gold-d);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:12px 18px;border-radius:4px;transition:.2s;}
 .g-add:hover{background:rgba(184,147,90,.08);}
@@ -152,6 +169,12 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .hint-box{display:flex;align-items:center;gap:12px;background:#fdf6ec;border:1px solid #ecd9b8;border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.6;color:#6b5320;margin-top:14px;flex-wrap:wrap;}
 .hint-box button{background:var(--gold);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border-radius:2px;white-space:nowrap;}
 .hint-box button:hover{background:var(--gold-d);}
+.gold-rate-panel{display:grid;grid-template-columns:36px minmax(0,1fr) minmax(180px,260px);align-items:center;gap:14px;margin:18px 0 2px;padding:15px 0;border-top:1px solid rgba(184,147,90,.28);border-bottom:1px solid rgba(184,147,90,.28);}
+.gold-rate-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(184,147,90,.12);color:var(--gold-d);}
+.gold-rate-copy strong{font-size:12px;display:block;}
+.gold-rate-copy span{font-size:10px;line-height:1.5;color:var(--mut);display:block;margin-top:3px;}
+.gold-rate-panel input{width:100%;min-width:0;border:1px solid rgba(28,25,20,.18);border-radius:8px;padding:12px;background:rgba(255,255,255,.5);font-size:14px;}
+@media(max-width:640px){.gold-rate-panel{grid-template-columns:32px 1fr;gap:10px}.gold-rate-panel input{grid-column:1/-1}}
 .finish-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:6px;}
 .finish-block{margin-top:18px;}
 .finish-block > .fb-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut);margin-bottom:8px;}
@@ -203,7 +226,7 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .toast.show{opacity:1;transform:translate(-50%,0);}
 
 /* ── FOOTER ── */
-footer{border-top:1px solid var(--line);padding:40px 5%;text-align:center;background:#fff;}
+footer{border-top:1px solid var(--line);padding:40px 5%;text-align:center;background:transparent;}
 footer .f-logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:2px;}
 footer .f-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:14px 0;}
 footer .f-links a{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);}
@@ -224,8 +247,7 @@ footer p{font-size:11px;color:var(--faint);}
     <a href="/silvers" data-i18n="nav_silvers">Silvers</a>
     <a href="/diamonds" data-i18n="nav_diamonds">Diamonds</a>
     <a href="/atelier" data-i18n="nav_atelier">Atelier</a>
-    <a href="/calculator" class="nav-active" data-i18n="nav_calculator">Calculator</a>
-    <a href="/booking" data-i18n="nav_booking">Booking</a>
+<a href="/booking" data-i18n="nav_booking">Booking</a>
     <a href="/contact" data-i18n="nav_contact">Contact</a>
     <div class="lang-toggle" role="group" aria-label="Language">
       <button type="button" id="lang-en" class="on">EN</button>
@@ -317,8 +339,8 @@ footer p{font-size:11px;color:var(--faint);}
       mode_mixed: 'Mix different teeth', mode_mixed_d: 'Different levels, stones & finishes per group.',
       group_n: 'Group', group_label_ph: 'Group name (optional)',
       add_group: '+ Add tooth group', remove: 'Remove',
-      lvl_05: 'Bars', lvl_1: 'Solid', lvl_2: 'Open face', lvl_3: 'Mid detail', lvl_4: 'Complex', lvl_5: 'Scorpion', lvl_6: 'Ultimate',
-      lvl_05_d: 'Half base — open bars with teeth showing behind.',
+      lvl_05: 'Bar', lvl_1: 'Solid', lvl_2: 'Open face', lvl_3: 'Mid detail', lvl_4: 'Complex', lvl_5: 'Scorpion', lvl_6: 'Ultimate',
+      lvl_05_d: 'Half the solid base price. Open horizontal bars across the front; the natural teeth show through the gaps.',
       lvl_1_d: 'Fully solid metal, no cuts. One clean surface.',
       lvl_2_d: 'Solid base with openings over the face of the teeth.',
       lvl_3_d: 'Lettering, simple outlines, a few cuts.',
@@ -329,7 +351,7 @@ footer p{font-size:11px;color:var(--faint);}
       accent_count: 'Stone count', accent_type: 'Stone type', setting: 'Setting',
       full_type: 'Stone type', coverage: 'Coverage',
       custom_price: 'Price per stone (EGP)', custom_price_tooth: 'Price per tooth (EGP)',
-      bars_note: 'Bars design — full iced bars are fixed for this level and included in the price.',
+      bars_note: 'Bar design — open horizontal bars with the natural tooth visible behind. Iced bars are a fixed option and included in the stone price.',
       stones_hint: 'Stones & diamonds are only available on Silver and Gold. Tap below to switch your metal in one tap.',
       switch_silver: 'Switch to Silver',
       plating_none: 'No plating',
@@ -343,10 +365,10 @@ footer p{font-size:11px;color:var(--faint);}
       mold: 'Dental mold', mold_none: 'I already have my mold', mold_normal: 'Normal per arch', mold_digital: 'Digital full mouth',
       client_name: 'Your name', client_phone: 'Phone / WhatsApp', client_notes: 'Notes (optional)',
       client_name_ph: 'e.g. Omar', client_phone_ph: '01xxxxxxxxx', client_notes_ph: 'Anything we should know?',
-      gold_rate_lbl: 'Today’s 24K gold rate (EGP / gram)', gold_rate_note: 'Gold is priced at the live daily rate. Enter today’s 24K rate to see your exact gold estimate.',
+      gold_rate_lbl: 'Enter today’s 24K gold rate (EGP / gram) — required each time', gold_rate_note: 'Required for every gold estimate. Please confirm today’s 24K studio rate; saved or old rates are never reused.',
       add_set: '+ Add Another Set',
       sum_title: 'Your Estimate', sum_sub: 'Live studio pricing — EGP',
-      sum_total: 'Total', sum_deposit: 'Deposit to begin (50%)', sum_balance: 'Balance on delivery',
+      sum_total: 'Total', sum_deposit: 'Full payment required (100%)', sum_balance: 'Remaining after full payment',
       sum_code: 'Your design code', sum_code_hint: 'Send this code to EGYGRILLZ or paste it in any calculator to load this exact design.',
       btn_pdf: 'Download PDF Estimate', btn_copy_code: 'Copy Code', btn_share: 'Copy Share Link',
       btn_book: 'Book Appointment', btn_contact: 'Send to Studio',
@@ -386,8 +408,8 @@ footer p{font-size:11px;color:var(--faint);}
       mode_mixed: 'مزج تصاميم مختلفة', mode_mixed_d: 'مستويات وأحجار وتشطيبات مختلفة لكل مجموعة.',
       group_n: 'مجموعة', group_label_ph: 'اسم المجموعة (اختياري)',
       add_group: '+ إضافة مجموعة أسنان', remove: 'إزالة',
-      lvl_05: 'بارات', lvl_1: 'سوليد', lvl_2: 'وجه مفتوح', lvl_3: 'تفاصيل متوسطة', lvl_4: 'معقّد', lvl_5: 'عقرب', lvl_6: 'أقصى تفصيل',
-      lvl_05_d: 'نصف السعر الأساسي — بارات مفتوحة والأسنان ظاهرة خلفها.',
+      lvl_05: 'بار', lvl_1: 'سوليد', lvl_2: 'وجه مفتوح', lvl_3: 'تفاصيل متوسطة', lvl_4: 'معقّد', lvl_5: 'عقرب', lvl_6: 'أقصى تفصيل',
+      lvl_05_d: 'نصف سعر السوليد. قضبان أفقية مفتوحة في الأمام وتظهر الأسنان الطبيعية من الفتحات.',
       lvl_1_d: 'معدن سوليد بالكامل بدون فتحات. سطح نظيف واحد.',
       lvl_2_d: 'قاعدة سوليد مع فتحات على وجه الأسنان.',
       lvl_3_d: 'حروف وخطوط بسيطة وبعض الفتحات.',
@@ -398,7 +420,7 @@ footer p{font-size:11px;color:var(--faint);}
       accent_count: 'عدد الأحجار', accent_type: 'نوع الحجر', setting: 'طريقة التركيب',
       full_type: 'نوع الحجر', coverage: 'التغطية',
       custom_price: 'السعر للحجر (جنيه)', custom_price_tooth: 'السعر للسن (جنيه)',
-      bars_note: 'تصميم بارات — البارات المرصّعة بالكامل ثابتة لهذا المستوى ومشمولة في السعر.',
+      bars_note: 'تصميم بار — قضبان أفقية مفتوحة وتظهر الأسنان الطبيعية خلفها. ترصيع البارات خيار ثابت ويُحسب ضمن سعر الأحجار.',
       stones_hint: 'الأحجار والألماس متاحة فقط على الفضة والذهب. اضغط أدناه لتبديل المعدن بضغطة واحدة.',
       switch_silver: 'التبديل إلى الفضة',
       plating_none: 'بدون طلاء',
@@ -412,10 +434,10 @@ footer p{font-size:11px;color:var(--faint);}
       mold: 'قالب الأسنان', mold_none: 'لديّ القالب بالفعل', mold_normal: 'عادي لكل فك', mold_digital: 'رقمي للفم الكامل',
       client_name: 'اسمك', client_phone: 'الهاتف / واتساب', client_notes: 'ملاحظات (اختياري)',
       client_name_ph: 'مثال: عمر', client_phone_ph: '01xxxxxxxxx', client_notes_ph: 'هل هناك أي شيء يجب أن نعرفه؟',
-      gold_rate_lbl: 'سعر عيار 24 اليوم (جنيه / جرام)', gold_rate_note: 'يُسعّر الذهب بسعر السوق اليومي. أدخل سعر عيار 24 اليوم لعرض تقدير دقيق.',
+      gold_rate_lbl: 'أدخل سعر عيار 24 اليوم (جنيه / جرام) — مطلوب في كل مرة', gold_rate_note: 'مطلوب لكل تقدير ذهبي. أكّد سعر الاستوديو اليوم لعيار 24؛ لا نستخدم سعرًا محفوظًا أو قديمًا.',
       add_set: '+ إضافة طقم آخر',
       sum_title: 'تقديرك', sum_sub: 'أسعار الاستوديو المباشرة — جنيه',
-      sum_total: 'الإجمالي', sum_deposit: 'المقدم للبدء (50%)', sum_balance: 'المتبقي عند الاستلام',
+      sum_total: 'الإجمالي', sum_deposit: 'الدفع الكامل مطلوب (100٪)', sum_balance: 'المتبقي بعد الدفع الكامل',
       sum_code: 'كود التصميم الخاص بك', sum_code_hint: 'أرسل هذا الكود إلى EGYGRILLZ أو الصقه في أي حاسبة لتحميل هذا التصميم بالضبط.',
       btn_pdf: 'تحميل تقدير PDF', btn_copy_code: 'نسخ الكود', btn_share: 'نسخ رابط المشاركة',
       btn_book: 'احجز موعدك', btn_contact: 'أرسل للاستوديو',
@@ -461,9 +483,74 @@ footer p{font-size:11px;color:var(--faint);}
     { id: 'blackgold', img: '/plating/BLACK%20GOLD%20PLATING.png' },
     { id: 'silverplating', img: '/plating/SILVER%20PLATING.png' },
   ];
+  const TEETH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" fill="none" id="teeth-chart-root" color="currentColor">
+  <!-- Perfected symmetric teeth chart: right side (user refined) mirrored to left. Packed spacing; centrals larger. -->
+  <style>
+    .tooth { fill:transparent; stroke:currentColor; stroke-width:1.45; stroke-linejoin:round; stroke-linecap:round; cursor:pointer; opacity:0.5; transition:fill .2s,opacity .2s,stroke-width .2s; }
+    .tooth:hover { opacity:0.9; stroke-width:1.9; }
+    .tooth.is-selected { fill:var(--tooth-selected, currentColor); fill-opacity:var(--tooth-selected-opacity, 0.28); opacity:1; stroke-width:2.1; }
+    .tooth.is-assigned { fill:var(--tooth-assigned, currentColor); fill-opacity:var(--tooth-assigned-opacity, 0.12); opacity:0.9; }
+    .tooth.is-active-tooth { fill:var(--tooth-active, currentColor); fill-opacity:var(--tooth-active-opacity, 0.4); opacity:1; stroke-width:2.6; }
+    .arch-label { font-family:"Space Grotesk",system-ui,sans-serif; font-size:11px; letter-spacing:.28em; text-transform:uppercase; fill:currentColor; opacity:0.3; }
+    .tooth-label { font-family:"Space Grotesk",system-ui,sans-serif; font-size:7.5px; fill:currentColor; opacity:0.18; text-anchor:middle; pointer-events:none; }
+    .gum-line { fill:none; stroke:currentColor; stroke-width:1; opacity:0.07; }
+    .midline { stroke:currentColor; stroke-width:1; stroke-dasharray:2 6; opacity:0.12; }
+  </style>
+  <text class="arch-label" x="450" y="40" text-anchor="middle">Upper</text>
+  <text class="arch-label" x="450" y="496" text-anchor="middle">Lower</text>
+  <line class="midline" x1="450" y1="58" x2="450" y2="462"/>
+  <path class="gum-line" d="M40,139 Q250,119 450,115 Q650,119 860,139"/>
+  <path class="gum-line" d="M40,384 Q250,404 450,408 Q650,404 860,384"/>
+  <g id="upper-arch">
+    <path class="tooth" id="tooth-18" data-tooth="18" d="M 82.904 202.43 C 85.223 197.361 85.223 191.443 84.063 184.995 C 82.904 178.835 79.426 172.675 74.788 168.057 C 70.141 164.973 65.503 163.438 62.025 163.438 C 58.547 163.438 53.899 164.973 49.262 168.057 C 44.624 172.675 41.136 178.835 39.977 184.995 C 38.818 191.443 38.818 197.361 41.136 202.43 C 42.932 203.808 46.113 204.832 49.967 205.5 C 53.787 206.163 57.94 203.132 62.385 203.096 C 66.598 203.062 71.107 206.057 74.662 205.396 C 78.251 204.727 81.202 203.738 82.904 202.43"/>
+    <path class="tooth" id="tooth-17" data-tooth="17" d="M 144.186 205.079 C 146.57 198.873 146.57 191.56 145.378 183.726 C 144.186 176.148 140.611 167.735 135.843 162.679 C 131.066 159.315 125.106 157.63 120.339 157.63 C 117.955 157.63 113.178 157.63 111.986 157.63 C 107.218 157.63 102.441 159.315 97.673 162.679 C 92.906 167.735 89.33 176.148 88.128 183.726 C 86.937 191.56 86.937 198.873 89.33 205.079 C 91.973 207 96.634 208.388 102.194 209.244 C 106.897 209.968 112.001 206.339 117.313 206.301 C 122.011 206.267 126.924 209.907 131.101 209.277 C 136.758 208.425 141.509 207.026 144.186 205.079"/>
+    <path class="tooth" id="tooth-16" data-tooth="16" d="M 209.691 205.388 C 212.082 199.171 212.082 191.732 210.886 182.902 C 209.691 174.319 206.095 165.737 200.117 160.59 C 195.335 157.161 189.348 155.443 184.566 155.443 C 182.175 155.443 177.383 155.443 174.992 155.443 C 170.21 155.443 164.232 157.161 159.44 160.59 C 153.463 165.737 149.876 174.319 148.681 182.902 C 147.475 191.732 147.475 199.171 149.876 205.388 C 152.333 207.544 156.844 209.146 162.353 210.194 C 167.443 211.163 174.623 206.694 180.587 206.716 C 187.143 206.742 192.485 211.16 197.984 210.042 C 203.142 208.993 207.348 207.442 209.691 205.388"/>
+    <path class="tooth" id="tooth-15" data-tooth="15" d="M 256.782 204.406 C 259.085 198.664 259.085 192.601 257.929 184.682 C 256.782 176.535 254.47 167.487 249.864 160.249 C 245.258 154.821 240.643 153.011 236.038 153.011 C 231.423 153.011 226.818 154.821 222.213 160.249 C 217.598 167.487 215.294 176.535 214.139 184.682 C 212.991 192.601 212.991 198.664 215.294 204.406 C 216.799 206.122 220.319 205.812 223.359 206.781 C 226.274 207.711 228.666 209.95 232.225 210.194 C 234.235 210.331 236.289 210.358 238.316 210.277 C 241.689 210.141 243.587 207.185 246.508 206.442 C 250.38 205.458 254.983 206.457 256.782 204.406"/>
+    <path class="tooth" id="tooth-14" data-tooth="14" d="M 303.983 204.425 C 306.289 198.702 306.289 191.644 305.131 183.859 C 303.983 174.841 301.667 165.823 297.055 158.609 C 293.592 155.001 288.98 153.198 285.516 153.198 C 284.358 153.198 282.052 153.198 280.904 153.198 C 277.44 153.198 272.819 155.001 269.365 158.609 C 264.743 165.823 262.437 174.841 261.279 183.859 C 260.131 191.644 260.131 198.702 262.437 204.425 C 264.647 206.934 270.457 206.42 275.546 207.328 C 278.529 207.86 280.29 210.339 283.527 210.321 C 286.38 210.305 290.887 207.854 293.541 207.41 C 298.836 206.526 301.703 207.012 303.983 204.425"/>
+    <path class="tooth" id="tooth-13" data-tooth="13" d="M 342.048 206.152 C 343.337 203.576 347.141 205.032 347.283 201.823 C 347.42 198.734 347.103 195.378 346.48 191.804 C 345.22 182.952 342.68 172.599 338.89 162.239 C 335.09 153.603 326.617 153.913 326.617 153.913 C 326.617 153.913 319.9 153.603 316.11 162.239 C 312.31 172.599 309.78 182.952 308.51 191.804 C 307.812 195.838 307.501 199.596 307.792 203.004 C 308.026 205.751 311.759 206.522 312.888 208.777 C 316.235 212.649 321.074 216.224 328.756 216.001 C 335.601 215.802 341.935 206.211 341.935 206.211"/>
+    <path class="tooth" id="tooth-12" data-tooth="12" d="M 384.596 205.384 C 386.693 202.255 386.693 198.416 385.644 193.038 C 384.596 185.894 382.51 177.718 379.365 170.91 C 376.231 165.456 372.048 162.733 367.866 162.733 C 363.683 162.733 359.501 165.456 356.356 170.91 C 353.222 177.718 351.125 185.894 350.088 193.038 C 349.04 198.416 349.04 202.255 351.125 205.384 C 357.405 209.423 378.329 209.423 384.596 205.384"/>
+    <path class="tooth" id="tooth-11" data-tooth="11" d="M 449.499 212.112 C 452.192 207.962 452.192 201.807 450.85 193.601 C 449.499 184.045 446.814 173.023 442.77 161.995 C 438.734 152.811 430.663 149.135 419.898 149.135 C 409.133 149.135 401.061 152.811 397.026 161.995 C 392.981 173.023 390.297 184.045 388.945 193.601 C 387.603 201.807 387.603 207.962 390.297 212.112 C 398.368 218.469 441.428 218.469 449.499 212.112"/>
+    <path class="tooth" id="tooth-21" data-tooth="21" d="M 452.001 212.112 C 449.308 207.962 449.308 201.807 450.65 193.601 C 452.001 184.045 454.686 173.023 458.73 161.995 C 462.766 152.811 470.837 149.135 481.602 149.135 C 492.367 149.135 500.439 152.811 504.474 161.995 C 508.519 173.023 511.203 184.045 512.555 193.601 C 513.897 201.807 513.897 207.962 511.203 212.112 C 503.132 218.469 460.072 218.469 452.001 212.112"/>
+    <path class="tooth" id="tooth-22" data-tooth="22" d="M 516.904 205.384 C 514.807 202.255 514.807 198.416 515.856 193.038 C 516.904 185.894 518.99 177.718 522.135 170.91 C 525.269 165.456 529.452 162.733 533.634 162.733 C 537.817 162.733 541.999 165.456 545.144 170.91 C 548.278 177.718 550.375 185.894 551.412 193.038 C 552.46 198.416 552.46 202.255 550.375 205.384 C 544.095 209.423 523.171 209.423 516.904 205.384"/>
+    <path class="tooth" id="tooth-23" data-tooth="23" d="M 559.452 206.152 C 558.163 203.576 554.359 205.032 554.217 201.823 C 554.08 198.734 554.397 195.378 555.02 191.804 C 556.28 182.952 558.82 172.599 562.61 162.239 C 566.41 153.603 574.883 153.913 574.883 153.913 C 574.883 153.913 581.6 153.603 585.39 162.239 C 589.19 172.599 591.72 182.952 592.99 191.804 C 593.688 195.838 593.999 199.596 593.708 203.004 C 593.474 205.751 589.741 206.522 588.612 208.777 C 585.265 212.649 580.426 216.224 572.744 216.001 C 565.899 215.802 559.565 206.211 559.565 206.211"/>
+    <path class="tooth" id="tooth-24" data-tooth="24" d="M 597.517 204.425 C 595.211 198.702 595.211 191.644 596.369 183.859 C 597.517 174.841 599.833 165.823 604.445 158.609 C 607.908 155.001 612.52 153.198 615.984 153.198 C 617.142 153.198 619.448 153.198 620.596 153.198 C 624.06 153.198 628.681 155.001 632.135 158.609 C 636.757 165.823 639.063 174.841 640.221 183.859 C 641.369 191.644 641.369 198.702 639.063 204.425 C 636.853 206.934 631.043 206.42 625.954 207.328 C 622.971 207.86 621.21 210.339 617.973 210.321 C 615.12 210.305 610.613 207.854 607.959 207.41 C 602.664 206.526 599.797 207.012 597.517 204.425"/>
+    <path class="tooth" id="tooth-25" data-tooth="25" d="M 644.718 204.406 C 642.415 198.664 642.415 192.601 643.571 184.682 C 644.718 176.535 647.03 167.487 651.636 160.249 C 656.242 154.821 660.857 153.011 665.462 153.011 C 670.077 153.011 674.682 154.821 679.287 160.249 C 683.902 167.487 686.206 176.535 687.361 184.682 C 688.509 192.601 688.509 198.664 686.206 204.406 C 684.701 206.122 681.181 205.812 678.141 206.781 C 675.226 207.711 672.834 209.95 669.275 210.194 C 667.265 210.331 665.211 210.358 663.184 210.277 C 659.811 210.141 657.913 207.185 654.992 206.442 C 651.12 205.458 646.517 206.457 644.718 204.406"/>
+    <path class="tooth" id="tooth-26" data-tooth="26" d="M 691.809 205.388 C 689.418 199.171 689.418 191.732 690.614 182.902 C 691.809 174.319 695.405 165.737 701.383 160.59 C 706.165 157.161 712.152 155.443 716.934 155.443 C 719.325 155.443 724.117 155.443 726.508 155.443 C 731.29 155.443 737.268 157.161 742.06 160.59 C 748.037 165.737 751.624 174.319 752.819 182.902 C 754.025 191.732 754.025 199.171 751.624 205.388 C 749.167 207.544 744.656 209.146 739.147 210.194 C 734.057 211.163 726.877 206.694 720.913 206.716 C 714.357 206.742 709.015 211.16 703.516 210.042 C 698.358 208.993 694.152 207.442 691.809 205.388"/>
+    <path class="tooth" id="tooth-27" data-tooth="27" d="M 757.314 205.079 C 754.93 198.873 754.93 191.56 756.122 183.726 C 757.314 176.148 760.889 167.735 765.657 162.679 C 770.434 159.315 776.394 157.63 781.161 157.63 C 783.545 157.63 788.322 157.63 789.514 157.63 C 794.282 157.63 799.059 159.315 803.827 162.679 C 808.594 167.735 812.17 176.148 813.372 183.726 C 814.563 191.56 814.563 198.873 812.17 205.079 C 809.527 207 804.866 208.388 799.306 209.244 C 794.603 209.968 789.499 206.339 784.187 206.301 C 779.489 206.267 774.576 209.907 770.399 209.277 C 764.742 208.425 759.991 207.026 757.314 205.079"/>
+    <path class="tooth" id="tooth-28" data-tooth="28" d="M 818.596 202.43 C 816.277 197.361 816.277 191.443 817.437 184.995 C 818.596 178.835 822.074 172.675 826.712 168.057 C 831.359 164.973 835.997 163.438 839.475 163.438 C 842.953 163.438 847.601 164.973 852.238 168.057 C 856.876 172.675 860.364 178.835 861.523 184.995 C 862.682 191.443 862.682 197.361 860.364 202.43 C 858.568 203.808 855.387 204.832 851.533 205.5 C 847.713 206.163 843.56 203.132 839.115 203.096 C 834.902 203.062 830.393 206.057 826.838 205.396 C 823.249 204.727 820.298 203.738 818.596 202.43"/>
+  </g>
+  <g id="lower-arch">
+    <path class="tooth" id="tooth-48" data-tooth="48" d="M 82.255 322.948 C 84.587 327.637 84.587 332.391 83.416 337.717 C 82.255 343.464 78.77 349.212 74.115 353.518 C 69.468 356.392 64.813 357.832 60.167 357.832 C 55.512 357.832 50.866 356.392 46.21 353.518 C 41.555 349.212 38.07 343.464 36.908 337.717 C 35.747 332.391 35.747 327.637 38.07 322.948 C 39.052 322.21 39.361 319.497 41.374 318.872 C 46.629 317.241 51.53 320.86 59.478 321.14 C 64.076 321.301 72.172 317.699 75.529 318.166 C 79.95 318.782 81.605 321.743 82.255 322.948"/>
+    <path class="tooth" id="tooth-47" data-tooth="47" d="M 157.11 319.641 C 159.6 324.935 159.6 330.49 158.35 336.583 C 157.11 343.015 153.39 350.161 148.42 354.453 C 143.46 358.026 137.25 359.453 131.04 359.453 C 127.32 359.453 117.39 359.453 114.91 359.453 C 108.7 359.453 102.49 358.026 97.53 354.453 C 92.56 350.161 88.84 343.015 87.6 336.583 C 86.36 330.563 86.36 325.105 88.84 319.903 C 90.488 318.933 91.815 317.345 95.836 316.657 C 102.887 315.449 111.965 319.406 122.14 319.374 C 129.52 319.351 138.128 315.114 143.818 315.502 C 152.756 316.112 158.347 318.87 157.11 319.641"/>
+    <path class="tooth" id="tooth-46" data-tooth="46" d="M 231.394 319.725 C 233.809 324.98 233.809 330.507 232.602 336.599 C 231.394 343.863 227.763 351.126 221.727 355.489 C 216.888 359.12 210.843 360.577 204.807 360.577 C 201.175 360.577 192.715 360.577 190.301 360.577 C 184.255 360.577 178.219 359.12 173.381 355.489 C 167.335 351.126 163.713 343.863 162.506 336.599 C 161.299 330.507 161.299 324.98 163.713 319.725 C 165.717 318.328 166.807 315.555 171.946 314.644 C 177.839 313.6 184.122 318.577 192.321 318.709 C 199.835 318.831 209.258 314.045 215.146 314.528 C 224.262 315.274 231.394 318.344 231.394 319.725"/>
+    <path class="tooth" id="tooth-45" data-tooth="45" d="M 282.064 320.006 C 284.441 325.311 284.441 331.85 283.257 339.053 C 282.064 346.546 278.514 354.876 273.78 359.869 C 269.036 364.038 264.293 365.7 259.559 365.7 C 254.815 365.7 250.081 364.038 245.337 359.869 C 240.603 354.876 237.043 346.546 235.86 339.053 C 234.676 331.85 234.676 325.311 237.043 320.006 C 238.928 318.36 243.299 318.543 247.772 317.214 C 251.703 316.047 255.549 313.257 260.102 313.297 C 265.066 313.34 266.324 315.62 270.314 316.968 C 274.216 318.286 280.889 318.657 282.064 320.006"/>
+    <path class="tooth" id="tooth-44" data-tooth="44" d="M 328.362 319.173 C 330.484 324.439 330.484 330.915 329.423 338.102 C 328.362 346.364 325.179 354.634 320.926 359.589 C 316.682 363.72 312.43 365.377 308.185 365.377 C 303.933 365.377 299.688 363.72 295.436 359.589 C 291.183 354.634 288 346.364 286.939 338.102 C 285.878 330.915 285.878 324.439 288 319.173 C 289.51 317.716 295.292 317.73 298.905 316.254 C 302.484 314.79 303.881 311.83 308.136 311.848 C 312.514 311.867 313.866 314.203 317.424 315.541 C 321.653 317.13 327.754 317.851 328.362 319.173"/>
+    <path class="tooth" id="tooth-43" data-tooth="43" d="M 364.927 312.442 C 365.292 313.168 372.628 316.731 372.892 317.51 C 374.476 322.174 373.15 325.111 372.056 331.364 C 370.78 340.149 368.218 350.479 363.115 359.084 C 359.277 365.971 346.508 365.971 342.68 359.084 C 337.566 350.479 335.014 340.149 333.738 331.364 C 332.452 324.067 329.9 320.492 332.462 315.418 C 335.706 315.164 338.604 312.992 340.622 312.219 C 346.782 309.856 348.117 307.587 353.337 308.171 C 358.142 308.708 362.611 310.307 365.227 312.924"/>
+    <path class="tooth" id="tooth-42" data-tooth="42" d="M 411.702 317.945 C 413.996 322.256 413.996 327.371 412.844 334.181 C 411.702 341.74 409.416 349.992 404.837 355.992 C 401.408 360.489 397.98 363.49 394.543 363.49 C 391.115 363.49 387.678 360.489 384.25 355.992 C 379.67 349.992 377.385 341.74 376.242 334.181 C 375.099 327.371 375.099 322.256 377.385 317.945 C 383.107 314.348 405.988 314.348 411.702 317.945"/>
+    <path class="tooth" id="tooth-41" data-tooth="41" d="M 449.914 317.952 C 452.22 322.348 452.22 327.559 451.067 334.477 C 449.914 342.091 447.599 349.699 444.14 355.788 C 440.681 360.352 437.212 362.637 433.753 362.637 C 430.285 362.637 426.826 360.352 423.358 355.788 C 419.898 349.699 417.592 342.091 416.439 334.477 C 415.286 327.559 415.286 322.348 417.592 317.952 C 420.551 316.064 427.212 316.585 434.024 316.635 C 440.483 316.682 447.104 316.162 449.914 317.952"/>
+    <path class="tooth" id="tooth-31" data-tooth="31" d="M 451.586 317.952 C 449.28 322.348 449.28 327.559 450.433 334.477 C 451.586 342.091 453.901 349.699 457.36 355.788 C 460.819 360.352 464.288 362.637 467.747 362.637 C 471.215 362.637 474.674 360.352 478.142 355.788 C 481.602 349.699 483.908 342.091 485.061 334.477 C 486.214 327.559 486.214 322.348 483.908 317.952 C 480.949 316.064 474.288 316.585 467.476 316.635 C 461.017 316.682 454.396 316.162 451.586 317.952"/>
+    <path class="tooth" id="tooth-32" data-tooth="32" d="M 489.798 317.945 C 487.504 322.256 487.504 327.371 488.656 334.181 C 489.798 341.74 492.084 349.992 496.663 355.992 C 500.092 360.489 503.52 363.49 506.957 363.49 C 510.385 363.49 513.822 360.489 517.25 355.992 C 521.83 349.992 524.115 341.74 525.258 334.181 C 526.401 327.371 526.401 322.256 524.115 317.945 C 518.393 314.348 495.512 314.348 489.798 317.945"/>
+    <path class="tooth" id="tooth-33" data-tooth="33" d="M 536.573 312.442 C 536.208 313.168 528.872 316.731 528.608 317.51 C 527.024 322.174 528.35 325.111 529.444 331.364 C 530.72 340.149 533.282 350.479 538.385 359.084 C 542.223 365.971 554.992 365.971 558.82 359.084 C 563.934 350.479 566.486 340.149 567.762 331.364 C 569.048 324.067 571.6 320.492 569.038 315.418 C 565.794 315.164 562.896 312.992 560.878 312.219 C 554.718 309.856 553.383 307.587 548.163 308.171 C 543.358 308.708 538.889 310.307 536.273 312.924"/>
+    <path class="tooth" id="tooth-34" data-tooth="34" d="M 573.138 319.173 C 571.016 324.439 571.016 330.915 572.077 338.102 C 573.138 346.364 576.321 354.634 580.574 359.589 C 584.818 363.72 589.07 365.377 593.315 365.377 C 597.567 365.377 601.812 363.72 606.064 359.589 C 610.317 354.634 613.5 346.364 614.561 338.102 C 615.622 330.915 615.622 324.439 613.5 319.173 C 611.99 317.716 606.208 317.73 602.595 316.254 C 599.016 314.79 597.619 311.83 593.364 311.848 C 588.986 311.867 587.634 314.203 584.076 315.541 C 579.847 317.13 573.746 317.851 573.138 319.173"/>
+    <path class="tooth" id="tooth-35" data-tooth="35" d="M 619.436 320.006 C 617.059 325.311 617.059 331.85 618.243 339.053 C 619.436 346.546 622.986 354.876 627.72 359.869 C 632.464 364.038 637.207 365.7 641.941 365.7 C 646.685 365.7 651.419 364.038 656.163 359.869 C 660.897 354.876 664.457 346.546 665.64 339.053 C 666.824 331.85 666.824 325.311 664.457 320.006 C 662.572 318.36 658.201 318.543 653.728 317.214 C 649.797 316.047 645.951 313.257 641.398 313.297 C 636.434 313.34 635.176 315.62 631.186 316.968 C 627.284 318.286 620.611 318.657 619.436 320.006"/>
+    <path class="tooth" id="tooth-36" data-tooth="36" d="M 670.106 319.725 C 667.691 324.98 667.691 330.507 668.898 336.599 C 670.106 343.863 673.737 351.126 679.773 355.489 C 684.612 359.12 690.657 360.577 696.693 360.577 C 700.325 360.577 708.785 360.577 711.199 360.577 C 717.245 360.577 723.281 359.12 728.119 355.489 C 734.165 351.126 737.787 343.863 738.994 336.599 C 740.201 330.507 740.201 324.98 737.787 319.725 C 735.783 318.328 734.693 315.555 729.554 314.644 C 723.661 313.6 717.378 318.577 709.179 318.709 C 701.665 318.831 692.242 314.045 686.354 314.528 C 677.238 315.274 670.106 318.344 670.106 319.725"/>
+    <path class="tooth" id="tooth-37" data-tooth="37" d="M 744.39 319.641 C 741.9 324.935 741.9 330.49 743.15 336.583 C 744.39 343.015 748.11 350.161 753.08 354.453 C 758.04 358.026 764.25 359.453 770.46 359.453 C 774.18 359.453 784.11 359.453 786.59 359.453 C 792.8 359.453 799.01 358.026 803.97 354.453 C 808.94 350.161 812.66 343.015 813.9 336.583 C 815.14 330.563 815.14 325.105 812.66 319.903 C 811.012 318.933 809.685 317.345 805.664 316.657 C 798.613 315.449 789.535 319.406 779.36 319.374 C 771.98 319.351 763.372 315.114 757.682 315.502 C 748.744 316.112 743.153 318.87 744.39 319.641"/>
+    <path class="tooth" id="tooth-38" data-tooth="38" d="M 819.245 322.948 C 816.913 327.637 816.913 332.391 818.084 337.717 C 819.245 343.464 822.73 349.212 827.385 353.518 C 832.032 356.392 836.687 357.832 841.333 357.832 C 845.988 357.832 850.634 356.392 855.29 353.518 C 859.945 349.212 863.43 343.464 864.592 337.717 C 865.753 332.391 865.753 327.637 863.43 322.948 C 862.448 322.21 862.139 319.497 860.126 318.872 C 854.871 317.241 849.97 320.86 842.022 321.14 C 837.424 321.301 829.328 317.699 825.971 318.166 C 821.55 318.782 819.895 321.743 819.245 322.948"/>
+  </g>
+  <text class="tooth-label" x="25.871" y="229" text-anchor="middle">18</text><text class="tooth-label" x="80.171" y="229" text-anchor="middle">17</text><text class="tooth-label" x="143.271" y="229" text-anchor="middle">16</text><text class="tooth-label" x="199.571" y="229" text-anchor="middle">15</text><text class="tooth-label" x="246.671" y="229" text-anchor="middle">14</text><text class="tooth-label" x="289.771" y="229" text-anchor="middle">13</text><text class="tooth-label" x="325.971" y="229" text-anchor="middle">12</text><text class="tooth-label" x="378.171" y="229" text-anchor="middle">11</text><text class="tooth-label" x="523.329" y="229" text-anchor="middle">21</text><text class="tooth-label" x="575.529" y="229" text-anchor="middle">22</text><text class="tooth-label" x="611.729" y="229" text-anchor="middle">23</text><text class="tooth-label" x="654.829" y="229" text-anchor="middle">24</text><text class="tooth-label" x="701.929" y="229" text-anchor="middle">25</text><text class="tooth-label" x="758.229" y="229" text-anchor="middle">26</text><text class="tooth-label" x="821.329" y="229" text-anchor="middle">27</text><text class="tooth-label" x="875.629" y="229" text-anchor="middle">28</text>
+  <text class="tooth-label" x="24.071" y="300" text-anchor="middle">48</text><text class="tooth-label" x="85.871" y="300" text-anchor="middle">47</text><text class="tooth-label" x="158.871" y="300" text-anchor="middle">46</text><text class="tooth-label" x="220.671" y="300" text-anchor="middle">45</text><text class="tooth-label" x="271.271" y="300" text-anchor="middle">44</text><text class="tooth-label" x="315.771" y="300" text-anchor="middle">43</text><text class="tooth-label" x="355.171" y="300" text-anchor="middle">42</text><text class="tooth-label" x="394.671" y="300" text-anchor="middle">41</text><text class="tooth-label" x="506.829" y="300" text-anchor="middle">31</text><text class="tooth-label" x="546.329" y="300" text-anchor="middle">32</text><text class="tooth-label" x="585.729" y="300" text-anchor="middle">33</text><text class="tooth-label" x="630.229" y="300" text-anchor="middle">34</text><text class="tooth-label" x="680.829" y="300" text-anchor="middle">35</text><text class="tooth-label" x="742.629" y="300" text-anchor="middle">36</text><text class="tooth-label" x="815.629" y="300" text-anchor="middle">37</text><text class="tooth-label" x="877.429" y="300" text-anchor="middle">38</text>
+</svg>`;
   const TOOTH_ORDER = ['UR1', 'UL1', 'UR2', 'UL2', 'UR3', 'UL3', 'UR4', 'UL4', 'UR5', 'UL5', 'UR6', 'UL6', 'UR7', 'UL7', 'UR8', 'UL8', 'LR1', 'LL1', 'LR2', 'LL2', 'LR3', 'LL3', 'LR4', 'LL4', 'LR5', 'LL5', 'LR6', 'LL6', 'LR7', 'LL7', 'LR8', 'LL8'];
-  const ARCH_UPPER = ['UR8', 'UR7', 'UR6', 'UR5', 'UR4', 'UR3', 'UR2', 'UR1', 'UL1', 'UL2', 'UL3', 'UL4', 'UL5', 'UL6', 'UL7', 'UL8'];
-  const ARCH_LOWER = ['LR8', 'LR7', 'LR6', 'LR5', 'LR4', 'LR3', 'LR2', 'LR1', 'LL1', 'LL2', 'LL3', 'LL4', 'LL5', 'LL6', 'LL7', 'LL8'];
+  const fdiToothId = (raw) => {
+    const n = Number(raw), quadrant = Math.floor(n / 10), tooth = n % 10;
+    return ({ 1: 'UR', 2: 'UL', 3: 'LL', 4: 'LR' }[quadrant] || '') + tooth;
+  };
+  function toothChartMarkup(setIndex) {
+    return TEETH_SVG
+      .replace('id="teeth-chart-root"', 'id="teeth-chart-root-' + setIndex + '" class="teeth-chart"')
+      .replace(/id="(upper-arch|lower-arch)"/g, (match, id) => 'id="' + id + '-' + setIndex + '"')
+      .replace(/id="tooth-/g, 'id="set' + setIndex + '-tooth-');
+  }
   const TEETH_PRESETS = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32];
   const STONE_TYPES = ['cz', 'moissanite', 'labgrown', 'natural'];
   const SETTINGS = ['flush', 'twoprong', 'threeprong', 'fourprong', 'sixprong', 'bezelfull', 'bezelhalf', 'bar'];
@@ -476,8 +563,9 @@ footer p{font-size:11px;color:var(--faint);}
   const settingName = (k) => ({ flush: 'Flush', twoprong: '2-Prong', threeprong: '3-Prong', fourprong: '4-Prong', sixprong: '6-Prong', bezelfull: 'Bezel full', bezelhalf: 'Bezel half', bar: 'Bar setting' }[k] || k);
   const coverageName = (k) => ({ standardpave: 'Standard Pave', frenchpave: 'French Pave', micropave: 'Micro-Pave', channel: 'Channel', invisible: 'Invisible' }[k] || k);
   const optName = (k) => t('opt_' + k) || k;
-  const levelName = (lv) => t('lvl_' + String(lv).replace('.', '_'));
-  const levelDesc = (lv) => t('lvl_' + String(lv).replace('.', '_') + '_d');
+  const levelKey = (lv) => String(lv) === '0.5' ? '05' : String(lv);
+  const levelName = (lv) => t('lvl_' + levelKey(lv));
+  const levelDesc = (lv) => t('lvl_' + levelKey(lv) + '_d');
   const matName = (m) => t('mat_' + m);
   const platingName = (p) => (p === 'none' ? t('plating_none') : t('pl_' + p));
 
@@ -510,14 +598,9 @@ footer p{font-size:11px;color:var(--faint);}
 
   /* ───────────────────────── pricing ───────────────────────── */
 
-  function studioGoldRate() {
-    const cfg = E() ? E().get() : {};
-    return Number(cfg.goldPrice) || 0;
-  }
   function goldRateForLine() {
-    if (studioGoldRate() > 0) return 0; // engine uses the live studio rate
-    const fb = parseFloat(state.goldRate);
-    return Number.isFinite(fb) && fb > 0 ? fb : 0;
+    const entered = parseFloat(state.goldRate);
+    return Number.isFinite(entered) && entered > 0 ? entered : 0;
   }
   function usesGold() {
     return state.sets.some((s) => {
@@ -606,13 +689,14 @@ footer p{font-size:11px;color:var(--faint);}
 
   function calcOrder() {
     if (!E()) return null;
-    return E().calculateOrder(buildLines(), { timeline: state.timeline, mold: state.mold, depositPct: 50 });
+    if (usesGold() && !(goldRateForLine() > 0)) return null;
+    return E().calculateOrder(buildLines(), { timeline: state.timeline, mold: state.mold, depositPct: 100 });
   }
 
   function currentCode() {
     if (!E()) return '';
     return E().encodeCode({
-      lines: buildLines(), timeline: state.timeline, mold: state.mold, depositPct: 50,
+      lines: buildLines(), timeline: state.timeline, mold: state.mold, depositPct: 100,
       clientName: state.clientName, clientPhone: state.clientPhone, notes: state.notes,
     }) || '';
   }
@@ -687,14 +771,18 @@ footer p{font-size:11px;color:var(--faint);}
     return html;
   }
 
+  function renderGoldRateField() {
+    return '<div class="gold-rate-panel"><div class="gold-rate-icon"><i class="fa-solid fa-coins"></i></div><div class="gold-rate-copy"><strong>' + esc(t('gold_rate_lbl')) + '</strong><span>' + esc(t('gold_rate_note')) + '</span></div><input type="number" min="0.01" step="0.01" required inputmode="decimal" value="' + esc(state.goldRate) + '" data-order="goldRate" aria-label="' + esc(t('gold_rate_lbl')) + '"></div>';
+  }
+
   function renderMaterial(obj, setIdx, groupIdx) {
     const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
     let html = '<div class="opt-grid">';
     MATERIALS.forEach((m) => {
       const name = matName(m.id);
       const desc = t('mat_' + m.id + '_d');
-      const per = perToothBase(m.id, obj.karat || '18');
-      html += '<div class="opt-card' + (obj.material === m.id ? ' selected' : '') + '" data-act="material" ' + at + ' data-value="' + m.id + '"><span class="opt-check">✓</span><img src="' + m.img + '" alt="' + esc(name) + '" loading="lazy"><div class="opt-name">' + esc(name) + '</div><div class="opt-desc">' + esc(desc) + '</div><div class="opt-price">' + esc(fmt(per)) + ' EGP ' + esc(t('per_tooth')) + '</div></div>';
+      const per = (m.id === 'gold' && !(goldRateForLine() > 0)) ? null : perToothBase(m.id, obj.karat || '18');
+      html += '<div class="opt-card' + (obj.material === m.id ? ' selected' : '') + '" data-act="material" ' + at + ' data-value="' + m.id + '"><span class="opt-check">✓</span><img src="' + m.img + '" alt="' + esc(name) + '" loading="lazy"><div class="opt-name">' + esc(name) + '</div><div class="opt-desc">' + esc(desc) + '</div><div class="opt-price">' + (per == null ? esc(lang === 'ar' ? 'أدخل سعر الذهب لحساب السعر' : 'Enter gold rate to price') : esc(fmt(per)) + ' EGP ' + esc(t('per_tooth'))) + '</div></div>';
     });
     html += '</div>';
     if (obj.material === 'gold') html += '<div class="karat-row"><span class="lbl">' + esc(t('karat')) + '</span>' + KARATS.map((k) => pill(k, obj.karat === k, k + 'K', 'data-act="karat" ' + at + ' data-value="' + k + '"')).join('') + '</div>';
@@ -702,16 +790,43 @@ footer p{font-size:11px;color:var(--faint);}
   }
 
   function renderTeeth(s, i) {
-    const at = 'data-index="' + i + '"';
     let html = '<div class="teeth-presets"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mut);align-self:center;margin-inline-end:4px">' + esc(t('preset')) + '</span>';
-    TEETH_PRESETS.forEach((n) => {
-      const selected = s.toothIds.length === n;
-      html += pill('preset' + n, selected, String(n), 'data-act="preset" ' + at + ' data-value="' + n + '"');
-    });
-    html += '</div><div class="counter-row"><button type="button" class="counter-btn" data-act="teeth-step" ' + at + ' data-value="-1" aria-label="Remove tooth">−</button><div class="counter-num">' + (s.toothIds.length || 0) + '</div><button type="button" class="counter-btn" data-act="teeth-step" ' + at + ' data-value="1" aria-label="Add tooth">+</button><span class="counter-lbl">' + esc(s.toothIds.length === 1 ? t('tooth_n') : t('teeth_n')) + '</span></div>';
-    const toothButton = (id) => '<button type="button" class="tooth' + (s.toothIds.includes(id) ? ' sel' : '') + '" data-act="tooth" ' + at + ' data-value="' + id + '" aria-label="' + id + '">' + id.slice(2) + '</button>';
-    html += '<div class="smile-map"><div class="arch-lbl">' + esc(t('upper')) + '</div><div class="arch arch-upper">' + ARCH_UPPER.map((id, x) => (x === 8 ? '<span class="mid-gap"></span>' : '') + toothButton(id)).join('') + '</div><div class="arch-lbl" style="margin-top:16px">' + esc(t('lower')) + '</div><div class="arch arch-lower">' + ARCH_LOWER.map((id, x) => (x === 8 ? '<span class="mid-gap"></span>' : '') + toothButton(id)).join('') + '</div></div>';
+    TEETH_PRESETS.forEach((n) => { html += pill('preset' + n, s.toothIds.length === n, String(n), 'data-act="preset" data-index="' + i + '" data-value="' + n + '"'); });
+    html += '</div><div class="counter-row"><button type="button" class="counter-btn" data-act="teeth-step" data-index="' + i + '" data-value="-1" aria-label="Remove tooth">−</button><div class="counter-num">' + s.toothIds.length + '</div><button type="button" class="counter-btn" data-act="teeth-step" data-index="' + i + '" data-value="1" aria-label="Add tooth">+</button><span class="counter-lbl">' + esc(s.toothIds.length === 1 ? t('tooth_n') : t('teeth_n')) + '</span></div>';
+    html += '<div class="smile-map" data-set="' + i + '">' + toothChartMarkup(i) + '<div class="chart-caption">' + esc(lang === 'ar' ? 'اضغط على السن لإضافته أو إزالته من التصميم.' : 'Tap a tooth to add it to or remove it from your design.') + '</div></div>';
     return html;
+  }
+
+  function levelExamples(level) {
+    const examples = {
+      '0.5': lang === 'ar' ? 'أمثلة: قضبان أمامية، قضبان مع نوافذ، قضبان متباعدة.' : 'Examples: front bars, bars with windows, spaced bar details.',
+      '1': lang === 'ar' ? 'أمثلة: غطاء كامل بسيط، سطح مصقول، شكل نظيف بدون فتحات.' : 'Examples: plain solid cap, mirror polish, clean uninterrupted surface.',
+      '2': lang === 'ar' ? 'أمثلة: نوافذ أمامية، فتحات وسطية، سطح مفتوح مع جوانب صلبة.' : 'Examples: front windows, center openings, open face with solid sides.',
+      '3': lang === 'ar' ? 'أمثلة: حروف، خطوط محددة، نقش بسيط أو قصّات قليلة.' : 'Examples: lettering, outlined edges, light engraving, a few cut-outs.',
+      '4': lang === 'ar' ? 'أمثلة: نقش عميق، تفاصيل كثيفة، قصّات دقيقة متعددة.' : 'Examples: deep engraving, dense diamond cuts, intricate multi-part detail.',
+      '5': lang === 'ar' ? 'أمثلة: عقرب أو شكل حيوان، شعار بارز ثلاثي الأبعاد.' : 'Examples: sculpted scorpion or animal, raised 3D logo, deep relief.',
+      '6': lang === 'ar' ? 'أمثلة: منحوتة مخصصة كاملة، طبقات متعددة، تصميم ثلاثي الأبعاد معقد.' : 'Examples: full custom sculpture, layered 3D forms, maximum-detail one-off.',
+    };
+    return examples[String(level)] || '';
+  }
+
+  function renderLevelWheel(current, setIndex, groupIndex) {
+    const selected = String(current || '1');
+    const selectedIndex = Math.max(0, LEVELS.indexOf(selected));
+    const groupAttr = groupIndex == null ? '' : ' data-group="' + groupIndex + '"';
+    const chooseAct = groupIndex == null ? 'level' : 'group-level';
+    const stepAct = groupIndex == null ? 'level-step' : 'group-level-step';
+    const radius = 108;
+    const items = LEVELS.map((lv, index) => {
+      const offset = (index - selectedIndex + LEVELS.length) % LEVELS.length;
+      const angle = (offset / LEVELS.length) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.round(Math.cos(angle) * radius), y = Math.round(Math.sin(angle) * radius);
+      const active = lv === selected;
+      return '<button type="button" class="level-wheel-item' + (active ? ' active' : '') + '" style="--x:' + x + 'px;--y:' + y + 'px" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(levelName(lv) + '. ' + levelDesc(lv)) + '"><img src="' + LEVEL_IMG(lv) + '" alt="" loading="lazy"><span class="wheel-name">' + esc(levelName(lv)) + '</span></button>';
+    }).join('');
+    const prevLabel = lang === 'ar' ? 'المستوى السابق' : 'Previous level';
+    const nextLabel = lang === 'ar' ? 'المستوى التالي' : 'Next level';
+    return '<div class="level-wheel-wrap"><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="-1" aria-label="' + prevLabel + '">' + (lang === 'ar' ? '›' : '‹') + '</button><div class="level-wheel" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '<div class="level-wheel-center">' + (lang === 'ar' ? 'مستوى' : 'LEVEL') + '</div></div><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="1" aria-label="' + nextLabel + '">' + (lang === 'ar' ? '‹' : '›') + '</button></div><div class="level-picked"><strong>' + esc(levelName(selected)) + '</strong><span>' + esc(levelDesc(selected)) + '</span><span class="level-examples">' + esc(levelExamples(selected)) + '</span></div>';
   }
 
   function renderGroupEditor(g, i, gi) {
@@ -720,7 +835,7 @@ footer p{font-size:11px;color:var(--faint);}
     let html = '<div class="group-card"><div class="group-head"><div class="group-title">' + esc(t('group_n')) + ' ' + (gi + 1) + '</div><input class="group-label-inp" type="text" maxlength="40" value="' + esc(g.label || '') + '" placeholder="' + esc(t('group_label_ph')) + '" data-scope="group" ' + at + ' data-field="label">' + (gi > 0 ? '<button type="button" class="group-remove" data-act="remove-group" ' + at + ' aria-label="Remove group"><i class="fa-solid fa-xmark"></i></button>' : '') + '</div>';
     html += '<div class="g-grid">' + fieldHtml(t('group_teeth'), 'number', g.teeth, attrs + ' data-field="teeth"', '', 1, 16) + '</div>';
     html += '<div style="margin-top:16px">' + renderMaterial(g, i, gi) + '</div>';
-    html += '<div class="finish-block"><div class="fb-t">' + esc(t('group_level')) + '</div><div class="opt-grid">' + LEVELS.map((lv) => '<div class="opt-card' + (g.level === lv ? ' selected' : '') + '" data-act="group-level" ' + at + ' data-value="' + lv + '"><span class="opt-check">✓</span><img src="' + LEVEL_IMG(lv) + '" alt="' + esc(levelName(lv)) + '" loading="lazy"><div class="opt-name">' + esc(levelName(lv)) + '</div><div class="opt-desc">' + esc(levelDesc(lv)) + '</div></div>').join('') + '</div></div>';
+    html += '<div class="finish-block"><div class="fb-t">' + esc(t('group_level')) + '</div>' + renderLevelWheel(g.level, i, gi) + '</div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(g.stones, g.material, g.level, i, gi) + '</div>';
     html += renderFinishFields(g, i, gi) + '</div>';
     return html;
@@ -729,14 +844,14 @@ footer p{font-size:11px;color:var(--faint);}
   function renderSet(s, i) {
     const isLast = state.sets.length === 1;
     let html = '<section class="set-block"><div class="set-head"><div class="set-title">' + esc(t('set_n')) + ' ' + (i + 1) + '<span>' + (s.mode === 'mixed' ? esc(t('mode_mixed')) : esc(matName(s.material))) + '</span></div>' + (!isLast ? '<button type="button" class="set-remove" data-act="remove-set" data-index="' + i + '"><i class="fa-solid fa-trash-can"></i> ' + esc(t('remove')) + '</button>' : '') + '</div>';
-    html += '<section class="step">' + headerStep(1, t('step1_t'), t('step1_s')) + renderMaterial(s, i, null) + '</section>';
+    html += '<section class="step">' + headerStep(1, t('step1_t'), t('step1_s')) + renderMaterial(s, i, null) + (i === 0 && usesGold() ? renderGoldRateField() : '') + '</section>';
     html += '<section class="step">' + headerStep(2, t('step2_t'), t('step2_s'));
     html += '<div class="mode-toggle">' +
       '<div class="mode-card' + (s.mode === 'uniform' ? ' selected' : '') + '" data-act="mode" data-index="' + i + '" data-value="uniform"><div class="mc-t">' + esc(t('mode_uniform')) + '</div><div class="mc-d">' + esc(t('mode_uniform_d')) + '</div></div>' +
       '<div class="mode-card' + (s.mode === 'mixed' ? ' selected' : '') + '" data-act="mode" data-index="' + i + '" data-value="mixed"><div class="mc-t">' + esc(t('mode_mixed')) + '</div><div class="mc-d">' + esc(t('mode_mixed_d')) + '</div></div></div>';
     html += renderTeeth(s, i);
     if (s.mode === 'uniform') {
-      html += '<div class="finish-block"><div class="fb-t">' + esc(t('step3_t')) + '</div><div class="opt-grid">' + LEVELS.map((lv) => '<div class="opt-card' + (s.level === lv ? ' selected' : '') + '" data-act="level" data-index="' + i + '" data-value="' + lv + '"><span class="opt-check">✓</span><img src="' + LEVEL_IMG(lv) + '" alt="' + esc(levelName(lv)) + '" loading="lazy"><div class="opt-name">' + esc(levelName(lv)) + '</div><div class="opt-desc">' + esc(levelDesc(lv)) + '</div></div>').join('') + '</div></div>';
+      html += '<div class="finish-block"><div class="fb-t">' + esc(t('step3_t')) + '</div>' + renderLevelWheel(s.level, i, null) + '</div>';
       html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(s.stones, s.material, s.level, i, null) + '</div>';
       html += renderFinishFields(s, i, null);
     } else {
@@ -760,10 +875,6 @@ footer p{font-size:11px;color:var(--faint);}
       optionHtml('', 'digitalfullmouth', state.mold, '', t('mold_digital')) + '</select></div>';
     html += fieldHtml(t('client_name'), 'text', state.clientName, 'data-order="clientName"', t('client_name_ph'));
     html += fieldHtml(t('client_phone'), 'tel', state.clientPhone, 'data-order="clientPhone"', t('client_phone_ph'));
-    if (usesGold() && studioGoldRate() <= 0) {
-      html += fieldHtml(t('gold_rate_lbl'), 'number', state.goldRate, 'class="full" data-order="goldRate"', '', 0, null);
-      html += '<p class="full" style="font-size:11px;color:var(--mut);line-height:1.6;margin-top:-8px">' + esc(t('gold_rate_note')) + '</p>';
-    }
     html += '<div class="fld full"><label>' + esc(t('client_notes')) + '</label><textarea data-order="notes" placeholder="' + esc(t('client_notes_ph')) + '">' + esc(state.notes) + '</textarea></div></div></section>';
     return html;
   }
@@ -776,7 +887,12 @@ footer p{font-size:11px;color:var(--faint);}
   function renderSummary() {
     const order = calcOrder();
     const code = currentCode();
-    if (!order) return;
+    if (!order) {
+      $('#mb-total-val').textContent = '—';
+      const prompt = lang === 'ar' ? 'أدخل سعر عيار 24 الحالي في خانة سعر الذهب لحساب التقدير.' : 'Enter today’s 24K gold rate in the Gold Rate field to calculate this estimate.';
+      $('#summary').innerHTML = '<div class="sum-title">' + esc(t('sum_title')) + '</div><div class="sum-sub">' + esc(t('sum_sub')) + '</div><div class="hint-box"><i class="fa-solid fa-coins"></i><span>' + esc(prompt) + '</span></div><div class="sum-total-row"><span class="sum-total-lbl">' + esc(t('sum_total')) + '</span><span class="sum-total">—<span class="curr">EGP</span></span></div><div class="sum-note">' + esc(t('sum_note')) + '</div>';
+      return;
+    }
     let html = '<div class="sum-title">' + esc(t('sum_title')) + '</div><div class="sum-sub">' + esc(t('sum_sub')) + '</div><div class="sum-lines">';
     order.lines.forEach((line, i) => {
       const label = E().lineLabel(line) || (t('set_n') + ' ' + (i + 1));
@@ -794,6 +910,18 @@ footer p{font-size:11px;color:var(--faint);}
 
   function render() {
     $('#sets-container').innerHTML = state.sets.map(renderSet).join('') + '<button type="button" class="add-set-btn" data-act="add-set"><i class="fa-solid fa-plus"></i> ' + esc(t('add_set')) + '</button>';
+    $$('.teeth-chart', $('#sets-container')).forEach((svg) => {
+      const setIndex = Number(svg.closest('.smile-map').dataset.set);
+      const selected = new Set((state.sets[setIndex] && state.sets[setIndex].toothIds) || []);
+      svg.querySelectorAll('[data-tooth]').forEach((path) => {
+        const toothId = fdiToothId(path.getAttribute('data-tooth'));
+        path.classList.toggle('is-selected', selected.has(toothId));
+        path.setAttribute('role', 'button');
+        path.setAttribute('tabindex', '0');
+        path.setAttribute('aria-label', 'Tooth ' + path.getAttribute('data-tooth'));
+        path.setAttribute('aria-pressed', selected.has(toothId) ? 'true' : 'false');
+      });
+    });
     $$('.opt-card[data-act], .mode-card[data-act]', $('#sets-container')).forEach((el) => {
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
@@ -841,6 +969,7 @@ footer p{font-size:11px;color:var(--faint);}
   }
 
   function useDecoded(decoded) {
+    state.goldRate = '';
     if (!decoded || !Array.isArray(decoded.lines) || !decoded.lines.length) return false;
     const nextSets = decoded.lines.map((line) => {
       const groups = Array.isArray(line.groups) ? line.groups : null;
@@ -905,9 +1034,15 @@ footer p{font-size:11px;color:var(--faint);}
     const idx = Number(target.dataset.index || 0);
     const gi = target.dataset.group == null ? null : Number(target.dataset.group);
     const s = state.sets[idx];
-    if (act === 'material') {
+    if (act === 'level-step' || act === 'group-level-step') {
+      const obj = act === 'level-step' ? s : s.groups[gi];
+      const current = Math.max(0, LEVELS.indexOf(String(obj.level || '1')));
+      obj.level = LEVELS[(current + Number(target.dataset.value) + LEVELS.length) % LEVELS.length];
+      if (obj.level === '0.5') obj.stones.mode = 'none';
+    } else if (act === 'material') {
       const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
       obj.material = target.dataset.value;
+      if (obj.material === 'gold') state.goldRate = '';
       if (obj.material !== 'gold') obj.karat = '18';
       if (obj.material === 'chrome' || obj.material === 'titanium') obj.stones = newStones();
     } else if (act === 'karat') {
@@ -981,6 +1116,8 @@ footer p{font-size:11px;color:var(--faint);}
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
+    const svgTooth = event.target.closest('[data-tooth]');
+    if (svgTooth && svgTooth.closest('.smile-map')) { event.preventDefault(); svgTooth.dispatchEvent(new MouseEvent('click', { bubbles:true })); return; }
     const card = event.target.closest('#sets-container .opt-card[data-act], #sets-container .mode-card[data-act]');
     if (card) { event.preventDefault(); card.click(); }
   });
@@ -990,6 +1127,18 @@ footer p{font-size:11px;color:var(--faint);}
     if (event.target.closest('.menu-toggle')) { $('#main-nav').classList.toggle('active'); return; }
     const closeNav = event.target.closest('.main-nav a');
     if (closeNav) $('#main-nav').classList.remove('active');
+    const tooth = event.target.closest('[data-tooth]');
+    if (tooth && tooth.closest('.smile-map')) {
+      const chart = tooth.closest('.smile-map');
+      const idx = Number(chart.dataset.set);
+      const id = fdiToothId(tooth.getAttribute('data-tooth'));
+      if (state.sets[idx] && id) {
+        state.sets[idx].toothIds = state.sets[idx].toothIds.includes(id) ? state.sets[idx].toothIds.filter((x) => x !== id) : state.sets[idx].toothIds.concat(id);
+        state.sets[idx].toothIds = TOOTH_ORDER.filter((x) => state.sets[idx].toothIds.includes(x));
+        render();
+      }
+      return;
+    }
     const action = event.target.closest('[data-act]');
     if (action) { event.preventDefault(); setAction(action); }
   });
