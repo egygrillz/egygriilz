@@ -7,8 +7,9 @@
  *  مفيش أي خدمة برة — GitHub بس. مفيش R2، مفيش Cloudflare Storage.
  *
  *  قواعد الحجم:
- *    • أقصى طول أو عرض: 1400 بكسل
- *    • أقصى حجم: 300 كيلو (وبننزل بالجودة لو احتاج)
+ *    • الصورة الكبيرة: 1400 بكسل، 300 كيلو كحد أقصى
+ *    • الكارت الصغير على الصفحة: نسخة مصغّرة 700 بكسل (~30-50 كيلو)
+ *      ← دي اللي بتخلي التصميمات تظهر بسرعة، والمودال بياخد الأصلية
  *    • الصور الصغيرة أصلاً مابنلمسهاش — مفيش فقدان جودة بدون سبب
  * ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -68,6 +69,44 @@ const MEDIA = {
     } finally {
       URL.revokeObjectURL(url);
     }
+  },
+
+  /* ── نسخة الكارت ────────────────────────────────────────────────
+     بتتصنع من نفس الصورة قبل الرفع، فمفيش أي شغل إضافي على المستخدم.
+     نفس المجلد، نفس الاسم، بس بـ _thumb قبل اللاحقة. */
+  THUMB_SIDE: 700,
+  THUMB_QUALITY: 0.78,
+
+  async makeThumb(blob) {
+    try {
+      const url = URL.createObjectURL(blob);
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = rej;
+        i.src = url;
+      });
+      let { naturalWidth: w, naturalHeight: h } = img;
+      if (Math.max(w, h) <= this.THUMB_SIDE) return null;   // صغيرة أصلاً
+      const scale = this.THUMB_SIDE / Math.max(w, h);
+      w = Math.round(w * scale);
+      h = Math.round(h * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      const out = await new Promise(r => canvas.toBlob(r, 'image/jpeg', this.THUMB_QUALITY));
+      URL.revokeObjectURL(url);
+      return out || null;
+    } catch (e) { return null; }
+  },
+
+  thumbName(name) {
+    return String(name).replace(/(\.[^.]+)$/, '_thumb$1');
   },
 
   cleanName(name) {

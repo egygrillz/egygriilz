@@ -1405,8 +1405,14 @@
   
   /** Reminder button: confirm first, then open Gmail */
   function openGmailFor(id){
-    var list = (cache.appointments && cache.appointments.items) || [];
+    var list = ((cache.appointments && cache.appointments.items) || []);
+    if (typeof allAppts !== 'undefined' && allAppts && allAppts.length) {
+      allAppts.forEach(function(x){ if (!list.some(function(y){ return y.id === x.id; })) list.push(x); });
+    }
     var a = list.find(function(x){ return x.id === id; });
+    if (!a && typeof allAppts !== 'undefined') {
+      a = (allAppts || []).find(function(x){ return x.id === id; });
+    }
     if(!a) return;
     if(!a.email){ showToast('No email for this client','error'); return; }
     var when = (a.date || '') + (a.time ? ' at ' + a.time : '');
@@ -1418,8 +1424,15 @@
 
   /** Reply button: same system */
   function openGmailReply(id){
-    var list = (cache.messages && cache.messages.items) || [];
+    /* بنقرا من كل الأماكن اللي الرسائل ممكن تكون فيها — مش مصدر واحد */
+    var list = ((cache.messages && cache.messages.items) || []);
+    if (typeof allMessages !== 'undefined' && allMessages && allMessages.length) {
+      allMessages.forEach(function(x){ if (!list.some(function(y){ return y.id === x.id; })) list.push(x); });
+    }
     var m = list.find(function(x){ return x.id === id; });
+    if (!m && typeof allMessages !== 'undefined') {
+      m = (allMessages || []).find(function(x){ return x.id === id; });
+    }
     if(!m) return;
     if(!m.email){ showToast('No email — save the client with an email first','error'); return; }
     if(!confirm('Open Gmail with a reply to ' + (m.name || 'this client') + '?\n\nSubject and message are already written. You only press Send.')) return;
@@ -2082,6 +2095,12 @@
     latest:   {folder:'sets', label:'Design'},
   };
   var CATALOG = 'assets/images/catalog.json';
+
+  /* اسم النسخة المصغّرة لنفس الصورة: 000001.jpg → 000001_thumb.jpg
+     الكارت بياخد المصغّرة، والدرج والمودال بياخدوا الأصلية. */
+  function thumbOf(name){
+    return /\.(jpe?g|png|webp)$/i.test(name) ? name.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : name;
+  }
   var IMG_ROOT = 'assets/images/sets/';
 
   /* ── الكتالوج: المكان الوحيد اللي فيه بيانات كل التصميمات ── */
@@ -2289,7 +2308,8 @@
       var tagHtml=tags.length?'<div class="tag-row">'+tags.map(function(t){return '<span class="tag '+(TAGS_MAP[t]&&TAGS_MAP[t].cls||'')+'">'+( TAGS_MAP[t]&&TAGS_MAP[t].label||t)+'</span>';}).join('')+'</div>':'';
       var mediaHtml=item.images.map(function(file,i){
         if(isVideoFile(file)) return '<video src="'+raw+IMG_ROOT+item.id+'/'+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
-        return '<img src="'+raw+IMG_ROOT+item.id+'/'+file+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
+        /* الكارت في اللوحة بياخد النسخة المصغّرة — أسرع بكتير، والأصلية بتيجي في الدرج */
+        return '<img src="'+raw+IMG_ROOT+item.id+'/'+thumbOf(file)+'" data-full="'+raw+IMG_ROOT+item.id+'/'+file+'" onerror="this.src=this.dataset.full" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
       }).join('');
       var hasVideo=item.images.some(function(f){return isVideoFile(f);});
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
@@ -2467,7 +2487,7 @@
     var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
     var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
     var html=drawerImages.map(function(file,i){
-      var src=raw+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now();
+      var src=raw+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now();   /* الدرج: الصورة الكاملة */
       var isVid=isVideoFile(file);
       var media=isVid?'<video src="'+src+'" muted playsinline></video>':'<img src="'+src+'" alt="" loading="lazy" decoding="async">';
       return '<div class="reorder-item" draggable="true" data-idx="'+i+'" ondragstart="drawerDragStart('+i+')" ondragover="drawerDragOver(event,this,'+i+')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="drawerDrop(event,'+i+')" ondragend="drawerDragEnd()">'+
@@ -2523,7 +2543,7 @@
         var slider=card.querySelector('.mini-slider');
         slider.innerHTML=drawerImages.map(function(file,i){
           if(isVideoFile(file)) return '<video src="'+raw2+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
-          return '<img src="'+raw2+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
+          return '<img src="'+raw2+IMG_ROOT+drawerId+'/'+thumbOf(file)+'?t='+Date.now()+'" data-full="'+raw2+IMG_ROOT+drawerId+'/'+file+'" onerror="this.src=this.dataset.full" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
         }).join('');
       }
       showToast(' Order saved!','success');closeDrawer();
@@ -2723,9 +2743,20 @@
         var ext = (img.name || 'x.jpg').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
         var fname = String(imgCounter).padStart(6,'0') + '.' + ext;
 
+        /* الأصلية */
         var b64 = await MEDIA.toBase64(blob);
         await putFile(basePath + '/' + fname, b64,
                       'Add ' + fname + ' to ' + itemId + ' (' + MEDIA.human(blob.size) + ')');
+
+        /* نسخة الكارت المصغّرة — بتتصنع أوتوماتيك من نفس الصورة */
+        if (/^image\//.test(blob.type || 'image/jpeg')) {
+          btn.textContent = 'Thumbnail ' + (i+1) + ' / ' + pendingImages.length + '…';
+          var thumb = await MEDIA.makeThumb(blob);
+          if (thumb) {
+            await putFile(basePath + '/' + MEDIA.thumbName(fname), await MEDIA.toBase64(thumb),
+                          'Add thumbnail for ' + fname + ' (' + MEDIA.human(thumb.size) + ')');
+          }
+        }
 
         newNames.push(fname);
         imgCounter++;

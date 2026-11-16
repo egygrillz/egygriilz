@@ -1202,7 +1202,7 @@ function renderItemSearchDropdown(matches, q) {
     return;
   }
   dropdown.innerHTML = matches.map(d => {
-    const imgSrc = d.images && d.images[0] ? `assets/images/${d.cat}/${d.folder}/${d.images[0]}` : '';
+    const imgSrc = d.images && d.images[0] ? `assets/images/sets/${d.folder}/${d.images[0]}` : '';
     return `
       <div class="item-search-option" data-name="${d.name||d.folder}" data-price="${d.priceNum||0}">
         ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" onerror="this.style.display='none'" loading="lazy" decoding="async">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
@@ -1401,17 +1401,22 @@ async function loadDesigns(cat) {
   if (designCache[cat]) { renderDesignGrid(designCache[cat]); return; }
   document.getElementById('design-grid').innerHTML = '<div class="design-picker-loading">Loading...</div>';
   try {
-    const jsonFile = cat === 'latest-designs' ? 'designs.json' : `${cat}.json`;
-    const list = await fetch(`assets/images/${cat}/${jsonFile}`).then(r => r.json());
+    /* كتالوج واحد — نفس مصدر الموقع */
+    const all = await fetch('assets/images/catalog.json?t=' + Date.now()).then(r => r.json());
+    const want = (cat === 'latest-designs' || cat === 'latest') ? null : cat;
     const designs = [];
-    for (const folder of list.slice(0,20)) {
-      try {
-        const txt = await fetch(`assets/images/${cat}/${folder}/info.txt`).then(r => r.text());
-        const d = parseInfo(txt);
-        d.folder = folder; d.cat = cat;
-        d.priceNum = parseFloat((d.price||'').replace(/[^0-9.]/g,'')) || 0;
-        designs.push(d);
-      } catch{}
+    for (const item of (all || [])) {
+      if (want && item.category !== want) continue;
+      if (designs.length >= 20) break;
+      const d = {
+        name: item.name || item.id,
+        desc: item.description || '',
+        price: item.price || '',
+        images: item.images || [],
+      };
+      d.folder = item.id; d.cat = item.category || cat;
+      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g,'')) || 0;
+      designs.push(d);
     }
     designCache[cat] = designs;
     // add to flat list for item search
@@ -1429,7 +1434,7 @@ function renderDesignGrid(designs) {
   designs.forEach(d => {
     const thumb = document.createElement('div');
     thumb.className = 'design-thumb';
-    const imgSrc = d.images && d.images[0] ? `assets/images/${d.cat}/${d.folder}/${d.images[0]}` : '';
+    const imgSrc = d.images && d.images[0] ? `assets/images/sets/${d.folder}/${d.images[0]}` : '';
     thumb.innerHTML = `
       ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" loading="lazy" onerror="this.parentElement.querySelector('.design-thumb-name').textContent+=' (no img)'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
       <div class="design-thumb-name">${d.name || d.folder}</div>

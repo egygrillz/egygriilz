@@ -448,6 +448,9 @@
       return parts.length >= 2 ? parts[parts.length - 2] : '';
     }
 
+    /* ── النسخة الصغيرة للكروت ── */
+    function thumbOf(u){ return /\.(jpe?g|png|webp)$/i.test(u) ? u.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : u; }
+
     function makeMedia(src, alt, click) {
       const box = document.createElement('div');
       box.className = 'media-box';
@@ -477,7 +480,10 @@
         revealObs.observe(v);
       } else {
         const img = document.createElement('img');
-        img.src = src; img.alt = alt||''; img.loading = 'lazy';
+        img.src = thumbOf(src); img.alt = alt||''; img.loading = 'lazy';
+        img.decoding = 'async';
+        img.dataset.full = src;
+        img.onerror = function(){ if(img.dataset.full){ img.src = img.dataset.full; img.removeAttribute('data-full'); } };
         box.appendChild(img);
       }
 
@@ -540,7 +546,9 @@
         lazyObs.observe(v); revealObs.observe(v);
       } else {
         const img = document.createElement('img');
-        img.src = heroSrc; img.alt = d.name; img.loading = 'eager';
+        img.src = thumbOf(heroSrc); img.alt = d.name; img.loading = 'eager'; img.fetchPriority = 'high';
+        img.dataset.full = heroSrc;
+        img.onerror = function(){ if(img.dataset.full){ img.src = img.dataset.full; img.removeAttribute('data-full'); } };
         bg.appendChild(img);
       }
       outer.appendChild(bg);
@@ -633,6 +641,11 @@
         loadEl.style.display = 'none';
         container.style.display = 'block';
         const list = WANTED ? designs.filter(d => d.id === WANTED) : designs;
+        /* نحمّل أول صورة لكل تصميم في الخلفية عشان تبقى جاهزة للضغط */
+        list.forEach(function(d){
+          const first = (d.images||[])[0];
+          if(first){ const im = new Image(); im.src = thumbOf('assets/images/sets/' + d.id + '/' + first); }
+        });
         if (WANTED && !list.length) { loadEl.style.display='none'; errEl.style.display='block'; return; }
         for(let i=0; i<list.length; i++) {
           const src = list[i];

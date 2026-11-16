@@ -162,7 +162,9 @@
     .modal-bg.open .modal { transform:translateY(0); }
     .modal-left { position:relative; flex:0 0 52%; overflow:hidden; background:#e8e4de; }
     .modal-slides { position:relative; width:100%; height:100%; min-height:440px; }
-    .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s; }
+    .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s;
+      background-size:cover; background-position:center; background-color:#e8e5e1; }
+    .modal-slide img { opacity:0; transition:opacity 0.35s ease; }
     .modal-slide.active { opacity:1; }
     .modal-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
     .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(240,237,232,0.85); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:var(--text); transition:background 0.2s; border-radius:50%; }
@@ -309,7 +311,54 @@
       if(/schedule|book|appointment/.test(t)) return 'booking';
       return 'contact';
     }
-    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" loading="lazy" decoding="async">';
+    /* ── اسم النسخة الصغيرة لنفس الصورة ── */
+    function thumbOf(src){
+      return /\.(jpe?g|png|webp)$/i.test(src) ? src.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : src;
+    }
+    /* لو المصغّرة مش موجودة (تصميم قديم) نرجع للأصلية بدل ما تبان مكسورة */
+    function imgFallback(el){
+      if (el && el.dataset && el.dataset.full) { el.src = el.dataset.full; el.removeAttribute('data-full'); }
+    }
+    /* ── صور جاهزة قبل الضغط ───────────────────────────────────────
+       بنحمّل الصور كلها في الخلفية أول ما التصميمات توصل، وبعد ما كل
+       صورة تخلص تحميل بنحوّلها من متأخرة (lazy) لجاهزة. النتيجة: أول ما
+       تدوس على أي تصميم بيفتح وعنده صوره فوراً. */
+    const _preloaded = new Map();
+    function preloadImages(urls){
+      urls.forEach(function(u){
+        if(!u || _preloaded.has(u)) return;
+        u = thumbOf(u);            /* الصغيرة بس — مش الأصلية */
+        const im = new Image();
+        im.decoding = 'sync';
+        const mark = function(){
+          _preloaded.set(u, true);
+          document.querySelectorAll('img').forEach(function(t){
+            if(t.getAttribute('src') === u){
+              t.loading = 'eager';
+              t.setAttribute('data-ready', '1');
+            }
+          });
+        };
+        im.onload = mark;
+        im.onerror = mark;
+        im.src = u;
+        _preloaded.set(u, im);
+      });
+    }
+    /* بيخلي صور المودال تظهر فوراً: لو الصورة اتحملت قبل كده،
+       بنحطها في الحال؛ لو لأ، بنوريها أثناء التحميل بدل ما نشيلها. */
+    function warmModalImages(images){
+      images.forEach(function(u){
+        /* المصغّرة (بتظهر فوراً) */
+        if(!_preloaded.has(thumbOf(u))){
+          const t = new Image(); t.src = thumbOf(u); _preloaded.set(thumbOf(u), t);
+        }
+      });
+    }
+
+    function openModal({name,desc,price,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
+        s.style.backgroundImage='url("'+thumbOf(src)+'")';
+        s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" loading="eager" decoding="async" onload="this.style.opacity=1">';
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
@@ -332,7 +381,9 @@
 
       let imgsHtml='';
       item.images.forEach(function(s,i){
-        imgsHtml+='<img src="'+s+'" alt="Handcrafted custom grillz by EGYGRILLZ" loading="lazy" decoding="async">';
+        imgsHtml+='<img src="'+thumbOf(s)+'" data-full="'+s+'" onerror="imgFallback(this)" '
+          +(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async"'
+          +' alt="Handcrafted custom grillz by EGYGRILLZ">';
       });
 
       panel.innerHTML=imgsHtml
@@ -460,6 +511,7 @@
       })
       .then(items=>{
         allItems=items.filter(x=>x.images.length);
+        preloadImages(allItems.reduce(function(a,v){ return a.concat(v.images||[]); }, []));
         if(!allItems.length){ document.getElementById('no-results').style.display='block'; return; }
         renderBatch(allItems);
         document.getElementById('see-more-btn').addEventListener('click',()=>renderBatch(allItems));
