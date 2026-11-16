@@ -262,8 +262,8 @@
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main{grid-template-columns:1fr;text-align:center;gap:30px;} .footer-col{display:flex;flex-direction:column;align-items:center;} .footer-bottom{flex-direction:column;text-align:center;} }
 
-    /* ── صورة الهيدر لكل صفحة — بتتحكم فيها من /editx → Page Heroes ── */
-    .page-hero { position:relative; width:100%; height:52vh; min-height:320px; overflow:hidden; background:#1f1f1f; }
+    /* Page hero override (configurable from /editx -> Page Heroes) */
+    .page-hero { position:relative; width:100%; height:52vh; min-height:320px; overflow:hidden; background:#1f1f1f; margin-top:60px; }
     .page-hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.82; }
     .page-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.55)); }
     .page-hero[hidden] { display:none; }
@@ -446,8 +446,7 @@
       return info;
     }
 
-    /* ── السعر: لو مكتوب "Contact us for details" يبقى لينك لصفحة التواصل ──
-       نفس اللي بيحصل في صفحات الذهب والفضة والألماس. */
+    /* Contact prices become links to the contact or booking page */
     function isContactPrice(price){
       var t = String(price || '').toLowerCase();
       return !t || /contact|enquir|inquire|ask|details|dm |whatsapp|call/.test(t);
@@ -467,7 +466,7 @@
 
     function isVid(f) { return /\.(mp4|mov|webm|avi|m4v)$/i.test(f); }
 
-    /* كل تصميم في مجلده جوه تصنيفه — من الكتالوج، مفيش تخمين */
+    /* Media path inside each design's category folder */
     function mediaPath(item, file){
       return 'assets/images/' + (item.category || 'latest-designs') + '/' + (item.folder || item.id) + '/' + file;
     }
@@ -478,8 +477,7 @@
       return parts.length >= 2 ? parts[parts.length - 2] : '';
     }
 
-    /* ── النسخة الصغيرة للكروت ── */
-    function thumbOf(u){ return /\.(jpe?g|png|webp)$/i.test(u) ? u.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : u; }
+    function thumbOf(u){ return u; }
 
     function makeMedia(src, alt, click) {
       const box = document.createElement('div');
@@ -518,12 +516,11 @@
       if(click) {
         box.style.cursor = 'pointer';
         box.addEventListener('click', () => {
-          // الصفحة الخاصة بالقطعة — كل تصميم ليه صفحته
-          if (!isVid(src)) {
+          if (!isVid(src) && !WANTED) {
             window.location.href = 'latest-designs?item=' + encodeURIComponent(folderOf(src));
             return;
           }
-          openLB(src, true);
+          openLB(src, isVid(src));
         });
       }
       return box;
@@ -657,7 +654,7 @@
     const errEl     = document.getElementById('error-state');
     const layouts   = [buildA, buildB, buildC, buildD];
 
-    /* ── ?item=<folder> — عرض تصميم واحد في صفحته ── */
+    /* Single-item view support via ?item=<folder> */
     const WANTED = new URLSearchParams(location.search).get('item') || '';
 
     fetch('assets/images/catalog.json?t=' + Date.now())
@@ -666,13 +663,12 @@
         if(!Array.isArray(designs)||!designs.length) throw new Error('empty');
         loadEl.style.display = 'none';
         container.style.display = 'block';
-        /* صفحة Latest بتعرض مجموعة latest-designs بس */
-        const latestOnly = designs.filter(d => (d.category || '') === 'latest-designs');
+        const latestOnly = designs.filter(d => (d.category || '') === 'latest-designs')
+          .sort((a,b) => (a.order||999) - (b.order||999));
         const pool = latestOnly.length ? latestOnly : designs;
         const list = WANTED
-          ? designs.filter(d => (d.folder || d.id) === WANTED)
+          ? designs.filter(d => (d.folder || d.id) === WANTED || d.id === WANTED)
           : pool;
-        /* نحمّل أول صورة لكل تصميم في الخلفية عشان تبقى جاهزة للضغط */
         list.forEach(function(d){
           const first = (d.images||[])[0];
           if(first){ const im = new Image(); im.src = mediaPath(d, first); }
@@ -682,7 +678,6 @@
           const src = list[i];
           const folder = src.id;
           try {
-            /* الصور والفيديوهات بنفس الترتيب اللي في الكتالوج */
             const files = (src.images || []).concat(src.videos || []);
             const d = {
               name: src.name, price: src.price, desc: src.description,
@@ -710,36 +705,29 @@
   </script>
 
   <script>
-  /* صورة الهيدر: بتتقرا من settings/pageMeta — لو مفيش، الصفحة تفضل زي ما هي */
+  /* Hero override from Firestore settings/pageMeta */
   (function () {
     var PAGE = 'latest-designs';
-    function ready() {
-      if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) return false;
-      return true;
-    }
-    function apply() {
-      try {
-        firebase.firestore().collection('settings').doc('pageMeta').get().then(function (snap) {
-          if (!snap.exists) return;
-          var m = snap.data() || {};
-          var hero = (m[PAGE] || {}).hero;
-          if (!hero) return;
-          var sec = document.createElement('div');
-          sec.className = 'page-hero';
-          sec.innerHTML = '<img src="' + hero + '" alt="EGYGRILLZ" fetchpriority="high" decoding="async">';
-          var head = document.querySelector('.page-header');
-          if (head && head.parentNode) head.parentNode.insertBefore(sec, head);
-          else document.body.insertBefore(sec, document.body.firstChild);
-        }).catch(function () {});
-      } catch (e) {}
-    }
-    /* نستنى Firebase يتحمّل */
-    var tries = 0;
-    (function wait() {
-      if (ready()) { apply(); return; }
-      if (++tries > 40) return;
-      setTimeout(wait, 250);
-    })();
+    fetch('https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents/settings/pageMeta')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (doc) {
+        var pf = doc && doc.fields && doc.fields[PAGE] && doc.fields[PAGE].mapValue && doc.fields[PAGE].mapValue.fields;
+        var hero = pf && pf.hero && pf.hero.stringValue;
+        if (!hero) return;
+        var sec = document.createElement('div');
+        sec.className = 'page-hero';
+        var img = document.createElement('img');
+        img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
+        img.alt = 'EGYGRILLZ';
+        img.fetchPriority = 'high';
+        img.decoding = 'async';
+        sec.appendChild(img);
+        var mh = document.querySelector('.masthead');
+        if (mh && mh.parentNode) {
+          mh.parentNode.insertBefore(sec, mh);
+          mh.style.paddingTop = '44px';
+        }
+      }).catch(function () {});
   })();
   </script>
 </body>

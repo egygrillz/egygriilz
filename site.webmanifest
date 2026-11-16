@@ -30,15 +30,15 @@
   ],
   "screenshots": [
     {
-      "src": "/assets/images/hero-grillz.jpg",
-      "sizes": "1280x720",
+      "src": "/assets/optimized/hero-grillz-1280.jpg",
+      "sizes": "1280x1707",
       "type": "image/jpeg",
       "form_factor": "wide",
       "label": "EGYGRILLZ Homepage"
     },
     {
-      "src": "/assets/images/hero-grillz.jpg",
-      "sizes": "750x1334",
+      "src": "/assets/optimized/hero-grillz-1280.jpg",
+      "sizes": "1280x1707",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "EGYGRILLZ Mobile"
@@ -49,14 +49,14 @@
       "name": "Book Appointment",
       "short_name": "Book",
       "description": "Schedule a custom grillz fitting",
-      "url": "/booking.html",
+      "url": "/booking",
       "icons": [{ "src": "/favicon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Gallery",
       "short_name": "Gallery",
       "description": "View our grillz portfolio",
-      "url": "/grillz-gallery.html",
+      "url": "/grillz-gallery",
       "icons": [{ "src": "/favicon-96x96.png", "sizes": "96x96" }]
     }
   ],

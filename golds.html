@@ -57,11 +57,12 @@
     .card-img { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#e8e5e1; border-radius:2px; }
     .row-2 .card-img { aspect-ratio:4/5; }
     .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.45s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
-    /* الغلاف ظاهر من أول لحظة — مش مستني أي كلاس */
+    /* First image stays visible immediately without awaiting rotation */
     .card-img img.active { opacity:1; }
-    /* lớp lót: النسخة المصغّرة تظهر في الحال، والصورة الأصلية تطلع فوقها لما تجهز */
     .modal-slide { background-size:cover; background-position:center; background-color:#e8e5e1; }
     .modal-slide img { opacity:1; }
+    .page-hero { position:relative; width:100%; height:52vh; min-height:320px; overflow:hidden; background:#1f1f1f; margin-top:60px; }
+    .page-hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.84; }
     .card-name-overlay { position:absolute; bottom:0; left:0; right:0; padding:28px 12px 12px; background:linear-gradient(to top,rgba(0,0,0,0.52) 0%,transparent 100%); z-index:3; pointer-events:none; }
     .card-name-overlay .name-on-img { font-family:'Playfair Display',serif; font-weight:400; font-size:13px; letter-spacing:0.5px; color:#fff; line-height:1.3; }
     .card-dots { position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:5px; pointer-events:none; z-index:4; }
@@ -266,29 +267,21 @@
       if(/schedule|book|appointment/.test(t)) return 'booking';
       return 'contact';
     }
-    /* ── مكان الصورة الصح ──
-       كل تصميم في مجلده: golds/golds5، latest-designs/design9، sets/set3 …
-       بنستخدم folder اللي في الكتالوج. مفيش نقل ولا تكرار لأي صورة. */
+    /* Media paths inside each item's category folder */
     function mediaPath(item, file){
       const dir = item.folder || item.id;
       const cat = item.category || 'sets';
       return 'assets/images/' + cat + '/' + dir + '/' + file;
     }
     function isVideoName(n){ return /\.(mp4|mov|webm|ogg)$/i.test(String(n||'')); }
-    /* ── اسم النسخة الصغيرة لنفس الصورة ── */
-    /* الصور مش معاها نسخة صغيرة على الريبو */
     function thumbOf(src){ return src; }
-    /* لو المصغّرة مش موجودة (تصميم قديم) نرجع للأصلية بدل ما تبان مكسورة */
     function imgFallback(el){}
-    /* ── صور جاهزة قبل الضغط ───────────────────────────────────────
-       بنحمّل الصور كلها في الخلفية أول ما التصميمات توصل، وبعد ما كل
-       صورة تخلص تحميل بنحوّلها من متأخرة (lazy) لجاهزة. النتيجة: أول ما
-       تدوس على أي تصميم بيفتح وعنده صوره فوراً. */
+    /* Preload grid images in background for instant modal transitions */
     const _preloaded = new Map();
     function preloadImages(urls){
       urls.forEach(function(u){
-        if(!u || _preloaded.has(u)) return;
-        u = thumbOf(u);            /* الصغيرة بس — مش الأصلية */
+        if(!u || _preloaded.has(u) || isVideoName(u)) return;
+        u = thumbOf(u);
         const im = new Image();
         im.decoding = 'sync';
         const mark = function(){
@@ -306,11 +299,9 @@
         _preloaded.set(u, im);
       });
     }
-    /* بيخلي صور المودال تظهر فوراً: لو الصورة اتحملت قبل كده،
-       بنحطها في الحال؛ لو لأ، بنوريها أثناء التحميل بدل ما نشيلها. */
     function warmModalImages(images){
       images.forEach(function(u){
-        /* المصغّرة (بتظهر فوراً) */
+        if(isVideoName(u)) return;
         if(!_preloaded.has(thumbOf(u))){
           const t = new Image(); t.src = thumbOf(u); _preloaded.set(thumbOf(u), t);
         }
@@ -318,8 +309,8 @@
     }
 
     function openModal({name,desc,price,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
-
-        s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" '+(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async">';
+        if(isVideoName(src)){ s.innerHTML='<video src="'+src+'" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover"></video>'; }
+        else { s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" '+(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async">'; }
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
@@ -329,12 +320,11 @@
     document.getElementById('modal-close').addEventListener('click',closeModal);
     modalBg.addEventListener('click',e=>{ if(e.target===modalBg)closeModal(); });
     document.addEventListener('keydown',e=>{ if(!modalBg.classList.contains('open'))return; if(e.key==='Escape')closeModal(); if(e.key==='ArrowLeft')goTo(mCur-1); if(e.key==='ArrowRight')goTo(mCur+1); });
-    /* ONE file lists every design. Images live under assets/images/sets/. */
     const base='assets/images/sets';
     fetch('assets/images/catalog.json?t=' + Date.now())
       .then(r=>r.json())
       .then(all=>{
-      const items=(all||[]).filter(x=>x.category==='golds');
+      const items=(all||[]).filter(x=>x.category==='golds').sort((a,b)=>(a.order||999)-(b.order||999));
       const container=document.getElementById('golds-grid');
       if(!items.length){ container.innerHTML='<p class="empty">No golds yet — check back soon.</p>'; return; }
       const promises=items.map(item=>Promise.resolve({
@@ -344,7 +334,6 @@
       }));
       Promise.all(promises).then(items=>{
         const valid=items.filter(Boolean);
-        /* نحمّل صور التصميمات في الخلفية — مش هنستنى المستخدم يدوس */
         preloadImages(valid.reduce(function(a,v){ return a.concat(v.images||[]); }, []));
         if(!valid.length){ container.innerHTML='<p class="empty">No golds yet — check back soon.</p>'; return; }
         const PAGE=10; let shown=0;
@@ -365,19 +354,17 @@
     function buildCard({name,desc,price,images,folder}){
       const card=document.createElement('div');
       card.className='set-card';
+      const photoImgs=images.filter(s=>!isVideoName(s));
 
-      // dots html
       let dotsHtml='';
-      if(images.length>1){
+      if(photoImgs.length>1){
         dotsHtml='<div class="card-dots">';
-        images.forEach(function(_,i){ dotsHtml+='<span class="card-dot-pip'+(i===0?' active':'')+'"></span>'; });
+        photoImgs.forEach(function(_,i){ dotsHtml+='<span class="card-dot-pip'+(i===0?' active':'')+'"></span>'; });
         dotsHtml+='</div>';
       }
 
-      // images html
       let imgsHtml='';
-      images.forEach(function(s,i){
-        /* أول صورة بتبقى active من أول لحظة — مفيش انتظار لدورة التبديل */
+      photoImgs.forEach(function(s,i){
         imgsHtml+='<img src="'+s+'" class="'+(i===0?'active':'')+'" '
           +(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async"'
           +' alt="Handcrafted custom grillz by EGYGRILLZ">';
@@ -386,17 +373,19 @@
       const cardImg=document.createElement('div');
       cardImg.className='card-img';
       cardImg.innerHTML=imgsHtml
-        +'<div class="card-name-overlay"><div class="name-on-img">'+(name||folder)+'</div></div>'
+        +'<div class="card-name-overlay"><div class="name-on-img"></div></div>'
         +dotsHtml
-        +'<button class="card-btn" aria-label="View '+name+'">'
+        +'<button class="card-btn" aria-label="View item">'
         +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
         +'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'
         +'</svg></button>';
+      cardImg.querySelector('.name-on-img').textContent = name || folder;
       card.appendChild(cardImg);
 
       const cardBody=document.createElement('div');
       cardBody.className='card-body';
-      cardBody.innerHTML=(desc?'<div class="card-desc">'+desc+'</div>':'')+'<div class="price">'+price+'</div>';
+      if(desc){ const de=document.createElement('div'); de.className='card-desc'; de.textContent=desc; cardBody.appendChild(de); }
+      const pr=document.createElement('div'); pr.className='price'; pr.textContent=price||''; cardBody.appendChild(pr);
       card.appendChild(cardBody);
 
       let c=0;
@@ -417,36 +406,29 @@
   </script>
 
   <script>
-  /* صورة الهيدر: بتتقرا من settings/pageMeta — لو مفيش، الصفحة تفضل زي ما هي */
+  /* Hero override from Firestore settings/pageMeta */
   (function () {
     var PAGE = 'golds';
-    function ready() {
-      if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) return false;
-      return true;
-    }
-    function apply() {
-      try {
-        firebase.firestore().collection('settings').doc('pageMeta').get().then(function (snap) {
-          if (!snap.exists) return;
-          var m = snap.data() || {};
-          var hero = (m[PAGE] || {}).hero;
-          if (!hero) return;
-          var sec = document.createElement('div');
-          sec.className = 'page-hero';
-          sec.innerHTML = '<img src="' + hero + '" alt="EGYGRILLZ" fetchpriority="high" decoding="async">';
-          var head = document.querySelector('.page-header');
-          if (head && head.parentNode) head.parentNode.insertBefore(sec, head);
-          else document.body.insertBefore(sec, document.body.firstChild);
-        }).catch(function () {});
-      } catch (e) {}
-    }
-    /* نستنى Firebase يتحمّل */
-    var tries = 0;
-    (function wait() {
-      if (ready()) { apply(); return; }
-      if (++tries > 40) return;
-      setTimeout(wait, 250);
-    })();
+    fetch('https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents/settings/pageMeta')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (doc) {
+        var pf = doc && doc.fields && doc.fields[PAGE] && doc.fields[PAGE].mapValue && doc.fields[PAGE].mapValue.fields;
+        var hero = pf && pf.hero && pf.hero.stringValue;
+        if (!hero) return;
+        var sec = document.createElement('div');
+        sec.className = 'page-hero';
+        var img = document.createElement('img');
+        img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
+        img.alt = 'EGYGRILLZ';
+        img.fetchPriority = 'high';
+        img.decoding = 'async';
+        sec.appendChild(img);
+        var head = document.querySelector('.page-header');
+        if (head && head.parentNode) {
+          head.parentNode.insertBefore(sec, head);
+          head.style.paddingTop = '44px';
+        }
+      }).catch(function () {});
   })();
   </script>
 </body>

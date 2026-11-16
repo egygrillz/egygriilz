@@ -125,10 +125,9 @@
     }
 
 
-    /* ── Security: prevent image/content copying ── */
-    img, video { pointer-events: none; -webkit-user-drag: none; user-drag: none; }
+    /* Media presentation rules */
+    img, video { -webkit-user-drag: none; user-drag: none; }
     * { -webkit-tap-highlight-color: transparent; }
-    img { -webkit-touch-callout: none; }
 
     .page-wrap { max-width: 980px; margin: 0 auto; padding: 100px 5% 60px; }
     .page-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 4px; color: #aaa; text-align: center; margin-bottom: 18px; }
@@ -156,7 +155,7 @@
   </style>
   <link rel="canonical" href="https://egygrillz.com/shipping">
 </head>
-<body ondragstart="return false;" onselectstart="return false;">
+<body>
 
   <!-- FLOATING LOGO -->
   <div class="floating-logo" id="floating-logo">
@@ -300,22 +299,6 @@
     document.querySelector('.menu-toggle').addEventListener('click', () => {
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
-    });
-  </script>
-
-  <script>
-    // ── Security: block right-click, F12, Ctrl+Shift+I, Ctrl+U, etc. ──
-    document.addEventListener('selectstart', e => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault(); });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'F12') { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','J','C','K'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === 'U') { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === 'S') { e.preventDefault(); return false; }
-      if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === 'A' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); return false; }
-    });
-    // Disable print screen
-    document.addEventListener('keyup', e => {
-      if (e.key === 'PrintScreen') { navigator.clipboard?.writeText('').catch(()=>{}); }
     });
   </script>
 </body>

@@ -2,20 +2,32 @@
 (function () {
   function slotDocId(date, time) { return date + '_' + String(time).replace(/[ :]/g, ''); }
 
-  // Public visitors now read only the "slots" collection (date + time, no personal data)
+  // Public visitors read only the "slots" collection (date + time, no personal data)
   window.loadTakenSlots = async function () {
     if (!db) return;
+    if (typeof readSlotCache === 'function') {
+      var cached = readSlotCache();
+      if (cached) { takenSlots = cached; return; }
+    }
     try {
       var snap = await db.collection('slots').get();
-      takenSlots = {};
+      var map = {};
       snap.forEach(function (doc) {
         var d = doc.data();
         if (d.date && d.time) {
-          if (!takenSlots[d.date]) takenSlots[d.date] = [];
-          takenSlots[d.date].push(d.time);
+          if (!map[d.date]) map[d.date] = [];
+          map[d.date].push(d.time);
         }
       });
-    } catch (e) { console.warn('Could not load taken slots:', e); }
+      takenSlots = map;
+      if (typeof writeSlotCache === 'function') writeSlotCache(map);
+    } catch (e) {
+      console.warn('Could not load taken slots:', e);
+      try {
+        var raw = localStorage.getItem('egygz_taken_v1_last');
+        if (raw) takenSlots = JSON.parse(raw).map || {};
+      } catch (_) {}
+    }
   };
 
   window.submitBooking = async function () {
@@ -33,12 +45,14 @@
     var FV = firebase.firestore.FieldValue;
 
     // 1) Claim the slot (fails if someone else already took it)
+    var slotRef = db.collection('slots').doc(slotDocId(selectedDate, selectedTime));
     try {
-      await db.collection('slots').doc(slotDocId(selectedDate, selectedTime)).set({ date: selectedDate, time: selectedTime });
+      await slotRef.set({ date: selectedDate, time: selectedTime });
     } catch (slotErr) {
       console.warn('Slot claim failed:', slotErr);
       alert('Sorry, this time was just taken. Please pick another slot.');
       selectedTime = null;
+      try { localStorage.removeItem('egygz_taken_v1'); } catch (_) {}
       await loadTakenSlots();
       btn.disabled = false;
       btn.textContent = 'Confirm Appointment';
@@ -64,6 +78,7 @@
       });
     } catch (err) {
       console.error('Booking error:', err);
+      try { await slotRef.delete(); } catch (_) {}
       alert('Oops! There was a problem. Please try again.');
       btn.disabled = false;
       btn.textContent = 'Confirm Appointment';

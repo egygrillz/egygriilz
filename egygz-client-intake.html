@@ -1,17 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script type="module">
-    // Real Firebase Auth gate — page stays hidden until a staff session exists.
-    import { requireAuth } from '/assets/firebase-auth-gate.js';
-    try { await requireAuth(); } catch (e) { console.error(e); }
-    document.documentElement.style.visibility = 'visible';
-  </script>
-  <style>html { visibility: hidden; }</style>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0a">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <title>EGYGRILLZ — Design Details</title>
@@ -298,7 +290,7 @@ const I18N = {
     },
     ar: {
         dir: "rtl", sub: "تفاصيل التصميم", back: "رجوع", next: "التالي",
-        footer: "مفيش أسعار هنا — الاستوديو يأكد لك price بعد مراجعة التفاصيل.",
+        footer: "مفيش أسعار هنا — الاستوديو بيأكدلك السعر بعد مراجعة التفاصيل.",
         step: "خطوة {a} / {b}",
         badgeLive: "لينك خاص لمرة واحدة", badgePlain: "تفاصيل التصميم", badgeExpired: "اللينك مستخدم",
         expiredT: "اللينك ده اتستخدم خلاص", expiredH: "اللينكات عندنا بتشتغل مرة واحدة بس عشان خصوصيتك. اطلب من الاستوديو لينك جديد وهياخد دقيقة.",
@@ -423,41 +415,23 @@ function svgIcon(name) {
 }
 
 
-/* ---------- repo images: materials/ levels/ plating/ (auto-matched by file name) ---------- */
+/* ---------- repo images: materials/ levels/ plating/ (resolved locally first) ---------- */
 const IMG = (() => {
-    const BASES = ["https://egygrillz.com/", "https://raw.githubusercontent.com/egygrillz/egygriilz/main/"];
-    const A = {
-        materials: { chrome: ["chrome", "cobalt"], titanium: ["titanium"], silver: ["silver", "sterling", "925"], gold: ["gold"] },
-        levels: { "0.5": ["0.5", "05", "bars", "bar"], "1": ["1", "solid"], "2": ["2", "open", "openface"], "3": ["3", "mid", "middetail"], "4": ["4", "complex"], "5": ["5", "scorpion", "heavy"], "6": ["6", "ultimate"] },
-        plating: { none: ["none", "no", "without"], blackgold: ["black", "blackgold"], whitegold: ["white", "whitegold"], rosegold: ["rose", "rosegold", "pink"], silverplating: ["silver", "silverplating"] }
+    const MAP = {
+        materials: { chrome: "CHROME.png", titanium: "TITANUM.png", silver: "SILVER.png", gold: "GOLD.png" },
+        levels: { "0.5": "LEVEL 0.5.png", "1": "LEVEL 1.png", "2": "LEVEL 2.png", "3": "LEVEL 3.png", "4": "LEVEL 4.png", "5": "LEVEL 5.png", "6": "LEVEL 6.png" },
+        plating: { blackgold: "BLACK GOLD PLATING.png", whitegold: "WHITE GOLD PLATING.png", rosegold: "ROSE GOLD PLATING.png", silverplating: "SILVER PLATING.png" }
     };
-    const KEY = "egygz_img_index_v2";
-    let files = {};
-    const ready = (async () => {
-        try { const c = JSON.parse(localStorage.getItem(KEY) || "null"); if (c && Date.now() - c.t < 6 * 3600e3) { files = c.f; return; } } catch (e) {}
-        try {
-            const out = {};
-            await Promise.all(Object.keys(A).map(async f => {
-                const r = await fetch("https://api.github.com/repos/egygrillz/egygriilz/contents/" + f + "?ref=main");
-                if (r.ok) out[f] = (await r.json()).filter(x => x.type === "file" && /\.(jpe?g|png|webp|avif|gif)$/i.test(x.name)).map(x => x.name);
-            }));
-            if (Object.keys(out).length) { files = out; try { localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), f: out })); } catch (e) {} }
-        } catch (e) {}
-    })();
-    const test = (b, a) => /^[0-9.]+$/.test(a) ? new RegExp("(^|[^0-9.])" + a.replace(/\./g, "\\.") + "($|[^0-9.])").test(b) : b.replace(/[^a-z]/g, "").includes(a);
-    const find = (f, k) => (files[f] || []).find(n => { const b = n.toLowerCase().replace(/\.[a-z0-9]+$/, ""); return (A[f][k] || [k]).some(a => test(b, a)); });
+    const ready = Promise.resolve();
     function hydrate(root) {
         (root || document).querySelectorAll("img[data-rf]").forEach(im => {
             if (im.dataset.on) return; im.dataset.on = 1;
-            const f = im.dataset.rf, k = im.dataset.rk, n = find(f, k), c = [];
-            const cap = w => w.charAt(0).toUpperCase() + w.slice(1);
-            const al = (A[f][k] || [k]).slice(0, 3);
-            const names = n ? [n] : al.flatMap(a => [a, cap(a)]).flatMap(a => ["jpg", "jpeg", "png", "webp"].map(e => a + "." + e));
-            BASES.forEach(b => names.forEach(x => c.push(b + f + "/" + encodeURIComponent(x))));
-            let i = 0;
+            const f = im.dataset.rf, k = im.dataset.rk;
+            const file = MAP[f] && MAP[f][k];
+            if (!file) { im.remove(); return; }
             im.onload = () => { im.hidden = false; };
-            im.onerror = () => { if (++i < c.length) im.src = c[i]; else im.remove(); };
-            im.src = c[0];
+            im.onerror = () => { im.remove(); };
+            im.src = "/" + f + "/" + encodeURIComponent(file);
         });
     }
     return { ready, hydrate };
@@ -505,7 +479,7 @@ const state = {
     lang: params.get("lang") === "ar" ? "ar" : "en",
     step: 0,
     burned: false,
-    answers: { c: "", n: "", m: "", karat: "18", goldRate: "", t: "6", l: "1", s: "none", at: "cz", sc: "1", ss: "flush", ft: "cz", cv: "standardpave", rf: "", pl: "none", en: "none", eg: "none", tl: "standard", md: "none", nt: "" }
+    answers: { c: "", n: "", m: "", karat: "18", goldRate: "", t: "6", l: "1", s: "none", at: "cz", sc: "1", ss: "flush", ft: "cz", cv: "standardpave", rl: "", rf: "", pl: "none", en: "none", eg: "none", tl: "standard", md: "none", nt: "" }
 };
 
 /* ---------------- helpers ---------------- */
@@ -544,7 +518,7 @@ function optsHtml(key, current, withGlyph) {
             ${folder ? `<span class="thumb">${svgIcon(o.icon || "hex")}<img class="ri" data-rf="${folder}" data-rk="${o.v}" alt="" hidden loading="lazy" decoding="async"></span>` : withGlyph && o.icon ? `<span class="glyph">${svgIcon(o.icon)}</span>` : ""}
             <span class="txt">
                 <b>${esc(o[state.lang] || o.en)}</b>
-                ${o.d ? `<em>${esc(state.lang === "ar" ? o.dAr : o.dEn)}</em>` : ""}
+                ${(o.dEn || o.dAr) ? `<em>${esc(state.lang === "ar" ? (o.dAr || o.dEn) : (o.dEn || o.dAr))}</em>` : ""}
                 ${o.exEn ? `<span class="chips">${(state.lang === "ar" ? o.exAr : o.exEn).map(x => `<span class="chip">${esc(x)}</span>`).join("")}</span>` : ""}
             </span>
             <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>

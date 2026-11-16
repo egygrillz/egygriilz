@@ -13,38 +13,13 @@
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
 
   <script data-cfasync="false">
-    var ADMIN_PW_HASH = '8e48868fbb1f1066dade8e5decd84645eec47ca1cf653776413a86cb4b9a2f6b';
     var MAX_ATTEMPTS = 5;
     var LOCKOUT_MS = 15 * 60 * 1000;
 
-    async function sha256(str) {
-      var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-      return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-    }
     function getLockout()  { return JSON.parse(localStorage.getItem('eq_lockout')||'{"attempts":0,"until":0}'); }
     function setLockout(d) { localStorage.setItem('eq_lockout', JSON.stringify(d)); }
     function isLockedOut() { var d=getLockout(); return Date.now()<d.until?d.until:false; }
 
-    async function doLogin() {
-      var until=isLockedOut();
-      if(until){document.getElementById('pw-err').textContent='Locked out. Try again in '+Math.ceil((until-Date.now())/60000)+' minute(s).';return;}
-      var enteredHash=await sha256(document.getElementById('pw-input').value);
-      if(enteredHash===ADMIN_PW_HASH){
-        setLockout({attempts:0,until:0});
-        document.getElementById('login-screen').style.display='none';
-        document.getElementById('app').style.display='block';
-        initApp();
-      } else {
-        var d=getLockout(); d.attempts=(d.attempts||0)+1;
-        var left=MAX_ATTEMPTS-d.attempts;
-        if(d.attempts>=MAX_ATTEMPTS){d.until=Date.now()+LOCKOUT_MS;document.getElementById('lockout-msg').style.display='block';document.getElementById('lockout-msg').textContent='Too many failed attempts. Locked out for 15 minutes.';document.getElementById('login-btn').disabled=true;}
-        setLockout(d);
-        document.getElementById('pw-err').textContent=left>0?'Incorrect password. '+left+' attempt(s) remaining.':'Account locked.';
-        document.getElementById('pw-input').value='';
-      }
-    }
-
-    function logout(){document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('pw-input').value='';document.getElementById('pw-err').textContent='';}
     function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');}
     function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open');}
 
@@ -69,9 +44,27 @@
       if(name==='sets'||name==='golds'||name==='silvers'||name==='diamonds'||name==='latest') loadCategory(name);
     }
 
-    /** iframe بيتحمّل أول مرة بس — بعد كده بيفضل عايش */
-    function openDbCheck(){
-      window.open('db-check.html', '_blank');
+    async function openDbCheck(){
+      var parts = [];
+      try {
+        var u = firebase.auth && firebase.auth().currentUser;
+        parts.push('Auth: ' + (u ? u.email : 'Not signed in'));
+      } catch(e){ parts.push('Auth: unavailable'); }
+      try {
+        if (db) {
+          await db.collection('settings').doc('pricing').get();
+          parts.push('Firestore: connected');
+        } else {
+          parts.push('Firestore: not initialized');
+        }
+      } catch(e){ parts.push('Firestore: ' + (e.code || e.message || 'error')); }
+      try {
+        var r = await fetch('assets/images/catalog.json?t=' + Date.now());
+        var j = r.ok ? await r.json() : [];
+        parts.push('Catalog: ' + (Array.isArray(j) ? j.length : 0) + ' items');
+      } catch(e){ parts.push('Catalog: unreachable'); }
+      parts.push('GitHub: ' + (GH && GH.owner && GH.repo ? (GH.owner + '/' + GH.repo) : 'not configured'));
+      showToast(parts.join(' | '), 'success');
     }
 
     function loadFrame(id, url){
@@ -80,6 +73,27 @@
       if(!f.getAttribute('src')) f.setAttribute('src', url);
       return f;
     }
+
+    window.addEventListener('message', function(ev){
+      if(ev.origin !== window.location.origin) return;
+      if(ev.data && ev.data.type === 'egygz:openInvoiceFromQuote' && ev.data.payload){
+        try { localStorage.setItem('egygz_pending_invoice_from_quote', JSON.stringify(ev.data.payload)); } catch(e){}
+        showPage('invoices');
+        var invFrame = document.getElementById('frame-invoices');
+        var sendPayload = function(){
+          try { invFrame.contentWindow.postMessage({ type: 'egygz:applyQuoteTransfer', payload: ev.data.payload }, window.location.origin); } catch(e){}
+        };
+        if(invFrame && invFrame.contentWindow && invFrame.dataset.loaded === '1') {
+          sendPayload();
+        } else if(invFrame) {
+          invFrame.addEventListener('load', function onLd(){
+            invFrame.dataset.loaded = '1';
+            invFrame.removeEventListener('load', onLd);
+            sendPayload();
+          });
+        }
+      }
+    });
 
     function loadSiteSettings(){
       var box = document.getElementById('site-settings-box');
@@ -865,14 +879,15 @@
         <!-- GOLDS -->
 
         <div class="panel" id="panel-gallery">
-          <div class="panel-head">
+          <div class="page-header-row">
             <div>
-              <div class="panel-title">Gallery Photos</div>
-              <div class="panel-sub">الصور اللي بتظهر في صفحة الجاليري بس — مش تصميمات</div>
+              <p class="ph-title">Gallery Photos</p>
+              <p class="ph-sub">Standalone gallery photos shown on the gallery page</p>
             </div>
-            <button class="btn-primary" onclick="openModal('gallery')"><i class="fas fa-plus"></i> Add Photo</button>
+            <button class="btn-outline-sm" onclick="openModal('gallery')">+ Add Photo</button>
           </div>
           <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search gallery…" oninput="filterGrid('gallery',this.value,'')"></div><span class="filter-count" id="count-gallery"></span></div>
+          <div class="bulk-bar" id="bulk-gallery"><span class="bulk-count" id="bulk-count-gallery">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('gallery')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('gallery')">Clear</button></div>
           <div class="grid" id="grid-gallery"><div class="empty-state"><i class="fas fa-images"></i><p>Loading…</p></div></div>
         </div>
         <div class="panel" id="panel-golds">
@@ -959,7 +974,7 @@
           <div class="page-header-row">
             <div>
               <p class="ph-title">Page Heroes</p>
-              <p class="ph-sub">اختار الصورة اللي تظهر فوق في كل صفحة، ورتّب ظهور التصميمات فيها</p>
+              <p class="ph-sub">Choose the hero image for each public page and arrange design display order</p>
             </div>
           </div>
 
@@ -987,8 +1002,7 @@
 
           <div class="section-card" style="padding:22px;">
             <p style="font-size:12px;color:#666;line-height:1.7;margin-bottom:14px;">
-              ترتيب الظهور في هذه الصفحة — اضغط السهم لتحريك التصميم فوق أو تحت.
-              الترتيب بيتحفظ في الكتالوج وبيطبّق على الموقع كله.
+              Display order for this page — use the arrows to move items up or down. Saved directly to the site catalog.
             </p>
             <div id="order-list"></div>
             <button class="btn-black" style="margin-top:16px;" onclick="saveHeroOrder()">
@@ -1029,26 +1043,26 @@
           <div class="page-header-row"><div><p class="ph-title">Pages Editor</p><p class="ph-sub">Edit any page text — no coding needed</p></div><button class="btn-outline-sm" onclick="openNewPageModal()">+ Create New Page</button></div>
           <div style="margin-bottom:14px;"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Main Pages</p>
             <div class="pages-grid" id="pages-main-grid">
-              <div class="page-card" onclick="selectPage('index','/','Homepage')"><i class="fas fa-home"></i><div><div class="page-card-name">Homepage</div><div class="page-card-sub">index.html</div></div></div>
-              <div class="page-card" onclick="selectPage('about','about','About Us')"><i class="fas fa-star"></i><div><div class="page-card-name">About Us</div><div class="page-card-sub">about.html</div></div></div>
-              <div class="page-card" onclick="selectPage('contact','contact','Contact')"><i class="fas fa-envelope"></i><div><div class="page-card-name">Contact</div><div class="page-card-sub">contact.html</div></div></div>
-              <div class="page-card" onclick="selectPage('booking','booking','Schedule / Booking')"><i class="fas fa-calendar"></i><div><div class="page-card-name">Schedule</div><div class="page-card-sub">booking.html</div></div></div>
-              <div class="page-card" onclick="selectPage('grillz-gallery','grillz-gallery','Gallery')"><i class="fas fa-images"></i><div><div class="page-card-name">Gallery</div><div class="page-card-sub">grillz-gallery.html</div></div></div>
-              <div class="page-card" onclick="selectPage('latest-designs','latest-designs','Latest Designs')"><i class="fas fa-fire"></i><div><div class="page-card-name">Latest Designs</div><div class="page-card-sub">latest-designs.html</div></div></div>
+              <div class="page-card" onclick="selectPage('index','index.html','Homepage')"><i class="fas fa-home"></i><div><div class="page-card-name">Homepage</div><div class="page-card-sub">index.html</div></div></div>
+              <div class="page-card" onclick="selectPage('about','about.html','About Us')"><i class="fas fa-star"></i><div><div class="page-card-name">About Us</div><div class="page-card-sub">about.html</div></div></div>
+              <div class="page-card" onclick="selectPage('contact','contact.html','Contact')"><i class="fas fa-envelope"></i><div><div class="page-card-name">Contact</div><div class="page-card-sub">contact.html</div></div></div>
+              <div class="page-card" onclick="selectPage('booking','booking.html','Schedule / Booking')"><i class="fas fa-calendar"></i><div><div class="page-card-name">Schedule</div><div class="page-card-sub">booking.html</div></div></div>
+              <div class="page-card" onclick="selectPage('grillz-gallery','grillz-gallery.html','Gallery')"><i class="fas fa-images"></i><div><div class="page-card-name">Gallery</div><div class="page-card-sub">grillz-gallery.html</div></div></div>
+              <div class="page-card" onclick="selectPage('latest-designs','latest-designs.html','Latest Designs')"><i class="fas fa-fire"></i><div><div class="page-card-name">Latest Designs</div><div class="page-card-sub">latest-designs.html</div></div></div>
             </div>
           </div>
           <div style="margin-bottom:14px;"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Collection Pages</p>
             <div class="pages-grid">
-              <div class="page-card" onclick="selectPage('golds','golds','Golds Collection')"><i class="fas fa-circle-dollar-to-slot" style="color:#6b6b6b;"></i><div><div class="page-card-name">Golds</div><div class="page-card-sub">golds.html</div></div></div>
-              <div class="page-card" onclick="selectPage('silvers','silvers','Silvers Collection')"><i class="fas fa-gem" style="color:#aaa;"></i><div><div class="page-card-name">Silvers</div><div class="page-card-sub">silvers.html</div></div></div>
-              <div class="page-card" onclick="selectPage('diamonds','diamonds','Diamonds Collection')"><i class="fas fa-gem" style="color:#89cff0;"></i><div><div class="page-card-name">Diamonds</div><div class="page-card-sub">diamonds.html</div></div></div>
+              <div class="page-card" onclick="selectPage('golds','golds.html','Golds Collection')"><i class="fas fa-circle-dollar-to-slot" style="color:#6b6b6b;"></i><div><div class="page-card-name">Golds</div><div class="page-card-sub">golds.html</div></div></div>
+              <div class="page-card" onclick="selectPage('silvers','silvers.html','Silvers Collection')"><i class="fas fa-gem" style="color:#aaa;"></i><div><div class="page-card-name">Silvers</div><div class="page-card-sub">silvers.html</div></div></div>
+              <div class="page-card" onclick="selectPage('diamonds','diamonds.html','Diamonds Collection')"><i class="fas fa-gem" style="color:#89cff0;"></i><div><div class="page-card-name">Diamonds</div><div class="page-card-sub">diamonds.html</div></div></div>
             </div>
           </div>
           <div style="margin-bottom:22px;"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Legal Pages</p>
             <div class="pages-grid">
-              <div class="page-card" onclick="selectPage('terms','terms','Terms of Service')"><i class="fas fa-file-contract"></i><div><div class="page-card-name">Terms of Service</div><div class="page-card-sub">terms.html</div></div></div>
-              <div class="page-card" onclick="selectPage('privacy','privacy','Privacy Policy')"><i class="fas fa-shield-alt"></i><div><div class="page-card-name">Privacy Policy</div><div class="page-card-sub">privacy.html</div></div></div>
-              <div class="page-card" onclick="selectPage('shipping','shipping','Care & Shipping')"><i class="fas fa-box"></i><div><div class="page-card-name">Care &amp; Shipping</div><div class="page-card-sub">shipping.html</div></div></div>
+              <div class="page-card" onclick="selectPage('terms','terms.html','Terms of Service')"><i class="fas fa-file-contract"></i><div><div class="page-card-name">Terms of Service</div><div class="page-card-sub">terms.html</div></div></div>
+              <div class="page-card" onclick="selectPage('privacy','privacy.html','Privacy Policy')"><i class="fas fa-shield-alt"></i><div><div class="page-card-name">Privacy Policy</div><div class="page-card-sub">privacy.html</div></div></div>
+              <div class="page-card" onclick="selectPage('shipping','shipping.html','Care & Shipping')"><i class="fas fa-box"></i><div><div class="page-card-name">Care &amp; Shipping</div><div class="page-card-sub">shipping.html</div></div></div>
             </div>
           </div>
           <div style="margin-bottom:22px;display:none;" id="custom-pages-section"><p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#bbb;margin-bottom:12px;">Custom Pages</p><div class="pages-grid" id="custom-pages-grid"></div></div>
@@ -1183,7 +1197,7 @@
       messagingSenderId: "1022362401463",
       appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
     });
-    /* AppCheck اختياري — لو فشل (شبكة/حجب) الصفحة لازم تكمل عادي */
+    /* AppCheck is optional; page must still boot if unavailable */
     try {
       firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true);
     } catch (acErr) {
@@ -1204,7 +1218,7 @@
     }
   })();
 
-  /* ── auto-login: نفس الجلسة اللي سجلت بيها قبل كده ── */
+  /* Auto-login: reuse active Firebase Auth session */
   window.addEventListener('load', function () {
     try {
       firebase.auth().onAuthStateChanged(function (u) {
@@ -1214,8 +1228,7 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         initApp();
-        /* syncSlots بيقرا كل المواعيد وكل الأوقات — غالي جدًا.
-           بنشغّله مرة واحدة في اليوم بس، أو لما تدوس الزرار في الإعدادات. */
+        /* syncSlots reads appointments & slots; run at most once per 20h automatically */
         try {
           var lastSync = Number(localStorage.getItem('eq_slots_sync') || 0);
           if (Date.now() - lastSync > 20 * 60 * 60 * 1000) {
@@ -1228,17 +1241,7 @@
   });
 
 
-  /* ═══════════════════════════════════════════════════════════════════
-     اقتصاد القراءات (2026-11-16)
-
-     المشكلة: المشروع وصل 103 ألف قراءة والقراءة وقفت بـ 429.
-       • loadOverview كان بيقرا appointments + messages + clients كاملة
-       • watchUnreadCount كان بيعمل onSnapshot على messages (قراءة كل فتحة)
-       • syncSlots كان بيقرا appointments + slots كاملة كل تسجيل دخول
-
-     الحل: كل نتيجة بتتحفظ في الذاكرة دقيقة واحدة، فالتنقل بين التابات
-     مابيولّدش قراءات جديدة. والمستمع الحيّ بيتقفل لما تسيب الصفحة.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* Read cache to minimize redundant Firestore reads across tab switches */
   var _readCache = {};
   var _CACHE_MS = 60 * 1000;
 
@@ -1248,13 +1251,11 @@
     try {
       var val = await fn();
       _readCache[key] = { at: Date.now(), val: val };
-      /* نحفظ نسخة في المتصفح — تفضل موجودة لو الحصة خلصت */
       try {
         localStorage.setItem('egygz_cache_' + key, JSON.stringify({ at: Date.now(), val: val }));
       } catch (e) {}
       return val;
     } catch (err) {
-      /* فشلت القراءة؟ نستخدم آخر نسخة محفوظة بدل ما الصفحة تفضى */
       try {
         var raw = localStorage.getItem('egygz_cache_' + key);
         if (raw) {
@@ -1274,7 +1275,7 @@
   }
   window.__egygzInvalidate = invalidate;
 
-  /* أي مستمع حيّ بيتسجل هنا ويتقفل عند الخروج */
+  /* Track active listeners so they unsubscribe cleanly on unload */
   var _liveListeners = [];
   function trackUnsubscribe(fn) {
     if (typeof fn === 'function') _liveListeners.push(fn);
@@ -1391,7 +1392,7 @@
       var wStartStr = weekStart.toISOString().slice(0,10);
       var wEndStr = weekEnd.toISOString().slice(0,10);
 
-      /* كاش دقيقة + حد أقصى 1000 مستند عشان الحساب مايفلتش */
+      /* Cached 60s, bounded to 1000 docs */
       var appts = await cachedGet('appts:ov', async function () {
         var snap = await db.collection('appointments').limit(1000).get();
         var out = [];
@@ -1401,6 +1402,11 @@
 
       var unread = await cachedGet('unread:ov', async function () {
         var snap = await db.collection('messages').where('read','==',false).limit(200).get();
+        return snap.size;
+      });
+
+      var clientsCount = await cachedGet('clients:ov', async function () {
+        var snap = await db.collection('clients').limit(1000).get();
         return snap.size;
       });
 
@@ -1414,7 +1420,7 @@
       document.getElementById('st-showed').textContent = showed;
       document.getElementById('st-noshow').textContent = noshow;
       document.getElementById('st-unread').textContent = unread;
-      document.getElementById('st-clients').textContent = clientSnap.size;
+      document.getElementById('st-clients').textContent = clientsCount;
       document.getElementById('st-today').textContent = todayCount;
       document.getElementById('st-week').textContent = weekCount;
       document.getElementById('st-month').textContent = monthCount;
@@ -1466,7 +1472,7 @@
 
   function watchUnreadCount() {
     if(!db) return;
-    /* قراءة واحدة بتتحفظ في الكاش — مش مستمع حيّ بيقرا كل ما حد يبعت رسالة */
+    /* Single cached read instead of a persistent snapshot listener */
     cachedGet('unread:badge', async function () {
       var snap = await db.collection('messages').where('read','==',false).limit(200).get();
       return snap.size;
@@ -1514,7 +1520,7 @@
       return (a.name||'').toLowerCase().includes(apptSearch)||(a.phone||'').includes(apptSearch)||(a.email||'').toLowerCase().includes(apptSearch)||(a.service||'').toLowerCase().includes(apptSearch);
     });
     var tbody = document.getElementById('appt-tbody');
-    if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center";color:#ccc;padding:40px;">No appointments found</td></tr>';return;}
+    if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#ccc;padding:40px;">No appointments found</td></tr>';return;}
     tbody.innerHTML = list.map(function(a){
       var yesActive = a.showedUp===true?'active':'';
       var noActive = a.showedUp===false?'active':'';
@@ -1578,7 +1584,7 @@
 
   /** Reply button: same system */
   function openGmailReply(id){
-    /* بنقرا من كل الأماكن اللي الرسائل ممكن تكون فيها — مش مصدر واحد */
+    /* Read from all available message stores */
     var list = ((cache.messages && cache.messages.items) || []);
     if (typeof allMessages !== 'undefined' && allMessages && allMessages.length) {
       allMessages.forEach(function(x){ if (!list.some(function(y){ return y.id === x.id; })) list.push(x); });
@@ -1902,7 +1908,7 @@
     try {
       var snap = await db.collection('appointments').where('phone','==',c.phone||'').orderBy('date','desc').get();
       var rows='';
-      snap.forEach(function(d){ var a=d.data(); rows+='<tr><td>'+a.date+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.service||'')+'</td><td>'+(a.showedUp===true?'':a.showedUp===false?'':'–')+'</td></tr>'; });
+      snap.forEach(function(d){ var a=d.data(); rows+='<tr><td>'+a.date+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.service||'')+'</td><td>'+(a.showedUp===true?'Showed':a.showedUp===false?'No Show':'Pending')+'</td></tr>'; });
       apptHistory = rows?'<div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Showed</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p style="color:#ccc;font-size:13px;padding:16px 0;">No appointment history found.</p>';
     } catch(e){}
     body.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;"><div><label class="form-label">Phone</label><p style="font-size:14px;">'+escHtml(c.phone||'—')+'</p></div><div><label class="form-label">Email</label><p style="font-size:14px;">'+escHtml(c.email||'—')+'</p></div><div><label class="form-label">First Visit</label><p style="font-size:14px;">'+escHtml(c.firstVisit||'—')+'</p></div><div><label class="form-label">Last Visit</label><p style="font-size:14px;">'+escHtml(c.lastVisit||'—')+'</p></div><div><label class="form-label">Services</label><p style="font-size:14px;">'+escHtml((c.services||[]).join(', ')||'—')+'</p></div><div><label class="form-label">Notes</label><p style="font-size:14px;">'+escHtml(c.notes||'—')+'</p></div></div><label class="form-label" style="margin-bottom:10px;">Appointment History</label>'+apptHistory;
@@ -2237,12 +2243,7 @@
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // INVENTORY CATEGORIES
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
-  /* كل تصميم بيتخزن مرة واحدة في sets/ — التصنيفات ملفات JSON بتشاور عليه */
-  /* ONE catalogue. Every image lives in assets/images/sets/<id>/.
-     Images are never duplicated — a design belongs to exactly one folder
-     and the catalogue records which collection it shows in. */
-  /* كل تصنيف في مجلده — زي ما هو على الريبو بالظبط.
-     مفيش نقل ولا تكرار: golds في golds/، latest في latest-designs/ … */
+  /* Master catalogue (catalog.json). Designs stay in their category folders. */
   var CAT = {
     sets:     {folder:'sets',           label:'Set',          prefix:'set'},
     golds:    {folder:'golds',          label:'Gold Design',  prefix:'golds'},
@@ -2253,27 +2254,23 @@
   };
   var CATALOG = 'assets/images/catalog.json';
 
-  /* اسم النسخة المصغّرة لنفس الصورة: 000001.jpg → 000001_thumb.jpg
-     الكارت بياخد المصغّرة، والدرج والمودال بياخدوا الأصلية. */
+  /* Optional thumbnail filename convention: 000001.jpg -> 000001_thumb.jpg */
   function thumbOf(name){
     return /\.(jpe?g|png|webp)$/i.test(name) ? name.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : name;
   }
-  var IMG_ROOT = 'assets/images/sets/';   /* الافتراضي — والمسار الحقيقي بيتحدد من التصنيف */
-  /* مجلد التصنيف على الريبو */
+  var IMG_ROOT = 'assets/images/sets/';
   function catRoot(cat){
-    var c = (cat === 'latest') ? 'latest-designs' : (cat || 'sets');
+    var c = (cat === 'latest') ? 'latest-designs' : (cat === 'gallery' ? 'grillz-gallery' : (cat || 'sets'));
     return 'assets/images/' + c + '/';
   }
-  /* مسار الصورة لتصميم معيّن */
   function itemRoot(item){
     var c = (item && (item.catFolder || item.category)) || 'sets';
     var d = (item && (item.folder || item.id)) || '';
-    /* الجاليري: الصور في المجلد نفسه، مش جوه مجلد لكل صورة */
     if (c === 'grillz-gallery') return 'assets/images/grillz-gallery/';
     return 'assets/images/' + c + '/' + d + '/';
   }
 
-  /* ── الكتالوج: المكان الوحيد اللي فيه بيانات كل التصميمات ── */
+  /* Read and write master catalog.json */
   async function readCatalog(){
     var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
     try{ var d=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); return Array.isArray(d)?d:[]; }
@@ -2282,7 +2279,6 @@
   async function writeCatalog(list, message){
     var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(list, null, 2))));
     await putFile(CATALOG, b64, message || 'Update catalogue');
-    /* نحدّث الكاش عشان الشاشة تتحدث فوراً */
     Object.keys(cache).forEach(function(k){
       if(cache[k] && cache[k].catalog) cache[k].catalog = list;
     });
@@ -2292,12 +2288,7 @@
   }
 
 
-  /* ═══════════════════════════════════════════════════════════════════
-     PAGE HEROES — صورة كل صفحة + ترتيب ظهور التصميمات
-     البيانات بتتحفظ في settings/pageMeta بصيغة:
-       { index: { hero: 'golds/golds1/000005.jpg' }, golds: {...} }
-     والترتيب بيتحفظ في حقل order جوه الكتالوج نفسه.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* PAGE HEROES — per-page hero image & design order */
   var _heroState = { page: 'index', meta: {}, items: [] };
 
   async function loadPageMeta() {
@@ -2320,7 +2311,7 @@
     if (box) box.innerHTML = '<div class="empty-state"><p>Loading…</p></div>';
     if (list) list.innerHTML = '';
 
-    /* 1) الكتالوج */
+    /* 1) Load catalog */
     var all = [];
     try {
       var raw = 'https://raw.githubusercontent.com/' + GH.owner + '/' + GH.repo + '/' + GH.branch + '/';
@@ -2328,14 +2319,14 @@
     } catch (e) { all = []; }
     all = Array.isArray(all) ? all : [];
 
-    /* 2) إعدادات الصفحة */
+    /* 2) Load saved page metadata */
     var meta = await loadPageMeta();
     _heroState.meta = meta || {};
 
-    /* 3) التصميمات — كل تصنيف بياخد اللي بتاعه، والجallery الكل بيتاح */
+    /* 3) Filter designs matching selected page */
     var want = _heroState.page;
     var items = all.filter(function (x) {
-      if (want === 'index') return true;                 /* الرئيسية: كل التصميمات */
+      if (want === 'index') return true;
       if (want === 'grillz-gallery') return x.category === 'grillz-gallery';
       return x.category === want;
     });
@@ -2347,7 +2338,7 @@
     items.sort(function (a, b) { return (a.order || 999) - (b.order || 999); });
     _heroState.items = items;
 
-    /* 4) الصورة الحالية */
+    /* 4) Display current hero preview */
     var cur = (meta[_heroState.page] || {}).hero || '';
     var curBox = document.getElementById('hero-current');
     if (curBox) {
@@ -2365,7 +2356,7 @@
   }
 
   function heroMediaUrl(item, file) {
-    /* من نفس الموقع — مش GitHub raw (اللي بيرفض التحميل المتكرر) */
+    /* Load from same origin rather than rate-limited raw.githubusercontent.com */
     var base = (location.origin && location.origin !== 'null') ? location.origin + '/' : '';
     return base + itemRoot(item) + file;
   }
@@ -2396,7 +2387,8 @@
   }
 
   async function pickHero(cat, folder, file) {
-    var path = 'assets/images/' + cat + '/' + folder + '/' + file;
+    if (!file) { showToast('No image on this item', 'error'); return; }
+    var path = itemRoot({ category: cat, folder: folder }) + file;
     try {
       showToast('Saving hero…', '');
       _heroState.meta[_heroState.page] = Object.assign({}, _heroState.meta[_heroState.page], { hero: path });
@@ -2475,14 +2467,18 @@
     var all=[];
     try{ all=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); }catch(e){ all=[]; }
     all=Array.isArray(all)?all:[];
-    /* كل تصنيف بيشوف بتاعه بس — من غير ما يخلط مع غيره */
+    /* Filter entries belonging strictly to this category */
     var want = (cat === 'latest') ? 'latest-designs' : (cat === 'gallery' ? 'grillz-gallery' : cat);
     var mine = all.filter(function(x){ return x.category === want; });
     mine.forEach(function(x){
       x.id = x.id || x.folder;
       x.folder = x.folder || x.id;
       x.catFolder = x.category || want;
+      x.desc = x.description || x.desc || '';
+      x.images = Array.isArray(x.images) ? x.images.slice() : [];
+      x.videos = Array.isArray(x.videos) ? x.videos.slice() : [];
     });
+    mine.sort(function(a,b){ return (a.order||999) - (b.order||999); });
     cache[cat]={list:mine.map(function(x){return x.id;}), items:mine, folder:want, catalog:all};
     renderGrid(cat);
   }
@@ -2502,8 +2498,10 @@
   }
   function updateBulkBar(cat){
     var count=bulkSelected[cat].size;
-    document.getElementById('bulk-'+cat).classList.toggle('visible',count>0);
-    document.getElementById('bulk-count-'+cat).textContent=count+' item'+(count!==1?'s':'')+' selected';
+    var bar=document.getElementById('bulk-'+cat);
+    var cnt=document.getElementById('bulk-count-'+cat);
+    if(bar) bar.classList.toggle('visible',count>0);
+    if(cnt) cnt.textContent=count+' item'+(count!==1?'s':'')+' selected';
   }
   function clearBulk(cat){
     bulkSelected[cat].clear();
@@ -2518,9 +2516,13 @@
       var list=await readCatalog();
       var keep=list.filter(function(x){return !ids.includes(x.id);});
       await writeCatalog(keep,'Bulk remove '+ids.length+' design(s)');
-      if(cache[cat]){cache[cat].list=newList;cache[cat].items=cache[cat].items.filter(function(i){return !ids.includes(i.id);});}
+      if(cache[cat]){
+        cache[cat].list=cache[cat].list.filter(function(x){return !ids.includes(x);});
+        cache[cat].items=cache[cat].items.filter(function(i){return !ids.includes(i.id);});
+        cache[cat].catalog=keep;
+      }
       bulkSelected[cat].clear();updateBulkBar(cat);renderGrid(cat);
-      showToast(' '+ids.length+' deleted','success');
+      showToast('Deleted '+ids.length+' item(s)','success');
     } catch(err){showToast('Error: '+err.message,'error');}
   }
 
@@ -2599,7 +2601,7 @@
         var e=catalogEntry(list,id);
         if(e) e.order=i+1;
       });
-      /* التصنيف بيتحكم في الظهور، والترتيب رقم واحد لكل تصميم */
+      /* Update catalog order field */
       await writeCatalog(list,'Reorder '+cat);
       if(cache[cat]){
         cache[cat].list=newOrder;
@@ -2637,12 +2639,13 @@
     grid.innerHTML=items.map(function(item){
       var tags=getTags(cat,item.id);
       var tagHtml=tags.length?'<div class="tag-row">'+tags.map(function(t){return '<span class="tag '+(TAGS_MAP[t]&&TAGS_MAP[t].cls||'')+'">'+( TAGS_MAP[t]&&TAGS_MAP[t].label||t)+'</span>';}).join('')+'</div>':'';
-      var mediaHtml=item.images.map(function(file,i){
+      var allMedia=(item.images||[]).concat(item.videos||[]);
+      var mediaHtml=allMedia.map(function(file,i){
         if(isVideoFile(file)) return '<video src="'+raw+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
-        /* الكارت في اللوحة بياخد النسخة المصغّرة — أسرع بكتير، والأصلية بتيجي في الدرج */
+        /* Load grid card preview directly from repository image */
         return '<img src="'+raw+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
       }).join('');
-      var hasVideo=item.images.some(function(f){return isVideoFile(f);});
+      var hasVideo=allMedia.some(function(f){return isVideoFile(f);});
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
       return '<div class="set-card '+(isChecked?'bulk-selected':'')+'" data-id="'+item.id+'" data-cat="'+cat+'">'+
         '<input type="checkbox" class="card-checkbox" '+(isChecked?'checked':'')+' onchange="toggleBulkSelect(\''+cat+'\',\''+item.id+'\',this)">'+
@@ -2776,18 +2779,20 @@
     var btn=card.querySelector('.btn-isave');btn.textContent='Saving…';btn.disabled=true;
     showToast('Saving…','');
     try{
-      var folder=CAT[cat].folder;
       var item=cache[cat]&&cache[cat].items.find(function(i){return i.id===id;});
-      var images=item&&item.images||[];
-      var infoStr='name: '+nameVal+'\nprice: '+priceVal+'\ndescription: '+descVal+'\nimages: '+images.join(',');
       var _l = await readCatalog(); var _e = catalogEntry(_l, id);
-      if(_e){ _e.name = item.name; _e.price = item.price; _e.description = item.desc;
-              await writeCatalog(_l, 'Update '+id+' text'); }
-      if(item){item.name=nameVal;item.desc=descVal;item.price=priceVal;}
+      if(_e){
+        _e.name = nameVal;
+        _e.price = priceVal;
+        _e.description = descVal;
+        await writeCatalog(_l, 'Update '+id+' text');
+      }
+      if(item){item.name=nameVal;item.desc=descVal;item.description=descVal;item.price=priceVal;}
       card.querySelector('.editable-field.name .field-val').textContent=nameVal;
       card.querySelector('.editable-field.desc .field-val').textContent=descVal;
       card.querySelector('.editable-field.price .field-val').textContent=priceVal;
       cancelInlineEdit(cat,id);
+      btn.textContent='Save to Site';btn.disabled=false;
       showToast(' Saved!','success');
     } catch(err){
       showToast('Error: '+err.message,'error');
@@ -2820,7 +2825,7 @@
     var grid=document.getElementById('reorder-grid');
     var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
     var html=drawerImages.map(function(file,i){
-      var src=raw+drawerRoot+file+'?t='+Date.now();   /* الدرج: الصورة الكاملة */
+      var src=raw+drawerRoot+file+'?t='+Date.now();
       var isVid=isVideoFile(file);
       var media=isVid?'<video src="'+src+'" muted playsinline></video>':'<img src="'+src+'" alt="" loading="lazy" decoding="async">';
       return '<div class="reorder-item" draggable="true" data-idx="'+i+'" ondragstart="drawerDragStart('+i+')" ondragover="drawerDragOver(event,this,'+i+')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="drawerDrop(event,'+i+')" ondragend="drawerDragEnd()">'+
@@ -2838,8 +2843,7 @@
   function drawerAddFiles(files){
     showToast('Uploading…','');
     var btn=document.getElementById('drawer-save-btn');btn.disabled=true;btn.textContent='Uploading…';
-    var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
-    var basePath=drawerRoot.replace(/^assets\/images\//,'');
+    var basePath=drawerRoot.replace(/^assets\/images\//,'').replace(/\/$/,'');
     var existing=drawerImages.map(function(n){return parseInt(n.replace(/\D/g,''),10);}).filter(function(n){return !isNaN(n);});
     var counter=existing.length>0?Math.max.apply(null,existing)+1:drawerImages.length;
     var fileArr=Array.from(files);var done=0;
@@ -2850,7 +2854,7 @@
       r.onload=async function(ev){
         var ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
         var fname=String(counter).padStart(6,'0')+'.'+ext;counter++;
-        try{await putFile(basePath+'/'+fname,ev.target.result.split(',')[1],'Add '+fname+' to '+drawerId);drawerImages.push(fname);}
+        try{await putFile('assets/images/'+basePath+'/'+fname,ev.target.result.split(',')[1],'Add '+fname+' to '+drawerId);drawerImages.push(fname);}
         catch(err){showToast('Upload error: '+err.message,'error');}
         done++;if(done===fileArr.length) finalizeDrawerUpload(btn);
       };
@@ -2863,13 +2867,13 @@
     var btn=document.getElementById('drawer-save-btn');btn.disabled=true;btn.textContent='Saving…';
     showToast('Saving order…','');
     try{
-      var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
       var item=cache[drawerCat]&&cache[drawerCat].items.find(function(i){return i.id===drawerId;});
-      var infoStr='name: '+(item&&item.name||'')+'\nprice: '+(item&&item.price||'')+'\ndescription: '+(item&&item.desc||'')+'\nimages: '+drawerImages.join(',');
+      var imgs=drawerImages.filter(function(f){ return !isVideoFile(f); });
+      var vids=drawerImages.filter(function(f){ return isVideoFile(f); });
       var _l2 = await readCatalog(); var _e2 = catalogEntry(_l2, drawerId);
-      if(_e2){ _e2.images = drawerImages.slice();
+      if(_e2){ _e2.images = imgs; _e2.videos = vids;
                await writeCatalog(_l2, 'Reorder images for '+drawerId); }
-      if(item) item.images=[...drawerImages];
+      if(item){ item.images=imgs; item.videos=vids; }
       var card=document.querySelector('.set-card[data-id="'+drawerId+'"][data-cat="'+drawerCat+'"]');
       if(card){
         var raw2='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
@@ -2916,7 +2920,6 @@
   function openModal(cat){
     currentMode='add';resetModal();currentEditCat=cat;
     document.getElementById('edit-category').value=cat;
-    /* العنوان بياخد الاسم الحقيقي للتصنيف، مش الـ id */
     document.getElementById('modal-title').textContent=
       'Add ' + ((CAT[cat] && CAT[cat].label) || cap(cat));
     document.getElementById('publish-btn').textContent='Publish to Site';
@@ -2927,12 +2930,12 @@
     var item=cache[cat]&&cache[cat].items.find(function(i){return i.id===id;});
     if(!item){showToast('Could not load item','error');return;}
     currentMode='edit';currentEditId=id;currentEditCat=cat;
-    pendingImages=[];existingImages=[...item.images];
+    pendingImages=[];existingImages=[].concat(item.images||[],item.videos||[]);
     document.getElementById('edit-id').value=id;
     document.getElementById('edit-category').value=cat;
     document.getElementById('f-name').value=item.name||'';
     document.getElementById('f-price').value=item.price||'';
-    document.getElementById('f-desc').value=item.desc||'';
+    document.getElementById('f-desc').value=item.desc||item.description||'';
     document.getElementById('file-input').value='';
     document.getElementById('modal-title').textContent='Edit — '+(item.name||id);
     document.getElementById('publish-btn').textContent='Save Changes';
@@ -2960,12 +2963,14 @@
     var id=document.getElementById('edit-id').value;
     var html='';
     if(id&&cat){
-      var catInfo=CAT[cat];var folder=catInfo&&catInfo.folder||cat;
+      var item=cache[cat]&&cache[cat].items.find(function(i){return i.id===id;});
+      var catInfo=CAT[cat]||CAT.sets;
+      var root=item?itemRoot(item):catRoot(cat)+id+'/';
       var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
       existingImages.forEach(function(img,i){
         var isVid=isVideoFile(img);
         html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'existing\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'existing\')">'+
-          (isVid?'<video src="'+raw+IMG_ROOT+id+'/'+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge"><i class="fas fa-play"></i> Video</span>':'<img src="'+raw+IMG_ROOT+id+'/'+img+'?t='+Date.now()+'" alt="" loading="lazy" decoding="async">')+
+          (isVid?'<video src="'+raw+root+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge"><i class="fas fa-play"></i> Video</span>':'<img src="'+raw+root+img+'?t='+Date.now()+'" alt="" loading="lazy" decoding="async">')+
           '<button class="remove-img" onclick="removeExisting('+i+')">×</button><span class="img-order">#'+(i+1)+'</span></div>';
       });
     }
@@ -2985,7 +2990,7 @@
   function removePending(i){pendingImages.splice(i,1);renderPreviews();}
   function closeModal(){document.getElementById('modal-overlay').classList.remove('open');resetModal();}
   function closeModalOnBg(e){if(e.target===document.getElementById('modal-overlay')) closeModal();}
-  /* كل حاجة بتتحفظ في GitHub — مفيش أي خدمة برة */
+  /* Everything persists directly to GitHub */
   function paintStorageMode(){
     var el = document.getElementById('storage-mode');
     if (!el) return;
@@ -3003,12 +3008,12 @@
       var file = list[idx];
       var isVid = file.type.startsWith('video/');
 
-      /* فيديو: مايتصغّرش في المتصفح — بنتحقق من حجمه بس */
+      /* Videos: skip image compression, validate size limit */
       if (isVid) {
         if (file.size > MEDIA.MAX_VIDEO_BYTES) {
           showToast('Video is ' + MEDIA.human(file.size) +
                     ' — the limit is ' + MEDIA.human(MEDIA.MAX_VIDEO_BYTES) +
-                    '. Trim it or upload to YouTube.', 'error');
+                    '. Trim it first.', 'error');
           continue;
         }
         var vurl = URL.createObjectURL(file);
@@ -3018,7 +3023,7 @@
         continue;
       }
 
-      /* صورة: تصغير + ضغط قبل ما تطلع من الجهاز */
+      /* Images: resize & compress before upload */
       showToast('Preparing ' + (idx + 1) + ' / ' + list.length + '…', '');
       var res = await MEDIA.compressImage(file);
       var url = URL.createObjectURL(res.blob);
@@ -3036,6 +3041,7 @@
   async function publishItem(){
     if(!GH.token||!GH.owner||!GH.repo){alert('GitHub Setup incomplete!');return;}
     var cat=document.getElementById('edit-category').value;
+    var catInfo=CAT[cat]||CAT.sets;
     var name=document.getElementById('f-name').value.trim();
     var price=document.getElementById('f-price').value.trim();
     var desc=document.getElementById('f-desc').value.trim();
@@ -3047,30 +3053,30 @@
     btn.disabled=true;btn.textContent='Publishing…';showToast('Publishing…','');
 
     try{
-      /* ── 1) رقم التصميم ──
-         كل تصميم بياخد مجلد واحد ثابت: assets/images/sets/setN/ */
+      /* 1) Determine design ID and target folder */
       var catalog = await readCatalog();
-      var catFolder = catInfo.folder;                 /* golds / silvers / latest-designs / grillz-gallery */
+      var catFolder = catInfo.folder;
       var prefix = catInfo.prefix || 'item';
       var itemId = editId;
       if(!itemId){
-        /* الرقم اللي بعده في نفس المجلد بس — مش في الكتالوج كله */
         var maxN = 0;
         catalog.forEach(function(x){
-          if((x.category || '') !== (cat === 'latest' ? 'latest-designs' : cat)) return;
+          if((x.category || '') !== catFolder) return;
           var id = String(x.folder || x.id || '');
           var m = new RegExp('^' + prefix + '(\\d+)$').exec(id);
           if(m) maxN = Math.max(maxN, parseInt(m[1], 10));
         });
         itemId = prefix + (maxN + 1);
       }
-      /* الجاليري: الملف بيتحفظ في مجلد الجاليري نفسه، مش في مجلد لكل صورة */
       var basePath = (catFolder === 'grillz-gallery')
         ? 'assets/images/grillz-gallery'
         : 'assets/images/' + catFolder + '/' + itemId;
 
-      /* ── 2) الصور: تتصغّر في المتصفح، وبعدين تتحفظ على GitHub ── */
-      var allExistingNums = existingImages
+      /* 2) Upload pending compressed images/videos to GitHub */
+      var numSource = (catFolder === 'grillz-gallery' && !editId)
+        ? catalog.filter(function(x){ return x.category === 'grillz-gallery'; }).reduce(function(acc,x){ return acc.concat(x.images||[]); }, [])
+        : existingImages;
+      var allExistingNums = numSource
         .map(function(n){ return parseInt(String(n).replace(/\D/g,''), 10); })
         .filter(function(n){ return !isNaN(n); });
       var imgCounter = allExistingNums.length ? Math.max.apply(null, allExistingNums) + 1 : 0;
@@ -3084,7 +3090,6 @@
         var ext = (img.name || 'x.jpg').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
         var fname = String(imgCounter).padStart(6,'0') + '.' + ext;
 
-        /* الأصلية */
         var b64 = await MEDIA.toBase64(blob);
         await putFile(basePath + '/' + fname, b64,
                       'Add ' + fname + ' to ' + itemId + ' (' + MEDIA.human(blob.size) + ')');
@@ -3093,12 +3098,11 @@
         imgCounter++;
       }
 
-      /* ── 3) الكتالوج: سطر واحد لكل تصميم ──
-         هنا بس بيتحفظ الاسم والسعر والوصف والصور والتصنيف. */
-      var allImages = existingImages.concat(newNames);   /* صور + فيديو مع بعض */
+      /* 3) Update single entry in catalog.json */
+      var allImages = existingImages.concat(newNames);
       var entry = catalogEntry(catalog, itemId);
 
-      var realCat = catInfo.folder;                     /* latest-designs / golds / sets / grillz-gallery */
+      var realCat = catInfo.folder;
       var imgs = allImages.filter(function(f){ return !isVideoFile(f); });
       var vids = allImages.filter(function(f){ return  isVideoFile(f); });
 
@@ -3156,7 +3160,12 @@
       var list=await readCatalog();
       var keep=list.filter(function(x){return x.id!==_dId;});
       await writeCatalog(keep,'Remove '+_dId);
-      if(cache[_dCat]){cache[_dCat].list=newList;cache[_dCat].items=cache[_dCat].items.filter(function(i){return i.id!==_dId;});renderGrid(_dCat);}
+      if(cache[_dCat]){
+        cache[_dCat].list=cache[_dCat].list.filter(function(x){return x!==_dId;});
+        cache[_dCat].items=cache[_dCat].items.filter(function(i){return i.id!==_dId;});
+        cache[_dCat].catalog=keep;
+        renderGrid(_dCat);
+      }
       showToast(' Item removed','success');
       setTimeout(function(){loadCategory(_dCat);},2000);
     } catch(err){showToast('Error: '+err.message,'error');}
@@ -3221,7 +3230,7 @@
       await writeCatalog(list,'Restore backup');
       showToast(' Backup restored!','success');loadAllPanels();
     } catch(err){showToast('Error: '+err.message,'error');}
-    btn.disabled=false;btn.textContent='<i class="fas fa-arrow-up"></i> Restore to GitHub';
+    btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-up"></i> Restore to GitHub';
   }
 
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
@@ -3229,17 +3238,17 @@
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var currentPageFile='',currentEditorMode='fields',currentPageHTML='';
   var PAGE_FIELDS={
-    'about':[
+    'about.html':[
       {id:'about-h1',label:'Page Heading',selector:'h1',type:'text'},
       {id:'about-p1',label:'First Paragraph',selector:'.story-text p:nth-child(1)',type:'textarea'},
       {id:'about-p2',label:'Second Paragraph',selector:'.story-text p:nth-child(2)',type:'textarea'},
     ],
-    'contact':[
+    'contact.html':[
       {id:'contact-h1',label:'Main Heading',selector:'.contact-info h1',type:'text'},
       {id:'contact-email',label:'Email Address',selector:'.detail-item:nth-child(2) a',type:'text'},
     ],
-    'booking':[{id:'booking-h1',label:'Main Heading',selector:'h1.page-heading',type:'text'}],
-    'terms':[{id:'terms-h1',label:'Page Title',selector:'h1',type:'text'}],
+    'booking.html':[{id:'booking-h1',label:'Main Heading',selector:'h1.page-heading',type:'text'}],
+    'terms.html':[{id:'terms-h1',label:'Page Title',selector:'h1',type:'text'}],
   };
 
   function switchEditorMode(mode){
@@ -3351,9 +3360,7 @@
     });
   }
 
-  /* LOCAL مش SESSION: الـ iframe بيقرا الجلسة من المتصفح، وجلسة SESSION
-     مابتنفعش للـ iframe على بعض المتصفحات. نفس سبب إن الكوتس والفاتورة
-     كانوا بيطلبوا دخول تاني جوه /editx. */
+  /* LOCAL persistence allows sibling studio iframes (quotes/invoices) to share Firebase Auth */
   try { firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
 
   // ‑‑ Login / logout with Firebase Auth ‑‑

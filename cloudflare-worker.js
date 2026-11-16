@@ -319,10 +319,30 @@ function buildQuotePdf(q, opt = {}) {
     y += 12;
   });
 
-  if (!lines.length) {
-    p.text('No designs on this quotation.', M + 8, y, { size: 9, color: '#8a8a8a' });
+  const services = order.services || q.services || [];
+  if (!lines.length && !services.length) {
+    p.text('No designs or services on this quotation.', M + 8, y, { size: 9, color: '#8a8a8a' });
     y += 24;
   }
+
+  services.forEach((s, idx) => {
+    if (y > A4.h - 190) {
+      doc.createPage();
+      y = 70;
+    }
+    const label = (s.name || s.type || 'Studio Service') + (Number(s.qty) > 1 ? ` (x${s.qty})` : '');
+    p.text(`${lines.length + idx + 1}.`, M + 8, y, { size: 9, bold: true });
+    p.text(label, M + 26, y, { size: 9 });
+    p.text(money(s.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 9, bold: true, align: 'right' });
+    y += 12;
+    if (s.notes) {
+      p.text(String(s.notes), M + 26, y, { size: 7.2, color: '#8a8a8a' });
+      y += 11;
+    }
+    y += 4;
+    p.line(M + 8, y, A4.w - M - 8, y, '#eeeeee', 0.4);
+    y += 12;
+  });
 
   /* ── totals ── */
   if (y > A4.h - 150) { doc.createPage(); y = 70; }
@@ -337,8 +357,10 @@ function buildQuotePdf(q, opt = {}) {
   };
 
   kv('Lines subtotal', money(order.linesSubtotal) + ' ' + cur);
+  if (order.servicesSubtotal) kv('Services subtotal', money(order.servicesSubtotal) + ' ' + cur);
   if (order.timelineAmount) kv(`Timeline (+${order.timelinePct || 0}%)`, money(order.timelineAmount) + ' ' + cur);
   if (order.moldCost) kv('Mold', money(order.moldCost) + ' ' + cur);
+  if (order.discountAmount) kv('Discount', '-' + money(order.discountAmount) + ' ' + cur);
 
   y += 2;
   p.rect(left - 10, y - 13, right - left + 18, 28, '#1f1f1f');
@@ -375,14 +397,19 @@ function buildQuotePdf(q, opt = {}) {
   return doc.build();
 }
 
-/** Short human label for a design line */
+/** Short human label for a design or service line */
 function lineLabel(l) {
+  if (l && l.kind === 'service') {
+    const qty = Number(l.teeth) > 1 ? ` (${l.teeth}x)` : '';
+    return `${l.serviceLabel || l.service || 'Studio Service'}${qty}`;
+  }
   const mat = l.material === 'gold' ? `Gold ${l.karat || '18'}K` : String(l.material || '');
   const bits = [`${mat} / ${l.teeth || 0} teeth / level ${l.level || '1'}`];
   if (l.accent && l.accent.count) bits.push(`${l.accent.count}x ${l.accent.type || ''}`.trim());
   if (l.full && l.full.bars) bits.push('full iced on bars');
   else if (l.full) bits.push(`full iced ${l.full.type || ''}`.trim());
   if (l.plating && l.plating !== 'none') bits.push(String(l.plating));
+  if (l.anodize && l.anodize !== 'none') bits.push('anodize ' + l.anodize);
   if (l.enamel && l.enamel !== 'none') bits.push('enamel ' + l.enamel);
   if (l.engraving && l.engraving !== 'none') bits.push('engraving ' + l.engraving);
   return bits.join('  -  ');
@@ -394,6 +421,7 @@ function designDetail(l) {
   if (l.designCost) bits.push(`design ${money(l.designCost)}`);
   if (l.stoneCost) bits.push(`stones ${money(l.stoneCost)}`);
   if (l.platingCost) bits.push(`plating ${money(l.platingCost)}`);
+  if (l.anodizeCost) bits.push(`anodizing ${money(l.anodizeCost)}`);
   if (l.enamelCost) bits.push(`enamel ${money(l.enamelCost)}`);
   if (l.engravingCost) bits.push(`engraving ${money(l.engravingCost)}`);
   return bits.join('   ');
@@ -636,8 +664,7 @@ function fsErrorText(err) {
     case 'permission-denied':
     case 'firestore-403':
       return 'The database is refusing to let me read.\n'
-        + 'Firestore -> Rules: the staff UID inside isStaff() must match the\n'
-        + 'account you sign in with. Paste the file 3-قواعد-فايربيز.rules and Publish.';
+        + 'Firestore -> Rules: ensure isStaff() includes this Firebase Auth user UID.';
     case 'not-found':
     case 'firestore-404':
       return 'Firestore cannot find that. Check the project id is egygrillz-studio.';
@@ -724,9 +751,16 @@ async function fetchCollection(env, name, fetchImpl = fetch) {
 /** invoice / quote doc → flat object */
 function mapInvoice(doc) {
   const f = (doc && doc.fields) || {};
-  const total = parsePrice(fsVal(f.total)) || parsePrice(fsVal(f.amount))
-    || (Array.isArray(f.items && f.items.arrayValue && f.items.arrayValue.values)
-      ? 0 : 0);
+  const itemVals = (f.items && f.items.arrayValue && f.items.arrayValue.values) || [];
+  const itemsSum = Array.isArray(itemVals)
+    ? itemVals.reduce((sum, entry) => {
+        const mf = (entry && entry.mapValue && entry.mapValue.fields) || {};
+        const qty = Number(fsVal(mf.qty)) || 1;
+        const unit = parsePrice(fsVal(mf.price)) || parsePrice(fsVal(mf.subtotal)) || parsePrice(fsVal(mf.amount));
+        return sum + (parsePrice(fsVal(mf.total)) || (qty * unit));
+      }, 0)
+    : 0;
+  const total = parsePrice(fsVal(f.total)) || parsePrice(fsVal(f.amount)) || parsePrice(fsVal(f.subtotal)) || itemsSum;
   return {
     id: (doc.name || '').split('/').pop(),
     clientName: String(fsVal(f.clientName) || fsVal(f.client) || fsVal(f.name) || ''),
@@ -804,7 +838,7 @@ function formatDayBlock(iso, appts, opts = {}) {
   if (!sorted.length) {
     return opts.skipEmpty ? '' : `${prettyDate(iso)}\n${LINE}\nNo appointments.\n`;
   }
-  // تقرير اليوم الواحد: العنوان فوقه أصلاً، فمفيش سطر مكرر
+  // Single-day report already has its date in the heading
   const parts = opts.singleDay
     ? []
     : [`${prettyDate(iso)}   —   ${sorted.length} appointment(s)`, LINE];
@@ -1296,9 +1330,8 @@ async function sendReportFile(env, fetchImpl = fetch) {
 const asciiName = (s) => String(s || 'client').replace(/[^\w\-]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'client';
 const escTg = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** "send the quote of ahmed" → returns the quote + PDF hint */
+/** "send the quote of ahmed" -> returns the quote + PDF */
 async function sendQuoteTo(arg, env, fetchImpl) {
-  // "send the quote of ahmed" → يبعت الـ PDF على طول
   return sendQuoteFile(arg, env, fetchImpl);
 }
 
@@ -1609,7 +1642,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
 
     case '/monthreport': {
       const rep = await monthlyReport(env, 1, fetchImpl);
-      // نسخة PDF لو المستخدم طلبها
+      // Attach PDF when explicitly requested
       if (/file|pdf/.test(arg)) {
         const bytes = buildTextPdf('Monthly report', rep);
         return { pdf: bytes, filename: 'EGYGRILLZ-monthly-report.pdf', caption: 'Monthly report' };
@@ -1824,7 +1857,7 @@ async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
 async function pollTelegram(env, fetchImpl = fetch) {
   if (!env.TELEGRAM_BOT_TOKEN) return { ok: false, error: 'no-token' };
   try {
-    // لو الويب هوك متسجل، تليجرام هو اللي هيبعتلنا — مفيش داعي نسحب
+    // Skip polling if webhook is already configured
     const wh = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getWebhookInfo`, { method: 'GET' })
       .then(r => r.json()).catch(() => ({}));
     if (wh && wh.ok && wh.result && wh.result.url) return { ok: true, skipped: 'webhook-active' };
@@ -1881,7 +1914,7 @@ async function clearWebhook(env, fetchImpl = fetch) {
  *   TURNSTILE_SECRET                  (optional but recommended)
  *
  * Vars (wrangler.toml [vars]):
- *   ALLOWED_ORIGINS = "https://egygillz.com,https://www.egygillz.com"
+ *   ALLOWED_ORIGINS = "https://egygrillz.com,https://www.egygrillz.com"
  *   RATE_LIMIT_PER_10MIN = "10"
  */
 
@@ -1895,8 +1928,12 @@ const json = (data, status = 200, extra = {}) =>
   });
 
 function cors(origin) {
-  const allow = (origin && origin.startsWith('https://egygillz.com')) || origin === 'http://localhost:8787'
-    ? origin : 'https://egygillz.com';
+  const allow = (origin && (
+    origin.startsWith('https://egygrillz.com')
+    || origin.startsWith('https://www.egygrillz.com')
+    || /\.pages\.dev$/.test(origin)
+    || origin.startsWith('http://localhost')
+  )) ? origin : 'https://egygrillz.com';
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
@@ -1987,7 +2024,7 @@ function formatMessage(d) {
   return lines.filter(Boolean).join('\n');
 }
 
-/** ملخص مواعيد بكرة — بيتبعت لصاحب المحل على تليجرام كل يوم الساعة 12 */
+/** Tomorrow's appointment summary sent daily at 12:00 Cairo time */
 function formatReminderDigest(appts, date) {
   if (!appts.length) {
     return `REMINDERS — ${date}\n\nNo appointments booked for tomorrow.`;
@@ -2092,7 +2129,7 @@ async function sendWhatsAppToClient(data, type, env, fetchImpl = fetch) {
 
 /* ───────────────── Resend email (free 3 000/month) ─────────────────
  * wrangler secret put RESEND_KEY      (re_XXXXXXXX)
- * wrangler secret put RESEND_FROM     (alerts@egygillz.com — domain must be verified)
+ * wrangler secret put RESEND_FROM     (alerts@egygrillz.com — domain must be verified)
  * wrangler secret put ALERT_EMAIL     (where YOU want the copy)
  * ───────────────────────────────────────────────────────────────── */
 async function sendEmail(subject, text, to, env, fetchImpl = fetch) {
@@ -2124,7 +2161,7 @@ function formatClientConfirmation(data) {
     `Date:    ${data.date || '—'}`,
     `Time:    ${data.time || '—'}`,
     ``,
-    `Address & directions: https://egygillz.com/contact`,
+    `Address & directions: https://egygrillz.com/contact`,
     `Questions? WhatsApp us: https://wa.me/201000353839`,
     ``,
     `See you soon `,
@@ -2286,12 +2323,12 @@ function clientEmailHTML(d) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- *  EMAILJS (server-side) — نفس حسابك اللي الموقع بيستخدمه، بس الكرون بيبعت منه
- *  محتاج Private Key من EmailJS → Account → General → API Keys.
+ *  EMAILJS (server-side) — uses EmailJS Private Key for scheduled reminders
+ *  (EmailJS -> Account -> General -> API Keys).
  *  Secrets: EMAILJS_PRIVATE_KEY
  *  Vars  : EMAILJS_SERVICE_ID (service_r8fhuah)
  *          EMAILJS_PUBLIC_KEY  (rvcNsK9pAj-jhd9RE)
- *          EMAILJS_REMINDER_TEMPLATE (الـ template اللي هتعمله)
+ *          EMAILJS_REMINDER_TEMPLATE
  * ═══════════════════════════════════════════════════════════════════════════ */
 async function sendViaEmailJS(templateId, params, env, fetchImpl = fetch) {
   if (!env.EMAILJS_PRIVATE_KEY) return { channel: 'emailjs', ok: false, skipped: true };
@@ -2312,7 +2349,7 @@ async function sendViaEmailJS(templateId, params, env, fetchImpl = fetch) {
   return { channel: 'emailjs', ok: r.ok, status: r.status, error: r.ok ? undefined : txt.slice(0, 200) };
 }
 
-/** يبعت التذكير عن طريق EmailJS */
+/** Send reminder via EmailJS */
 async function sendReminderTo(appt, env, f) {
   const params = {
     to_name: appt.name || 'there',
@@ -2388,7 +2425,7 @@ async function fetchTodaysAppointments(env, fetchImpl = fetch) {
   return { ok: true, appts, date: cairoTomorrow() };
 }
 
-/** يبعت ملخص مواعيد بكرة على تليجرام — يدوي أو من الـ Cron */
+/** Send tomorrow's appointment summary to Telegram (manual or Cron) */
 async function sendTelegramDigest(env) {
   const f = env.fetchImpl || fetch;
   const date = cairoTomorrow();
@@ -2439,12 +2476,12 @@ async function sendReminders(env) {
 /* ───────────────────────── handler ───────────────────────── */
 
 export default {
-  /** Cron Trigger — كل يوم الساعة 12 الضهر بتوقيت القاهرة */
+  /** Cron Trigger — daily 12:00 Cairo time + 1-min Telegram polling */
   async scheduled(event, env = {}, ctx = {}) {
     const work = (async () => {
-      // كل دقيقة: نسحب أي رسائل جديدة للبوت ونرد عليها
+      // Every minute: poll incoming Telegram bot updates
       const bot = await pollTelegram(env).catch(e => ({ ok: false, error: String(e) }));
-      // أول الشهر الساعة 12 الضهر: تقرير الشهر اللي فات بالكامل
+      // First day of month at 12:00 Cairo time: send previous month's report
       const cairoNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
       if (cairoNow.getUTCDate() === 1 && cairoNow.getUTCHours() === 12 && cairoNow.getUTCMinutes() === 0) {
         const report = await monthlyReport(env, 1).catch(e => 'Report failed: ' + e);
@@ -2529,12 +2566,12 @@ export default {
       const secret = env.CRON_SECRET || '';
       const given = url.searchParams.get('key') || req.headers.get('X-Cron-Key') || '';
       if (secret && given !== secret) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
-      // التذكير بقى يدوي من /editx — هنا بنبعت ملخص بكرة على تليجرام فقط
+      // Reminders are sent manually from /editx; Cron sends tomorrow's digest to Telegram only
       return sendTelegramDigest(env);
     }
 
 
-    /* ── GET /api/telegram/check — هل البوت شايف الداتابيز؟ ── */
+    /* GET /api/telegram/check — verify bot access to Firestore */
     if (url.pathname === '/api/telegram/check') {
       if (!env.FIREBASE_API_KEY) {
         return json({ ok:false, step:'key', message:'FIREBASE_API_KEY is not set in Cloudflare.' }, 200, { origin });
@@ -2544,7 +2581,7 @@ export default {
         return json({ ok:false, step:'login',
           message:'STAFF_EMAIL / STAFF_PASSWORD are not set (or wrong), so the bot is anonymous and Firestore refuses it.' }, 200, { origin });
       }
-      // جرّب قراءة حقيقية
+      // Run lightweight read check
       const r = await fetch(`https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents:runQuery?key=${env.FIREBASE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -2563,9 +2600,7 @@ export default {
     }
 
 
-    /* ── POST /api/pdf — استوديو العروض يبعت ملف PDF على تليجرام ──
-       الحماية: مفتاح في الهيدر + فحص الأصل. الملف بيتبعت كـ multipart
-       ومش بيتخزن في أي مكان. */
+    /* POST /api/pdf — Quotes Studio forwards PDF directly to Telegram (multipart, not stored) */
     if (url.pathname === '/api/pdf') {
       if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 200, { origin });
       const key = env.PDF_KEY || '';
@@ -2660,8 +2695,7 @@ export default {
       sendWhatsAppToClient(data, type, env, f).catch(e => ({ channel: 'wa-client', ok: false, error: String(e) })),
       sendEmail(`New ${type} — EGYGRILLZ`, text, env.ALERT_EMAIL, env, f)
         .catch(e => ({ channel: 'email-staff', ok: false, error: String(e) })),
-      /* ! العميل بياخد إيميل التأكيد من EmailJS في المتصفح مباشرة —
-         ده احتياطي بس (لو EmailJS في المتصفح فشل) وبيستخدم نفس القالب */
+      /* Client confirmation email is handled browser-side by EmailJS */
       Promise.resolve({ channel: 'email-client', ok: false, skipped: true }),
     ]);
 

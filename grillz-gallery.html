@@ -205,6 +205,8 @@
 
     
     .ed-panel-focus { outline:3px solid #fff; outline-offset:4px; box-shadow:0 0 0 8px rgba(0,0,0,.35); }
+    .page-hero { position:relative; width:100%; height:52vh; min-height:320px; overflow:hidden; background:#1f1f1f; margin-top:60px; }
+    .page-hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.84; }
 </style>
   <link rel="canonical" href="https://egygrillz.com/grillz-gallery">
 </head>
@@ -311,23 +313,16 @@
       if(/schedule|book|appointment/.test(t)) return 'booking';
       return 'contact';
     }
-    /* ── اسم النسخة الصغيرة لنفس الصورة ── */
-    function thumbOf(src){
-      return /\.(jpe?g|png|webp)$/i.test(src) ? src.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : src;
-    }
-    /* لو المصغّرة مش موجودة (تصميم قديم) نرجع للأصلية بدل ما تبان مكسورة */
+    function thumbOf(src){ return src; }
     function imgFallback(el){
       if (el && el.dataset && el.dataset.full) { el.src = el.dataset.full; el.removeAttribute('data-full'); }
     }
-    /* ── صور جاهزة قبل الضغط ───────────────────────────────────────
-       بنحمّل الصور كلها في الخلفية أول ما التصميمات توصل، وبعد ما كل
-       صورة تخلص تحميل بنحوّلها من متأخرة (lazy) لجاهزة. النتيجة: أول ما
-       تدوس على أي تصميم بيفتح وعنده صوره فوراً. */
+    /* Preload gallery images in background for instant modal switches */
     const _preloaded = new Map();
     function preloadImages(urls){
       urls.forEach(function(u){
         if(!u || _preloaded.has(u)) return;
-        u = thumbOf(u);            /* الصغيرة بس — مش الأصلية */
+        u = thumbOf(u);
         const im = new Image();
         im.decoding = 'sync';
         const mark = function(){
@@ -345,11 +340,8 @@
         _preloaded.set(u, im);
       });
     }
-    /* بيخلي صور المودال تظهر فوراً: لو الصورة اتحملت قبل كده،
-       بنحطها في الحال؛ لو لأ، بنوريها أثناء التحميل بدل ما نشيلها. */
     function warmModalImages(images){
       images.forEach(function(u){
-        /* المصغّرة (بتظهر فوراً) */
         if(!_preloaded.has(thumbOf(u))){
           const t = new Image(); t.src = thumbOf(u); _preloaded.set(thumbOf(u), t);
         }
@@ -388,13 +380,16 @@
 
       panel.innerHTML=imgsHtml
         +'<div class="ed-panel-info">'
-        +'<div class="name">'+item.name+'</div>'
-        +'<div class="desc">'+item.desc+'</div>'
-        +'<a class="price" href="contact" onclick="event.stopPropagation()">'+item.price+'</a>'
+        +'<div class="name"></div>'
+        +'<div class="desc"></div>'
+        +'<a class="price" href="contact" onclick="event.stopPropagation()"></a>'
         +'</div>'
         +dotsHtml;
+      panel.querySelector('.name').textContent=item.name||'';
+      panel.querySelector('.desc').textContent=item.desc||'';
+      panel.querySelector('.price').textContent=item.price||'';
 
-      /* أول صورة ظاهرة فوراً — الباقي بيتقلّب تلقائياً كل 3.5 ثانية */
+      /* First image stays visible immediately; others rotate automatically */
       const firstImg=panel.querySelector('img');
       if(firstImg){
         firstImg.classList.add('active');
@@ -498,8 +493,7 @@
       },200);
     });
 
-    /* ── Load: مصدر واحد للصور والمعلومات ── */
-    /* أسماء التصنيفات التي لها صفحة خاصة في الموقع */
+    /* Load gallery entries from master catalog.json */
     const OWN_PAGE = { sets:'sets', golds:'golds', silvers:'silvers',
                        diamonds:'diamonds', 'latest-designs':'latest-designs' };
 
@@ -507,8 +501,8 @@
       .then(r=>r.json())
       .then(catalog=>{
         return (catalog||[])
-          /* الجاليري = صور الكاست البيضاء فقط. التصميمات لها صفحاتها. */
           .filter(d => d.category === 'grillz-gallery')
+          .sort((a,b) => (a.order||999) - (b.order||999))
           .map(d=>({
             name: d.name || d.id,
             desc: d.description || '',
@@ -528,36 +522,29 @@
   </script>
 
   <script>
-  /* صورة الهيدر: بتتقرا من settings/pageMeta — لو مفيش، الصفحة تفضل زي ما هي */
+  /* Hero override from Firestore settings/pageMeta */
   (function () {
     var PAGE = 'grillz-gallery';
-    function ready() {
-      if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) return false;
-      return true;
-    }
-    function apply() {
-      try {
-        firebase.firestore().collection('settings').doc('pageMeta').get().then(function (snap) {
-          if (!snap.exists) return;
-          var m = snap.data() || {};
-          var hero = (m[PAGE] || {}).hero;
-          if (!hero) return;
-          var sec = document.createElement('div');
-          sec.className = 'page-hero';
-          sec.innerHTML = '<img src="' + hero + '" alt="EGYGRILLZ" fetchpriority="high" decoding="async">';
-          var head = document.querySelector('.page-header');
-          if (head && head.parentNode) head.parentNode.insertBefore(sec, head);
-          else document.body.insertBefore(sec, document.body.firstChild);
-        }).catch(function () {});
-      } catch (e) {}
-    }
-    /* نستنى Firebase يتحمّل */
-    var tries = 0;
-    (function wait() {
-      if (ready()) { apply(); return; }
-      if (++tries > 40) return;
-      setTimeout(wait, 250);
-    })();
+    fetch('https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents/settings/pageMeta')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (doc) {
+        var pf = doc && doc.fields && doc.fields[PAGE] && doc.fields[PAGE].mapValue && doc.fields[PAGE].mapValue.fields;
+        var hero = pf && pf.hero && pf.hero.stringValue;
+        if (!hero) return;
+        var sec = document.createElement('div');
+        sec.className = 'page-hero';
+        var img = document.createElement('img');
+        img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
+        img.alt = 'EGYGRILLZ';
+        img.fetchPriority = 'high';
+        img.decoding = 'async';
+        sec.appendChild(img);
+        var head = document.querySelector('.page-header');
+        if (head && head.parentNode) {
+          head.parentNode.insertBefore(sec, head);
+          head.style.paddingTop = '44px';
+        }
+      }).catch(function () {});
   })();
   </script>
 </body>
