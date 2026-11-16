@@ -35,7 +35,7 @@ Local test results: every nav link resolves (0 broken), 0 HTML nesting errors, 0
 | Piece | Where | What it does |
 |---|---|---|
 | `moulds.html` | `/moulds` | Teeth-chart order page. Posts the order to the Worker (`/api/moulds/order`), which saves it to Firestore **`mould_orders`** and alerts Telegram. If the Worker is unreachable the page falls back to writing straight to Firestore. Prices (`settings/site` → `mouldPerArch`, `mouldDeliveryFee`) are applied to every total. |
-| `editx` → **Moulds** | `/editx` | Lists orders (`Pending` / `Approved` / `Delivered`), edits the kit prices, pastes the payment link. **Approve & open Gmail** saves the link + `approved`, then opens Gmail with the client's address, subject and your template filled in — **you press Send**. |
+| `editx` → **Moulds** | `/editx` | Lists orders (`Pending` / `Approved` / `Delivered`) through the Worker (`GET /api/moulds/orders`), edits the kit prices, pastes the payment link. **Approve & open Gmail** saves the link + `approved`, then opens Gmail with the client's address, subject and your template filled in — **you press Send**. |
 | `editx` → **Home Banners** | `/editx` | Uploads or picks the wide image for the Golds / Silvers / Diamonds home sections (`settings/banners`). |
 | Telegram bot | Worker | `/moulds`, `/mould`, `/pay`, `/deliver`, `/sets`, `/setvis`, `/status`, `/calc`, `/invoice` + inline buttons. `/pay <ref> <link>` marks the order approved and replies with a **tap-to-open Gmail draft** (subject + body already written) so you can send it from your phone. |
 | `assets/set-visibility.js` | public pages | Hides sets switched off from `/setvis` (`settings/visibility`). |
@@ -52,8 +52,20 @@ template for moulds, so there is nothing to configure in Google Cloud:
 * `/api/health` no longer lists any email channel — if an `email_*` flag still shows up there, the
   old Worker is still deployed.
 
-**Optional:** `MOULDS_KEY` — when set, `/api/moulds/status` and `/api/moulds/approve` also require the
-`X-Moulds-Key` header (the pages call them from the studio domain, which is always allowed).
+### Why `/editx` asks the Worker for the order list
+
+`mould_orders` holds client phone numbers and addresses, so the Firestore rules refuse to let a
+browser read the collection — the dashboard used to try anyway and showed
+**“Could not load mould orders. Missing or insufficient permissions.”**
+
+`GET /api/moulds/orders?limit=120&status=pending` reads it with the studio's own credentials
+(`STAFF_EMAIL` / `STAFF_PASSWORD`) and returns the same shape the cards render. `/editx` falls back
+to a direct read when the rules allow it, and if both fail the message now names the reason and the
+account the dashboard is signed in as.
+
+**Optional:** `MOULDS_KEY` — when set, `/api/moulds/orders`, `/api/moulds/status` and
+`/api/moulds/approve` also require the `X-Moulds-Key` header (the pages call them from the studio
+domain, which is always allowed).
 
 Verify: `curl -s https://<worker>/api/health | grep -E "moulds_|email"`
 

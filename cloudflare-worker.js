@@ -2219,6 +2219,10 @@ function mapMouldOrder(doc) {
     mapLink: String(fsVal(f.mapLink) || '').trim(),
     status: String(fsVal(f.status) || 'pending').toLowerCase(),
     paymentLink: String(fsVal(f.paymentLink) || '').trim(),
+    approvedAt: fsVal(f.approvedAt) || '',
+    statusUpdatedAt: fsVal(f.statusUpdatedAt) || '',
+    deliveredAt: fsVal(f.deliveredAt) || '',
+    source: String(fsVal(f.source) || ''),
     emailSentAt: fsVal(f.emailSentAt),
     emailChannel: String(fsVal(f.emailChannel) || ''),
     createdAt: created && typeof created === 'object' && created._seconds !== undefined
@@ -3448,6 +3452,7 @@ export default {
           pdf: 'POST /api/pdf',
           moulds_order: 'POST /api/moulds/order',
           moulds_approve: 'POST /api/moulds/approve',
+          moulds_orders: 'GET /api/moulds/orders',
           moulds_status: 'POST /api/moulds/status',
           notify: 'POST /api/notify',
         },
@@ -3670,6 +3675,28 @@ export default {
      * Nothing is emailed here. The response carries the Gmail draft URL so
      * /editx and the bot can open the compose window; a human presses Send.
      */
+    /* ── mould orders: the list /editx shows ──
+     * Firestore refuses anonymous reads of `mould_orders` (the collection holds
+     * client phone numbers and addresses). The dashboard therefore asks the
+     * Worker, which reads with the studio's own credentials.
+     * Protect it with the MOULDS_KEY secret and/or ALLOWED_ORIGINS. */
+    if (url.pathname === '/api/moulds/orders') {
+      if (req.method !== 'GET') return json({ ok: false, error: 'use-get' }, 405, { origin });
+      if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
+      const key = env.MOULDS_KEY || '';
+      const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
+      if (key && given !== key) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+
+      const limit = Math.max(1, Math.min(200, parseInt(url.searchParams.get('limit') || '120', 10) || 120));
+      const status = clean(url.searchParams.get('status') || '', 20).toLowerCase();
+      const r = await fetchMouldOrders(env, { limit, status: status || 'all' }, env.fetchImpl || fetch)
+        .catch(e => ({ ok: false, error: String(e), orders: [] }));
+      if (!r.ok) {
+        return json({ ok: false, error: r.error || 'firestore', orders: [] }, 502, { origin });
+      }
+      return json({ ok: true, count: r.orders.length, orders: r.orders }, 200, { origin });
+    }
+
     if (url.pathname === '/api/moulds/approve') {
       if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
       if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
