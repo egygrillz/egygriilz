@@ -12,7 +12,7 @@
  * Nothing secret is exposed here — the Worker holds all keys.
  */
 (function () {
-  var ENDPOINT = 'https://egygillz-api.egygillz.workers.dev/api/notify';
+  var ENDPOINT = 'https://egygillz-api.egygrillz.workers.dev/api/notify';
 
   function turnstileToken() {
     try {
