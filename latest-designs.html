@@ -440,6 +440,25 @@
       return info;
     }
 
+    /* ── السعر: لو مكتوب "Contact us for details" يبقى لينك لصفحة التواصل ──
+       نفس اللي بيحصل في صفحات الذهب والفضة والألماس. */
+    function isContactPrice(price){
+      var t = String(price || '').toLowerCase();
+      return !t || /contact|enquir|inquire|ask|details|dm |whatsapp|call/.test(t);
+    }
+    function priceTarget(price){
+      var t = String(price || '').toLowerCase();
+      if(/schedule|book|appointment/.test(t)) return 'booking';
+      return 'contact';
+    }
+    function priceHtml(price, cls){
+      if(!price) return '';
+      if(isContactPrice(price)){
+        return `<a class="${cls} price-link" href="${priceTarget(price)}" style="text-decoration:none;display:inline-block">${price}</a>`;
+      }
+      return `<span class="${cls}">${price}</span>`;
+    }
+
     function isVid(f) { return /\.(mp4|mov|webm|avi|m4v)$/i.test(f); }
 
     /* كل تصميم في مجلده جوه تصنيفه — من الكتالوج، مفيش تخمين */
@@ -516,7 +535,7 @@
       txt.innerHTML = `
         <div class="spread-kicker">New Arrival</div>
         <div class="spread-title">${d.name}</div>
-        ${d.price?`<div class="spread-price">${d.price}</div>`:''}
+        ${d.price?`<div class="spread-price">${isContactPrice(d.price)?`<a href="${priceTarget(d.price)}" style="color:inherit;text-decoration:none">${d.price} →</a>`:d.price}</div>`:''}
         ${d.desc?`<div class="spread-desc">${d.desc}</div>`:''}`;
       right.appendChild(txt);
       if(d.images.length > 1) {
@@ -564,7 +583,7 @@
         <div class="lb-title">${l1}${l2?`<br><em>${l2}</em>`:''}</div>
         <div class="lb-row">
           ${d.desc?`<div class="lb-desc">${d.desc}</div>`:'<div></div>'}
-          ${d.price?`<div class="lb-price">${d.price}</div>`:''}
+          ${d.price?`<div class="lb-price">${isContactPrice(d.price)?`<a href="${priceTarget(d.price)}" style="color:inherit;text-decoration:none">${d.price} →</a>`:d.price}</div>`:''}
         </div>`;
       if(d.images.length > 1) {
         const strip = document.createElement('div');
@@ -586,7 +605,7 @@
       left.innerHTML = `
         <div class="spread-kicker">Latest Design</div>
         <div class="spread-title" style="font-size:clamp(32px,4vw,62px);">${d.name}</div>
-        ${d.price?`<div class="spread-price">${d.price}</div>`:''}
+        ${d.price?`<div class="spread-price">${isContactPrice(d.price)?`<a href="${priceTarget(d.price)}" style="color:inherit;text-decoration:none">${d.price} →</a>`:d.price}</div>`:''}
         ${d.desc?`<div class="spread-desc">${d.desc}</div>`:''}`;
       row.appendChild(left);
       const right = document.createElement('div');
@@ -607,7 +626,7 @@
       tc.innerHTML = `
         <div class="spread-kicker">Curated Piece</div>
         <div class="spread-title" style="font-size:clamp(30px,4vw,58px);">${d.name}</div>
-        ${d.price?`<div class="spread-price">${d.price}</div>`:''}`;
+        ${d.price?`<div class="spread-price">${isContactPrice(d.price)?`<a href="${priceTarget(d.price)}" style="color:inherit;text-decoration:none">${d.price} →</a>`:d.price}</div>`:''}`;
       hdr.appendChild(tc);
       const rule = document.createElement('div');
       rule.className = 'ld-rule';

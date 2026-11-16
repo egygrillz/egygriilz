@@ -932,9 +932,9 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 
 <!-- Firebase SDK -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { firebaseApp } from '/assets/firebase-auth-gate.js';
 
 
 /* ══════════════════════════════════════════════════
@@ -945,15 +945,8 @@ import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js
 /* ══════════════════════════════════════════════════
    FIREBASE CONFIG
 ══════════════════════════════════════════════════ */
-const firebaseConfig = {
-  apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
-  authDomain: "egygrillz-studio.firebaseapp.com",
-  projectId: "egygrillz-studio",
-  storageBucket: "egygrillz-studio.firebasestorage.app",
-  messagingSenderId: "1022362401463",
-  appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
-};
-const fbApp = initializeApp(firebaseConfig);
+/* نفس التطبيق اللي الـ gate سجّل الدخول عليه */
+const fbApp = firebaseApp();
 const db = getFirestore(fbApp);
 
 
@@ -1406,6 +1399,7 @@ async function loadDesigns(cat) {
     const want = (cat === 'latest-designs' || cat === 'latest') ? null : cat;
     const designs = [];
     for (const item of (all || [])) {
+      if (item.category === 'grillz-gallery') continue;   /* صور جاليري مش تصميمات */
       if (want && item.category !== want) continue;
       if (designs.length >= 20) break;
       const d = {
@@ -1436,7 +1430,8 @@ function renderDesignGrid(designs) {
   designs.forEach(d => {
     const thumb = document.createElement('div');
     thumb.className = 'design-thumb';
-    const imgSrc = d.images && d.images[0] ? `assets/images/sets/${d.folder}/${d.images[0]}` : '';
+    /* المسار من مجلد التصنيف الحقيقي — مش sets/ للكل */
+    const imgSrc = d.images && d.images[0] ? (d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0] : '';
     thumb.innerHTML = `
       ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" loading="lazy" onerror="this.parentElement.querySelector('.design-thumb-name').textContent+=' (no img)'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
       <div class="design-thumb-name">${d.name || d.folder}</div>

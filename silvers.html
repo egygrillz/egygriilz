@@ -56,11 +56,12 @@
     .set-card:hover .card-img img.active { transform:scale(1.03); }
     .card-img { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#e8e5e1; border-radius:2px; }
     .row-2 .card-img { aspect-ratio:4/5; }
-    .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.9s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
-    .card-img img.active { opacity:1; }
+    .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.45s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
+    /* الغلاف ظاهر من أول لحظة — مش مستني أي كلاس */
+    .card-img img:first-child, .card-img img.active { opacity:1; }
     /* lớp lót: النسخة المصغّرة تظهر في الحال، والصورة الأصلية تطلع فوقها لما تجهز */
     .modal-slide { background-size:cover; background-position:center; background-color:#e8e5e1; }
-    .modal-slide img { opacity:0; transition:opacity 0.35s ease; }
+    .modal-slide img { opacity:1; }
     .card-name-overlay { position:absolute; bottom:0; left:0; right:0; padding:28px 12px 12px; background:linear-gradient(to top,rgba(0,0,0,0.52) 0%,transparent 100%); z-index:3; pointer-events:none; }
     .card-name-overlay .name-on-img { font-family:'Playfair Display',serif; font-weight:400; font-size:13px; letter-spacing:0.5px; color:#fff; line-height:1.3; }
     .card-dots { position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:5px; pointer-events:none; z-index:4; }
@@ -318,7 +319,7 @@
 
     function openModal({name,desc,price,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
 
-        s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" loading="eager" decoding="async" onload="this.style.opacity=1">';
+        s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" '+(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async">';
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }

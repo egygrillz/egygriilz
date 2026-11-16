@@ -60,6 +60,7 @@
       if(name==='appointments') loadAppointments();
       if(name==='clients') loadClients();
       if(name==='messages') loadMessages();
+      if(name==='gallery') loadCategory('gallery');
       if(name==='schedule') loadScheduleSettings();
       if(name==='settings') loadSiteSettings();
       if(name==='quotes') loadFrame('frame-quotes','quotes');
@@ -86,7 +87,7 @@
     }
 
     function pageTitle(n){
-      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',quotes:'Quotes',invoices:'Invoices',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
+      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',quotes:'Quotes',invoices:'Invoices',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',gallery:'Gallery',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
       return map[n]||n;
     }
   </script>
@@ -666,6 +667,7 @@
         <button class="nav-item" data-page="sets" onclick="showPage('sets')"><i class="fas fa-images"></i> Sets</button>
         <button class="nav-item" data-page="golds" onclick="showPage('golds')"><i class="fas fa-circle-dollar-to-slot"></i> Golds</button>
         <button class="nav-item" data-page="silvers" onclick="showPage('silvers')"><i class="fas fa-gem"></i> Silvers</button>
+        <button class="nav-item" data-page="gallery" onclick="showPage('gallery')"><i class="fas fa-images"></i> Gallery</button>
         <button class="nav-item" data-page="diamonds" onclick="showPage('diamonds')"><i class="fas fa-gem"></i> Diamonds</button>
         <button class="nav-item" data-page="latest" onclick="showPage('latest')"><i class="fas fa-fire"></i> Latest Designs</button>
         <div class="nav-section">Site</div>
@@ -854,6 +856,18 @@
         </div>
 
         <!-- GOLDS -->
+
+        <div class="panel" id="panel-gallery">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Gallery Photos</div>
+              <div class="panel-sub">الصور اللي بتظهر في صفحة الجاليري بس — مش تصميمات</div>
+            </div>
+            <button class="btn-primary" onclick="openModal('gallery')"><i class="fas fa-plus"></i> Add Photo</button>
+          </div>
+          <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search gallery…" oninput="filterGrid('gallery',this.value,'')"></div><span class="filter-count" id="count-gallery"></span></div>
+          <div class="grid" id="grid-gallery"><div class="empty-state"><i class="fas fa-images"></i><p>Loading…</p></div></div>
+        </div>
         <div class="panel" id="panel-golds">
           <div class="page-header-row">
             <div><p class="ph-title">Golds</p><p class="ph-sub">Click any field to edit inline</p></div>
@@ -2095,6 +2109,7 @@
     silvers:  {folder:'silvers',        label:'Silver Design',prefix:'silvers'},
     diamonds: {folder:'diamonds',       label:'Diamond Design',prefix:'diamonds'},
     latest:   {folder:'latest-designs', label:'Design',       prefix:'design'},
+    gallery:  {folder:'grillz-gallery', label:'Gallery Photo', prefix:'gallery'},
   };
   var CATALOG = 'assets/images/catalog.json';
 
@@ -2113,6 +2128,8 @@
   function itemRoot(item){
     var c = (item && (item.catFolder || item.category)) || 'sets';
     var d = (item && (item.folder || item.id)) || '';
+    /* الجاليري: الصور في المجلد نفسه، مش جوه مجلد لكل صورة */
+    if (c === 'grillz-gallery') return 'assets/images/grillz-gallery/';
     return 'assets/images/' + c + '/' + d + '/';
   }
 
@@ -2163,7 +2180,7 @@
     try{ all=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); }catch(e){ all=[]; }
     all=Array.isArray(all)?all:[];
     /* كل تصنيف بيشوف بتاعه بس — من غير ما يخلط مع غيره */
-    var want = (cat === 'latest') ? 'latest-designs' : cat;
+    var want = (cat === 'latest') ? 'latest-designs' : (cat === 'gallery' ? 'grillz-gallery' : cat);
     var mine = all.filter(function(x){ return x.category === want; });
     mine.forEach(function(x){
       x.id = x.id || x.folder;
@@ -2181,7 +2198,7 @@
   }
 
   // ‑‑ BULK SELECT ‑‑
-  var bulkSelected={sets:new Set(),golds:new Set(),silvers:new Set(),diamonds:new Set(),latest:new Set()};
+  var bulkSelected={sets:new Set(),golds:new Set(),silvers:new Set(),diamonds:new Set(),latest:new Set(),gallery:new Set()};
   function toggleBulkSelect(cat,id,checkbox){
     if(checkbox.checked) bulkSelected[cat].add(id);else bulkSelected[cat].delete(id);
     updateBulkBar(cat);
@@ -2737,7 +2754,7 @@
       /* ── 1) رقم التصميم ──
          كل تصميم بياخد مجلد واحد ثابت: assets/images/sets/setN/ */
       var catalog = await readCatalog();
-      var catFolder = catInfo.folder;                 /* golds / silvers / latest-designs … */
+      var catFolder = catInfo.folder;                 /* golds / silvers / latest-designs / grillz-gallery */
       var prefix = catInfo.prefix || 'item';
       var itemId = editId;
       if(!itemId){
@@ -2751,7 +2768,10 @@
         });
         itemId = prefix + (maxN + 1);
       }
-      var basePath = 'assets/images/' + catFolder + '/' + itemId;
+      /* الجاليري: الملف بيتحفظ في مجلد الجاليري نفسه، مش في مجلد لكل صورة */
+      var basePath = (catFolder === 'grillz-gallery')
+        ? 'assets/images/grillz-gallery'
+        : 'assets/images/' + catFolder + '/' + itemId;
 
       /* ── 2) الصور: تتصغّر في المتصفح، وبعدين تتحفظ على GitHub ── */
       var allExistingNums = existingImages
@@ -2782,7 +2802,7 @@
       var allImages = existingImages.concat(newNames);   /* صور + فيديو مع بعض */
       var entry = catalogEntry(catalog, itemId);
 
-      var realCat = catInfo.folder;                     /* latest-designs / golds / sets … */
+      var realCat = catInfo.folder;                     /* latest-designs / golds / sets / grillz-gallery */
       var imgs = allImages.filter(function(f){ return !isVideoFile(f); });
       var vids = allImages.filter(function(f){ return  isVideoFile(f); });
 

@@ -11,8 +11,7 @@
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 
-<script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase بيتحمّل جوه الموديول بنفس نسخة الـ gate (10.12.0) — ممنوع نسخة تانية هنا -->
 <script data-cfasync="false" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
@@ -411,7 +410,22 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 /* ══════════════════════════════════════════════════════════════════
    1. AUTH
    ══════════════════════════════════════════════════════════════════ */
-import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js';
+import { requireAuth, signOut as fbSignOut, firebaseApp } from '/assets/firebase-auth-gate.js';
+
+/* نفس نسخة Firebase اللي الـ gate بيستخدمها (10.12.0) — مش نسخة تانية.
+   قبل كده كانت الصفحة بتحمّل 9.23.0 منفصلة، فالجلسة ماكانتش بتتشاف
+   و Firestore كان بيرفض القراءة: Missing or insufficient permissions. */
+await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js');
+const firebase = window.firebase;
+const FIREBASE_CFG = {
+  apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
+  authDomain: "egygrillz-studio.firebaseapp.com",
+  projectId: "egygrillz-studio",
+  storageBucket: "egygrillz-studio.firebasestorage.app",
+  messagingSenderId: "1022362401463",
+  appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
+};
 
 // Stops here until the admin signs in — requireAuth() shows its own overlay.
 const USER = await requireAuth();
@@ -423,16 +437,7 @@ document.querySelectorAll('[data-logout]').forEach(function (el) {
 /* ══════════════════════════════════════════════════════════════════
    2. FIREBASE + ENGINE
    ══════════════════════════════════════════════════════════════════ */
-const firebaseConfig = {
-  apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
-  authDomain: "egygrillz-studio.firebaseapp.com",
-  projectId: "egygrillz-studio",
-  storageBucket: "egygrillz-studio.firebasestorage.app",
-  messagingSenderId: "1022362401463",
-  appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
-};
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db = firebase.apps.length ? firebase.firestore() : firebase.initializeApp(FIREBASE_CFG).firestore();
 
 // load the engine as a classic script (it attaches to window.CalcEngine)
 await new Promise((res, rej) => {

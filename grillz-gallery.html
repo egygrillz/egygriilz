@@ -164,7 +164,7 @@
     .modal-slides { position:relative; width:100%; height:100%; min-height:440px; }
     .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s;
       background-size:cover; background-position:center; background-color:#e8e5e1; }
-    .modal-slide img { opacity:0; transition:opacity 0.35s ease; }
+    .modal-slide img { opacity:1; }
     .modal-slide.active { opacity:1; }
     .modal-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
     .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(240,237,232,0.85); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:var(--text); transition:background 0.2s; border-radius:50%; }
@@ -497,15 +497,17 @@
     fetch('assets/images/catalog.json?t='+Date.now())
       .then(r=>r.json())
       .then(catalog=>{
-        return (catalog||[]).map(d=>({
-          name: d.name || d.id,
-          desc: d.description || '',
-          price: d.price || '',
-          images: (d.images||[]).concat(d.videos||[])
-            .map(f=>'assets/images/'+(d.category||'sets')+'/'+(d.folder||d.id)+'/'+f),
-          folder: d.folder || d.id,
-          cat: d.category || 'sets',
-        }));
+        /* الجاليري بيعرض صور الجاليري بس — مش تصميمات المجموعات التانية */
+        return (catalog||[])
+          .filter(d => d.category === 'grillz-gallery')
+          .map(d=>({
+            name: d.name || 'Gallery',
+            desc: d.description || '',
+            price: d.price || '',
+            images: (d.images||[]).map(f => 'assets/images/grillz-gallery/' + f),
+            folder: d.folder || d.id,
+            cat: 'grillz-gallery',
+          }));
       })
       .then(items=>{
         allItems=items.filter(x=>x.images.length);

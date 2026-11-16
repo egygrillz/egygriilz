@@ -846,19 +846,23 @@
       const scrollEl = document.getElementById('lv-gallery-scroll');
       try {
         /* نفس الكتالوج الواحد — مفيش ملفات تانية */
-        const list = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        if (!Array.isArray(list) || !list.length) return;
+        const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
+        /* الجاليري: صور الجاليري بس */
+        const list = (all || []).filter(x => x.category === 'grillz-gallery');
+        if (!list.length) return;
         const frag = document.createDocumentFragment();
         for (const r of list.slice(0, 8)) {
           const folder = r.folder || r.id;
           const imgs = (r.images || []).filter(f => !isVidName(f));
           const d = { name: r.name, desc: r.description, price: r.price, images: imgs };
-          const src = imgs[0] ? mediaPath(r, imgs[0]) : '';
+          const src = r.category === 'grillz-gallery'
+            ? 'assets/images/grillz-gallery/' + imgs[0]
+            : (imgs[0] ? mediaPath(r, imgs[0]) : '');
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-gal-card';
           card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
-          card.addEventListener('click', () => window.location = 'grillz-gallery?item=' + encodeURIComponent(folder));
+          card.addEventListener('click', () => window.location = 'grillz-gallery');
           frag.appendChild(card);
         }
         scrollEl.appendChild(frag);
