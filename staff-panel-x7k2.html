@@ -10,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="/assets/calc-engine.js"></script>
+    <script src="/assets/staff-calculator.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         // Applied before first paint so the theme never flashes.
@@ -173,7 +174,11 @@
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                     <span>Usage Today</span>
                 </button>
-                <button onclick="openSettings()" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium tracking-wide uppercase">
+                <button onclick="openPricingSettings()" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium tracking-wide uppercase">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3a8.99 8.99 0 000-2l2.03-1.58a.5.5 0 00.11-.64l-1.92-3.32a.5.5 0 00-.61-.22l-2.39.96a9 9 0 00-1.73-1L16.1 2.6a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.34 2.56a9 9 0 00-1.73 1l-2.39-.96a.5.5 0 00-.61.22L3.27 8.74a.5.5 0 00.11.64L5.4 10.96a9 9 0 000 2l-2.02 1.58a.5.5 0 00-.11.64l1.92 3.32a.5.5 0 00.61.22l2.39-.96a9 9 0 001.73 1l.34 2.56a.5.5 0 00.5.42h3.84a.5.5 0 00.5-.42l.34-2.56a9 9 0 001.73-1l2.39.96a.5.5 0 00.61-.22l1.92-3.32a.5.5 0 00-.11-.64L20.94 11z"/></svg>
+                    <span>Pricing settings</span>
+                </button>
+                <button onclick="openSettings()" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg hover:bg-gray-800 transition text-xs font-medium tracking-wide uppercase">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <span>Knowledge Base</span>
                 </button>
@@ -511,292 +516,39 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                         </div>
                     </div>
 
-                    <!-- Quote lines -->
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5 gap-2">
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Design lines <span class="text-gray-300">(multiple designs in one quote)</span></label>
-                            <span class="shrink-0 flex items-center gap-2">
-                                <span id="lineCountBadge" class="text-[10px] text-gray-400"></span>
-                                <button type="button" onclick="clearLines()" class="text-[10px] text-gray-400 hover:text-red-500 underline">Clear all</button>
-                            </span>
-                        </div>
-                        <div id="quoteLinesList" class="space-y-2"></div>
-                        <div id="quoteLinesEmpty" class="text-[10px] text-gray-400 border border-dashed border-gray-200 rounded-lg px-3 py-2.5 leading-relaxed">
-                            No lines yet. Fill the line editor below and press “Add design line” for each design in the set — or just press “Calculate Exact Quote” to quote a single design.
-                        </div>
-                    </div>
-
-                    <!-- Line editor -->
-                    <div id="lineEditor" class="border border-gray-200 rounded-lg p-3 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span id="editorTitle" class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Line editor</span>
-                            <button type="button" id="editorCancelEdit" onclick="cancelEditLine()" class="hidden text-[10px] text-gray-500 hover:text-black underline">Cancel edit</button>
-                        </div>
-
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Design name <span class="text-gray-300">(optional — appears on the quote &amp; PDF)</span></label>
-                            <input type="text" id="calcDesignName" maxlength="40" placeholder="e.g. Top grillz — Ahmed · Bottom bars · Left fang"
-                                class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-gray-400">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Material</label>
-                                <select id="calcMaterial" onchange="onCalcMaterialChange(true)" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="chrome">Cobalt Chrome</option>
-                                    <option value="titanium">Titanium</option>
-                                    <option value="silver">Sterling Silver 925</option>
-                                    <option value="gold">Gold</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Teeth (1–16)</label>
-                                <input type="number" id="calcTeeth" min="1" max="16" value="6" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                            </div>
-                        </div>
-
-                        <div id="calcGoldWrap" class="hidden grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Karat</label>
-                                <select id="calcKarat" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="10">10K</option>
-                                    <option value="14">14K</option>
-                                    <option value="18" selected>18K</option>
-                                    <option value="21">21K</option>
-                                    <option value="22">22K</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Gold EGP/g</label>
-                                <input type="number" id="calcGoldPrice" placeholder="Type today's rate here" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                            </div>
-                            <div class="col-span-2 text-[10px] text-gray-400">Asked once per day when you choose Gold, then saved on this device. You can still edit it here.</div>
-                        </div>
-
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Design Level</label>
-                            <select id="calcLevel" onchange="onCalcLevelChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="0.5">0.5 — Bars (half base, no design %)</option>
-                                <option value="1" selected>1 — Solid (+0%)</option>
-                                <option value="2">2 — Open face (+10%)</option>
-                                <option value="3">3 — Mid detail (+15%)</option>
-                                <option value="4">4 — Complex (+25%)</option>
-                                <option value="5">5 — Scorpion / heavy detail (+40%)</option>
-                                <option value="6">6 — Ultimate (+60%)</option>
-                            </select>
-                            <div id="calcLevelStrip" class="flex gap-2 overflow-x-auto mt-2 pb-1"></div>
-                            <button type="button" onclick="toggleLevelGuide()" class="mt-1 text-[10px] text-gray-500 hover:text-black underline">Level guide &amp; examples</button>
-                            <div id="calcLevelGuide" class="hidden mt-2 space-y-2"></div>
-                        </div>
-
-                        <div>
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Stones</label>
-                            <select id="calcStonesMode" onchange="onCalcStonesChange()" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="none">None</option>
-                                <option value="accent">Accent (per stone)</option>
-                                <option value="fulliced">Full iced (per tooth)</option>
-                            </select>
-                            <p id="calcNoStonesNote" class="hidden text-[10px] text-gray-400 mt-1">Chrome and Titanium don't take stones.</p>
-                        </div>
-
-                        <div id="calcAccentWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
-                            <div class="grid grid-cols-3 gap-2">
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Count</label>
-                                    <input type="number" id="calcAccentCount" min="1" value="1" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Type</label>
-                                    <select id="calcAccentType" onchange="onCalcAccentTypeChange(true)" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                        <option value="cz">CZ</option>
-                                        <option value="moissanite">Moissanite</option>
-                                        <option value="labgrown">Lab-Grown</option>
-                                        <option value="natural">Natural</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Setting</label>
-                                    <select id="calcAccentSetting" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                        <option value="flush">Flush (150)</option>
-                                        <option value="twoprong">2-Prong (175)</option>
-                                        <option value="threeprong">3-Prong (200)</option>
-                                        <option value="fourprong">4-Prong (200)</option>
-                                        <option value="sixprong">6-Prong (220)</option>
-                                        <option value="bezelfull">Bezel full (250)</option>
-                                        <option value="bezelhalf">Bezel half (225)</option>
-                                        <option value="bar">Bar setting (200)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div id="calcAccentCustomPriceWrap" class="hidden">
-                                <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/stone)</label>
-                                <input type="number" id="calcAccentCustomPrice" placeholder="Type today's rate" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                <p class="text-[10px] text-gray-400 mt-1">Asked once per day for Lab-Grown / Natural, then saved on this device.</p>
-                            </div>
-                        </div>
-
-                        <div id="calcFullIcedWrap" class="hidden space-y-2 border border-gray-200 rounded-lg p-3">
-                            <div id="calcFullIcedBarsNote" class="hidden text-[10px] text-gray-500">Level 0.5 Bars + full iced uses a fixed 400 EGP/tooth — no type/coverage needed.</div>
-                            <div id="calcFullIcedNormalFields" class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Type</label>
-                                    <select id="calcFullType" onchange="onCalcFullTypeChange(true)" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                        <option value="cz">CZ</option>
-                                        <option value="moissanite">Moissanite</option>
-                                        <option value="labgrown">Lab-Grown</option>
-                                        <option value="natural">Natural</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Coverage</label>
-                                    <select id="calcCoverage" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                        <option value="standardpave">Standard Pave (1000)</option>
-                                        <option value="frenchpave">French Pave (1100)</option>
-                                        <option value="micropave">Micro-Pave (1200)</option>
-                                        <option value="channel">Channel (1500)</option>
-                                        <option value="invisible">Invisible (2500)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div id="calcFullCustomPriceWrap" class="hidden">
-                                <label class="block text-[10px] text-gray-500 mb-1">Today's stone price (EGP/tooth)</label>
-                                <input type="number" id="calcFullCustomPrice" placeholder="Type today's rate" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs">
-                                <p class="text-[10px] text-gray-400 mt-1">Asked once per day for Lab-Grown / Natural, then saved on this device.</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Plating</label>
-                                <select id="calcPlating" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="none">None</option>
-                                    <option value="yellowgold">Yellow gold (300)</option>
-                                    <option value="blackgold">Black gold (400)</option>
-                                    <option value="whitegold">White gold (400)</option>
-                                    <option value="rosegold">Rose gold (300)</option>
-                                    <option value="silverplating">Silver plating (200)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Enamel</label>
-                                <select id="calcEnamel" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="none">None</option>
-                                    <option value="single">Single (200)</option>
-                                    <option value="multi">Multi (350)</option>
-                                    <option value="master">Master (750)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Engraving</label>
-                                <select id="calcEngraving" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="none">None</option>
-                                    <option value="small">Small (200)</option>
-                                    <option value="medium">Medium (450)</option>
-                                    <option value="large">Large (700)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div id="calcAnodizeWrap" class="hidden">
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Titanium Anodizing (per tooth)</label>
-                            <select id="calcAnodize" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                <option value="none">None</option>
-                                <option value="single">Single color (300)</option>
-                                <option value="dual">Dual color (350)</option>
-                                <option value="multi">Multi color (450)</option>
-                            </select>
-                        </div>
-
-                        <button type="button" id="addLineBtn" onclick="addDesignLine()" class="w-full py-2.5 border border-black text-black rounded-lg hover:bg-black hover:text-white transition text-[10px] font-medium uppercase tracking-wider">+ Add design line to quote</button>
-                    </div>
-
-                    <!-- Studio services -->
-                    <div id="calcServicesWrap" class="border border-gray-200 rounded-lg p-3 space-y-2.5">
-                        <div class="flex items-center justify-between gap-2">
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Studio services <span class="text-gray-300">(optional)</span></label>
-                            <button type="button" onclick="addCalcService()" class="text-[10px] font-medium text-black underline hover:text-gray-500">+ Add service</button>
-                        </div>
-                        <div class="flex flex-wrap gap-1.5">
-                            <button type="button" onclick="quickAddCalcService('impression')" class="text-[10px] px-2 py-1 border border-gray-200 rounded hover:border-black">+ Impression</button>
-                            <button type="button" onclick="quickAddCalcService('consultation')" class="text-[10px] px-2 py-1 border border-gray-200 rounded hover:border-black">+ Consultation</button>
-                            <button type="button" onclick="quickAddCalcService('toothgem')" class="text-[10px] px-2 py-1 border border-gray-200 rounded hover:border-black">+ Toothgem</button>
-                            <button type="button" onclick="quickAddCalcService('polishing')" class="text-[10px] px-2 py-1 border border-gray-200 rounded hover:border-black">+ Clean &amp; Polish</button>
-                        </div>
-                        <div id="calcServicesList" class="space-y-2"></div>
-                        <div id="calcServicesEmpty" class="text-[10px] text-gray-400">No extra studio services added.</div>
-                    </div>
-
-                    <!-- Order level settings -->
-                    <div>
-                        <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Order settings (whole quote)</label>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Timeline</label>
-                                <select id="calcTimeline" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="standard">Standard (+0%)</option>
-                                    <option value="rush">Rush (+25%)</option>
-                                    <option value="emergency">Emergency (+50%)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Mold</label>
-                                <select id="calcMold" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="none">None</option>
-                                    <option value="normalperarch">Normal, per arch (200)</option>
-                                    <option value="digitalfullmouth">Digital full mouth (1500)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Deposit (shown on PDF)</label>
-                                <select id="calcDepositPct" class="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                                    <option value="0">Not shown</option>
-                                    <option value="25">25%</option>
-                                    <option value="50">50%</option>
-                                    <option value="100">100%</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="runCalculator()" class="w-full py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-medium uppercase tracking-wider">Calculate Exact Quote</button>
-
-                    <div id="calcResult" class="hidden border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <pre id="calcResultText" class="text-xs whitespace-pre-wrap font-mono text-gray-800"></pre>
-                        <div class="mt-3">
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Client name (for PDF, optional)</label>
-                            <input type="text" id="calcClientNameForPdf" placeholder="e.g. Ahmed Mostafa" class="w-full px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-xs">
-                        </div>
-                        <div class="mt-3">
-                            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Notes for the client (printed on the PDF, optional)</label>
-                            <textarea id="calcNotes" rows="2" placeholder="e.g. Deposit confirms the order · fitting appointment 5 PM Thursday" class="w-full px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-xs resize-none"></textarea>
-                        </div>
-                        <div class="flex space-x-2 mt-3">
-                            <button onclick="copyText(document.getElementById('calcResultText').innerText, 'Copied')" class="flex-1 py-2 border border-gray-300 rounded-lg text-[10px] uppercase tracking-wider hover:bg-white">Copy</button>
-                            <button onclick="downloadQuotationPdf()" class="flex-1 py-2 border border-gray-300 rounded-lg text-[10px] uppercase tracking-wider hover:bg-white">Download PDF</button>
-                            <button onclick="insertCalcResultIntoPricingChat()" class="flex-1 py-2 bg-black text-white rounded-lg text-[10px] uppercase tracking-wider hover:bg-gray-800">Add to AI Chat</button>
-                        </div>
+                    <div id="scalcHost"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Today's rate window (opens only when a rate is needed) -->
-    <div id="rateModal" class="fixed inset-0 z-[70] hidden">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeRate()"></div>
-        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
-            <div class="bg-white w-full max-w-xs rounded-xl shadow-2xl p-5 pointer-events-auto">
-                <h3 id="rateTitle" class="font-semibold text-sm"></h3>
-                <p id="rateHint" class="text-[11px] text-gray-400 mt-1"></p>
-                <input id="rateInput" type="number" inputmode="decimal" onkeydown="if(event.key==='Enter')saveRate()" class="w-full mt-3 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400">
-                <div class="flex gap-2 mt-4">
-                    <button type="button" onclick="closeRate()" class="flex-1 py-2.5 border border-gray-300 rounded-lg text-[11px] uppercase tracking-wider">Cancel</button>
-                    <button type="button" onclick="saveRate()" class="flex-1 py-2.5 bg-black text-white rounded-lg text-[11px] uppercase tracking-wider">Save</button>
+
+    <!-- Pricing & studio settings — written straight to the database -->
+    <div id="pricingSettingsModal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closePricingSettings()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-3 pointer-events-none">
+            <div class="bg-white w-full max-w-5xl h-[88vh] rounded-xl shadow-2xl pointer-events-auto flex flex-col overflow-hidden">
+                <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0">
+                    <div>
+                        <h3 class="font-semibold text-sm tracking-wide uppercase">Calculator &amp; studio settings</h3>
+                        <p class="text-[10px] text-gray-400 mt-0.5">The single source of truth — saved to Firestore and used by every page.</p>
+                    </div>
+                    <button onclick="closePricingSettings()" class="text-gray-400 hover:text-black transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="px-5 pt-3 shrink-0 flex space-x-1 border-b border-gray-100">
+                    <button id="psTabPricingBtn" onclick="switchSettingsTab('pricing')" class="px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-black text-black">Pricing &amp; calculator</button>
+                    <button id="psTabStudioBtn" onclick="switchSettingsTab('studio')" class="px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-transparent text-gray-400 hover:text-gray-700">Studio &amp; booking</button>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 py-4">
+                    <div id="psPricing"><div id="pricingSettingsHost"></div></div>
+                    <div id="psStudio" class="hidden"><div id="studioSettingsHost"></div></div>
                 </div>
             </div>
         </div>
     </div>
-
     <!-- Staff Assistant Modal -->
     <div id="staffChatModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeStaffChat()"></div>
@@ -910,7 +662,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
                 const r = await window.CalcEngine.load(db);
                 if (window.SiteConfig) await window.SiteConfig.load(db);
                 console.log('[calc] settings:', r.source);
-                if (typeof refreshCalcRateUI === 'function') refreshCalcRateUI();
+                if (staffCalc) staffCalc.refresh();
             }catch(e){ console.warn('[calc] settings load failed', e); }
         })();
         const auth = firebase.auth();
@@ -2015,710 +1767,104 @@ ${kb || "(not configured)"}
             "6": "/levels/LEVEL%206.png"
         };
 
-        const LINE_TIMELINE_DEFAULT = "standard";
-        let calcLines = [];        // saved design lines for the current quote
-        let calcServices = [];     // saved studio service lines
-        let editingLineId = null;  // null = editor in "add new line" mode
-        let lineSeq = 0;
-
-        function refreshCalcRateUI() {
-            const cfg = calcCfg();
-            const setOpts = (id, map, suffix) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                Array.from(el.options).forEach(opt => {
-                    const v = map[opt.value];
-                    if (v === undefined || v === null) return;
-                    const base = opt.textContent.replace(/\s*\([^)]*\)\s*$/, "");
-                    opt.textContent = opt.value === "none" ? "None" : `${base} (${v}${suffix || ""})`;
-                });
-            };
-            setOpts("calcPlating", cfg.plating || {});
-            setOpts("calcEnamel", cfg.enamel || {});
-            setOpts("calcEngraving", cfg.engraving || {});
-            setOpts("calcAnodize", cfg.anodize || {});
-            setOpts("calcAccentSetting", cfg.settingPrice || {});
-            setOpts("calcCoverage", cfg.coveragePrice || {});
-            setOpts("calcTimeline", cfg.timelinePct || {}, "%");
-            calcLines.forEach(recalcLineObject);
-            if (calcLines.length) renderLinesList();
-            renderCalcServices();
-        }
-
-        // ---------- Studio services store ----------
-        function addCalcService(presetType) {
-            const type = presetType || "custom";
-            const cfg = calcCfg();
-            const unitPrice = Number((cfg.servicePrices && cfg.servicePrices[type]) || 0);
-            const name = CALC_LABELS.service[type] || "Studio Service";
-            calcServices.push({ id: newLineId(), type, name, qty: 1, unitPrice });
-            renderCalcServices();
-            persistQuoteState();
-        }
-        function quickAddCalcService(type) { addCalcService(type); showToast("Service added"); }
-        function renderCalcServices() {
-            const list = document.getElementById("calcServicesList");
-            const empty = document.getElementById("calcServicesEmpty");
-            if (!list || !empty) return;
-            empty.classList.toggle("hidden", calcServices.length > 0);
-            list.innerHTML = "";
-            calcServices.forEach((sv, idx) => {
-                const sub = (Number(sv.qty) || 1) * (Number(sv.unitPrice) || 0);
-                const row = document.createElement("div");
-                row.className = "grid grid-cols-12 gap-1.5 items-center border border-gray-200 rounded p-2 bg-gray-50";
-                row.innerHTML = `
-                    <input type="text" data-sv-name value="${escapeHtml(sv.name || "")}" placeholder="Service name" class="col-span-6 px-2 py-1 bg-white border border-gray-200 rounded text-xs">
-                    <input type="number" data-sv-qty min="1" value="${Number(sv.qty) || 1}" class="col-span-2 px-1.5 py-1 bg-white border border-gray-200 rounded text-xs text-center">
-                    <input type="number" data-sv-price min="0" value="${Number(sv.unitPrice) || 0}" class="col-span-3 px-1.5 py-1 bg-white border border-gray-200 rounded text-xs text-right">
-                    <button type="button" data-sv-del class="col-span-1 text-[11px] text-gray-400 hover:text-red-500 text-center" title="Remove">×</button>
-                `;
-                row.querySelector("[data-sv-name]").oninput = e => { calcServices[idx].name = e.target.value; persistQuoteState(); };
-                row.querySelector("[data-sv-qty]").oninput = e => { calcServices[idx].qty = Math.max(1, parseInt(e.target.value, 10) || 1); persistQuoteState(); };
-                row.querySelector("[data-sv-price]").oninput = e => { calcServices[idx].unitPrice = Math.max(0, parseFloat(e.target.value) || 0); persistQuoteState(); };
-                row.querySelector("[data-sv-del]").onclick = () => { calcServices.splice(idx, 1); renderCalcServices(); persistQuoteState(); };
-                list.appendChild(row);
-            });
-        }
-
-        // ---------- Quote lines store ----------
-        function newLineId() { lineSeq += 1; return "L" + Date.now().toString(36) + lineSeq; }
-
-        function getLines() {
-            return calcLines.map(l => ({ ...l }));
-        }
-
-        function setLines(lines) {
-            calcLines = Array.isArray(lines) ? lines : [];
-            refreshLinesUI();
-        }
-
-        function refreshLinesUI() {
-            renderLinesList();
-            renderLevelStrip();
-            persistQuoteState();
-        }
-
-        function addDesignLine() {
-            const parsed = buildLineFromEditor();
-            if (!parsed) return;
-
-            if (editingLineId) {
-                const idx = calcLines.findIndex(l => l.id === editingLineId);
-                if (idx > -1) calcLines[idx] = { ...parsed, id: editingLineId };
-                editingLineId = null;
-                setEditorMode("add");
-            } else {
-                calcLines.push({ ...parsed, id: newLineId() });
-                document.getElementById("calcDesignName").value = ""; // ready for the next design
-            }
-
-            refreshLinesUI();
-            showToast("Line added to quote");
-        }
-
-        function editLine(id) {
-            const line = calcLines.find(l => l.id === id);
-            if (!line) return;
-            editingLineId = id;
-            writeLineToEditor(line);
-            setEditorMode("edit");
-            document.getElementById("lineEditor").scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-
-        function deleteLine(id) {
-            calcLines = calcLines.filter(l => l.id !== id);
-            if (editingLineId === id) { editingLineId = null; setEditorMode("add"); }
-            refreshLinesUI();
-        }
-
-        function clearLines() {
-            if ((calcLines.length || calcServices.length) && !confirm("Remove all design lines and services from this quote?")) return;
-            calcLines = [];
-            calcServices = [];
-            editingLineId = null;
-            setEditorMode("add");
-            renderCalcServices();
-            refreshLinesUI();
-            document.getElementById("calcResult").classList.add("hidden");
-        }
-
-        function cancelEditLine() {
-            editingLineId = null;
-            setEditorMode("add");
-            showToast("Edit cancelled");
-        }
-
-        function setEditorMode(mode) {
-            const title = document.getElementById("editorTitle");
-            const btn = document.getElementById("addLineBtn");
-            const cancelBtn = document.getElementById("editorCancelEdit");
-            if (mode === "edit") {
-                title.innerText = "Editing line";
-                btn.innerText = "Update this line";
-                cancelBtn.classList.remove("hidden");
-            } else {
-                title.innerText = "Line editor";
-                btn.innerText = "+ Add design line to quote";
-                cancelBtn.classList.add("hidden");
-            }
-        }
-
-        function renderLinesList() {
-            const list = document.getElementById("quoteLinesList");
-            const empty = document.getElementById("quoteLinesEmpty");
-            const badge = document.getElementById("lineCountBadge");
-
-            badge.innerText = calcLines.length ? `${calcLines.length} line${calcLines.length > 1 ? "s" : ""}` : "";
-            empty.classList.toggle("hidden", calcLines.length > 0);
-
-            list.innerHTML = "";
-            calcLines.forEach(line => {
-                const card = document.createElement("div");
-                card.className = "line-card border border-gray-200 rounded-lg px-3 py-2.5 bg-white";
-                card.innerHTML = `
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-xs font-medium text-gray-900">${escapeHtml(lineLabel(line))}</span>
-                        <span class="text-xs font-semibold shrink-0">${formatMoney(line.subtotal)} EGP</span>
-                    </div>
-                    <div class="mt-0.5 flex items-center justify-between gap-2">
-                        <span class="text-[10px] text-gray-500 truncate">${escapeHtml(lineSubLabel(line))}</span>
-                        <span class="shrink-0 flex items-center gap-1.5">
-                            <button type="button" data-edit="${line.id}" class="text-[10px] text-gray-500 hover:text-black underline">Edit</button>
-                            <button type="button" data-del="${line.id}" class="text-[10px] text-gray-400 hover:text-red-500 underline">Remove</button>
-                        </span>
-                    </div>
-                `;
-                card.querySelector("[data-edit]").onclick = () => editLine(line.id);
-                card.querySelector("[data-del]").onclick = () => deleteLine(line.id);
-                list.appendChild(card);
-            });
-        }
-
-        function parseNum(v, fallback) {
-            const n = parseFloat(v);
-            return isNaN(n) ? fallback : n;
-        }
-
-        // Builds a line object from the editor fields.
-        // Returns { line } , { needRates: true } or { error: "..." }
-        function computeLineFromEditor() {
-            const cfg = calcCfg();
-            const material = document.getElementById("calcMaterial").value;
-            const teeth = parseInt(document.getElementById("calcTeeth").value, 10);
-            const level = document.getElementById("calcLevel").value;
-            const stones = document.getElementById("calcStonesMode").value;
-            const plating = document.getElementById("calcPlating").value;
-            const enamel = document.getElementById("calcEnamel").value;
-            const engraving = document.getElementById("calcEngraving").value;
-            const anodize = material === "titanium" ? (document.getElementById("calcAnodize")?.value || "none") : "none";
-
-            const res = { needRates: false };
-            if (!teeth || teeth < 1 || teeth > 16) return { error: "Teeth must be between 1 and 16" };
-
-            const spec = {
-                name: (document.getElementById("calcDesignName").value || "").trim().slice(0, 40),
-                material, teeth, level, stones, plating, enamel, engraving, anodize
-            };
-
-            if (material === "gold") {
-                spec.karat = document.getElementById("calcKarat").value;
-                const gp = parseFloat(document.getElementById("calcGoldPrice").value);
-                if (!gp || gp <= 0) return { needRates: "GOLD", error: "Enter today's gold EGP/g for the gold line" };
-                spec.goldPrice = gp;
-            }
-
-            if (stones === "accent") {
-                const count = parseInt(document.getElementById("calcAccentCount").value, 10) || 0;
-                if (count < 1) return { error: "Accent stones: count must be at least 1" };
-                const type = document.getElementById("calcAccentType").value;
-                const setting = document.getElementById("calcAccentSetting").value;
-                let price = (cfg.accentPrice || {})[type];
-                if (price === null || price === undefined) {
-                    price = parseFloat(document.getElementById("calcAccentCustomPrice").value);
-                    if (price === null || isNaN(price) || price < 0) return { needRates: "LAB_ACCENT", error: "Enter today's rate for Lab-Grown/Natural accent stones" };
-                }
-                spec.accent = { count, type, setting, price, customPrice: price, settingPrice: (cfg.settingPrice || {})[setting] || 0 };
-            } else if (stones === "fulliced") {
-                if (level === "0.5") {
-                    spec.full = { bars: true };
-                } else {
-                    const type = document.getElementById("calcFullType").value;
-                    const coverage = document.getElementById("calcCoverage").value;
-                    let price = (cfg.fullPrice || {})[type];
-                    if (price === null || price === undefined) {
-                        price = parseFloat(document.getElementById("calcFullCustomPrice").value);
-                        if (isNaN(price) || price < 0) return { needRates: "LAB_FULL", error: "Enter today's rate for Lab-Grown/Natural full-iced stones" };
-                    }
-                    spec.full = { type, coverage, price, customPrice: price, coveragePrice: (cfg.coveragePrice || {})[coverage] || 0 };
-                }
-            }
-
-            res.line = CE.calculateLine(spec);
-            return res;
-        }
-
-        // Builds a valid line object from the editor inputs. On failure it shows the
-        // right toast / highlights today's rates panel and returns null.
-        function buildLineFromEditor() {
-            const r = computeLineFromEditor();
-            if (r.error) {
-                showToast(r.error, true);
-                if (r.needRates === "GOLD") askRate("gold");
-                if (r.needRates === "LAB_ACCENT") askRate(document.getElementById("calcAccentType").value === "natural" ? "natAccent" : "labAccent");
-                if (r.needRates === "LAB_FULL") askRate(document.getElementById("calcFullType").value === "natural" ? "natFull" : "labFull");
-                return null;
-            }
-            return r.line;
-        }
-
-        function lineLabel(line) {
-            const materialLabel = line.material === "gold" ? `Gold ${line.karat}K` : (CALC_LABELS.material[line.material] || line.material);
-            const core = `${materialLabel} · ${line.teeth} teeth · ${CALC_LABELS.level[line.level] || line.level}`;
-            const name = (line.name || "").trim();
-            return name ? `${name} — ${core}` : core;
-        }
-
-        function lineSubLabel(line) {
-            const bits = [];
-            if (line.accent) bits.push(`${line.accent.count}× ${CALC_LABELS.accentType[line.accent.type]} ${CALC_LABELS.setting[line.accent.setting]}`);
-            if (line.full && line.full.bars) bits.push(`Full iced (Bars @${calcCfg().barsStonesPerTooth || 400})`);
-            else if (line.full) bits.push(`Full iced ${CALC_LABELS.accentType[line.full.type]} ${CALC_LABELS.coverage[line.full.coverage]}`);
-            if (line.plating && line.plating !== "none") bits.push(CALC_LABELS.plating[line.plating]);
-            if (line.enamel && line.enamel !== "none") bits.push("Enamel " + CALC_LABELS.enamel[line.enamel]);
-            if (line.engraving && line.engraving !== "none") bits.push("Engraving " + CALC_LABELS.engraving[line.engraving]);
-            if (line.anodize && line.anodize !== "none" && line.material === "titanium") bits.push("Anodize " + CALC_LABELS.anodize[line.anodize]);
-            return bits.length ? bits.join(" · ") : "Base only";
-        }
-
         function formatMoney(n) {
-            return (Math.round(n * 100) / 100).toLocaleString();
+            return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString();
         }
 
-        function round2(n) { return Math.round(n * 100) / 100; }
-
-        // ---------- Editor <-> line ----------
-        function writeLineToEditor(line) {
-            const cfg = calcCfg();
-            document.getElementById("calcDesignName").value = line.name || "";
-            document.getElementById("calcMaterial").value = line.material;
-            onCalcMaterialChange();
-            document.getElementById("calcTeeth").value = line.teeth;
-            document.getElementById("calcLevel").value = line.level;
-            if (line.material === "gold") {
-                document.getElementById("calcKarat").value = line.karat || "18";
-                document.getElementById("calcGoldPrice").value = line.goldPrice || "";
-            }
-            document.getElementById("calcStonesMode").value = line.stones;
-            onCalcStonesChange();
-            if (line.accent) {
-                document.getElementById("calcAccentCount").value = line.accent.count;
-                document.getElementById("calcAccentType").value = line.accent.type;
-                onCalcAccentTypeChange();
-                document.getElementById("calcAccentSetting").value = line.accent.setting;
-                if (cfg.accentPrice[line.accent.type] === null) document.getElementById("calcAccentCustomPrice").value = line.accent.price;
-            }
-            if (line.full) {
-                if (!line.full.bars) {
-                    document.getElementById("calcFullType").value = line.full.type;
-                    onCalcFullTypeChange();
-                    document.getElementById("calcCoverage").value = line.full.coverage;
-                    if (cfg.fullPrice[line.full.type] === null) document.getElementById("calcFullCustomPrice").value = line.full.price;
-                }
-            }
-            document.getElementById("calcPlating").value = line.plating || "none";
-            document.getElementById("calcEnamel").value = line.enamel || "none";
-            document.getElementById("calcEngraving").value = line.engraving || "none";
-            if (document.getElementById("calcAnodize")) document.getElementById("calcAnodize").value = line.anodize || "none";
-            renderLevelStrip();
-        }
-
-        // ---------- Level picker + guide with examples ----------
-        function renderLevelStrip() {
-            const strip = document.getElementById("calcLevelStrip");
-            if (!strip) return;
-            const current = document.getElementById("calcLevel").value;
-            strip.innerHTML = "";
-
-            Object.keys(LEVEL_INFO).forEach(key => {
-                const info = LEVEL_INFO[key];
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "lvl-chip shrink-0 text-left border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white" +
-                    (key === current ? " active" : " hover:border-gray-400");
-                btn.dataset.level = key;
-                btn.innerHTML = `
-                    <span class="block text-[11px] font-semibold leading-tight">${escapeHtml(key)} ${escapeHtml(info.name)}</span>
-                    <span class="lvl-sub block text-[9px] text-gray-400 leading-tight">${info.pct ? "+" + info.pct + "%" : "half base"}</span>
-                `;
-                btn.onclick = () => {
-                    document.getElementById("calcLevel").value = key;
-                    renderLevelStrip();
-                    onCalcLevelChange();
-                };
-                strip.appendChild(btn);
+        // ==================== THE ONE CALCULATOR ====================
+        // The calculator is /assets/staff-calculator.js — the same component the
+        // quotes page, invoices, the admin and the public estimator mount. There
+        // is therefore exactly one calculator UI and one set of numbers.
+        let staffCalc = null;
+        function mountStaffCalculator() {
+            if (staffCalc) return staffCalc;
+            const host = document.getElementById("scalcHost");
+            if (!host || !window.StaffCalculator) return null;
+            staffCalc = window.StaffCalculator.mount(host, {
+                db: db,
+                showPdf: true,
+                onChange: () => { window._lastCalcQuote = null; },
+                onCalculate: (order) => { window._lastCalcQuote = toPdfQuote(order); }
             });
+            return staffCalc;
         }
 
-        function renderLevelGuide() {
-            const el = document.getElementById("calcLevelGuide");
-            el.innerHTML = "";
-            Object.keys(LEVEL_INFO).forEach(key => {
-                const info = LEVEL_INFO[key];
-                const img = LEVEL_EXAMPLE_IMAGES[key];
-                const card = document.createElement("div");
-                card.className = "border border-gray-200 rounded-lg p-3 bg-white";
-                card.innerHTML = `
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                            <p class="text-[11px] font-semibold">${escapeHtml(key)} — ${escapeHtml(info.name)}</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5 leading-relaxed">${escapeHtml(info.desc)}</p>
-                        </div>
-                        <span class="text-[10px] text-gray-400 shrink-0">${info.pct ? "+" + info.pct + "%" : "half base"}</span>
-                    </div>
-                    <img data-rf="levels" data-rk="${key}" alt="${escapeHtml(info.name)} example" class="example-thumb mt-2" hidden loading="lazy" decoding="async">
-                    <div class="flex flex-wrap gap-1 mt-2">
-                        ${info.examples.map(ex => `<span class="text-[9px] text-gray-500 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">${escapeHtml(ex)}</span>`).join("")}
-                    </div>
-                    <button type="button" data-use-level="${key}" class="mt-2 text-[10px] text-black underline hover:text-gray-500">Use this level</button>
-                `;
-                card.querySelector("[data-use-level]").onclick = () => {
-                    document.getElementById("calcLevel").value = key;
-                    renderLevelStrip();
-                    onCalcLevelChange();
-                    showToast(`Level set to ${key} ${info.name}`);
-                };
-                el.appendChild(card);
-            });
-        }
-
-        function toggleLevelGuide() {
-            const el = document.getElementById("calcLevelGuide");
-            const willShow = el.classList.contains("hidden");
-            if (willShow) { renderLevelGuide(); IMG.ready.then(() => IMG.hydrate(el)); }
-            el.classList.toggle("hidden", !willShow);
-        }
-
-        function onCalcMaterialChange(user) {
-            const material = document.getElementById("calcMaterial").value;
-            const isGold = material === "gold";
-            document.getElementById("calcGoldWrap").classList.toggle("hidden", !isGold);
-            const anoWrap = document.getElementById("calcAnodizeWrap");
-            if (anoWrap) anoWrap.classList.toggle("hidden", material !== "titanium");
-
-            if (isGold) {
-                autoFillGoldPriceIfEmpty();
-                if (user === true && !getTodayRates().gold) askRate("gold");
-            }
-
-            const noStones = material === "chrome" || material === "titanium";
-            const stonesSelect = document.getElementById("calcStonesMode");
-            document.getElementById("calcNoStonesNote").classList.toggle("hidden", !noStones);
-            if (noStones) {
-                stonesSelect.value = "none";
-                stonesSelect.disabled = true;
-            } else {
-                stonesSelect.disabled = false;
-            }
-            onCalcStonesChange();
-        }
-
-        function onCalcLevelChange() {
-            renderLevelStrip();
-            onCalcStonesChange(); // full-iced-on-bars behaves differently
-        }
-
-        function onCalcStonesChange() {
-            const mode = document.getElementById("calcStonesMode").value;
-            document.getElementById("calcAccentWrap").classList.toggle("hidden", mode !== "accent");
-            document.getElementById("calcFullIcedWrap").classList.toggle("hidden", mode !== "fulliced");
-
-            if (mode === "accent") autoFillStonePrice("accent");
-            if (mode === "fulliced") {
-                const isBars = document.getElementById("calcLevel").value === "0.5";
-                document.getElementById("calcFullIcedBarsNote").classList.toggle("hidden", !isBars);
-                document.getElementById("calcFullIcedNormalFields").classList.toggle("hidden", isBars);
-                if (!isBars) autoFillStonePrice("full");
-            }
-        }
-
-        function onCalcAccentTypeChange(user) {
-            const type = document.getElementById("calcAccentType").value;
-            document.getElementById("calcAccentCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
-            autoFillStonePrice("accent");
-            if (user === true && (type === "labgrown" || type === "natural")) { const k = type === "labgrown" ? "labAccent" : "natAccent"; if (!getTodayRates()[k]) askRate(k); }
-        }
-
-        function onCalcFullTypeChange(user) {
-            const type = document.getElementById("calcFullType").value;
-            document.getElementById("calcFullCustomPriceWrap").classList.toggle("hidden", !(type === "labgrown" || type === "natural"));
-            autoFillStonePrice("full");
-            if (user === true && (type === "labgrown" || type === "natural")) { const k = type === "labgrown" ? "labFull" : "natFull"; if (!getTodayRates()[k]) askRate(k); }
-        }
-
-        function readOrderSettings() {
-            return {
-                timeline: document.getElementById("calcTimeline").value,
-                mold: document.getElementById("calcMold").value
-            };
-        }
-
-        function applyOrderSettings(order) {
-            if (!order) return;
-            if (order.timeline) document.getElementById("calcTimeline").value = order.timeline;
-            if (order.mold) document.getElementById("calcMold").value = order.mold;
-        }
-
-        // ---------- Main calculation ----------
-        function runCalculator() {
-            const cfg = calcCfg();
-            // 1) Build lines: use the saved list, or fall back to the single line in the editor (if any, or services-only).
-            let lines = getLines();
-            if (lines.length === 0 && calcServices.length === 0) {
-                const added = buildLineFromEditor();
-                if (!added) return;
-                lines = [added];
-            }
-
-            // 2) Order-level inputs
-            const timeline = document.getElementById("calcTimeline").value;
-            const mold = document.getElementById("calcMold").value;
-            const depositPct = parseInt(document.getElementById("calcDepositPct").value, 10) || 0;
-
-            // 3) Unified calculation through CalcEngine
-            const order = CE.calculateOrder(lines, {
-                timeline,
-                mold,
-                depositPct,
-                services: calcServices,
-                round: true
-            });
-
-            // 4) Render breakdown
-            const out = [];
-            order.lines.forEach((l, i) => {
-                const materialLine = l.material === "gold"
-                    ? `Gold ${l.karat}K @ ${l.goldPrice} EGP/g → base/tooth = ${formatMoney(l.base)} EGP`
-                    : `${CALC_LABELS.material[l.material]} → base/tooth = ${formatMoney(l.base)} EGP`;
-
-                let stoneLine = "None";
-                if (l.accent) {
-                    stoneLine = `Accent × ${l.accent.count} (${CALC_LABELS.accentType[l.accent.type]} ${formatMoney(l.accentUnit)} + ${CALC_LABELS.setting[l.accent.setting]} ${l.settingUnit}) = ${formatMoney(l.stoneCost)} EGP`;
-                } else if (l.full && l.full.bars) {
-                    stoneLine = `Full iced on Bars: ${l.teeth} × ${cfg.barsStonesPerTooth || 400} = ${formatMoney(l.stoneCost)} EGP`;
-                } else if (l.full) {
-                    stoneLine = `Full iced × ${l.teeth} (${CALC_LABELS.accentType[l.full.type]} ${formatMoney(l.fullUnit)} + ${CALC_LABELS.coverage[l.full.coverage]} ${l.coverageUnit}) = ${formatMoney(l.stoneCost)} EGP`;
-                }
-
-                out.push(`DESIGN ${i + 1}: ${lineLabel(l)}`);
-                out.push(`  Material: ${materialLine} → ${formatMoney(l.materialTotal)} EGP`);
-                out.push(`  Design: ${l.level === "0.5" ? "0 (Bars)" : `+${l.designPct}% = ${formatMoney(l.designCost)} EGP`}`);
-                out.push(`  Stones: ${stoneLine}`);
-                out.push(`  Plating: ${CALC_LABELS.plating[l.plating] || l.plating} → ${formatMoney(l.platingCost)} EGP`);
-                out.push(`  Enamel: ${CALC_LABELS.enamel[l.enamel] || l.enamel} → ${formatMoney(l.enamelCost)} EGP`);
-                out.push(`  Engraving: ${CALC_LABELS.engraving[l.engraving] || l.engraving} → ${formatMoney(l.engravingCost)} EGP`);
-                if (l.anodizeCost) out.push(`  Anodizing: ${CALC_LABELS.anodize[l.anodize] || l.anodize} → ${formatMoney(l.anodizeCost)} EGP`);
-                out.push(`  Line subtotal: ${formatMoney(l.subtotal)} EGP`);
-                out.push("");
-            });
-
-            if (order.services.length) {
-                out.push("STUDIO SERVICES:");
-                order.services.forEach(sv => {
-                    out.push(`  • ${sv.name} (${sv.qty} × ${formatMoney(sv.unitPrice)}) = ${formatMoney(sv.subtotal)} EGP`);
-                });
-                out.push(`  Services subtotal: ${formatMoney(order.servicesSubtotal)} EGP`);
-                out.push("");
-            }
-
-            if (order.lines.length) out.push(`Designs subtotal: ${formatMoney(order.linesSubtotal)} EGP`);
-            if (order.servicesSubtotal) out.push(`Services subtotal: ${formatMoney(order.servicesSubtotal)} EGP`);
-            out.push(`Timeline: ${CALC_LABELS.timeline[timeline]} (+${order.timelinePct}%) = ${formatMoney(order.timelineAmount)} EGP`);
-            out.push(`Mold: ${CALC_LABELS.mold[mold]} → ${formatMoney(order.moldCost)} EGP`);
-            out.push("");
-            out.push(`QUOTE TOTAL: ${order.total.toLocaleString()} EGP`);
-            if (depositPct) {
-                out.push(`Deposit (${depositPct}%): ${order.deposit.toLocaleString()} EGP`);
-                out.push(`Balance before delivery: ${order.balance.toLocaleString()} EGP`);
-            }
-
-            document.getElementById("calcResultText").innerText = out.join("\n");
-            document.getElementById("calcResult").classList.remove("hidden");
-
+        // The PDF writer was written against the old result object — keep it fed.
+        function toPdfQuote(order) {
+            const L = CE.LABELS;
+            const dep = staffCalc && staffCalc.el("deposit") ? (parseInt(staffCalc.el("deposit").value, 10) || 0) : 0;
             const first = order.lines[0] || { level: "1", teeth: 0, plating: "none", enamel: "none", engraving: "none" };
-            window._lastCalcQuote = {
+            const sum = (k) => order.lines.reduce((s, l) => s + (Number(l[k]) || 0), 0);
+            return {
                 lines: order.lines,
                 services: order.services,
                 servicesSubtotal: order.servicesSubtotal,
                 lineCount: order.lineCount,
                 teethTotal: order.teethTotal,
-                materialLabel: order.lineCount > 1 ? `${order.lineCount} designs` : (order.lines[0] ? lineLabel(first) : "Services"),
-                levelLabel: CALC_LABELS.level[first.level] || "",
+                materialLabel: order.lineCount > 1 ? order.lineCount + " designs" : (order.lines[0] ? staffCalc.lineLabel(first) : "Services"),
+                levelLabel: (L.level || {})[first.level] || "",
                 teeth: first.teeth || 0,
-                materialTotal: order.lines.reduce((s, l) => s + l.materialTotal, 0),
-                designCost: order.lines.reduce((s, l) => s + l.designCost, 0),
-                stoneCost: order.lines.reduce((s, l) => s + l.stoneCost, 0),
-                platingCost: order.lines.reduce((s, l) => s + l.platingCost, 0),
-                plating: order.lineCount === 1 ? (CALC_LABELS.plating[first.plating] || "—") : "—",
-                enamelCost: order.lines.reduce((s, l) => s + l.enamelCost, 0),
-                enamel: order.lineCount === 1 ? (CALC_LABELS.enamel[first.enamel] || "—") : "—",
-                engravingCost: order.lines.reduce((s, l) => s + l.engravingCost, 0),
-                engraving: order.lineCount === 1 ? (CALC_LABELS.engraving[first.engraving] || "—") : "—",
+                materialTotal: sum("materialTotal"),
+                designCost: sum("designCost"),
+                stoneCost: sum("stoneCost"),
+                platingCost: sum("platingCost"),
+                plating: order.lineCount === 1 ? ((L.plating || {})[first.plating] || "—") : "—",
+                enamelCost: sum("enamelCost"),
+                enamel: order.lineCount === 1 ? ((L.enamel || {})[first.enamel] || "—") : "—",
+                engravingCost: sum("engravingCost"),
+                engraving: order.lineCount === 1 ? ((L.engraving || {})[first.engraving] || "—") : "—",
                 sub: order.linesSubtotal,
-                tlAmount: order.timelineAmount, timeline: CALC_LABELS.timeline[timeline], tlPct: order.timelinePct,
-                moldCost: order.moldCost, mold: CALC_LABELS.mold[mold],
+                tlAmount: order.timelineAmount,
+                timeline: (L.timeline || {})[order.timeline] || order.timeline,
+                tlPct: order.timelinePct,
+                moldCost: order.moldCost,
+                mold: (L.mold || {})[order.mold] || order.mold,
                 total: order.total,
-                deposit: depositPct ? { pct: depositPct, amount: order.deposit } : null
+                deposit: dep ? { pct: dep, amount: order.deposit } : null
             };
         }
 
-        // ==================== TODAY'S RATES (device-local, per day) ====================
-        // Gold and lab-grown/natural stone rates change daily. They are kept on this
-        // device for today only, auto-filled into the lines, and can always be
-        // overridden per line by hand.
-        const LS_PREFIX = "egygz_pricing_v1_";
-        function lsQuoteKey() { return LS_PREFIX + todayKey(); }
+        // ==================== PRICING & STUDIO SETTINGS (database) ====================
+        // Every number the calculator uses is edited here and written to Firestore
+        // (settings/pricing + settings/site). No localStorage, no per-page copies.
+        let pricingSettingsMounted = false;
+        let studioSettingsMounted = false;
 
-        let RATES = { gold: "", labAccent: "", natAccent: "", labFull: "", natFull: "" };
-        function getTodayRates() { return { ...RATES }; }
-        function setRateInputs(r) { if (r) RATES = { ...RATES, ...r }; }
-        function renderTodayRatesPanel() {}
-        const RATE_META = {
-            gold: { t: "Today's gold rate", h: "EGP per gram", el: "calcGoldPrice" },
-            labAccent: { t: "Today's lab-grown stone rate", h: "EGP per stone", el: "calcAccentCustomPrice" },
-            natAccent: { t: "Today's natural stone rate", h: "EGP per stone", el: "calcAccentCustomPrice" },
-            labFull: { t: "Today's lab-grown rate, full iced", h: "EGP per tooth", el: "calcFullCustomPrice" },
-            natFull: { t: "Today's natural rate, full iced", h: "EGP per tooth", el: "calcFullCustomPrice" }
-        };
-        let rateKind = null;
-        function askRate(kind) {
-            rateKind = kind;
-            const m = RATE_META[kind], inp = document.getElementById("rateInput");
-            document.getElementById("rateTitle").innerText = m.t;
-            document.getElementById("rateHint").innerText = m.h + " - saved on this device for today.";
-            inp.value = RATES[kind] || "";
-            document.getElementById("rateModal").classList.remove("hidden");
-            setTimeout(() => inp.focus(), 60);
+        function openPricingSettings() {
+            document.getElementById("pricingSettingsModal").classList.remove("hidden");
+            switchSettingsTab("pricing");
+            mountPricingSettings();
         }
-        function closeRate() { document.getElementById("rateModal").classList.add("hidden"); }
-        function saveRate() {
-            const v = parseFloat(document.getElementById("rateInput").value);
-            if (!v || v <= 0) { showToast("Enter a valid rate", true); return; }
-            RATES[rateKind] = v;
-            const el = document.getElementById(RATE_META[rateKind].el);
-            if (el) el.value = v;
-            if (rateKind === "gold") {
-                let n = 0;
-                calcLines.forEach(l => { if (l.material === "gold") { l.goldPrice = v; recalcLineObject(l); n++; } });
-                if (n) renderLinesList();
-            }
-            persistQuoteState();
-            closeRate();
-            showToast("Rate saved for today");
+        function closePricingSettings() {
+            document.getElementById("pricingSettingsModal").classList.add("hidden");
         }
-
-        function autoFillGoldPriceIfEmpty() {
-            const r = getTodayRates();
-            const el = document.getElementById("calcGoldPrice");
-            if (el && !el.value && r.gold) el.value = r.gold;
+        function switchSettingsTab(which) {
+            const pricing = which !== "studio";
+            document.getElementById("psPricing").classList.toggle("hidden", !pricing);
+            document.getElementById("psStudio").classList.toggle("hidden", pricing);
+            const on = "px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-black text-black";
+            const off = "px-3 py-2 text-[11px] font-medium uppercase tracking-wider border-b-2 border-transparent text-gray-400 hover:text-gray-700";
+            document.getElementById("psTabPricingBtn").className = pricing ? on : off;
+            document.getElementById("psTabStudioBtn").className = pricing ? off : on;
+            if (!pricing) mountStudioSettings();
         }
-
-        function autoFillStonePrice(which) {
-            const r = getTodayRates();
-            if (which === "accent") {
-                const type = document.getElementById("calcAccentType").value;
-                const el = document.getElementById("calcAccentCustomPrice");
-                if (!el || el.value) return;
-                if (type === "labgrown" && r.labAccent) el.value = r.labAccent;
-                if (type === "natural" && r.natAccent) el.value = r.natAccent;
-            }
-            if (which === "full") {
-                const type = document.getElementById("calcFullType").value;
-                const el = document.getElementById("calcFullCustomPrice");
-                if (!el || el.value) return;
-                if (type === "labgrown" && r.labFull) el.value = r.labFull;
-                if (type === "natural" && r.natFull) el.value = r.natFull;
-            }
+        function mountPricingSettings() {
+            if (pricingSettingsMounted) return;
+            const host = document.getElementById("pricingSettingsHost");
+            if (!host || !window.StaffCalculator) return;
+            window.StaffCalculator.mountSettings(host, {
+                db: db,
+                onSaved: () => { if (staffCalc) staffCalc.refresh(); }
+            });
+            pricingSettingsMounted = true;
         }
-
-        function applyTodayRatesToEditor(which) {
-            // Called right after telling staff to ask for today's rate — drop in the
-            // saved value so the toast doesn't leave them stuck.
-            if (which === "accent") autoFillStonePrice("accent");
-            if (which === "full") autoFillStonePrice("full");
-        }
-
-        // Recomputes all derived numbers on a saved line (used when today's gold
-        // rate or studio settings update, so lines stay synced with CalcEngine).
-        function recalcLineObject(line) {
-            const next = CE.calculateLine(line);
-            Object.assign(line, next);
-            return line;
-        }
-
-        // ==================== QUOTE STATE PERSISTENCE (same device, same day) ====================
-        function persistQuoteState() {
-            try {
-                const state = {
-                    savedAt: new Date().toISOString(),
-                    lines: calcLines,
-                    services: calcServices,
-                    timeline: document.getElementById("calcTimeline")?.value || "standard",
-                    mold: document.getElementById("calcMold")?.value || "none",
-                    level: document.getElementById("calcLevel")?.value || "1",
-                    clientName: document.getElementById("calcClientNameForPdf")?.value || "",
-                    notes: document.getElementById("calcNotes")?.value || "",
-                    depositPct: document.getElementById("calcDepositPct")?.value || "0",
-                    designName: document.getElementById("calcDesignName")?.value || "",
-                    rates: getTodayRates(),
-                    editor: {
-                        goldPrice: document.getElementById("calcGoldPrice")?.value || "",
-                        accentCustom: document.getElementById("calcAccentCustomPrice")?.value || "",
-                        fullCustom: document.getElementById("calcFullCustomPrice")?.value || ""
-                    }
-                };
-                localStorage.setItem(lsQuoteKey(), JSON.stringify(state));
-            } catch (e) { /* private mode / quota — pricing still works, just no auto-save */ }
-        }
-
-        function restoreQuoteState() {
-            renderLevelStrip();
-            setEditorMode("add");
-
-            let saved = null;
-            try { saved = JSON.parse(localStorage.getItem(lsQuoteKey()) || "null"); } catch (e) { saved = null; }
-
-            if (saved) {
-                applyOrderSettings({ timeline: saved.timeline, mold: saved.mold });
-                if (saved.level) document.getElementById("calcLevel").value = saved.level;
-                if (saved.clientName) document.getElementById("calcClientNameForPdf").value = saved.clientName;
-                if (saved.notes) document.getElementById("calcNotes").value = saved.notes;
-                if (saved.depositPct) document.getElementById("calcDepositPct").value = saved.depositPct;
-                if (saved.designName) document.getElementById("calcDesignName").value = saved.designName;
-                if (Array.isArray(saved.lines)) calcLines = saved.lines;
-                if (Array.isArray(saved.services)) calcServices = saved.services;
-                if (saved.editor) {
-                    if (saved.editor.goldPrice) document.getElementById("calcGoldPrice").value = saved.editor.goldPrice;
-                    if (saved.editor.accentCustom) document.getElementById("calcAccentCustomPrice").value = saved.editor.accentCustom;
-                    if (saved.editor.fullCustom) document.getElementById("calcFullCustomPrice").value = saved.editor.fullCustom;
-                }
-                setRateInputs(saved.rates);
-            } else {
-                pruneOldQuoteState();
-            }
-
-            onCalcMaterialChange();   // sync gold/stones/anodize visibility
-            renderCalcServices();
-            refreshLinesUI();
-            renderTodayRatesPanel(false);
-        }
-
-        function pruneOldQuoteState() {
-            try {
-                const keep = lsQuoteKey();
-                Object.keys(localStorage)
-                    .filter(k => k.startsWith(LS_PREFIX) && k !== keep)
-                    .forEach(k => localStorage.removeItem(k));
-            } catch (e) { /* ignore */ }
+        function mountStudioSettings() {
+            if (studioSettingsMounted) return;
+            if (!window.SiteConfig) return;
+            const host = document.getElementById("studioSettingsHost");
+            if (!host) return;
+            window.SiteConfig.renderSettings(host, db, () => showToast("Studio settings saved"));
+            studioSettingsMounted = true;
         }
 
         // ==================== QUOTATION PDF ====================
@@ -2781,9 +1927,9 @@ ${kb || "(not configured)"}
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: "pt", format: "a4" });
-            const clientName = document.getElementById("calcClientNameForPdf").value.trim();
+            const clientName = staffCalc && staffCalc.el("clientName") ? staffCalc.el("clientName").value.trim() : "";
             const clientNameSafe = pdfSafe(clientName).trim();   // jsPDF fonts are Latin-only
-            const notes = (document.getElementById("calcNotes")?.value || "").trim();
+            const notes = (staffCalc && staffCalc.el("clientNotes") ? staffCalc.el("clientNotes").value : "").trim();
             const pageW = doc.internal.pageSize.getWidth();
             const pageH = doc.internal.pageSize.getHeight();
             const M = 40;
@@ -2940,9 +2086,9 @@ ${kb || "(not configured)"}
         }
 
         function insertCalcResultIntoPricingChat() {
-            const text = document.getElementById("calcResultText").innerText;
+            const text = staffCalc ? staffCalc.getResultText() : "";
             if (!text) { showToast("Calculate a quote first", true); return; }
-            const clientName = document.getElementById("calcClientNameForPdf").value.trim();
+            const clientName = staffCalc && staffCalc.el("clientName") ? staffCalc.el("clientName").value.trim() : "";
             try {
                 db.collection("pricing_chat").doc("thread").collection("messages").add({
                     role: "user",
@@ -3094,63 +2240,50 @@ Custom Dental Jewelry, Cairo`;
         }
 
         function fillEditorFromIntake(p) {
-            const setSel = (id, val) => {
-                const el = document.getElementById(id);
-                if (!val) return;
-                // ignore values that aren't real options (hand-edited / malformed codes)
-                try {
-                    if (el.options && Array.from(el.options).every(o => o.value !== val)) return;
-                } catch (e) { /* no options collection — just set it */ }
-                el.value = val;
-            };
+            const calc = mountStaffCalculator();
+            if (!calc) return;
+            const setField = (name, val) => { if (val !== undefined && val !== null && val !== "") calc.setField(name, val); };
             const clientName = (p.get("c") || "").trim();
             const designName = (p.get("n") || "").trim();
-            document.getElementById("calcDesignName").value =
-                [clientName, designName].filter(Boolean).join(" — ").slice(0, 40);
+            calc.setField("name", [clientName, designName].filter(Boolean).join(" — ").slice(0, 40));
 
-            setSel("calcMaterial", p.get("m"));
-            onCalcMaterialChange();
+            setField("material", p.get("m"));
             const teeth = parseInt(p.get("t"), 10);
-            if (teeth >= 1 && teeth <= 16) document.getElementById("calcTeeth").value = teeth;
-            setSel("calcLevel", p.get("l"));
-            onCalcLevelChange();
+            if (teeth >= 1 && teeth <= 16) calc.setField("teeth", teeth);
+            setField("level", p.get("l"));
 
-            const material = document.getElementById("calcMaterial").value;
+            const material = calc.getField("material");
             const noStones = material === "chrome" || material === "titanium";
-            if (material === "gold" && p.get("k")) setSel("calcKarat", p.get("k"));
-            setSel("calcStonesMode", noStones ? "none" : p.get("s"));
-            onCalcStonesChange();
+            if (material === "gold" && p.get("k")) setField("karat", p.get("k"));
+            setField("stones", noStones ? "none" : p.get("s"));
 
             if (!noStones && p.get("s") === "accent") {
                 const count = parseInt(p.get("sc"), 10);
-                if (count > 0) document.getElementById("calcAccentCount").value = count;
-                setSel("calcAccentType", p.get("at"));
-                onCalcAccentTypeChange();
-                setSel("calcAccentSetting", p.get("ss"));
-                if (p.get("ra")) document.getElementById("calcAccentCustomPrice").value = p.get("ra");
+                if (count > 0) calc.setField("accentCount", count);
+                setField("accentType", p.get("at"));
+                setField("accentSetting", p.get("ss"));
+                if (p.get("ra")) calc.setField("accentCustom", p.get("ra"));
             }
             if (!noStones && p.get("s") === "fulliced") {
-                setSel("calcFullType", p.get("ft"));
-                onCalcFullTypeChange();
-                setSel("calcCoverage", p.get("cv"));
-                if (p.get("rf")) document.getElementById("calcFullCustomPrice").value = p.get("rf");
+                setField("fullType", p.get("ft"));
+                setField("coverage", p.get("cv"));
+                if (p.get("rf")) calc.setField("fullCustom", p.get("rf"));
             }
 
-            setSel("calcPlating", p.get("pl"));
-            setSel("calcEnamel", p.get("en"));
-            setSel("calcEngraving", p.get("eg"));
-            if (document.getElementById("calcAnodize")) setSel("calcAnodize", p.get("an") || "none");
-            setSel("calcTimeline", p.get("tl"));
-            setSel("calcMold", p.get("md"));
+            setField("plating", p.get("pl"));
+            setField("enamel", p.get("en"));
+            setField("engraving", p.get("eg"));
+            setField("anodize", p.get("an") || "none");
+            setField("timeline", p.get("tl"));
+            setField("mold", p.get("md"));
 
             // ---- gold rate: the studio's saved rate wins, but flag any mismatch ----
             const clientGold = parseFloat(p.get("gr"));
-            const goldEl = document.getElementById("calcGoldPrice");
             const noteBits = [];
             if (material === "gold" && clientGold > 0) {
-                const current = parseFloat(goldEl.value);
+                const current = parseFloat(calc.getField("goldPrice"));
                 if (!current) {
-                    goldEl.value = clientGold;
+                    calc.setField("goldPrice", clientGold);
                     noteBits.push(`Gold rate ${clientGold} EGP/g taken from the client — verify.`);
                 } else if (current !== clientGold) {
                     noteBits.push(`Client stated gold at ${clientGold} EGP/g; using the studio rate ${current} EGP/g — confirm with the client.`);
@@ -3159,7 +2292,8 @@ Custom Dental Jewelry, Cairo`;
             if (p.get("ra") || p.get("rf")) noteBits.push("Client-stated stone rate — verify before quoting.");
             if (p.get("nt")) noteBits.push("Client note: " + p.get("nt"));
             if (p.get("c")) noteBits.push("From the client intake form.");
-            if (noteBits.length) document.getElementById("calcNotes").value = noteBits.join("\n");
+            const notesEl = calc.el("clientNotes");
+            if (notesEl && noteBits.length) notesEl.value = noteBits.join("\n");
         }
 
         function applyIntakeCode() {
@@ -3171,21 +2305,21 @@ Custom Dental Jewelry, Cairo`;
             }
             const em = box.value.match(/EGZ1[:\uff1a]\s*([A-Za-z0-9\-_=+\/]+)/i);
             const code = em ? em[1] : box.value.trim().replace(/\s+/g, "");
-            if (calcLines.some(l => l.importedCode === code)) {
+            const calc = mountStaffCalculator();
+            if (!calc) { showToast("Calculator not ready yet", true); return; }
+            if (calc.getLines().some(l => l.importedCode === code)) {
                 showToast("This intake code is already in the quote");
                 return;
             }
             fillEditorFromIntake(params);
 
-            const built = buildLineFromEditor(); // validates + explains anything missing
-            if (built) {
-                calcLines.push({ ...built, id: newLineId(), importedCode: code });
-                refreshLinesUI();
-                document.getElementById("calcDesignName").value = "";
-                showToast("Client's answers added as a new design line");
-            } else {
-                showToast("Loaded what the client sent — complete the rest, then press Add design line", true);
-            }
+            const built = calc.readLine();     // validates + explains anything missing
+            if (built.error) { showToast(built.error, true); return; }
+            const line = CE.calculateLine(built.line);
+            line.importedCode = code;
+            calc.setLines(calc.getLines().concat([line]));
+            calc.setField("name", "");
+            showToast("Client's answers added as a new design line");
             box.value = "";
         }
 
@@ -3316,7 +2450,7 @@ Custom Dental Jewelry, Cairo`;
             applyTheme(getThemeMode());
             pruneIntakeTokens();
             renderIntakeLinkStatus();
-            try { restoreQuoteState(); } catch (e) { console.warn("Quote restore failed:", e); }
+            try { mountStaffCalculator(); } catch (e) { console.warn("Calculator mount failed:", e); }
         });
 
         // follow the system when the mode is "auto"

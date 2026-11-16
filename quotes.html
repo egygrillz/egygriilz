@@ -262,7 +262,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
     <a href="editx">Admin</a>
   </nav>
   <div class="spacer"></div>
-  <button class="btn btn-ghost btn-sm" id="settingsBtn"><i class="fas fa-sliders"></i> Settings</button>
+  <a class="btn btn-ghost btn-sm" href="/staff-panel-x7k2" target="_blank" rel="noopener" title="Calculator settings live in the Staff Panel"><i class="fas fa-sliders"></i> Settings</a>
   <span class="who" id="who"></span>
 </header>
 
@@ -303,17 +303,10 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
       <div class="card">
         <div class="card-h">
           <h2>Design lines</h2>
-          <span class="hint">one line per design</span>
-          <div class="spacer"></div>
-          <div class="gold-bar" title="Today's 24K gold rate (EGP/g)">
-            <span>Gold 24K</span>
-            <input id="quickGoldRate" type="number" min="0" step="any" placeholder="EGP/g">
-          </div>
-          <button class="btn btn-dark btn-sm" id="addLineBtn"><i class="fas fa-plus"></i> Add line</button>
+          <span class="hint">the studio calculator — same as the Staff Panel</span>
         </div>
-        <div class="card-b">
-          <div class="lines" id="linesWrap"></div>
-          <div id="linesEmpty" class="empty">No lines yet — press Add line to start.</div>
+        <div class="card-b" style="padding:0">
+          <div id="scQuoteCalc" style="padding:16px"></div>
         </div>
       </div>
 
@@ -451,23 +444,9 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
   </div>
 </div>
 
-<!-- ═══════════ settings drawer ═══════════ -->
-<div class="drawer-mask" id="drawerMask"></div>
-<aside class="drawer" id="drawer">
-  <div class="drawer-h">
-    <h3>Pricing settings</h3>
-    <div class="spacer" style="flex:1"></div>
-    <button class="btn btn-ghost btn-sm" id="drawerClose"><i class="fas fa-xmark"></i></button>
-  </div>
-  <div class="drawer-b" id="drawerBody"></div>
-  <div class="drawer-f">
-    <button class="btn btn-ghost" id="resetBtn">Reset</button>
-    <button class="btn btn-primary" id="saveSettings">Save settings</button>
-  </div>
-</aside>
-
 <div class="toast" id="toast"></div>
 
+<script src="/assets/staff-calculator.js"></script>
 <script type="module">
 /* ══════════════════════════════════════════════════════════════════
    1. AUTH
@@ -527,18 +506,6 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => E.fmt(n);
 
-let CATALOG_PRESETS = [];
-fetch('/assets/images/catalog.json')
-  .then(r => r.ok ? r.json() : [])
-  .then(list => {
-    if (Array.isArray(list)) {
-      /* every design is quotable: ones without a saved calculator spec open
-         with the default options so the line can be configured right here */
-      CATALOG_PRESETS = list.filter(x => x && x.id && x.name);
-      if (LINES.length) renderLines();
-    }
-  }).catch(() => {});
-
 function toast(msg, isErr){
   const t = $('toast');
   t.textContent = msg;
@@ -595,225 +562,38 @@ $('clientPick').addEventListener('change', function(){
 function fillSelects(){
   const S = E.get();
   const L = E.LABELS;
-
   $('timeline').innerHTML = Object.keys(S.timelinePct).map(k =>
     `<option value="${k}">${L.timeline[k] || k}${S.timelinePct[k] ? ' (+' + S.timelinePct[k] + '%)' : ''}</option>`).join('');
   $('mold').innerHTML = Object.keys(S.moldFlat).map(k =>
     `<option value="${k}">${L.mold[k] || k}${S.moldFlat[k] ? ' (+' + S.moldFlat[k] + ')' : ''}</option>`).join('');
   $('depositPct').value = S.depositPct;
-  if ($('quickGoldRate')) $('quickGoldRate').value = S.goldPrice || '';
 }
 fillSelects();
 
-$('quickGoldRate').addEventListener('input', function () {
-  const S = E.get();
-  S.goldPrice = Math.max(0, Number(this.value) || 0);
-  E.set(S);
-  recalc();
-});
-
 /* ══════════════════════════════════════════════════════════════════
-   5. LINE EDITOR & STUDIO SERVICES
+   5. THE CALCULATOR — the staff panel's calculator, unchanged
    ══════════════════════════════════════════════════════════════════ */
 let LINES = [];
 let SERVICES = [];
 let CURRENT_QUOTE_ID = null;
+let QUOTE_CALC = null;
 
-function lineSkeleton(i){
-  const S = E.get(), L = E.LABELS;
-  const materials = Object.keys(S.materialBase).concat(['gold']);
-  const levels = Object.keys(S.designPct);
-  const platings = Object.keys(S.plating);
-  const enamels = Object.keys(S.enamel);
-  const engravings = Object.keys(S.engraving);
-  const anodizes = Object.keys(S.anodize || { none: 0 });
-  const accents = Object.keys(S.accentPrice);
-  const settings = Object.keys(S.settingPrice);
-  const coverages = Object.keys(S.coveragePrice);
-  const karats = Object.keys(S.goldKarat);
-
-  const sel = (field, opts, labels) => `<select class="inp" data-f="${field}">` +
-    opts.map(k => `<option value="${k}">${esc(labels[k] || k)}</option>`).join('') + '</select>';
-
-  const presetOpts = CATALOG_PRESETS.length
-    ? `<label class="f" style="max-width:210px"><span>Load catalog design</span><select class="inp" data-preset><option value="">— custom —</option>` +
-      CATALOG_PRESETS.map(p => `<option value="${esc(p.id)}">${esc(p.name)}${p.calc && p.calc.material ? '' : ' — set options'}</option>`).join('') + `</select></label>`
-    : '';
-
-  return `
-    <div class="line-row" data-i="${i}">
-      <div class="name" style="display:flex;gap:8px;flex-wrap:wrap">
-        <label class="f" style="flex:1;min-width:180px"><span>Design name (optional)</span>
-          <input class="inp" data-f="name" placeholder="e.g. Top grillz — Ahmed"></label>
-        ${presetOpts}
-      </div>
-      <div class="line-grid">
-        <label class="f"><span>Material</span>${sel('material', materials, L.material)}</label>
-        <label class="f" data-goldwrap><span>Karat</span>${sel('karat', karats, {})}</label>
-        <label class="f"><span>Teeth</span><input class="inp" data-f="teeth" type="number" min="1" max="16" value="6"></label>
-        <label class="f"><span>Design level</span>${sel('level', levels, L.level)}</label>
-        <label class="f"><span>Plating</span>${sel('plating', platings, L.plating)}</label>
-        <label class="f"><span>Enamel</span>${sel('enamel', enamels, L.enamel)}</label>
-        <label class="f"><span>Engraving</span>${sel('engraving', engravings, L.engraving)}</label>
-        <label class="f" data-anowrap style="display:none"><span>Anodizing</span>${sel('anodize', anodizes, L.anodize || {})}</label>
-      </div>
-      <div class="line-grid">
-        <label class="f"><span>Stone type</span>
-          <select class="inp" data-f="stoneMode">
-            <option value="none">No stones</option>
-            <option value="accent">Accent stones</option>
-            <option value="full">Full iced</option>
-            <option value="bars">Full iced on bars</option>
-          </select></label>
-        <label class="f" data-accentonly style="display:none"><span>Stone</span>${sel('accentType', accents, L.accentType)}</label>
-        <label class="f" data-accentonly style="display:none"><span>Setting</span>${sel('accentSetting', settings, L.setting)}</label>
-        <label class="f" data-accentonly style="display:none"><span>Count</span><input class="inp" data-f="accentCount" type="number" min="0" value="0"></label>
-        <label class="f" data-accentcustom style="display:none"><span>Rate / stone (EGP)</span><input class="inp" data-f="accentCustomPrice" type="number" min="0" step="any" placeholder="Today's rate"></label>
-        <label class="f" data-fullonly style="display:none"><span>Full stone</span>${sel('fullType', accents, L.accentType)}</label>
-        <label class="f" data-fullonly style="display:none"><span>Coverage</span>${sel('fullCoverage', coverages, L.coverage)}</label>
-        <label class="f" data-fullcustom style="display:none"><span>Rate / tooth (EGP)</span><input class="inp" data-f="fullCustomPrice" type="number" min="0" step="any" placeholder="Today's rate"></label>
-      </div>
-      <div class="actions">
-        <span style="flex:1;font-size:11px;color:var(--ink2);font-variant-numeric:tabular-nums" data-out>—</span>
-        <button class="btn btn-rose btn-sm" data-del><i class="fas fa-trash"></i></button>
-      </div>
-    </div>`;
-}
-
-function renderLines(){
-  const wrap = $('linesWrap');
-  wrap.innerHTML = LINES.map((_, i) => lineSkeleton(i)).join('');
-  $('linesEmpty').style.display = LINES.length ? 'none' : 'block';
-  wrap.querySelectorAll('.line-row').forEach((row, i) => {
-    const l = LINES[i] || {};
-    row.querySelectorAll('[data-f]').forEach(el => {
-      const f = el.dataset.f;
-      if (f === 'stoneMode') {
-        el.value = l.mode || (l.accent ? 'accent' : (l.full && l.full.bars ? 'bars' : (l.full ? 'full' : 'none')));
-      } else if (f === 'accentCount') {
-        el.value = (l.accent && l.accent.count) || 0;
-      } else if (f === 'accentCustomPrice') {
-        el.value = (l.accent && l.accent.customPrice !== undefined ? l.accent.customPrice : '') || '';
-      } else if (f === 'fullCustomPrice') {
-        el.value = (l.full && l.full.customPrice !== undefined ? l.full.customPrice : '') || '';
-      } else if (l[f] !== undefined) {
-        el.value = l[f];
-      }
-    });
-    if (l.accent) {
-      row.querySelector('[data-f="accentType"]').value = l.accent.type || 'cz';
-      row.querySelector('[data-f="accentSetting"]').value = l.accent.setting || 'flush';
-    }
-    if (l.full && !l.full.bars) {
-      row.querySelector('[data-f="fullType"]').value = l.full.type || 'moissanite';
-      row.querySelector('[data-f="fullCoverage"]').value = l.full.coverage || 'standardpave';
-    }
-    syncRow(row);
+function mountQuoteCalculator(){
+  const host = $('scQuoteCalc');
+  if (!host || !window.StaffCalculator) return null;
+  QUOTE_CALC = window.StaffCalculator.mount(host, {
+    db: db,
+    parts: { lines: true, editor: true, services: false, order: false, result: false },
+    onChange: (lines) => { LINES = lines; recalc(); }
   });
+  return QUOTE_CALC;
+}
+
+/* replace the lines in the calculator (opening a saved quote / starting fresh) */
+function syncLines(){
+  if (QUOTE_CALC) QUOTE_CALC.setLines(LINES);
   recalc();
 }
-
-function readRow(row){
-  const g = f => row.querySelector(`[data-f="${f}"]`);
-  const material = g('material').value;
-  const noStones = !E.allowsStones(material);
-  const mode = noStones ? 'none' : g('stoneMode').value;
-  const l = {
-    name: g('name') ? g('name').value.trim() : '',
-    material,
-    karat: g('karat') ? g('karat').value : '18',
-    teeth: Number(g('teeth').value) || 6,
-    level: g('level').value,
-    plating: g('plating').value,
-    enamel: g('enamel').value,
-    engraving: g('engraving').value,
-    anodize: material === 'titanium' && g('anodize') ? g('anodize').value : 'none',
-    mode,
-  };
-  if (mode === 'accent') {
-    const customPrice = g('accentCustomPrice') && g('accentCustomPrice').value !== '' ? Number(g('accentCustomPrice').value) : undefined;
-    l.accent = {
-      type: g('accentType').value,
-      setting: g('accentSetting').value,
-      count: Number(g('accentCount').value) || 0,
-      customPrice,
-    };
-  } else if (mode === 'full') {
-    const customPrice = g('fullCustomPrice') && g('fullCustomPrice').value !== '' ? Number(g('fullCustomPrice').value) : undefined;
-    l.full = { type: g('fullType').value, coverage: g('fullCoverage').value, customPrice };
-  } else if (mode === 'bars') {
-    l.full = { bars: true };
-  }
-  return l;
-}
-
-function syncRow(row){
-  const S = E.get();
-  const mat = row.querySelector('[data-f="material"]').value;
-  const noStones = !E.allowsStones(mat);
-  const sm = row.querySelector('[data-f="stoneMode"]');
-  if (noStones) { sm.value = 'none'; sm.disabled = true; }
-  else { sm.disabled = false; }
-  const mode = sm.value;
-  const isGold = mat === 'gold';
-  const isTi = mat === 'titanium';
-  row.querySelectorAll('[data-accentonly]').forEach(e => e.style.display = mode === 'accent' ? '' : 'none');
-  row.querySelectorAll('[data-fullonly]').forEach(e => e.style.display = mode === 'full' ? '' : 'none');
-  const gw = row.querySelector('[data-goldwrap]');
-  if (gw) gw.style.display = isGold ? '' : 'none';
-  const aw = row.querySelector('[data-anowrap]');
-  if (aw) aw.style.display = isTi ? '' : 'none';
-
-  const aType = row.querySelector('[data-f="accentType"]')?.value || 'cz';
-  const fType = row.querySelector('[data-f="fullType"]')?.value || 'moissanite';
-  const ac = row.querySelector('[data-accentcustom]');
-  if (ac) ac.style.display = (mode === 'accent' && S.accentPrice[aType] === null) ? '' : 'none';
-  const fc = row.querySelector('[data-fullcustom]');
-  if (fc) fc.style.display = (mode === 'full' && S.fullPrice[fType] === null) ? '' : 'none';
-}
-
-$('linesWrap').addEventListener('input', onLineChange);
-$('linesWrap').addEventListener('change', onLineChange);
-
-function onLineChange(e){
-  const row = e.target.closest('.line-row');
-  if (!row) return;
-  const i = +row.dataset.i;
-  if (e.target.matches('[data-preset]')) {
-    const item = CATALOG_PRESETS.find(p => p.id === e.target.value);
-    if (item) {
-      const c = (item.calc && item.calc.material) ? item.calc : null;
-      LINES[i] = Object.assign({
-        name: item.name || '',
-        material: 'chrome', karat: '18', teeth: 6, level: '1',
-        plating: 'none', enamel: 'none', engraving: 'none', anodize: 'none', mode: 'none'
-      }, c || {}, c ? {
-        mode: c.accent ? 'accent' : (c.full && c.full.bars ? 'bars' : (c.full ? 'full' : 'none'))
-      } : {});
-      renderLines();
-      toast(c ? 'Loaded catalog design: ' + item.name
-              : item.name + ' — set the material, teeth and finish to price it');
-      return;
-    }
-  }
-  if (e.target.matches('[data-f="material"],[data-f="stoneMode"],[data-f="accentType"],[data-f="fullType"]')) syncRow(row);
-  LINES[i] = readRow(row);
-  recalc();
-}
-
-$('linesWrap').addEventListener('click', e => {
-  const del = e.target.closest('[data-del]');
-  if (!del) return;
-  const row = del.closest('.line-row');
-  LINES.splice(+row.dataset.i, 1);
-  renderLines();
-});
-
-$('addLineBtn').addEventListener('click', () => {
-  LINES.push({ material: 'chrome', karat: '18', teeth: 6, level: '1', plating: 'none',
-    enamel: 'none', engraving: 'none', anodize: 'none', mode: 'none' });
-  renderLines();
-});
 
 /* ── Studio services UI ── */
 function renderServices(){
@@ -895,21 +675,7 @@ $('svcsWrap').addEventListener('click', e => {
 let LAST = null;
 
 function recalc(){
-  const S = E.get();
-  $('linesWrap').querySelectorAll('.line-row').forEach(row => {
-    const i = +row.dataset.i;
-    const src = LINES[i] || {};
-    const line = E.calculateLine(src);
-    const out = row.querySelector('[data-out]');
-    if (out) {
-      const needsGold = src.material === 'gold' && !Number(S.goldPrice);
-      const needsStone = (src.mode === 'accent' && S.accentPrice[(src.accent||{}).type] === null && !Number((src.accent||{}).customPrice))
-        || (src.mode === 'full' && S.fullPrice[(src.full||{}).type] === null && !Number((src.full||{}).customPrice));
-      if (needsGold) { out.textContent = 'Set Gold 24K rate above'; out.style.color = 'var(--rose)'; }
-      else if (needsStone) { out.textContent = 'Enter stone rate'; out.style.color = 'var(--rose)'; }
-      else { out.textContent = `${fmt(line.subtotal)} EGP`; out.style.color = ''; }
-    }
-  });
+  if (QUOTE_CALC) LINES = QUOTE_CALC.getLines();
 
   if (!LINES.length && !SERVICES.length) {
     LAST = null;
@@ -968,7 +734,8 @@ $('newQuoteBtn').addEventListener('click', () => {
   $('discountVal').value = '';
   $('discountType').value = 'egp';
   $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Save quote';
-  renderLines();
+  if (QUOTE_CALC) QUOTE_CALC.reset();
+  syncLines();
   renderServices();
   toast('Started a fresh quote');
 });
@@ -1166,7 +933,7 @@ $('quotesBody').addEventListener('click', async (e) => {
     $('discountType').value = (q.discount && q.discount.type) || 'egp';
     $('quoteNotes').value = q.notes || '';
     $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Update quote';
-    renderLines();
+    syncLines();
     renderServices();
     toast('Quote opened');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1514,129 +1281,6 @@ $('whatsappBtn').addEventListener('click', async () => {
   }
 });
 
-/* ══════════════════════════════════════════════════════════════════
-   10. SETTINGS DRAWER
-   ══════════════════════════════════════════════════════════════════ */
-const drawer = $('drawer'), mask = $('drawerMask');
-
-function openDrawer(){ drawer.classList.add('open'); mask.classList.add('open'); }
-function closeDrawer(){ drawer.classList.remove('open'); mask.classList.remove('open'); }
-$('settingsBtn').addEventListener('click', openDrawer);
-$('drawerClose').addEventListener('click', closeDrawer);
-mask.addEventListener('click', closeDrawer);
-
-function renderSettings(){
-  const S = E.get(), L = E.LABELS;
-  const num = (path, label, val, nullable) =>
-    `<div class="row"><span class="k">${esc(label)}</span>
-      <input class="inp" data-set="${path}" ${nullable ? 'data-nullable="1" placeholder="custom"' : ''} type="number" step="any" value="${val === null || val === undefined ? '' : val}"></div>`;
-  const group = (title, body) => `<div class="sec"><h4>${esc(title)}</h4>${body}</div>`;
-
-  let html = '';
-
-  html += group('Materials — price per tooth',
-    Object.keys(S.materialBase).map(k => num('materialBase.'+k, L.material[k]||k, S.materialBase[k])).join(''));
-
-  html += group('Gold — today\'s rate & formula',
-    num('goldPrice', 'Price per gram (EGP)', S.goldPrice) +
-    num('goldCastFee', 'Cast fee per tooth (EGP)', S.goldCastFee) +
-    num('goldWeightFactor', 'Weight factor (g)', S.goldWeightFactor) +
-    Object.keys(S.goldKarat).map(k =>
-      num('goldKarat.'+k+'.purity', k+'K purity', S.goldKarat[k].purity) +
-      num('goldKarat.'+k+'.margin', k+'K margin', S.goldKarat[k].margin)
-    ).join(''));
-
-  html += group('Design levels — surcharge %',
-    Object.keys(S.designPct).map(k => num('designPct.'+k, L.level[k]||k, S.designPct[k])).join(''));
-
-  html += group('Stone price per stone (blank = custom daily rate)',
-    Object.keys(S.accentPrice).map(k => {
-      const v = S.accentPrice[k];
-      return num('accentPrice.'+k, L.accentType[k]||k, v, k === 'labgrown' || k === 'natural');
-    }).join(''));
-
-  html += group('Setting price',
-    Object.keys(S.settingPrice).map(k => num('settingPrice.'+k, L.setting[k]||k, S.settingPrice[k])).join(''));
-
-  html += group('Full iced — price per tooth (blank = custom daily rate)',
-    Object.keys(S.fullPrice).map(k => {
-      const v = S.fullPrice[k];
-      return num('fullPrice.'+k, L.accentType[k]||k, v, k === 'labgrown' || k === 'natural');
-    }).join('') + num('barsStonesPerTooth', 'Full iced on bars / tooth', S.barsStonesPerTooth));
-
-  html += group('Coverage',
-    Object.keys(S.coveragePrice).map(k => num('coveragePrice.'+k, L.coverage[k]||k, S.coveragePrice[k])).join(''));
-
-  html += group('Plating',
-    Object.keys(S.plating).map(k => num('plating.'+k, L.plating[k]||k, S.plating[k])).join(''));
-
-  html += group('Enamel',
-    Object.keys(S.enamel).map(k => num('enamel.'+k, L.enamel[k]||k, S.enamel[k])).join(''));
-
-  html += group('Engraving',
-    Object.keys(S.engraving).map(k => num('engraving.'+k, L.engraving[k]||k, S.engraving[k])).join(''));
-
-  html += group('Titanium Anodizing',
-    Object.keys(S.anodize || {}).map(k => num('anodize.'+k, (L.anodize && L.anodize[k])||k, S.anodize[k])).join(''));
-
-  html += group('Studio services (default EGP)',
-    Object.keys(S.servicePrices || {}).map(k => num('servicePrices.'+k, (L.service && L.service[k])||k, S.servicePrices[k])).join(''));
-
-  html += group('Order level',
-    Object.keys(S.timelinePct).map(k => num('timelinePct.'+k, L.timeline[k]+' %', S.timelinePct[k])).join('') +
-    Object.keys(S.moldFlat).map(k => num('moldFlat.'+k, L.mold[k], S.moldFlat[k])).join('') +
-    num('roundTo', 'Round total up to', S.roundTo) +
-    num('depositPct', 'Default deposit %', S.depositPct));
-
-  $('drawerBody').innerHTML = html;
-}
-
-function readSettings(){
-  const S = JSON.parse(JSON.stringify(E.get()));
-  $('drawerBody').querySelectorAll('[data-set]').forEach(el => {
-    const path = el.dataset.set.split('.');
-    let o = S;
-    for (let i = 0; i < path.length - 1; i++) o = o[path[i]] = o[path[i]] || {};
-    const raw = el.value.trim();
-    if (el.dataset.nullable === '1' && raw === '') {
-      o[path[path.length - 1]] = null;
-    } else {
-      o[path[path.length - 1]] = Number(raw);
-    }
-  });
-  return S;
-}
-
-$('saveSettings').addEventListener('click', async () => {
-  const S = readSettings();
-  E.set(S);
-  try {
-    await E.save(db);
-    fillSelects();
-    renderLines();
-    renderServices();
-    recalc();
-    renderSettings();
-    toast('Settings saved — everything follows');
-  } catch (e) {
-    console.warn(e);
-    toast('Saved locally only — Firestore rejected it', true);
-  }
-});
-
-$('resetBtn').addEventListener('click', () => {
-  if (!confirm('Reset every price to the built-in defaults?')) return;
-  E.reset();
-  fillSelects();
-  renderLines();
-  renderServices();
-  renderSettings();
-  recalc();
-  toast('Reset to defaults — press Save to keep');
-});
-
-renderSettings();
-
 /* the module scope is not the global scope — publish what the HTML buttons call */
 window.sendPdfToTelegram = sendPdfToTelegram;
 
@@ -1645,7 +1289,7 @@ window.sendPdfToTelegram = sendPdfToTelegram;
    ══════════════════════════════════════════════════════════════════ */
 await loadClients();
 await loadQuotes();
-renderLines();
+mountQuoteCalculator();
 renderServices();
 recalc();
 </script>

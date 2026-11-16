@@ -13,6 +13,7 @@
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="/assets/calc-engine.js"></script>
+<script src="/assets/staff-calculator.js"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
 window.addEventListener('load', function() {
@@ -875,173 +876,12 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 
 </div><!-- end #app -->
 
-<!-- ══ CUSTOM GRILLZ CALCULATOR MODAL ══ -->
+<!-- ══ CUSTOM GRILLZ CALCULATOR MODAL (the staff panel calculator) ══ -->
 <div class="modal-overlay" id="calc-modal">
-  <div class="modal-box wide">
+  <div class="modal-box wide" style="max-width:860px">
     <button class="modal-close" id="close-calc-modal">&times;</button>
     <div class="modal-title">Custom Grillz Calculator</div>
-    <div class="field-group">
-      <label class="field-label">Design Label (optional)</label>
-      <input type="text" class="field-input" id="cm-name" placeholder="e.g. Top 6 Silver · Bottom Bars">
-    </div>
-    <div class="calc-grid-2">
-      <div class="field-group">
-        <label class="field-label">Material</label>
-        <select class="field-select" id="cm-material">
-          <option value="chrome">Cobalt Chrome</option>
-          <option value="titanium">Titanium</option>
-          <option value="silver">Sterling Silver 925</option>
-          <option value="gold">Gold</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Teeth (1-16)</label>
-        <input type="number" class="field-input" id="cm-teeth" min="1" max="16" value="6">
-      </div>
-    </div>
-    <div class="calc-grid-2" id="cm-gold-wrap" style="display:none">
-      <div class="field-group">
-        <label class="field-label">Karat</label>
-        <select class="field-select" id="cm-karat">
-          <option value="10">10K</option>
-          <option value="14">14K</option>
-          <option value="18" selected>18K</option>
-          <option value="21">21K</option>
-          <option value="22">22K</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Today's 24K Gold (EGP/g)</label>
-        <input type="number" class="field-input" id="cm-gold-rate" min="0" step="any" placeholder="Enter EGP/g">
-      </div>
-    </div>
-    <div class="calc-grid-2">
-      <div class="field-group">
-        <label class="field-label">Design Level</label>
-        <select class="field-select" id="cm-level">
-          <option value="0.5">0.5 Bars (Half Base)</option>
-          <option value="1">1 Solid (+0%)</option>
-          <option value="2">2 Open Face (+10%)</option>
-          <option value="3">3 Mid Detail (+15%)</option>
-          <option value="4">4 Complex (+25%)</option>
-          <option value="5">5 Scorpion (+40%)</option>
-          <option value="6">6 Ultimate (+60%)</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Stones</label>
-        <select class="field-select" id="cm-stones">
-          <option value="none">No Stones</option>
-          <option value="accent">Accent Stones</option>
-          <option value="full">Full Iced</option>
-          <option value="bars">Full Iced on Bars</option>
-        </select>
-      </div>
-    </div>
-    <div class="calc-grid-3" id="cm-accent-wrap" style="display:none">
-      <div class="field-group">
-        <label class="field-label">Count</label>
-        <input type="number" class="field-input" id="cm-acount" min="1" value="1">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Type</label>
-        <select class="field-select" id="cm-atype">
-          <option value="cz">CZ</option>
-          <option value="moissanite">Moissanite</option>
-          <option value="labgrown">Lab-Grown</option>
-          <option value="natural">Natural</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Setting</label>
-        <select class="field-select" id="cm-asetting">
-          <option value="flush">Flush</option>
-          <option value="twoprong">2-Prong</option>
-          <option value="threeprong">3-Prong</option>
-          <option value="fourprong">4-Prong</option>
-          <option value="sixprong">6-Prong</option>
-          <option value="bezelfull">Bezel Full</option>
-          <option value="bezelhalf">Bezel Half</option>
-          <option value="bar">Bar</option>
-        </select>
-      </div>
-    </div>
-    <div class="field-group" id="cm-acustom-wrap" style="display:none">
-      <label class="field-label">Stone Price (EGP / stone)</label>
-      <input type="number" class="field-input" id="cm-acustom" min="0" step="any" placeholder="Enter today's rate">
-    </div>
-    <div class="calc-grid-2" id="cm-full-wrap" style="display:none">
-      <div class="field-group">
-        <label class="field-label">Stone Type</label>
-        <select class="field-select" id="cm-ftype">
-          <option value="cz">CZ</option>
-          <option value="moissanite">Moissanite</option>
-          <option value="labgrown">Lab-Grown</option>
-          <option value="natural">Natural</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Coverage</label>
-        <select class="field-select" id="cm-fcov">
-          <option value="standardpave">Standard Pave</option>
-          <option value="frenchpave">French Pave</option>
-          <option value="micropave">Micro-Pave</option>
-          <option value="channel">Channel</option>
-          <option value="invisible">Invisible</option>
-        </select>
-      </div>
-    </div>
-    <div class="field-group" id="cm-fcustom-wrap" style="display:none">
-      <label class="field-label">Full-Iced Price (EGP / tooth)</label>
-      <input type="number" class="field-input" id="cm-fcustom" min="0" step="any" placeholder="Enter today's rate">
-    </div>
-    <div class="calc-grid-3">
-      <div class="field-group">
-        <label class="field-label">Plating</label>
-        <select class="field-select" id="cm-plating">
-          <option value="none">None</option>
-          <option value="yellowgold">Yellow Gold</option>
-          <option value="blackgold">Black Gold</option>
-          <option value="whitegold">White Gold</option>
-          <option value="rosegold">Rose Gold</option>
-          <option value="silverplating">Silver Plating</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Enamel</label>
-        <select class="field-select" id="cm-enamel">
-          <option value="none">None</option>
-          <option value="single">Single</option>
-          <option value="multi">Multi</option>
-          <option value="master">Master</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Engraving</label>
-        <select class="field-select" id="cm-engraving">
-          <option value="none">None</option>
-          <option value="small">Small</option>
-          <option value="medium">Medium</option>
-          <option value="large">Large</option>
-        </select>
-      </div>
-    </div>
-    <div class="field-group" id="cm-ano-wrap" style="display:none">
-      <label class="field-label">Titanium Anodizing</label>
-      <select class="field-select" id="cm-anodize">
-        <option value="none">None</option>
-        <option value="single">Single Color</option>
-        <option value="dual">Dual Color</option>
-        <option value="multi">Multi Color</option>
-      </select>
-    </div>
-    <div class="calc-total-bar">
-      <div>
-        <div class="field-label" style="margin:0">Calculated Line Total</div>
-        <div id="cm-spec-preview" style="font-size:11px;color:#666;margin-top:2px">—</div>
-      </div>
-      <div style="font-family:'Playfair Display',serif;font-size:24px" id="cm-total-preview">0 EGP</div>
-    </div>
+    <div id="invCalcHost"></div>
     <div class="modal-actions">
       <button class="modal-btn outline" id="cancel-calc-modal">Cancel</button>
       <button class="modal-btn" id="apply-calc-modal">Add to Invoice</button>
@@ -1759,96 +1599,26 @@ function renderDesignGrid(designs) {
 /* ══════════════════════════════════════════════════
    CALCULATOR MODAL + SERVICES BAR + QUOTE IMPORT
 ══════════════════════════════════════════════════ */
-function syncCalcModal() {
-  if (!E) return;
-  const S = E.get();
-  const mat = document.getElementById('cm-material').value;
-  const isGold = mat === 'gold';
-  const isTi = mat === 'titanium';
-  const noStones = !E.allowsStones(mat);
-  document.getElementById('cm-gold-wrap').style.display = isGold ? '' : 'none';
-  document.getElementById('cm-ano-wrap').style.display = isTi ? '' : 'none';
+let INVOICE_CALC = null;
 
-  const smEl = document.getElementById('cm-stones');
-  if (noStones) { smEl.value = 'none'; smEl.disabled = true; }
-  else { smEl.disabled = false; }
-  const mode = smEl.value;
-  document.getElementById('cm-accent-wrap').style.display = mode === 'accent' ? '' : 'none';
-  document.getElementById('cm-full-wrap').style.display = mode === 'full' ? '' : 'none';
-
-  const aType = document.getElementById('cm-atype').value;
-  const fType = document.getElementById('cm-ftype').value;
-  document.getElementById('cm-acustom-wrap').style.display = (mode === 'accent' && S.accentPrice[aType] === null) ? '' : 'none';
-  document.getElementById('cm-fcustom-wrap').style.display = (mode === 'full' && S.fullPrice[fType] === null) ? '' : 'none';
-
-  const line = readCalcModalLine();
-  const calc = E.calculateLine(line);
-  document.getElementById('cm-spec-preview').textContent = E.lineLabel(calc);
-  document.getElementById('cm-total-preview').textContent = fmt(calc.subtotal) + ' EGP';
-}
-
-function readCalcModalLine() {
-  const mat = document.getElementById('cm-material').value;
-  const noStones = !E.allowsStones(mat);
-  const mode = noStones ? 'none' : document.getElementById('cm-stones').value;
-  const gp = parseFloat(document.getElementById('cm-gold-rate').value) || 0;
-  const line = {
-    name: document.getElementById('cm-name').value.trim(),
-    material: mat,
-    karat: document.getElementById('cm-karat').value,
-    goldPrice: gp > 0 ? gp : undefined,
-    teeth: Math.max(1, Math.min(16, parseInt(document.getElementById('cm-teeth').value, 10) || 6)),
-    level: document.getElementById('cm-level').value,
-    plating: document.getElementById('cm-plating').value,
-    enamel: document.getElementById('cm-enamel').value,
-    engraving: document.getElementById('cm-engraving').value,
-    anodize: mat === 'titanium' ? document.getElementById('cm-anodize').value : 'none',
-  };
-  if (mode === 'accent') {
-    const cp = document.getElementById('cm-acustom').value;
-    line.accent = {
-      count: Math.max(1, parseInt(document.getElementById('cm-acount').value, 10) || 1),
-      type: document.getElementById('cm-atype').value,
-      setting: document.getElementById('cm-asetting').value,
-      customPrice: cp !== '' ? Number(cp) : undefined,
-    };
-  } else if (mode === 'full') {
-    const cp = document.getElementById('cm-fcustom').value;
-    line.full = {
-      type: document.getElementById('cm-ftype').value,
-      coverage: document.getElementById('cm-fcov').value,
-      customPrice: cp !== '' ? Number(cp) : undefined,
-    };
-  } else if (mode === 'bars') {
-    line.full = { bars: true };
-  }
-  return line;
+function ensureInvoiceCalc(){
+  if (INVOICE_CALC) return INVOICE_CALC;
+  const host = document.getElementById('invCalcHost');
+  if (!host || !window.StaffCalculator) return null;
+  INVOICE_CALC = window.StaffCalculator.mount(host, {
+    db: (window.firebase && firebase.apps && firebase.apps.length) ? firebase.firestore() : null,
+    designMode: true,
+    showApply: false,
+    applyLabel: 'Add to Invoice',
+    initialLines: []
+  });
+  return INVOICE_CALC;
 }
 
 function openCalcWithPreset(name, calc) {
-  const c = calc || {};
-  document.getElementById('cm-name').value = name || c.name || '';
-  document.getElementById('cm-material').value = c.material || 'chrome';
-  document.getElementById('cm-karat').value = c.karat || '18';
-  document.getElementById('cm-gold-rate').value = (E && E.get().goldPrice) || '';
-  document.getElementById('cm-teeth').value = c.teeth || 6;
-  document.getElementById('cm-level').value = String(c.level || '1');
-  document.getElementById('cm-plating').value = c.plating || 'none';
-  document.getElementById('cm-enamel').value = c.enamel || 'none';
-  document.getElementById('cm-engraving').value = c.engraving || 'none';
-  document.getElementById('cm-anodize').value = c.anodize || 'none';
-  const mode = c.accent ? 'accent' : (c.full && c.full.bars ? 'bars' : (c.full ? 'full' : 'none'));
-  document.getElementById('cm-stones').value = mode;
-  if (c.accent) {
-    document.getElementById('cm-acount').value = c.accent.count || 1;
-    document.getElementById('cm-atype').value = c.accent.type || 'cz';
-    document.getElementById('cm-asetting').value = c.accent.setting || 'flush';
-  }
-  if (c.full && !c.full.bars) {
-    document.getElementById('cm-ftype').value = c.full.type || 'moissanite';
-    document.getElementById('cm-fcov').value = c.full.coverage || 'standardpave';
-  }
-  syncCalcModal();
+  const inst = ensureInvoiceCalc();
+  if (!inst) { showToast('Calculator unavailable', 'error-toast'); return; }
+  inst.loadLine(calc || {}, name || (calc && calc.name) || '');
   document.getElementById('calc-modal').classList.add('open');
 }
 
@@ -1860,24 +1630,13 @@ function setupCalculatorModal() {
   document.getElementById('cancel-calc-modal').addEventListener('click', close);
   modal.addEventListener('click', e => { if (e.target === modal) close(); });
 
-  ['cm-material','cm-karat','cm-gold-rate','cm-teeth','cm-level','cm-stones',
-   'cm-acount','cm-atype','cm-asetting','cm-acustom','cm-ftype','cm-fcov','cm-fcustom',
-   'cm-plating','cm-enamel','cm-engraving','cm-anodize','cm-name'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', syncCalcModal);
-      el.addEventListener('change', syncCalcModal);
-    }
-  });
-
   document.getElementById('apply-calc-modal').addEventListener('click', () => {
-    const line = readCalcModalLine();
-    if (line.material === 'gold' && (!line.goldPrice || line.goldPrice <= 0)) {
-      showToast('Enter today\'s 24K gold rate (EGP/g)', 'error-toast');
-      return;
-    }
-    const calc = E.calculateLine(line);
-    const label = line.name || (E.LABELS.material[line.material] + ' Custom Grillz');
+    const inst = ensureInvoiceCalc();
+    if (!inst) return;
+    const read = inst.readLine();
+    if (read.error) { showToast(read.error, 'error-toast'); return; }
+    const calc = E.calculateLine(read.line);
+    const label = read.line.name || (E.LABELS.material[read.line.material] + ' Custom Grillz');
     addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal, line: calc });
     close();
     showToast('Custom grillz line added: ' + fmt(calc.subtotal) + ' EGP', 'success');
