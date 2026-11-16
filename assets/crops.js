@@ -2,32 +2,13 @@
  *  EGYGRILLZ — NON-DESTRUCTIVE IMAGE CROPS
  *  ---------------------------------------------------------------------------
  *  Every image the site shows can be re-framed from /editx without touching
- *  the file itself: the studio drags/zooms a preview and we store the numbers.
- *  The full-original file stays untouched, so a crop can be changed or thrown
- *  away at any time.
+ *  the file itself: the studio drags/zooms a preview and we store the numbers
+ *  in Firestore  settings/crops → { items: [ { slot, x, y, zoom } ] }.
  *
- *  Crops are stored per *placement*, so the same photo can be framed one way
- *  as a page hero, another way as a home banner, and a third way as a design
- *  card:
- *
- *      settings/crops → { items: [
- *          { slot: "hero:index",              x: 50, y: 42, zoom: 1.15 },
- *          { slot: "banner:golds",            x: 50, y: 50, zoom: 1.00 },
- *          { slot: "card:golds/golds12",            x: 44, y: 50, zoom: 1.20 },  // every photo
- *          { slot: "card:golds/golds12::000001.jpg", x: 60, y: 50, zoom: 1.00 }   // one photo
- *      ] }
- *
- *  How an element is matched:
- *    1. closest [data-crop="slot"]   → that slot (heroes, banners, anything
- *                                      the page marks explicitly)
- *    2. an image that belongs to a design → "card:<category>/<folder>" or,
- *       when a per-photo entry exists, "card:<category>/<folder>::<file>"
- *    3. anything else (modals, logos, …) is left alone
- *
- *  The rendering rule is shared with the /editx editor through
- *  Crops.applyStyles(), so the preview is exactly what visitors get.
+ *  Backed by a 10-minute localStorage cache, stale fallback, and shared 429
+ *  quota cooldown so visitor page views never burn through Firestore quota.
  * ═══════════════════════════════════════════════════════════════════════════ */
-(function () {
+(function (global) {
   'use strict';
 
   var PROJECT = 'egygrillz-studio';
@@ -35,17 +16,24 @@
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
     '/databases/(default)/documents/settings/crops?key=' + API_KEY;
   var CACHE_KEY = 'egygz_crops_v1';
-  /* Firestore's free plan allows 50,000 reads a day and stops answering when
-     they are gone, so a visitor re-reads this document at most every 10 min.
-     /editx clears the copy in its own browser after saving, so the studio
-     always sees its change immediately. */
-  var CACHE_TTL = 10 * 60 * 1000;
+  var QUOTA_KEY = 'egygz_fs_quota_until_v1';
+  var CACHE_TTL = 30 * 60 * 1000;
+  var QUOTA_COOLDOWN = 15 * 60 * 1000;
+  var TIMEOUT = 4000;
   var SKIP = '.modal-slide, .modal, [data-crop="off"]';
 
   var map = {};                   // slot → { x, y, zoom }
-  var pathIndex = null;           // normalised image path → design folder
+  var pathIndex = null;           // normalised image path → [primaryKey, legacyKey?]
+  var pathPromise = null;
   var started = false;
   var ready = null;
+
+  function isQuotaCooling() {
+    try { return Number(localStorage.getItem(QUOTA_KEY) || 0) > Date.now(); } catch (e) { return false; }
+  }
+  function markQuotaHit() {
+    try { localStorage.setItem(QUOTA_KEY, String(Date.now() + QUOTA_COOLDOWN)); } catch (e) {}
+  }
 
   /* ── paths ─────────────────────────────────────────────────────────── */
 
@@ -55,6 +43,7 @@
     s = s.split('#')[0].split('?')[0];
     s = s.replace(/^https?:\/\/[^/]+/i, '');
     s = s.replace(/^\.?\//, '');
+    try { s = decodeURIComponent(s); } catch (e) {}
     return s;
   }
 
@@ -104,13 +93,14 @@
     });
   }
 
-  function readCache() {
+  function readCache(allowStale) {
     try {
       var raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       var o = JSON.parse(raw);
-      if (!o || !o.at || Date.now() - o.at > CACHE_TTL) return null;
-      return Array.isArray(o.items) ? o.items : null;
+      if (!o || !o.at || !Array.isArray(o.items)) return null;
+      if (!allowStale && (Date.now() - o.at > CACHE_TTL)) return null;
+      return o.items;
     } catch (e) { return null; }
   }
 
@@ -118,26 +108,42 @@
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ items: items, at: Date.now() })); } catch (e) {}
   }
 
-  function load() {
-    if (ready) return ready;
-    var cached = readCache();
-    if (cached) {
-      indexItems(cached);
+  function load(force) {
+    if (!force && ready) return ready;
+    if (!force) {
+      var cached = readCache(false);
+      if (cached) {
+        indexItems(cached);
+        ready = Promise.resolve(map);
+        return ready;
+      }
+    }
+    var stale = readCache(true);
+    if (stale) indexItems(stale);
+    if (!force && isQuotaCooling()) {
       ready = Promise.resolve(map);
       return ready;
     }
+
     ready = new Promise(function (resolve) {
-      if (!window.fetch) { resolve(map); return; }
-      var timer = setTimeout(function () { resolve(map); }, 2500);
-      window.fetch(DOC_URL, { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : null; })
+      if (!global.fetch) { resolve(map); return; }
+      var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+      var timer = setTimeout(function () {
+        if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+      }, TIMEOUT);
+
+      global.fetch(DOC_URL, ctrl ? { signal: ctrl.signal } : undefined)
+        .then(function (r) {
+          if (r.status === 429) { markQuotaHit(); return null; }
+          if (r.status === 404) { writeCache([]); indexItems([]); return { __empty: true }; }
+          return r.ok ? r.json() : null;
+        })
         .then(function (doc) {
-          var items = doc && doc.fields && doc.fields.items
-            ? (val(doc.fields.items) || [])
-            : [];
+          clearTimeout(timer);
+          if (!doc || doc.__empty) { resolve(map); return; }
+          var items = doc.fields && doc.fields.items ? (val(doc.fields.items) || []) : [];
           indexItems(items);
           writeCache(items);
-          clearTimeout(timer);
           resolve(map);
         })
         .catch(function () { clearTimeout(timer); resolve(map); });
@@ -147,47 +153,63 @@
 
   /* ── design index (for "card:" slots) ─────────────────────────────── */
 
+  function designKeysForItem(item) {
+    var cat = item.catFolder || item.category || item.page || 'sets';
+    var folder = item.folder || item.id || '';
+    var id = item.id || folder;
+    if (!folder && !id) return [];
+    /* grillz-gallery seed items all share folder "000001"; give each item its own
+       unique key grillz-gallery/<id>, while keeping legacy grillz-gallery/000001
+       and grillz-gallery/<fileNoExt> as fallbacks. */
+    if (cat === 'grillz-gallery' && folder === '000001' && id) {
+      return [cat + '/' + id, cat + '/' + folder];
+    }
+    var primary = cat + '/' + folder;
+    return (id && id !== folder) ? [primary, cat + '/' + id] : [primary];
+  }
+
   function buildPathIndex() {
     if (pathIndex) return Promise.resolve(pathIndex);
-    pathIndex = {};
-    /* the live catalogue when /assets/catalog.js is on the page (so designs
-       saved in /editx get their crops too), otherwise the seed file */
-    var source = (window.Catalog && typeof window.Catalog.load === 'function')
-      ? window.Catalog.load()
-      : fetch('assets/images/catalog.json').then(function (r) { return r.ok ? r.json() : []; });
-    return source
+    if (pathPromise) return pathPromise;
+    var source = (global.Catalog && typeof global.Catalog.load === 'function')
+      ? global.Catalog.load()
+      : (global.fetch
+          ? global.fetch('/assets/images/catalog.json').then(function (r) { return r.ok ? r.json() : []; })
+          : Promise.resolve([]));
+    pathPromise = source
       .then(function (all) {
+        var idx = {};
         (Array.isArray(all) ? all : []).forEach(function (item) {
-          var cat = item.category || item.page || 'sets';
+          var cat = item.catFolder || item.category || item.page || 'sets';
           var folder = item.folder || item.id || '';
-          if (!folder) return;
-          var key = cat + '/' + folder;
+          var keys = designKeysForItem(item);
+          if (!keys.length) return;
           (item.images || []).forEach(function (f) {
             if (!f) return;
-            /* the pages address the same photo three ways depending on the
-               section: category/folder/file, category/file (gallery) or
-               folder/file — index all of them */
-            pathIndex[normPath('assets/images/' + cat + '/' + folder + '/' + f)] = key;
-            pathIndex[normPath('assets/images/' + cat + '/' + f)] = key;
-            pathIndex[normPath('assets/images/' + folder + '/' + f)] = key;
+            var fileNoExt = fileOf(f).replace(/\.[^.]+$/, '');
+            var entryKeys = keys.slice();
+            if (fileNoExt && entryKeys.indexOf(cat + '/' + fileNoExt) === -1) {
+              entryKeys.push(cat + '/' + fileNoExt);
+            }
+            if (/^https?:\/\//i.test(f) || f.charAt(0) === '/') {
+              idx[normPath(f)] = entryKeys;
+              return;
+            }
+            if (folder) idx[normPath('assets/images/' + cat + '/' + folder + '/' + f)] = entryKeys;
+            idx[normPath('assets/images/' + cat + '/' + f)] = entryKeys;
+            if (folder) idx[normPath('assets/images/' + folder + '/' + f)] = entryKeys;
           });
         });
-        return pathIndex;
+        pathIndex = idx;
+        pathPromise = null;
+        return idx;
       })
-      .catch(function () { return pathIndex; });
+      .catch(function () { pathIndex = pathIndex || {}; pathPromise = null; return pathIndex; });
+    return pathPromise;
   }
 
   /* ── rendering ────────────────────────────────────────────────────── */
 
-  /**
-   * Apply one crop to one element. Shared with /editx, so the editor preview
-   * and the live page are always identical.
-   *
-   * object-position moves the visible window inside the image; the box is
-   * scaled up for the zoom and offset so the pan stays anchored. Nothing is
-   * written to the file and no transform is used — the card/hero hover
-   * effects keep working.
-   */
   function applyStyles(img, crop) {
     if (!img || !img.style) return;
     var st = img.style;
@@ -222,10 +244,6 @@
     }
   }
 
-  function hasPhotoCrop(slot) {
-    return !!map[slot];
-  }
-
   /** which slot does this <img> belong to? '' when it is not croppable */
   function slotFor(img) {
     if (!img || img.tagName !== 'IMG') return '';
@@ -236,36 +254,42 @@
       return s && s !== 'off' ? s : '';
     }
     var path = normPath(img.currentSrc || img.src || '');
-    var folder = pathIndex && pathIndex[path];
-    if (!folder) return '';
-    var perPhoto = 'card:' + folder + '::' + fileOf(path);
-    return hasPhotoCrop(perPhoto) ? perPhoto : 'card:' + folder;
+    var keys = pathIndex && pathIndex[path];
+    if (!keys || !keys.length) return '';
+    var list = Array.isArray(keys) ? keys : [keys];
+    var file = fileOf(path);
+    for (var i = 0; i < list.length; i++) {
+      var perPhoto = 'card:' + list[i] + '::' + file;
+      if (map[perPhoto]) return perPhoto;
+      var whole = 'card:' + list[i];
+      if (map[whole]) return whole;
+    }
+    return 'card:' + list[0];
   }
 
   function apply(img) {
     if (!img || img.tagName !== 'IMG') return;
     var slot = slotFor(img);
     if (!slot) return;
-    if (!img.getAttribute('data-crop-slot')) img.setAttribute('data-crop-slot', slot);
+    img.setAttribute('data-crop-slot', slot);
     applyStyles(img, map[slot]);
   }
 
   function applyAll(root) {
+    if (typeof document === 'undefined') return;
     var scope = root && root.querySelectorAll ? root : document;
     scope.querySelectorAll('img').forEach(apply);
   }
 
   function observe() {
-    if (typeof MutationObserver !== 'function' || !document.body) return;
+    if (typeof MutationObserver !== 'function' || typeof document === 'undefined' || !document.body) return;
     var obs = new MutationObserver(function (records) {
+      if (!Object.keys(map).length) return;
       records.forEach(function (rec) {
         (rec.addedNodes || []).forEach(function (node) {
           if (!node || node.nodeType !== 1) return;
           if (node.tagName === 'IMG') apply(node);
-          else if (node.querySelectorAll) {
-            node.querySelectorAll('img').forEach(apply);
-            if (node.tagName === 'IMG') apply(node);
-          }
+          else if (node.querySelectorAll) node.querySelectorAll('img').forEach(apply);
         });
       });
     });
@@ -273,36 +297,56 @@
   }
 
   function boot() {
-    if (started) return;
+    if (started || typeof document === 'undefined') return;
     started = true;
     observe();
-    load()
-      .then(buildPathIndex)
-      .then(function () {
-        applyAll(document);
-        /* late images (slideshows, lazy strips) are caught by the observer,
-           but one more pass after the page settles helps the tall galleries */
-        setTimeout(function () { applyAll(document); }, 800);
-        setTimeout(function () { applyAll(document); }, 2500);
-      });
+    load().then(function () {
+      /* Skip building the catalog path index if no card: crops exist at all */
+      var hasCardCrop = Object.keys(map).some(function (k) { return k.indexOf('card:') === 0; });
+      if (!hasCardCrop) {
+        if (Object.keys(map).length) applyAll(document);
+        return;
+      }
+      return buildPathIndex().then(function () { applyAll(document); });
+    });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
   }
 
-  window.Crops = {
+  global.Crops = {
     load: load,
     get: function (slot) { return map[slot] || null; },
     all: function () { return Object.assign({}, map); },
-    index: function (items) { indexItems(items); applyAll(document); },
+    index: function (items) {
+      indexItems(items);
+      buildPathIndex().then(function () { applyAll(typeof document !== 'undefined' ? document : null); });
+    },
     apply: apply,
     applyAll: applyAll,
     applyStyles: applyStyles,
     slotFor: slotFor,
     normPath: normPath,
-    refresh: function () { try { localStorage.removeItem(CACHE_KEY); } catch (e) {} ready = null; }
+    designKey: function (item) { return designKeysForItem(item)[0] || ''; },
+    refresh: function () {
+      try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+      ready = null;
+      pathIndex = null;
+    },
+    invalidate: function () {
+      try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+      ready = null;
+      pathIndex = null;
+    },
+    clearCache: function () {
+      try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+      ready = null;
+      pathIndex = null;
+    }
   };
-})();
+})(typeof globalThis !== 'undefined' ? globalThis : window);

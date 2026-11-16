@@ -113,6 +113,7 @@
     <nav class="main-nav">
       <a href="/">Home</a>
       <a href="latest-designs">Latest</a>
+      <a href="calculator">Calculator</a>
       <a href="booking">Schedule</a>
       <a href="grillz-gallery">Gallery</a>
       <a href="golds">Golds</a>
@@ -259,13 +260,18 @@
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelector('.main-nav').classList.remove('active');
+        document.body.classList.remove('menu-open');
+      }
+    });
   </script>
   <script>
     /* Sync timeline percentages dynamically from CalcEngine / Firestore settings */
     (function(){
-      var SRC = 'assets/calc-engine.js?v=2';
       var s = document.createElement('script');
-      s.src = SRC;
+      s.src = '/assets/calc-engine.js?v=4';
       function paint(){
         try {
           var E = window.CalcEngine;
@@ -283,10 +289,9 @@
         paint();
         try {
           var E = window.CalcEngine;
-          if (E && E.fetchSettingsRest) {
-            E.fetchSettingsRest().then(paint).catch(function(){});
-          } else if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && E && E.load) {
-            E.load(firebase.firestore()).then(paint).catch(function(){});
+          if (E && typeof E.load === 'function') {
+            var dbInst = (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) ? firebase.firestore() : null;
+            E.load(dbInst).then(paint).catch(function(){});
           }
         } catch(e){ console.warn('timeline numbers', e); }
       };

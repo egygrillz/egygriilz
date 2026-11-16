@@ -10,21 +10,10 @@
  *  or a “which page is this design on?” change made in /editx shows up in
  *  seconds — no GitHub token, no redeploy.
  *
- *  Shape written by /editx:
- *      { items: [ …catalogue entries… ], deleted: ["id", …], updatedAt: "…" }
- *      items    overlay: same id → that entry wins, new id → appended
- *      deleted  tombstones: a design removed in /editx stays removed even
- *               though it is still inside the seed file
- *
- *  If Firestore is unreachable the seed file is served untouched, so the site
- *  can never be blocked by this script.
- *
- *  Load it BEFORE the page's own scripts, after /assets/set-visibility.js:
- *      <script src="/assets/set-visibility.js?v=2"></script>
- *      <script src="/assets/catalog.js?v=1"></script>
- *  …then  await Catalog.load()  → array of designs.
+ *  If Firestore is unreachable or rate-limited, the cached overlay (or the
+ *  seed file untouched) is served immediately so the site is never blocked.
  * ═══════════════════════════════════════════════════════════════════════════ */
-(function () {
+(function (global) {
   'use strict';
 
   var PROJECT = 'egygrillz-studio';
@@ -32,21 +21,41 @@
   var API_KEY = 'AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk';
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
     '/databases/(default)/documents/settings/catalog?key=' + API_KEY;
-  var SEED = 'assets/images/catalog.json';
-  var TTL = 15 * 1000;          // one page view, several sections
-  var TIMEOUT = 2500;           // never stall the grid on a slow database
-  /* Firestore's free plan stops answering after 50,000 reads a day, so the
-     saved copy of the overlay is reused for 10 minutes — browsing five pages
-     costs one read instead of five. /editx clears it after every save. */
+  var SEED = '/assets/images/catalog.json';
+  var TTL = 60 * 1000;                  // in-memory reuse across sections on same page
+  var TIMEOUT = 5000;                   // never stall the grid on a slow database
   var OVERLAY_KEY = 'egygz_catalog_overlay_v1';
-  var OVERLAY_TTL = 10 * 60 * 1000;
+  var SEED_SESSION_KEY = 'egygz_catalog_seed_v1';
+  var QUOTA_KEY = 'egygz_fs_quota_until_v1';
+  var OVERLAY_TTL = 30 * 60 * 1000;     // 30 min reuse to protect free 50k/day quota
+  var QUOTA_COOLDOWN = 15 * 60 * 1000;  // 15 min backoff after HTTP 429
 
-  var cache = null;             // last merged list
+  var cache = null;
   var cachedAt = 0;
+  var seedMem = null;
   var inflight = null;
 
+  function isQuotaCooling() {
+    try {
+      var until = Number(localStorage.getItem(QUOTA_KEY) || 0);
+      return until > Date.now();
+    } catch (e) { return false; }
+  }
+
+  function markQuotaHit() {
+    try { localStorage.setItem(QUOTA_KEY, String(Date.now() + QUOTA_COOLDOWN)); } catch (e) {}
+  }
+
+  function fetchWithTimeout(url, opts, ms) {
+    if (!global.fetch) return Promise.reject(new Error('no-fetch'));
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) { try { ctrl.abort(); } catch (e) {} } }, ms || TIMEOUT);
+    var init = Object.assign({}, opts || {});
+    if (ctrl) init.signal = ctrl.signal;
+    return global.fetch(url, init).finally(function () { clearTimeout(timer); });
+  }
+
   /* ── Firestore REST → plain JS ─────────────────────────────────────────── */
-  /* a single Firestore *value* */
   function decodeValue(value) {
     if (!value || typeof value !== 'object') return null;
     if ('nullValue' in value) return null;
@@ -60,7 +69,6 @@
     return null;
   }
 
-  /* a Firestore *field map* (the `fields` object of a document or a mapValue) */
   function decodeFields(fields) {
     var out = {};
     Object.keys(fields || {}).forEach(function (k) { out[k] = decodeValue(fields[k]); });
@@ -68,18 +76,42 @@
   }
 
   /* ── sources ───────────────────────────────────────────────────────────── */
-  function readSeed() {
-    return fetch(SEED + '?t=' + Date.now())
+  function readSeed(force) {
+    if (!force && Array.isArray(seedMem)) return Promise.resolve(seedMem);
+    if (!force) {
+      try {
+        var raw = sessionStorage.getItem(SEED_SESSION_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length) {
+            seedMem = parsed;
+            return Promise.resolve(parsed);
+          }
+        }
+      } catch (e) {}
+    }
+    var url = force ? (SEED + '?v=' + Date.now()) : SEED;
+    return fetchWithTimeout(url, force ? { cache: 'no-cache' } : undefined, 8000)
       .then(function (r) { return r.ok ? r.json() : []; })
-      .then(function (j) { return Array.isArray(j) ? j : []; })
-      .catch(function () { return []; });
+      .then(function (j) {
+        var arr = Array.isArray(j) ? j : [];
+        if (arr.length) {
+          seedMem = arr;
+          try { sessionStorage.setItem(SEED_SESSION_KEY, JSON.stringify(arr)); } catch (e) {}
+        }
+        return arr;
+      })
+      .catch(function () {
+        if (Array.isArray(seedMem)) return seedMem;
+        return [];
+      });
   }
 
-  function readOverlayCache() {
+  function readOverlayCache(allowStale) {
     try {
       var o = JSON.parse(localStorage.getItem(OVERLAY_KEY) || 'null');
       if (!o || !Array.isArray(o.items) || !o.at) return null;
-      if (Date.now() - o.at > OVERLAY_TTL) return null;
+      if (!allowStale && (Date.now() - o.at > OVERLAY_TTL)) return null;
       return { items: o.items, deleted: Array.isArray(o.deleted) ? o.deleted : [] };
     } catch (e) { return null; }
   }
@@ -89,22 +121,28 @@
       localStorage.setItem(OVERLAY_KEY, JSON.stringify({
         at: Date.now(), items: overlay.items, deleted: overlay.deleted,
       }));
-    } catch (e) { /* quota / private mode — cost nothing */ }
+    } catch (e) {}
   }
 
-  function readOverlay() {
+  function readOverlay(force) {
     var empty = { items: [], deleted: [] };
-    var saved = readOverlayCache();
-    if (saved) return Promise.resolve(saved);
-    if (!window.fetch) return Promise.resolve(empty);
-    var timer;
-    var slow = new Promise(function (resolve) {
-      timer = setTimeout(function () { resolve(empty); }, TIMEOUT);
-    });
-    var real = fetch(DOC_URL)
-      .then(function (r) { return r.ok ? r.json() : null; })
+    if (!force) {
+      var saved = readOverlayCache(false);
+      if (saved) return Promise.resolve(saved);
+    }
+    var stale = readOverlayCache(true);
+    if (!force && isQuotaCooling()) return Promise.resolve(stale || empty);
+    if (!global.fetch) return Promise.resolve(stale || empty);
+
+    return fetchWithTimeout(DOC_URL, undefined, TIMEOUT)
+      .then(function (r) {
+        if (r.status === 429) { markQuotaHit(); return null; }
+        if (r.status === 404) { writeOverlayCache(empty); return { __empty: true }; }
+        return r.ok ? r.json() : null;
+      })
       .then(function (doc) {
-        if (!doc) return empty;
+        if (!doc) return stale || empty;
+        if (doc.__empty) return empty;
         var data = decodeFields(doc.fields || {});
         var overlay = {
           items: Array.isArray(data.items) ? data.items : [],
@@ -113,8 +151,7 @@
         writeOverlayCache(overlay);
         return overlay;
       })
-      .catch(function () { return empty; });
-    return Promise.race([real, slow]).then(function (v) { clearTimeout(timer); return v || empty; });
+      .catch(function () { return stale || empty; });
   }
 
   /* ── merge ─────────────────────────────────────────────────────────────── */
@@ -137,11 +174,25 @@
       .map(function (id) { return byId[id]; });
   }
 
-  /* designs the studio hid in /editx must stay hidden, even when they come
-     from the Firestore overlay (the seed file is filtered by set-visibility,
-     the overlay is not) */
+  /** Resolve a design image/video path across standard folders, grillz-gallery, and uploaded URLs */
+  function mediaPath(item, file) {
+    var f = String(file || '').trim();
+    if (!f) return '';
+    if (/^(https?:|data:|blob:|\/)/i.test(f)) return f;
+    if (/^assets\//i.test(f)) return f;
+    var cat = String((item && (item.catFolder || item.category || item.page)) || 'sets').trim();
+    var folder = String((item && (item.folder || item.id)) || '').trim();
+    /* grillz-gallery seed items live directly under assets/images/grillz-gallery/<file>
+       and all share folder "000001"; new gallery items added in /editx get their own folder */
+    if (cat === 'grillz-gallery' && (!folder || folder === '000001')) {
+      return 'assets/images/grillz-gallery/' + f;
+    }
+    if (!folder) return 'assets/images/' + cat + '/' + f;
+    return 'assets/images/' + cat + '/' + folder + '/' + f;
+  }
+
   function applyVisibility(list) {
-    var vis = window.EGYGZ && window.EGYGZ.visibility;
+    var vis = global.EGYGZ && global.EGYGZ.visibility;
     if (!vis || typeof vis.filter !== 'function') return Promise.resolve(list);
     return vis.filter(list).catch(function () { return list; });
   }
@@ -149,29 +200,66 @@
   function load(force) {
     var now = Date.now();
     if (!force && cache && (now - cachedAt) < TTL) return Promise.resolve(cache);
-    if (inflight) return inflight;
-    inflight = Promise.all([readSeed(), readOverlay()])
+    if (!force && inflight) return inflight;
+    var p = Promise.all([readSeed(!!force), readOverlay(!!force)])
       .then(function (r) { return applyVisibility(merge(r[0], r[1])); })
       .catch(function () { return cache || []; })
       .then(function (list) {
-        inflight = null;
-        if (list) { cache = list; cachedAt = Date.now(); }
+        if (inflight === p) inflight = null;
+        if (Array.isArray(list)) { cache = list; cachedAt = Date.now(); }
         return cache || [];
       });
-    return inflight;
+    inflight = p;
+    return p;
   }
 
-  window.Catalog = {
-    seedUrl: SEED,
-    /** Promise<design[]> — seed file merged with everything saved in /editx */
+  /**
+   * Public price display helper respecting per-design `showPrice` (Yes / No) set in /editx.
+   * When `item.showPrice === false` (No), always shows "Contact for Quotation" → /contact.
+   */
+  function priceInfo(item, opts) {
+    var o = opts || {};
+    var name = String((item && (item.name || item.id)) || '').trim();
+    var href = '/contact' + (name ? ('?design=' + encodeURIComponent(name)) : '');
+    if (!item || item.showPrice === false) {
+      return { show: false, isQuote: true, text: 'Contact for Quotation', href: href };
+    }
+    var raw = String(item.price || '').trim();
+    if (raw) {
+      if (/contact|quot|inquir|upon request|ask|dm/i.test(raw)) {
+        return { show: false, isQuote: true, text: 'Contact for Quotation', href: href };
+      }
+      var num = parseFloat(raw.replace(/[^0-9.]/g, ''));
+      if (Number.isFinite(num) && num > 0) {
+        var curMatch = raw.match(/\b(EGP|USD|EUR|GBP|AED|SAR)\b/i);
+        var cur = curMatch ? curMatch[1].toUpperCase() : 'EGP';
+        var formatted = Math.round(num).toLocaleString('en-US') + ' ' + cur;
+        return { show: true, isQuote: false, text: formatted, href: href };
+      }
+    }
+    if (o.fallbackQuote) {
+      return { show: false, isQuote: true, text: 'Contact for Quotation', href: href };
+    }
+    return { show: false, isQuote: false, text: '', href: href };
+  }
+
+  global.Catalog = {
+    seedUrl: 'assets/images/catalog.json',
     load: load,
-    /** the merge rule, exposed for tools that already have both halves */
     merge: merge,
-    /** forget the saved overlay — /editx calls this after a save */
+    mediaPath: mediaPath,
+    priceInfo: priceInfo,
+    invalidate: function (force) {
+      try { localStorage.removeItem(OVERLAY_KEY); } catch (e) {}
+      try { sessionStorage.removeItem(SEED_SESSION_KEY); } catch (e) {}
+      cache = null; cachedAt = 0; seedMem = null;
+      if (force !== false) inflight = null;
+    },
     clearCache: function (force) {
       try { localStorage.removeItem(OVERLAY_KEY); } catch (e) {}
-      cache = null; cachedAt = 0;
-      if (force) inflight = null;
+      try { sessionStorage.removeItem(SEED_SESSION_KEY); } catch (e) {}
+      cache = null; cachedAt = 0; seedMem = null;
+      if (force !== false) inflight = null;
     },
   };
-})();
+})(typeof globalThis !== 'undefined' ? globalThis : window);

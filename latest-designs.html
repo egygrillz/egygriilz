@@ -130,7 +130,10 @@
 
     .spread-kicker { font-size:8px; letter-spacing:5px; text-transform:uppercase; color:var(--grey); margin-bottom:16px; }
     .spread-title { font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(26px,3.5vw,52px); line-height:1.05; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
-    .spread-price { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--grey); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:8px 0; margin:16px 0; }
+    .spread-price { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--grey); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:8px 0; margin:14px 0; text-decoration:none; transition:opacity .2s; }
+    a.spread-price:hover { opacity:0.65; }
+    .lb-price { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.88); border-top:1px solid rgba(255,255,255,0.28); border-bottom:1px solid rgba(255,255,255,0.28); padding:8px 0; margin:0 0 16px; text-decoration:none; transition:opacity .2s; }
+    a.lb-price:hover { opacity:0.7; }
     .spread-desc { font-size:13px; line-height:1.9; color:#444; max-width:420px; }
 
     /* LAYOUT A */
@@ -269,9 +272,9 @@
     .page-hero[hidden] { display:none; }
   </style>
   <link rel="canonical" href="https://egygrillz.com/latest-designs">
-  <script src="/assets/set-visibility.js?v=2"></script>
-  <script src="/assets/catalog.js?v=1"></script>
-  <script src="/assets/crops.js?v=1"></script>
+  <script src="/assets/set-visibility.js?v=3"></script>
+  <script src="/assets/catalog.js?v=4"></script>
+  <script src="/assets/crops.js?v=3"></script>
 </head>
 <body>
 
@@ -287,6 +290,7 @@
     <nav class="main-nav">
       <a href="/">Home</a>
       <a href="latest-designs" class="nav-active">Latest</a>
+      <a href="calculator">Calculator</a>
       <a href="booking">Schedule</a>
       <a href="grillz-gallery">Gallery</a>
       <a href="golds">Golds</a>
@@ -394,19 +398,33 @@
     });
 
     /* ── Lightbox ── */
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
     const lightbox  = document.getElementById('lightbox');
     const lbContent = document.getElementById('lb-content');
     document.getElementById('lb-close').addEventListener('click', closeLB);
     lightbox.addEventListener('click', e => { if(e.target===lightbox) closeLB(); });
-    document.addEventListener('keydown', e => { if(e.key==='Escape') closeLB(); });
-    function openLB(src, vid) {
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        if (lightbox.classList.contains('open')) closeLB();
+        else {
+          document.querySelector('.main-nav').classList.remove('active');
+          document.body.classList.remove('menu-open');
+        }
+      }
+    });
+    function openLB(src, vid, alt) {
       lbContent.innerHTML = vid
-        ? `<video src="${src}" autoplay loop muted playsinline></video>`
-        : `<img src="${src}" alt="" loading="lazy" decoding="async">`;
+        ? `<video src="${esc(src)}" autoplay loop muted playsinline controls></video>`
+        : `<img src="${esc(src)}" alt="${esc(alt||'EGYGRILLZ')}" decoding="async">`;
       lightbox.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
     function closeLB() {
+      lbContent.querySelectorAll('video').forEach(v => { try { v.pause(); v.removeAttribute('src'); } catch(e){} });
       lightbox.classList.remove('open');
       lbContent.innerHTML = '';
       document.body.style.overflow = '';
@@ -420,10 +438,14 @@
           revealObs.unobserve(e.target);
         }
         if(e.target.tagName==='VIDEO') {
-          e.isIntersecting ? e.target.play().catch(()=>{}) : e.target.pause();
+          (e.isIntersecting && !document.hidden) ? e.target.play().catch(()=>{}) : e.target.pause();
         }
       });
     }, { threshold:0.06, rootMargin:'0px 0px -40px 0px' });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) document.querySelectorAll('video').forEach(v => { try { v.pause(); } catch(e){} });
+    });
 
     const lazyObs = new IntersectionObserver(entries => {
       entries.forEach(e => {
@@ -433,38 +455,16 @@
           lazyObs.unobserve(e.target);
         }
       });
-    }, { rootMargin:'400px' });
+    }, { rootMargin:'300px' });
 
-    function parseInfo(text) {
-      const info = { name:'', price:'', desc:'', images:[] };
-      text.split('\n').forEach(line => {
-        const ci = line.indexOf(':'); if(ci===-1) return;
-        const k = line.slice(0,ci).trim().toLowerCase();
-        const v = line.slice(ci+1).trim();
-        if(k==='name'||k==='title') info.name=v;
-        else if(k==='price') info.price=v;
-        else if(k==='description'||k==='desc') info.desc=v;
-        else if(k==='images') info.images=v.split(',').map(s=>s.trim()).filter(Boolean);
-      });
-      return info;
-    }
+    function isVid(f) { return /\.(mp4|mov|webm|ogg|avi|m4v)$/i.test(String(f||'')); }
 
-    function isVid(f) { return /\.(mp4|mov|webm|avi|m4v)$/i.test(f); }
-
-    /* Media path inside each design's category folder */
     function mediaPath(item, file){
+      if (window.Catalog && typeof window.Catalog.mediaPath === 'function') return window.Catalog.mediaPath(item, file);
       return 'assets/images/' + (item.category || 'latest-designs') + '/' + (item.folder || item.id) + '/' + file;
     }
 
-    /** assets/images/latest-designs/<folder>/<file> -> <folder> */
-    function folderOf(src) {
-      const parts = String(src).split('/');
-      return parts.length >= 2 ? parts[parts.length - 2] : '';
-    }
-
-    function thumbOf(u){ return u; }
-
-    function makeMedia(src, alt, click) {
+    function makeMedia(src, alt, click, itemKey, eager) {
       const box = document.createElement('div');
       box.className = 'media-box';
 
@@ -479,7 +479,9 @@
         wrap.appendChild(v);
 
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'mute-btn';
+        btn.setAttribute('aria-label', 'Toggle sound');
         btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
         btn.addEventListener('click', ev => {
           ev.stopPropagation();
@@ -493,7 +495,9 @@
         revealObs.observe(v);
       } else {
         const img = document.createElement('img');
-        img.src = src; img.alt = alt||''; img.loading = 'lazy';
+        img.src = src; img.alt = alt || 'EGYGRILLZ';
+        img.loading = eager ? 'eager' : 'lazy';
+        if (eager) img.fetchPriority = 'high';
         img.decoding = 'async';
         box.appendChild(img);
       }
@@ -501,20 +505,30 @@
       if(click) {
         box.style.cursor = 'pointer';
         box.addEventListener('click', () => {
-          if (!isVid(src) && !WANTED) {
-            window.location.href = 'latest-designs?item=' + encodeURIComponent(folderOf(src));
+          if (!isVid(src) && !WANTED && itemKey) {
+            window.location.href = 'latest-designs?item=' + encodeURIComponent(itemKey);
             return;
           }
-          openLB(src, isVid(src));
+          openLB(src, isVid(src), alt);
         });
       }
       return box;
     }
 
-    function buildA(d, folder) {
+    function spreadPriceHtml(item, dark) {
+      const cls = dark ? 'lb-price' : 'spread-price';
+      const pi = (window.Catalog && typeof window.Catalog.priceInfo === 'function')
+        ? window.Catalog.priceInfo(item, { fallbackQuote: true })
+        : { show: !!(item && item.showPrice !== false && item.price), isQuote: !(item && item.showPrice !== false && item.price), text: (item && item.showPrice !== false && item.price) || 'Contact for Quotation', href: '/contact' };
+      if (pi.show) return `<div class="${cls}">${esc(pi.text)}</div>`;
+      if (pi.isQuote) return `<a class="${cls}" href="${esc(pi.href)}">${esc(pi.text)} →</a>`;
+      return '';
+    }
+
+    function buildA(d, itemKey, isFirst) {
       const row = document.createElement('div');
       row.className = 'la';
-      const hero = makeMedia(d.images[0], d.name, true);
+      const hero = makeMedia(d.images[0], d.name, true, itemKey, isFirst);
       hero.classList.add('la-hero');
       row.appendChild(hero);
       const right = document.createElement('div');
@@ -522,14 +536,15 @@
       const txt = document.createElement('div');
       txt.innerHTML = `
         <div class="spread-kicker">New Arrival</div>
-        <div class="spread-title">${d.name}</div>
-        ${d.desc?`<div class="spread-desc">${d.desc}</div>`:''}`;
+        <div class="spread-title">${esc(d.name)}</div>
+        ${spreadPriceHtml(d.item, false)}
+        ${d.desc?`<div class="spread-desc">${esc(d.desc)}</div>`:''}`;
       right.appendChild(txt);
       if(d.images.length > 1) {
         const g = document.createElement('div');
         g.className = 'la-grid';
         d.images.slice(1,7).forEach(f => {
-          g.appendChild(makeMedia(f, d.name, true));
+          g.appendChild(makeMedia(f, d.name, true, itemKey, false));
         });
         right.appendChild(g);
       }
@@ -537,7 +552,7 @@
       return row;
     }
 
-    function buildB(d, folder) {
+    function buildB(d, itemKey, isFirst) {
       const outer = document.createElement('div');
       outer.className = 'lb-outer';
       const bg = document.createElement('div');
@@ -555,27 +570,30 @@
         lazyObs.observe(v); revealObs.observe(v);
       } else {
         const img = document.createElement('img');
-        img.src = heroSrc; img.alt = d.name; img.loading = 'eager'; img.fetchPriority = 'high';
+        img.src = heroSrc; img.alt = d.name || 'EGYGRILLZ';
+        img.loading = isFirst ? 'eager' : 'lazy';
+        img.decoding = 'async';
         bg.appendChild(img);
       }
       outer.appendChild(bg);
       const content = document.createElement('div');
       content.className = 'lb-content';
-      const words = d.name.split(' ');
+      const words = String(d.name || '').split(' ');
       const h = Math.ceil(words.length/2);
       const l1 = words.slice(0,h).join(' ');
       const l2 = words.slice(h).join(' ');
       content.innerHTML = `
         <div class="lb-kicker">EGYGRILLZ &nbsp;·&nbsp; Exclusive Drop</div>
-        <div class="lb-title">${l1}${l2?`<br><em>${l2}</em>`:''}</div>
+        <div class="lb-title">${esc(l1)}${l2?`<br><em>${esc(l2)}</em>`:''}</div>
+        <div>${spreadPriceHtml(d.item, true)}</div>
         <div class="lb-row">
-          ${d.desc?`<div class="lb-desc">${d.desc}</div>`:'<div></div>'}
+          ${d.desc?`<div class="lb-desc">${esc(d.desc)}</div>`:'<div></div>'}
         </div>`;
       if(d.images.length > 1) {
         const strip = document.createElement('div');
         strip.className = 'lb-strip';
         d.images.slice(1,6).forEach(f => {
-          strip.appendChild(makeMedia(f, d.name, true));
+          strip.appendChild(makeMedia(f, d.name, true, itemKey, false));
         });
         content.appendChild(strip);
       }
@@ -583,26 +601,27 @@
       return outer;
     }
 
-    function buildC(d, folder) {
+    function buildC(d, itemKey, isFirst) {
       const row = document.createElement('div');
       row.className = 'lc';
       const left = document.createElement('div');
       left.className = 'lc-left';
       left.innerHTML = `
         <div class="spread-kicker">Latest Design</div>
-        <div class="spread-title" style="font-size:clamp(32px,4vw,62px);">${d.name}</div>
-        ${d.desc?`<div class="spread-desc">${d.desc}</div>`:''}`;
+        <div class="spread-title" style="font-size:clamp(32px,4vw,62px);">${esc(d.name)}</div>
+        ${spreadPriceHtml(d.item, false)}
+        ${d.desc?`<div class="spread-desc">${esc(d.desc)}</div>`:''}`;
       row.appendChild(left);
       const right = document.createElement('div');
       right.className = 'lc-right';
-      d.images.slice(0,3).forEach(f => {
-        right.appendChild(makeMedia(f, d.name, true));
+      d.images.slice(0,3).forEach((f, idx) => {
+        right.appendChild(makeMedia(f, d.name, true, itemKey, isFirst && idx === 0));
       });
       row.appendChild(right);
       return row;
     }
 
-    function buildD(d, folder) {
+    function buildD(d, itemKey, isFirst) {
       const wrap = document.createElement('div');
       wrap.className = 'ld';
       const hdr = document.createElement('div');
@@ -610,76 +629,92 @@
       const tc = document.createElement('div');
       tc.innerHTML = `
         <div class="spread-kicker">Curated Piece</div>
-        <div class="spread-title" style="font-size:clamp(30px,4vw,58px);">${d.name}</div>
-        `;
+        <div class="spread-title" style="font-size:clamp(30px,4vw,58px);">${esc(d.name)}</div>
+        ${spreadPriceHtml(d.item, false)}`;
       hdr.appendChild(tc);
       const rule = document.createElement('div');
       rule.className = 'ld-rule';
       hdr.appendChild(rule);
       const dc = document.createElement('div');
       dc.style.display = 'flex'; dc.style.flexDirection = 'column'; dc.style.justifyContent = 'flex-end';
-      if(d.desc) dc.innerHTML = `<div class="spread-desc">${d.desc}</div>`;
+      if(d.desc) dc.innerHTML = `<div class="spread-desc">${esc(d.desc)}</div>`;
       hdr.appendChild(dc);
       wrap.appendChild(hdr);
       const grid = document.createElement('div');
       grid.className = 'ld-grid';
-      d.images.slice(0,6).forEach(f => {
-        grid.appendChild(makeMedia(f, d.name, true));
+      d.images.slice(0,6).forEach((f, idx) => {
+        grid.appendChild(makeMedia(f, d.name, true, itemKey, isFirst && idx === 0));
       });
       wrap.appendChild(grid);
       return wrap;
     }
 
-    /* ── MAIN ── */
+    /* ── MAIN (paginated to keep initial decode fast) ── */
     const container = document.getElementById('designs-container');
     const loadEl    = document.getElementById('loading-state');
     const errEl     = document.getElementById('error-state');
     const layouts   = [buildA, buildB, buildC, buildD];
-
-    /* Single-item view support via ?item=<folder> */
-    const WANTED = new URLSearchParams(location.search).get('item') || '';
+    const WANTED    = new URLSearchParams(location.search).get('item') || '';
+    const SPREAD_PAGE = 5;
 
     window.Catalog.load()
-      .then(async designs => {
+      .then(designs => {
         if(!Array.isArray(designs)||!designs.length) throw new Error('empty');
-        loadEl.style.display = 'none';
-        container.style.display = 'block';
-        /* Public page assignment (falls back to the category for legacy items) */
         const pageOf = d => Object.prototype.hasOwnProperty.call(d,'page') ? d.page : (d.category || '');
         const latestOnly = designs.filter(d => pageOf(d) === 'latest-designs')
           .sort((a,b) => (a.order||999) - (b.order||999));
         const pool = latestOnly.length ? latestOnly : designs;
-        const list = WANTED
+        const list = (WANTED
           ? designs.filter(d => (d.folder || d.id) === WANTED || d.id === WANTED)
-          : pool;
-        list.forEach(function(d){
-          const first = (d.images||[])[0];
-          if(first){ const im = new Image(); im.src = mediaPath(d, first); }
-        });
-        if (WANTED && !list.length) { loadEl.style.display='none'; errEl.style.display='block'; return; }
-        for(let i=0; i<list.length; i++) {
-          const src = list[i];
-          const folder = src.id;
-          try {
-            const files = (src.images || []).concat(src.videos || []);
-            const d = {
-              name: src.name, desc: src.description,
-              images: files.map(f => mediaPath(src, f)),
-              item: src,
-            };
-            if(!d.images.length) continue;
-            if(i > 0) {
-              const rule = document.createElement('div');
-              rule.className = 'spread-rule';
-              container.appendChild(rule);
-            }
-            const spread = document.createElement('div');
-            spread.className = 'spread';
-            spread.appendChild(layouts[i % layouts.length](d, folder));
-            container.appendChild(spread);
-            revealObs.observe(spread);
-          } catch(e) { console.warn('Failed:', folder, e); }
+          : pool).filter(src => ((src.images || []).length + (src.videos || []).length) > 0);
+        if (!list.length) { loadEl.style.display='none'; errEl.style.display='block'; return; }
+
+        loadEl.style.display = 'none';
+        container.style.display = 'block';
+
+        let rendered = 0;
+        const moreWrap = document.createElement('div');
+        moreWrap.style.cssText = 'text-align:center;padding:48px 5% 12px;display:none;';
+        const moreBtn = document.createElement('button');
+        moreBtn.type = 'button';
+        moreBtn.className = 'cta-btn-dark';
+        moreBtn.style.cssText = 'background:transparent;cursor:pointer;font-family:inherit;';
+        moreBtn.textContent = 'Load More Designs';
+        moreWrap.appendChild(moreBtn);
+        container.parentNode.insertBefore(moreWrap, errEl);
+
+        function renderSpreads() {
+          const slice = list.slice(rendered, rendered + SPREAD_PAGE);
+          slice.forEach((src, idx) => {
+            const globalIdx = rendered + idx;
+            const itemKey = (src.category === 'grillz-gallery' && src.folder === '000001') ? src.id : (src.folder || src.id);
+            try {
+              const files = (src.images || []).concat(src.videos || []);
+              const d = {
+                name: src.name || src.id,
+                desc: src.description || '',
+                images: files.map(f => mediaPath(src, f)).filter(Boolean),
+                item: src,
+              };
+              if (!d.images.length) return;
+              if (globalIdx > 0) {
+                const rule = document.createElement('div');
+                rule.className = 'spread-rule';
+                container.appendChild(rule);
+              }
+              const spread = document.createElement('div');
+              spread.className = 'spread';
+              spread.appendChild(layouts[globalIdx % layouts.length](d, itemKey, globalIdx === 0));
+              container.appendChild(spread);
+              revealObs.observe(spread);
+            } catch(e) { console.warn('Failed:', itemKey, e); }
+          });
+          rendered += slice.length;
+          moreWrap.style.display = rendered < list.length ? 'block' : 'none';
         }
+
+        moreBtn.addEventListener('click', renderSpreads);
+        renderSpreads();
       })
       .catch(() => {
         loadEl.style.display = 'none';

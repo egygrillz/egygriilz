@@ -114,6 +114,7 @@
     <nav class="main-nav">
       <a href="/">Home</a>
       <a href="latest-designs">Latest</a>
+      <a href="calculator">Calculator</a>
       <a href="booking">Schedule</a>
       <a href="grillz-gallery">Gallery</a>
       <a href="golds">Golds</a>
@@ -234,23 +235,71 @@
     })();
 
 
+    var sendingContact = false;
+
+    // Pre-fill design quotation request or calculator code when arriving from ?design= or ?code=
+    (function prefillContactInquiry() {
+      try {
+        var sp = new URLSearchParams(window.location.search);
+        var design = (sp.get('design') || '').trim();
+        var code = (sp.get('code') || sp.get('c') || '').trim();
+        var msgEl = document.getElementById('c-message');
+        if (!msgEl || msgEl.value.trim()) return;
+        if (design && code) {
+          msgEl.value = 'Hi EGYGRILLZ, I would like a quotation for "' + design + '".\nCalculator Code: ' + code + '\n';
+        } else if (design) {
+          msgEl.value = 'Hi EGYGRILLZ, I would like a quotation for "' + design + '".\n';
+        } else if (code) {
+          msgEl.value = 'Hi EGYGRILLZ, I would like to confirm my custom grillz design.\nDesign Code: ' + code + '\n';
+        }
+      } catch (e) {}
+    })();
+
+    function showContactError(msg) {
+      var errEl = document.getElementById('c-error');
+      if (!errEl) return;
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+    }
+
     async function sendMessage() {
+      if (sendingContact) return;
       var name = (document.getElementById('c-name').value || '').trim();
       var email = (document.getElementById('c-email').value || '').trim();
       var message = (document.getElementById('c-message').value || '').trim();
       var phone   = (document.getElementById('c-phone') ? document.getElementById('c-phone').value : '').trim();
-      if (!name || !email || !message) { return; }
 
+      if (name.length < 2) {
+        document.getElementById('c-name').focus();
+        showContactError('Please enter your name.');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        document.getElementById('c-email').focus();
+        showContactError('Please enter a valid email address so we can reply.');
+        return;
+      }
+      if (message.length < 3) {
+        document.getElementById('c-message').focus();
+        showContactError('Please enter your message.');
+        return;
+      }
+
+      sendingContact = true;
       var btn = document.getElementById('submit-btn');
       var errEl = document.getElementById('c-error');
       btn.disabled = true;
       btn.textContent = 'Sending…';
-      errEl.style.display = 'none';
+      if (errEl) errEl.style.display = 'none';
 
-      try {
-        // 1. Save to Firestore
-        if (db) {
-          await db.collection('messages').add({
+      var savedId = '';
+      var savedDb = false;
+      var notified = false;
+
+      // 1. Save to Firestore
+      if (db) {
+        try {
+          var docRef = await db.collection('messages').add({
             name: name,
             email: email,
             phone: phone,
@@ -258,28 +307,44 @@
             read: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
+          savedId = docRef && docRef.id ? docRef.id : '';
+          savedDb = true;
+        } catch (err) {
+          console.error('Contact Firestore save error:', err);
         }
+      }
 
-        // 2. WhatsApp notification
+      // 2. Worker notification (Telegram/WhatsApp/Email backup)
       try {
-        await (window.EGYGZ ? EGYGZ.notify.message({
-          name: name, phone: (typeof phone !== 'undefined' ? phone : ''),
-          email: (typeof email !== 'undefined' ? email : ''), message: message
-        }) : Promise.resolve());
+        if (window.EGYGZ && EGYGZ.notify && typeof EGYGZ.notify.message === 'function') {
+          var nRes = await EGYGZ.notify.message({
+            name: name, phone: phone, email: email, message: message, ref: savedId
+          });
+          if (nRes && nRes.ok) notified = true;
+        }
       } catch (e) { console.warn('notify skipped', e); }
 
-        // Success
-        document.getElementById('form-wrapper').style.display = 'none';
-        document.getElementById('success-message').style.display = 'block';
+      sendingContact = false;
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
 
-      } catch(err) {
-        console.error('Contact form error:', err);
-        errEl.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Send Message';
+      if (!savedDb && !notified) {
+        showContactError('We could not send your message right now. Please check your connection and try again, or message us on Instagram @egygrillz.');
+        return;
       }
+
+      document.getElementById('form-wrapper').style.display = 'none';
+      document.getElementById('success-message').style.display = 'block';
     }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var nav = document.querySelector('.main-nav');
+        if (nav) nav.classList.remove('active');
+        document.body.classList.remove('menu-open');
+      }
+    });
   </script>
-<script src="/assets/egygz-notify.js" defer></script>
+<script src="/assets/egygz-notify.js?v=3" defer></script>
 </body>
 </html>

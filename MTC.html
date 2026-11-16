@@ -3,10 +3,18 @@
 <head>
   <script type="module">
     import { requireAuth } from '/assets/firebase-auth-gate.js';
-    try { await requireAuth(); } catch (e) { console.error(e); }
-    document.documentElement.style.visibility = 'visible';
+    try {
+      await requireAuth();
+      document.documentElement.classList.add('auth-ready');
+    } catch (e) {
+      console.error(e);
+      document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#e0e0e0">Authentication unavailable. Please refresh and sign in.</div>';
+      document.documentElement.classList.add('auth-ready');
+    }
   </script>
-  <style>html { visibility: hidden; }</style>
+  <style>
+    html:not(.auth-ready) body > :not(#egygz-auth-gate) { display: none !important; }
+  </style>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,18 +74,24 @@
     }
 
     function itemMediaUrl(item, file) {
-      if (item.category === 'grillz-gallery') return '/assets/images/grillz-gallery/' + file;
-      return '/assets/images/' + item.category + '/' + (item.folder || item.id) + '/' + file;
+      var f = String(file || '').trim();
+      if (/^(https?:|data:|\/)/i.test(f)) return f;
+      var folder = item.folder || item.id || '';
+      if (item.category === 'grillz-gallery' && (!folder || folder === '000001')) {
+        return '/assets/images/grillz-gallery/' + f;
+      }
+      return '/assets/images/' + item.category + '/' + folder + '/' + f;
     }
 
     async function runAudit() {
       var btn = document.getElementById('run-btn');
       btn.disabled = true;
+      btn.textContent = 'Running Audit…';
       document.getElementById('log').innerHTML = '';
       var ok = 0, warn = 0, err = 0;
 
       try {
-        var res = await fetch('/assets/images/catalog.json?t=' + Date.now());
+        var res = await fetch('/assets/images/catalog.json', { cache: 'no-cache' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         var catalog = await res.json();
         if (!Array.isArray(catalog)) throw new Error('catalog.json is not an array');
@@ -117,6 +131,7 @@
         log('Audit failed: ' + e.message, 'err');
       } finally {
         btn.disabled = false;
+        btn.textContent = 'Run Catalog Audit';
       }
     }
   </script>

@@ -446,7 +446,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 
 <div class="toast" id="toast"></div>
 
-<script src="/assets/staff-calculator.js"></script>
+<script src="/assets/staff-calculator.js?v=4"></script>
 <script type="module">
 /* ══════════════════════════════════════════════════════════════════
    1. AUTH
@@ -483,22 +483,29 @@ document.querySelectorAll('[data-logout]').forEach(function (el) {
    2. FIREBASE + ENGINE
    ══════════════════════════════════════════════════════════════════ */
 const db = firebase.apps.length ? firebase.firestore() : firebase.initializeApp(FIREBASE_CFG).firestore();
+try { db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
 
 // load the engine as a classic script (it attaches to window.CalcEngine)
 await new Promise((res, rej) => {
   const s = document.createElement('script');
-  s.src = '/assets/calc-engine.js?v=2';
+  s.src = '/assets/calc-engine.js?v=4';
   s.onload = res; s.onerror = rej;
   document.head.appendChild(s);
 });
 const E = window.CalcEngine;
 
-const settingsLoad = await E.load(db);
-if (!settingsLoad.ok) console.warn('[quotes] settings fallback:', settingsLoad.error);
-if (window.SiteConfig) {
-  await window.SiteConfig.load(db);
+const [settingsLoad] = await Promise.all([
+  E.load(db).catch(err => ({ ok: false, error: err })),
+  window.SiteConfig ? window.SiteConfig.load(db).catch(() => {}) : Promise.resolve(),
+]);
+if (!settingsLoad || !settingsLoad.ok) console.warn('[quotes] settings fallback:', settingsLoad && settingsLoad.error);
+function validDays() {
+  const n = window.SiteConfig ? Number(window.SiteConfig.num('quoteValidDays')) : 0;
+  return (Number.isFinite(n) && n > 0) ? Math.round(n) : 14;
+}
+{
   const pill = document.querySelector('.quote-pill');
-  if (pill) pill.textContent = `Pre-Approval Quotation · Valid ${window.SiteConfig.num('quoteValidDays') || 14} Days`;
+  if (pill) pill.textContent = `Pre-Approval Quotation · Valid ${validDays()} Days`;
 }
 
 /* ── helpers ── */
@@ -516,30 +523,61 @@ function toast(msg, isErr){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   3. CLIENT PICKER — from the bookings collection
+   3. CLIENT PICKER — bounded + cached to protect daily Firestore quota
    ══════════════════════════════════════════════════════════════════ */
 let CLIENTS = [];
+const Q_CLIENTS_CACHE = 'egygz_quotes_clients_v1';
+const Q_CLIENTS_TTL = 10 * 60 * 1000;
 
-async function loadClients(){
+function renderClientSelect() {
+  const sel = $('clientPick');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— choose or type below —</option>' +
+    CLIENTS.map((c,i) => `<option value="${i}">${esc(c.name || '—')} · ${esc(c.phone || '')}${c.last ? ' · ' + esc(c.last) : ''}</option>`).join('');
+}
+
+async function loadClients(force){
+  if (!force) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(Q_CLIENTS_CACHE) || 'null');
+      if (raw && Array.isArray(raw.list) && raw.at && (Date.now() - raw.at) < Q_CLIENTS_TTL) {
+        CLIENTS = raw.list;
+        renderClientSelect();
+        return;
+      }
+    } catch (e) {}
+  }
   try {
-    const snap = await db.collection('appointments').orderBy('date','desc').limit(400).get();
-    const map = new Map();
+    const snap = await db.collection('clients').orderBy('lastVisit', 'desc').limit(120).get();
+    const list = [];
     snap.forEach(doc => {
       const d = doc.data() || {};
-      const key = (d.phone || d.name || '').trim();
-      if (!key) return;
-      const prev = map.get(key);
-      const rec = {
-        name: d.name || '', phone: d.phone || '', email: d.email || '',
-        last: d.date || '', count: (prev ? prev.count : 0) + 1,
-        services: (prev ? prev.services : []).concat(d.service ? [d.service] : []),
-      };
-      if (!map.has(key) || (d.date || '') > (prev ? prev.last : '')) map.set(key, rec);
+      list.push({
+        name: d.name || '',
+        phone: d.phone || doc.id || '',
+        email: d.email || '',
+        last: d.lastVisit || '',
+        count: Number(d.totalAppointments) || 0,
+      });
     });
-    CLIENTS = [...map.values()].sort((a,b) => (b.last||'').localeCompare(a.last||''));
-    const sel = $('clientPick');
-    sel.innerHTML = '<option value="">— choose or type below —</option>' +
-      CLIENTS.map((c,i) => `<option value="${i}">${esc(c.name || '—')} · ${esc(c.phone)} · ${esc(c.last)}</option>`).join('');
+    if (list.length) {
+      CLIENTS = list;
+    } else {
+      const aSnap = await db.collection('appointments').orderBy('date', 'desc').limit(100).get();
+      const map = new Map();
+      aSnap.forEach(doc => {
+        const d = doc.data() || {};
+        const key = (d.phone || d.name || '').trim();
+        if (!key) return;
+        const prev = map.get(key);
+        if (!prev || (d.date || '') > (prev.last || '')) {
+          map.set(key, { name: d.name || '', phone: d.phone || '', email: d.email || '', last: d.date || '', count: (prev ? prev.count : 0) + 1 });
+        }
+      });
+      CLIENTS = [...map.values()].sort((a,b) => (b.last||'').localeCompare(a.last||''));
+    }
+    try { localStorage.setItem(Q_CLIENTS_CACHE, JSON.stringify({ at: Date.now(), list: CLIENTS })); } catch (e) {}
+    renderClientSelect();
   } catch (e) {
     console.warn('[quotes] clients failed', e);
   }
@@ -584,8 +622,45 @@ function mountQuoteCalculator(){
   QUOTE_CALC = window.StaffCalculator.mount(host, {
     db: db,
     parts: { lines: true, editor: true, services: false, order: false, result: false },
-    onChange: (lines) => { LINES = lines; recalc(); }
+    onChange: (lines) => { LINES = lines; recalc(); },
+    getExtraCodeData: () => {
+      const dVal = Number($('discountVal').value) || 0;
+      return {
+        lines: LINES,
+        services: SERVICES,
+        timeline: $('timeline').value || 'standard',
+        mold: $('mold').value || 'none',
+        depositPct: Number($('depositPct').value) || 0,
+        discount: dVal > 0 ? { value: dVal, type: $('discountType').value === 'pct' ? 'pct' : 'flat' } : null,
+        clientName: ($('clientName').value || '').trim(),
+        clientPhone: ($('clientPhone').value || '').trim(),
+        notes: ($('quoteNotes').value || '').trim(),
+      };
+    },
+    onImportCode: (decoded, pricedLines, pricedSvcs) => {
+      LINES = Array.isArray(pricedLines) ? pricedLines : [];
+      if (Array.isArray(pricedSvcs)) {
+        SERVICES = pricedSvcs.map(sv => ({ type: sv.type || 'custom', name: sv.name, qty: sv.qty || 1, unitPrice: sv.unitPrice || 0 }));
+        renderServices();
+      }
+      if (decoded.timeline && $('timeline')) $('timeline').value = decoded.timeline;
+      if (decoded.mold && $('mold')) $('mold').value = decoded.mold;
+      if (decoded.depositPct !== undefined && $('depositPct')) $('depositPct').value = String(decoded.depositPct || 0);
+      if (decoded.discount && Number(decoded.discount.value) > 0) {
+        $('discountVal').value = decoded.discount.value;
+        $('discountType').value = decoded.discount.type === 'pct' ? 'pct' : 'egp';
+      }
+      if (decoded.clientName && !$('clientName').value.trim()) $('clientName').value = decoded.clientName;
+      if (decoded.clientPhone && !$('clientPhone').value.trim()) $('clientPhone').value = decoded.clientPhone;
+      if (decoded.notes && !$('quoteNotes').value.trim()) $('quoteNotes').value = decoded.notes;
+      recalc();
+    }
   });
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const qCode = sp.get('c') || sp.get('code');
+    if (qCode) QUOTE_CALC.importCode(qCode);
+  } catch (e) {}
   return QUOTE_CALC;
 }
 
@@ -697,7 +772,11 @@ function recalc(){
   });
 
   $('totalVal').innerHTML = `${fmt(LAST.total)} <small>${esc(LAST.currency)}</small>`;
-  const goldMissing = LINES.some(l => l.material === 'gold') && !Number(S.goldPrice);
+  const S = E.get();
+  const goldMissing = LINES.some(l => {
+    const gs = Array.isArray(l.groups) ? l.groups : [l];
+    return gs.some(g => g.material === 'gold' && !Number(g.goldPrice));
+  }) && !Number(S.goldPrice);
   $('totalSub').innerHTML = goldMissing
     ? '<span style="color:var(--rose)"><i class="fas fa-triangle-exclamation"></i> Set today\'s 24K gold rate above</span>'
     : `${LAST.lineCount} design(s)${LAST.services.length ? ` · ${LAST.services.length} service(s)` : ''} · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}`;
@@ -743,18 +822,65 @@ $('newQuoteBtn').addEventListener('click', () => {
 $('calcBtn').addEventListener('click', () => { recalc(); toast('Calculated'); });
 
 /* ══════════════════════════════════════════════════════════════════
-   7. SAVE / LOAD QUOTES
+   7. SAVE / LOAD QUOTES (paginated: 30 per page + Load more)
    ══════════════════════════════════════════════════════════════════ */
 let QUOTES = [];
+let QUOTES_CURSOR = null;
+let QUOTES_HAS_MORE = false;
+let QUOTES_LOADING = false;
+const QUOTES_PAGE_SIZE = 30;
 
-async function loadQuotes(){
+function ensureQuotesMoreBtn() {
+  let btn = document.getElementById('loadMoreQuotesBtn');
+  if (btn) return btn;
+  const empty = $('quotesEmpty');
+  if (!empty || !empty.parentNode) return null;
+  const wrap = document.createElement('div');
+  wrap.id = 'loadMoreQuotesWrap';
+  wrap.style.cssText = 'text-align:center;padding:12px 0;display:none;';
+  wrap.innerHTML = '<button type="button" class="btn btn-ghost btn-sm" id="loadMoreQuotesBtn">Load more quotes</button>';
+  empty.parentNode.appendChild(wrap);
+  btn = wrap.querySelector('#loadMoreQuotesBtn');
+  btn.addEventListener('click', () => loadQuotes(true));
+  return btn;
+}
+
+function syncQuotesMoreUi() {
+  ensureQuotesMoreBtn();
+  const wrap = document.getElementById('loadMoreQuotesWrap');
+  if (wrap) wrap.style.display = QUOTES_HAS_MORE ? 'block' : 'none';
+}
+
+async function loadQuotes(append){
+  if (QUOTES_LOADING) return;
+  QUOTES_LOADING = true;
+  const moreBtn = ensureQuotesMoreBtn();
+  if (append && moreBtn) { moreBtn.disabled = true; moreBtn.textContent = 'Loading…'; }
   try {
-    const snap = await db.collection('quotes').orderBy('createdAt','desc').limit(200).get();
-    QUOTES = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    let q = db.collection('quotes').orderBy('createdAt','desc').limit(QUOTES_PAGE_SIZE);
+    if (append && QUOTES_CURSOR) q = q.startAfter(QUOTES_CURSOR);
+    const snap = await q.get();
+    const rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    QUOTES_CURSOR = snap.docs.length ? snap.docs[snap.docs.length - 1] : QUOTES_CURSOR;
+    QUOTES_HAS_MORE = snap.docs.length === QUOTES_PAGE_SIZE;
+    if (append) {
+      const seen = new Set(QUOTES.map(x => x.id));
+      rows.forEach(r => { if (!seen.has(r.id)) QUOTES.push(r); });
+    } else {
+      QUOTES = rows;
+    }
   } catch (e) {
     console.warn('[quotes] load failed', e);
-    QUOTES = [];
+    if (!append) QUOTES = [];
+    const code = String((e && (e.code || e.message)) || '');
+    if (/resource-exhausted|429|quota/i.test(code)) {
+      toast('Firestore daily quota reached — try again shortly', true);
+    }
+  } finally {
+    QUOTES_LOADING = false;
+    if (moreBtn) { moreBtn.disabled = false; moreBtn.textContent = 'Load more quotes'; }
   }
+  syncQuotesMoreUi();
   renderQuotes();
   renderMonth();
 }
@@ -961,12 +1087,19 @@ $('quotesBody').addEventListener('click', async (e) => {
   }
 });
 
+let isSavingQuote = false;
 $('saveBtn').addEventListener('click', async () => {
-  if (!LINES.length && !SERVICES.length) return toast('Add at least one design line or service', true);
+  if (isSavingQuote) return;
   recalc();
+  if ((!LINES.length && !SERVICES.length) || !LAST) return toast('Add at least one design line or service', true);
   const name = $('clientName').value.trim();
   const phone = $('clientPhone').value.trim();
-  if (!name) return toast('Client name is required', true);
+  if (!name) { $('clientName').focus(); return toast('Client name is required', true); }
+
+  const saveBtn = $('saveBtn');
+  isSavingQuote = true;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
   const dVal = Number($('discountVal').value) || 0;
   const existing = CURRENT_QUOTE_ID ? QUOTES.find(x => x.id === CURRENT_QUOTE_ID) : null;
@@ -1000,13 +1133,18 @@ $('saveBtn').addEventListener('click', async () => {
       const ref = await db.collection('quotes').add(payload);
       CURRENT_QUOTE_ID = ref.id;
       QUOTES.unshift(Object.assign({ id: ref.id }, payload));
-      $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Update quote';
       toast('Quote saved');
     }
     renderQuotes(); renderMonth();
   } catch (e) {
     console.warn(e);
-    toast('Could not save — check Firestore rules', true);
+    toast('Could not save — ' + ((e && e.code) || 'check connection'), true);
+  } finally {
+    isSavingQuote = false;
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = CURRENT_QUOTE_ID
+      ? '<i class="fas fa-floppy-disk"></i> Update quote'
+      : '<i class="fas fa-floppy-disk"></i> Save quote';
   }
 });
 
@@ -1102,24 +1240,40 @@ function makePdf(q){
   y += 16;
 
   (order.lines || []).forEach((l, i) => {
-    if (y > H - 170) { doc.addPage(); y = 60; }
+    const groups = (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) ? l.groups : null;
+    if (y > H - (groups ? 170 + groups.length * 12 : 170)) { doc.addPage(); y = 60; }
     doc.setFontSize(9); doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
-    text('Design ' + (i+1), M, y);
+    text(l.name ? ('Set ' + (i+1) + ': ' + l.name.slice(0, 14)) : ('Set ' + (i+1)), M, y);
     doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
-    const label = E.lineLabel(l);
-    const parts = doc.splitTextToSize(pdfSafe(label), W - M * 2 - 220);
-    text(parts[0] || '', M + 78, y);
+    const headLabel = groups
+      ? `${l.mixedMaterials ? 'Mixed Materials' : (l.material === 'gold' ? 'Gold ' + (l.karat || '18') + 'K' : (E.LABELS.material[l.material] || l.material))} - ${l.teeth} teeth (Mixed, ${groups.length} groups)`
+      : E.lineLabel(l);
+    const parts = doc.splitTextToSize(pdfSafe(headLabel), W - M * 2 - 175);
+    text(parts[0] || '', M + 96, y);
     doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
     text(fmt(l.subtotal) + ' ' + order.currency, W - M, y, { align: 'right' });
     y += 13;
+    if (groups) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(95,95,95);
+      groups.forEach((g, gi) => {
+        if (y > H - 110) { doc.addPage(); y = 60; }
+        const pre = g.label ? (g.label + ': ') : ('#' + (gi + 1) + ': ');
+        const gTxt = pdfSafe('- ' + pre + (E.groupLabel ? E.groupLabel(g, { includeMaterial: true }) : (g.teeth + 'T L' + g.level)));
+        const gParts = doc.splitTextToSize(gTxt, W - M * 2 - 180);
+        text(gParts[0] || '', M + 96, y);
+        text(fmt(g.subtotal) + ' ' + order.currency, W - M, y, { align: 'right' });
+        y += 11;
+      });
+    }
     doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
     const detail = `${l.teeth} teeth - material ${fmt(l.materialTotal)}` +
+      (l.designCost ? ` - complexity ${fmt(l.designCost)}` : '') +
       (l.stoneCost ? ` - stones ${fmt(l.stoneCost)}` : '') +
       (l.platingCost ? ` - plating ${fmt(l.platingCost)}` : '') +
       (l.enamelCost ? ` - enamel ${fmt(l.enamelCost)}` : '') +
       (l.engravingCost ? ` - engraving ${fmt(l.engravingCost)}` : '') +
       (l.anodizeCost ? ` - anodize ${fmt(l.anodizeCost)}` : '');
-    text(detail, M + 78, y);
+    text(detail, M + 96, y);
     y += 16;
   });
 
@@ -1182,11 +1336,11 @@ function makePdf(q){
 
   /* footer */
   doc.setFontSize(7); doc.setTextColor(175,175,175);
-  text('This quotation is valid for 14 days. Prices are confirmed once the deposit is paid.', M, H - 44);
+  text(`This quotation is valid for ${validDays()} days. Prices are confirmed once the deposit is paid.`, M, H - 44);
   text('EGYGRILLZ - egygrillz.com', W - M, H - 44, { align: 'right' });
 
-  const fname = 'EGYGRILLZ-Quote-' + pdfSafe(q.clientName || 'client').replace(/\s+/g,'-').slice(0,30) +
-    '-' + new Date().toISOString().slice(0,10) + '.pdf';
+  const safeClient = pdfSafe(q.clientName || 'client').replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'client';
+  const fname = 'EGYGRILLZ-Quote-' + safeClient + '-' + new Date().toISOString().slice(0,10) + '.pdf';
 
   if (q.returnBlob) return { blob: doc.output('blob'), name: fname };
 
@@ -1199,8 +1353,11 @@ function makePdf(q){
    The key is stored once, on this device only (localStorage)
    ══════════════════════════════════════════════════════════════════ */
 const WORKER_URL = 'https://egygillz-api.egygrillz.workers.dev';
+let isSendingBotPdf = false;
 
 async function sendPdfToTelegram() {
+  if (isSendingBotPdf) return;
+  recalc();
   if (!LAST) return toast('Nothing to send yet', true);
   let key = localStorage.getItem('egygz_pdf_key');
   if (!key) {
@@ -1210,37 +1367,46 @@ async function sendPdfToTelegram() {
     key = key.trim();
   }
   const built = makePdf({
-    id: '', clientName: $('clientName').value.trim(), clientPhone: $('clientPhone').value.trim(),
+    id: CURRENT_QUOTE_ID || '', clientName: $('clientName').value.trim(), clientPhone: $('clientPhone').value.trim(),
     clientEmail: $('clientEmail').value.trim(), order: LAST, notes: $('quoteNotes').value.trim(),
     createdAt: new Date().toISOString(), returnBlob: true,
   });
   if (!built || !built.blob) return toast('Could not build the PDF', true);
 
-  toast('Sending...');
+  const btn = $('toBotBtn');
+  isSendingBotPdf = true;
+  if (btn) btn.disabled = true;
+  toast('Sending to Telegram…');
   try {
     const fd = new FormData();
     fd.append('file', built.blob, built.name);
     fd.append('caption', '<b>Quotation</b>\n' +
-      ($('clientName').value.trim() || 'Client') + '\n' +
+      esc($('clientName').value.trim() || 'Client') + '\n' +
       CalcEngine.fmt(LAST.total) + ' ' + (LAST.currency || 'EGP'));
+    const ctrl = new AbortController();
+    const tmr = setTimeout(() => ctrl.abort(), 15000);
     const r = await fetch(WORKER_URL + '/api/pdf', {
-      method: 'POST', headers: { 'X-Pdf-Key': key }, body: fd,
-    });
+      method: 'POST', headers: { 'X-Pdf-Key': key }, body: fd, signal: ctrl.signal,
+    }).finally(() => clearTimeout(tmr));
     const d = await r.json().catch(() => ({}));
     if (d.ok) { toast('Sent to your Telegram'); return; }
     if (d.error === 'unauthorized') { localStorage.removeItem('egygz_pdf_key'); toast('Wrong key — try again', true); return; }
     toast('Could not send: ' + (d.error || r.status), true);
   } catch (e) {
-    toast('Could not reach the worker', true);
+    toast(e && e.name === 'AbortError' ? 'Telegram send timed out — try again' : 'Could not reach the worker', true);
+  } finally {
+    isSendingBotPdf = false;
+    if (btn) btn.disabled = false;
   }
 }
 
 $('toBotBtn').addEventListener('click', sendPdfToTelegram);
 
 $('pdfBtn').addEventListener('click', () => {
+  recalc();
   if (!LAST) return toast('Nothing to print yet', true);
   makePdf({
-    id: '', clientName: $('clientName').value.trim(), clientPhone: $('clientPhone').value.trim(),
+    id: CURRENT_QUOTE_ID || '', clientName: $('clientName').value.trim(), clientPhone: $('clientPhone').value.trim(),
     clientEmail: $('clientEmail').value.trim(), order: LAST, notes: $('quoteNotes').value.trim(),
     createdAt: new Date().toISOString(),
   });
@@ -1258,20 +1424,24 @@ function quoteBody(){
     + lines + `\n\n`
     + ($('quoteNotes').value.trim() ? `Notes: ${$('quoteNotes').value.trim()}\n\n` : '')
     + `Location:\nInside Smart Smile Clinics\n38 Abou Bakr El-Sdeek, Heliopolis\nFloor 5, Apt 504 - Cairo\n\n`
-    + `This quotation is valid for 14 days.\n\nEGYGRILLZ`;
+    + `This quotation is valid for ${validDays()} days.\n\nEGYGRILLZ`;
 }
 
 $('emailBtn').addEventListener('click', () => {
+  recalc();
   if (!LAST) return toast('Calculate first', true);
   const to = $('clientEmail').value.trim();
   const subj = 'Your EGYGRILLZ quotation';
-  window.open('https://mail.google.com/mail/?view=cm&fs=1'
+  const url = 'https://mail.google.com/mail/?view=cm&fs=1'
     + '&to=' + encodeURIComponent(to)
     + '&su=' + encodeURIComponent(subj)
-    + '&body=' + encodeURIComponent(quoteBody()), '_blank');
+    + '&body=' + encodeURIComponent(quoteBody());
+  const w = window.open(url, '_blank');
+  if (w) { try { w.opener = null; } catch (e) {} }
 });
 
 $('whatsappBtn').addEventListener('click', async () => {
+  recalc();
   if (!LAST) return toast('Calculate first', true);
   try {
     await navigator.clipboard.writeText(quoteBody());
@@ -1287,11 +1457,10 @@ window.sendPdfToTelegram = sendPdfToTelegram;
 /* ══════════════════════════════════════════════════════════════════
    11. BOOT
    ══════════════════════════════════════════════════════════════════ */
-await loadClients();
-await loadQuotes();
 mountQuoteCalculator();
 renderServices();
 recalc();
+await Promise.allSettled([loadClients(), loadQuotes()]);
 </script>
 </body>
 </html>

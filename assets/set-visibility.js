@@ -4,88 +4,132 @@
  *  /editx and the Telegram bot both write the "hidden on the site" list to
  *  Firestore  settings/visibility  →  { hidden: ["folder-id", …] }.
  *
- *  The catalogue itself is a static file (assets/images/catalog.json), so this
- *  script sits in front of it: every request for catalog.json waits for the
- *  hidden list (once, cached) and returns the catalogue without those designs.
- *  Nothing else on the page has to change — including the lazy loaders.
- *
- *  Load it BEFORE the page's own scripts:
- *      <script src="/assets/set-visibility.js"></script>
- *  If the database is unreachable the catalogue is returned untouched, so the
- *  site can never be blocked by this file.
+ *  Every request for catalog.json (and Catalog.load()) filters out hidden
+ *  designs using an O(1) Set, backed by a localStorage cache and 429 cooldown
+ *  so the site stays fast and never burns Firestore quota.
  * ═══════════════════════════════════════════════════════════════════════════ */
-(function () {
+(function (global) {
   'use strict';
 
   var PROJECT = 'egygrillz-studio';
-  /* Public web key — Firestore REST rejects keyless reads. */
   var API_KEY = 'AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk';
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
     '/databases/(default)/documents/settings/visibility?key=' + API_KEY;
   var CACHE_KEY = 'egygz_visibility_v1';
-  /* 30 minutes: every page view used to cost one Firestore read, which is what
-     burns through the free 50k/day. A toggle still shows up the same day. */
-  var CACHE_TTL = 30 * 60 * 1000;
+  var QUOTA_KEY = 'egygz_fs_quota_until_v1';
+  var CACHE_TTL = 30 * 60 * 1000;       // 30 minutes
+  var QUOTA_COOLDOWN = 15 * 60 * 1000;  // 15 min backoff on HTTP 429
+  var TIMEOUT = 4000;
 
-  var ready = null;                 // Promise<string[]>
-  var nativeFetch = window.fetch ? window.fetch.bind(window) : null;
+  var ready = null;
+  var nativeFetch = global.fetch ? global.fetch.bind(global) : null;
 
-  function readCache() {
+  function isQuotaCooling() {
+    try { return Number(localStorage.getItem(QUOTA_KEY) || 0) > Date.now(); } catch (e) { return false; }
+  }
+  function markQuotaHit() {
+    try { localStorage.setItem(QUOTA_KEY, String(Date.now() + QUOTA_COOLDOWN)); } catch (e) {}
+  }
+
+  function readCache(allowStale) {
     try {
       var raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       var o = JSON.parse(raw);
       if (!o || !Array.isArray(o.hidden) || !o.at) return null;
-      if (Date.now() - o.at > CACHE_TTL) return null;
-      return o.hidden;
+      if (!allowStale && (Date.now() - o.at > CACHE_TTL)) return null;
+      return o.hidden.map(function (s) { return String(s || '').trim().toLowerCase(); }).filter(Boolean);
     } catch (e) { return null; }
   }
 
   function writeCache(hidden) {
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify({ hidden: hidden, at: Date.now() }));
-    } catch (e) { /* private mode — cost nothing */ }
+    } catch (e) {}
   }
 
-  function load() {
-    if (ready) return ready;
-    var cached = readCache();
-    if (cached) { ready = Promise.resolve(cached); return ready; }
+  function load(force) {
+    if (!force && ready) return ready;
+    if (!force) {
+      var cached = readCache(false);
+      if (cached) { ready = Promise.resolve(cached); return ready; }
+    }
+    var stale = readCache(true);
+    if (!force && isQuotaCooling()) {
+      ready = Promise.resolve(stale || []);
+      return ready;
+    }
 
     ready = new Promise(function (resolve) {
-      if (!nativeFetch) return resolve([]);
-      var timer = setTimeout(function () { resolve([]); }, 2500);   // never stall the page
-      nativeFetch(DOC_URL)
-        .then(function (r) { return r.ok ? r.json() : null; })
+      if (!nativeFetch) return resolve(stale || []);
+      var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+      var timer = setTimeout(function () {
+        if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+      }, TIMEOUT);
+
+      nativeFetch(DOC_URL, ctrl ? { signal: ctrl.signal } : undefined)
+        .then(function (r) {
+          if (r.status === 429) { markQuotaHit(); return null; }
+          if (r.status === 404) { writeCache([]); return { __empty: true }; }
+          return r.ok ? r.json() : null;
+        })
         .then(function (doc) {
-          var values = doc && doc.fields && doc.fields.hidden &&
+          clearTimeout(timer);
+          if (!doc) return resolve(stale || []);
+          if (doc.__empty) return resolve([]);
+          var values = doc.fields && doc.fields.hidden &&
             doc.fields.hidden.arrayValue && doc.fields.hidden.arrayValue.values;
           var hidden = (values || []).map(function (v) {
-            return String(v.stringValue || '').toLowerCase();
+            return String(v.stringValue || '').trim().toLowerCase();
           }).filter(Boolean);
           writeCache(hidden);
-          clearTimeout(timer);
           resolve(hidden);
         })
-        .catch(function () { clearTimeout(timer); resolve([]); });
+        .catch(function () { clearTimeout(timer); resolve(stale || []); });
     });
     return ready;
   }
 
-  function keyOf(item) {
-    if (!item) return '';
-    return String(item.folder || item.id || '').trim().toLowerCase();
+  /** Keys that identify an item in settings/visibility (handles grillz-gallery shared folder "000001") */
+  function keysOf(item) {
+    if (!item) return [];
+    var out = [];
+    var id = String(item.id || '').trim().toLowerCase();
+    var folder = String(item.folder || '').trim().toLowerCase();
+    var cat = String(item.category || item.page || '').trim().toLowerCase();
+    if (id) out.push(id);
+    if (folder && folder !== id) {
+      /* In grillz-gallery, seed items gallery1..gallery8 all share folder "000001";
+         only match folder when it is actually unique to the item. */
+      if (!(cat === 'grillz-gallery' && folder === '000001')) {
+        out.push(folder);
+      } else if (id === 'gallery1') {
+        out.push(folder);
+      }
+    }
+    return out;
+  }
+
+  function isItemHidden(item, hiddenSet) {
+    if (!item || !hiddenSet || !hiddenSet.size) return false;
+    var keys = keysOf(item);
+    for (var i = 0; i < keys.length; i++) {
+      if (hiddenSet.has(keys[i])) return true;
+    }
+    return false;
   }
 
   function filterCatalogue(list, hidden) {
-    if (!Array.isArray(list) || !hidden.length) return list;
-    return list.filter(function (item) { return hidden.indexOf(keyOf(item)) === -1; });
+    if (!Array.isArray(list) || !Array.isArray(hidden) || !hidden.length) return list;
+    var set = new Set(hidden.map(function (s) { return String(s || '').trim().toLowerCase(); }).filter(Boolean));
+    if (!set.size) return list;
+    return list.filter(function (item) { return !isItemHidden(item, set); });
   }
 
-  if (nativeFetch) {
-    window.fetch = function (input, init) {
+  if (nativeFetch && typeof Response === 'function') {
+    global.fetch = function (input, init) {
       var url = typeof input === 'string' ? input : (input && input.url) || '';
-      var isCatalogue = /catalog\.json/i.test(url);
+      var isCatalogue = /(?:^|\/)catalog\.json(?:$|\?)/i.test(url);
       var run = nativeFetch(input, init);
       if (!isCatalogue) return run;
       return load().then(function (hidden) {
@@ -105,17 +149,23 @@
     };
   }
 
-  window.EGYGZ = window.EGYGZ || {};
-  window.EGYGZ.visibility = {
-    /** Promise<string[]> — the hidden design keys */
+  function invalidate() {
+    try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+    ready = null;
+  }
+
+  global.EGYGZ = global.EGYGZ || {};
+  global.EGYGZ.visibility = {
     load: load,
-    /** filter any catalogue array with the current hidden list */
     filter: function (list) {
       return load().then(function (hidden) { return filterCatalogue(list, hidden); });
     },
-    /** true when a design is hidden */
     isHidden: function (item) {
-      return load().then(function (hidden) { return hidden.indexOf(keyOf(item)) !== -1; });
+      return load().then(function (hidden) {
+        return isItemHidden(item, new Set(hidden));
+      });
     },
+    invalidate: invalidate,
+    clearCache: invalidate,
   };
-})();
+})(typeof globalThis !== 'undefined' ? globalThis : window);

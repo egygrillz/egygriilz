@@ -46,14 +46,21 @@
 
     function goStep(n) {
       if (n === 2 && selectedServices.length === 0) return;
-      if (n === 3 && !selectedDate) return;
-      if (n === 4 && !selectedTime) return;
+      if (n === 3 && (!selectedDate || !selectedTime)) return;
+      if (n === 4 && (!selectedDate || !selectedTime)) return;
       currentStep = n;
       document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
       var panel = document.getElementById('step' + n);
       if (panel) panel.classList.add('active');
       updateStepIndicators(n);
-      if (n === 2) renderCalendar();
+      if (n === 2) {
+        renderCalendar();
+        if (typeof window.loadTakenSlots === 'function') {
+          window.loadTakenSlots().then(function () {
+            if (selectedDate && currentStep === 2) renderTimeSlots(selectedDate);
+          }).catch(function () {});
+        }
+      }
       if (n === 4) renderReview();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -72,6 +79,8 @@
     function pickDate(dateStr) {
       selectedDate = dateStr;
       selectedTime = null;
+      var nextBtn = document.getElementById('step2-next');
+      if (nextBtn) nextBtn.disabled = true;
       renderCalendar();
       renderTimeSlots(dateStr);
     }
@@ -310,6 +319,7 @@
     <nav class="main-nav">
       <a href="/">Home</a>
       <a href="latest-designs">Latest</a>
+      <a href="calculator">Calculator</a>
       <a href="booking" class="nav-active">Schedule</a>
       <a href="grillz-gallery">Gallery</a>
       <a href="golds">Golds</a>
@@ -554,32 +564,69 @@
     })();
 
 
-    // ── LOAD SETTINGS ──
+    // ── LOAD SETTINGS (15-min localStorage cache + stale fallback to protect Firestore quota) ──
+    var SCHED_CACHE_KEY = 'egygz_schedule_v1';
+    var SCHED_CACHE_MS  = 30 * 60 * 1000;
+
+    function applyScheduleData(d) {
+      if (!d || typeof d !== 'object') return;
+      if (Array.isArray(d.openDays) && d.openDays.length) scheduleSettings.openDays = d.openDays;
+      if (typeof d.openHour !== 'undefined') scheduleSettings.openHour = parseInt(d.openHour, 10);
+      if (typeof d.closeHour !== 'undefined') scheduleSettings.closeHour = parseInt(d.closeHour, 10);
+      if (typeof d.slotDuration !== 'undefined') scheduleSettings.slotDuration = parseInt(d.slotDuration, 10) || 60;
+      if (Array.isArray(d.holidays)) {
+        scheduleSettings.holidays = d.holidays.map(function(h) {
+          return typeof h === 'string' ? h : (h && h.date ? h.date : '');
+        }).filter(Boolean);
+      }
+    }
+
+    function readScheduleCache(allowStale) {
+      try {
+        var raw = localStorage.getItem(SCHED_CACHE_KEY);
+        if (!raw) return null;
+        var c = JSON.parse(raw);
+        if (!c || !c.at || !c.data) return null;
+        if (!allowStale && (Date.now() - c.at) > SCHED_CACHE_MS) return null;
+        return c.data;
+      } catch (e) { return null; }
+    }
+
     async function loadSettings() {
+      var cached = readScheduleCache(false);
+      if (cached) { applyScheduleData(cached); return; }
+      var stale = readScheduleCache(true);
+      if (stale) applyScheduleData(stale);
       if (!db) return;
+      try {
+        var quotaUntil = Number(localStorage.getItem('egygz_fs_quota_until_v1') || 0);
+        if (quotaUntil > Date.now()) return;
+      } catch (e) {}
       try {
         var snap = await db.collection('settings').doc('schedule').get();
         if (snap.exists) {
-          var d = snap.data();
-          if (d.openDays) scheduleSettings.openDays = d.openDays;
-          if (typeof d.openHour !== 'undefined') scheduleSettings.openHour = d.openHour;
-          if (typeof d.closeHour !== 'undefined') scheduleSettings.closeHour = d.closeHour;
-          if (typeof d.slotDuration !== 'undefined') scheduleSettings.slotDuration = parseInt(d.slotDuration) || 60;
-          // Normalize holidays — support legacy string array and new {date,note} object array
-          if (d.holidays) {
-            scheduleSettings.holidays = d.holidays.map(function(h) {
-              return typeof h === 'string' ? h : (h.date || '');
-            }).filter(Boolean);
-          }
+          var d = snap.data() || {};
+          applyScheduleData(d);
+          try {
+            localStorage.setItem(SCHED_CACHE_KEY, JSON.stringify({
+              at: Date.now(),
+              data: {
+                openDays: scheduleSettings.openDays,
+                openHour: scheduleSettings.openHour,
+                closeHour: scheduleSettings.closeHour,
+                slotDuration: scheduleSettings.slotDuration,
+                holidays: scheduleSettings.holidays
+              }
+            }));
+          } catch (e) {}
         }
       } catch(e) { console.warn('Could not load settings:', e); }
-      console.log('[EGYGRILLZ] Schedule loaded:', JSON.stringify(scheduleSettings));
     }
 
     // ── LOAD TAKEN SLOTS ──
-    // Read lightweight `slots` collection with a short local cache to minimize Firestore reads.
+    // Read lightweight upcoming `slots` collection with a 3-min local cache to minimize Firestore reads.
     var SLOT_CACHE_KEY = 'egygz_taken_v1';
-    var SLOT_CACHE_MS  = 60 * 1000;
+    var SLOT_CACHE_MS  = 3 * 60 * 1000;
 
     function readSlotCache() {
       try {
@@ -758,8 +805,14 @@
         (notes ? row('Notes', notes) : '');
     }
 
+    function escBookingHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     function row(k, v) {
-      return '<div class="review-row"><span class="review-key">' + k + '</span><span class="review-val">' + v + '</span></div>';
+      return '<div class="review-row"><span class="review-key">' + escBookingHtml(k) + '</span><span class="review-val">' + escBookingHtml(v) + '</span></div>';
     }
 
     // ── SUBMIT ──
@@ -887,31 +940,34 @@
       }
     }
 
-    // ── INIT ──
+    // ── INIT (slots load lazily when the visitor moves to Step 2) ──
+    initCal();
     loadSettings().then(function() {
-      initCal();
-      loadTakenSlots();
+      if (currentStep === 2) renderCalendar();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var nav = document.querySelector('.main-nav');
+        if (nav) nav.classList.remove('active');
+        document.body.classList.remove('menu-open');
+      }
     });
   </script>
 
-  <script src="/assets/booking-secure.js"></script>
-
-
-<script src="/assets/egygz-notify.js" defer></script>
-<script src="assets/calc-engine.js?v=2"></script>
-<script data-cfasync="false">
-/* Site settings: reads settings/site and fills every [data-cfg] element. */
-(function () {
-  try {
-    if (!window.SiteConfig) return;
-    window.SiteConfig.apply(document);
-    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-      window.SiteConfig.load(firebase.firestore()).then(function () {
+  <script src="/assets/booking-secure.js?v=3"></script>
+  <script src="/assets/egygz-notify.js?v=3" defer></script>
+  <script src="/assets/calc-engine.js?v=4"></script>
+  <script data-cfasync="false">
+  /* Site settings: reads cached settings/site via REST and fills every [data-cfg] element. */
+  (function () {
+    try {
+      if (!window.SiteConfig) return;
+      window.SiteConfig.apply(document);
+      window.SiteConfig.load(null).then(function () {
         window.SiteConfig.apply(document);
       }).catch(function () {});
-    }
-  } catch (e) { /* never break the page */ }
-})();
-</script>
+    } catch (e) { /* never break the page */ }
+  })();
+  </script>
 </body>
 </html>

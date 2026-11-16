@@ -2,35 +2,34 @@
  *  EGYGRILLZ — HOME SECTION BANNERS
  *  ---------------------------------------------------------------------------
  *  The wide banner at the top of each collection section on the home page
- *  (Golds / Silvers / Diamonds) is chosen in /editx → "Home Banners".
+ *  (Golds / Silvers / Diamonds) is chosen in /editx → "Home Banners" and
+ *  stored in Firestore  settings/banners.
  *
- *  The choice is stored in Firestore  settings/banners :
- *      { golds:    { images: ["/assets/banners/golds-1.jpg"], name: "…", desc: "…" },
- *        silvers:  { … },
- *        diamonds: { … } }
- *
- *  When a section has no banner the home page falls back to the first design
- *  assigned to that page — exactly what it did before this file existed.
+ *  Backed by a 10-minute localStorage cache, stale fallback, and shared 429
+ *  cooldown so visitor traffic stays instant and never burns quota.
  * ═══════════════════════════════════════════════════════════════════════════ */
-(function () {
+(function (global) {
   'use strict';
 
   var PROJECT = 'egygrillz-studio';
-  /* Public web key of the project (already shipped in every page).
-     Firestore's REST API refuses keyless reads, which made the banner
-     document unreachable — the home page then always fell back to the
-     first design, so a banner saved in /editx never showed up. */
   var API_KEY = 'AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk';
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
     '/databases/(default)/documents/settings/banners?key=' + API_KEY;
   var TIERS = ['golds', 'silvers', 'diamonds'];
   var CACHE_KEY = 'egygz_banners_v1';
-  /* 10 minutes keeps visitors from re-reading the document on every section;
-     /editx clears this browser's copy the moment a banner is saved. */
-  var CACHE_TTL = 10 * 60 * 1000;
+  var QUOTA_KEY = 'egygz_fs_quota_until_v1';
+  var CACHE_TTL = 30 * 60 * 1000;
+  var QUOTA_COOLDOWN = 15 * 60 * 1000;
+  var TIMEOUT = 4000;
   var ready = null;
 
-  /** Firestore REST value → plain JS */
+  function isQuotaCooling() {
+    try { return Number(localStorage.getItem(QUOTA_KEY) || 0) > Date.now(); } catch (e) { return false; }
+  }
+  function markQuotaHit() {
+    try { localStorage.setItem(QUOTA_KEY, String(Date.now() + QUOTA_COOLDOWN)); } catch (e) {}
+  }
+
   function val(v) {
     if (!v) return undefined;
     if (v.stringValue !== undefined) return v.stringValue;
@@ -61,12 +60,13 @@
     return out;
   }
 
-  function readCache() {
+  function readCache(allowStale) {
     try {
       var raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       var o = JSON.parse(raw);
-      if (!o || !o.at || Date.now() - o.at > CACHE_TTL) return null;
+      if (!o || !o.at) return null;
+      if (!allowStale && (Date.now() - o.at > CACHE_TTL)) return null;
       return normalise(o.data || {});
     } catch (e) { return null; }
   }
@@ -75,41 +75,66 @@
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data, at: Date.now() })); } catch (e) {}
   }
 
-  function load() {
-    if (ready) return ready;
-    var cached = readCache();
-    if (cached) { ready = Promise.resolve(cached); return ready; }
+  function load(force) {
+    if (!force && ready) return ready;
+    if (!force) {
+      var cached = readCache(false);
+      if (cached) { ready = Promise.resolve(cached); return ready; }
+    }
+    var stale = readCache(true);
+    if (!force && isQuotaCooling()) {
+      ready = Promise.resolve(stale || normalise({}));
+      return ready;
+    }
+
     ready = new Promise(function (resolve) {
-      if (!window.fetch) return resolve(normalise({}));
-      var timer = setTimeout(function () { resolve(normalise({})); }, 2500);
-      window.fetch(DOC_URL, { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : null; })
+      if (!global.fetch) return resolve(stale || normalise({}));
+      var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+      var timer = setTimeout(function () {
+        if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+      }, TIMEOUT);
+
+      global.fetch(DOC_URL, ctrl ? { signal: ctrl.signal } : undefined)
+        .then(function (r) {
+          if (r.status === 429) { markQuotaHit(); return null; }
+          if (r.status === 404) { writeCache({}); return { __empty: true }; }
+          return r.ok ? r.json() : null;
+        })
         .then(function (doc) {
-          var data = doc && doc.fields ? val({ mapValue: { fields: doc.fields } }) : {};
+          clearTimeout(timer);
+          if (!doc) return resolve(stale || normalise({}));
+          if (doc.__empty) return resolve(normalise({}));
+          var data = doc.fields ? val({ mapValue: { fields: doc.fields } }) : {};
           var clean = normalise(data || {});
           writeCache(data || {});
-          clearTimeout(timer);
           resolve(clean);
         })
-        .catch(function () { clearTimeout(timer); resolve(normalise({})); });
+        .catch(function () { clearTimeout(timer); resolve(stale || normalise({})); });
     });
     return ready;
   }
 
-  /** site path for a banner image (absolute URLs pass through) */
+  /** site path for a banner image (absolute and data URLs pass through) */
   function srcOf(path) {
     var p = String(path || '').trim();
     if (!p) return '';
-    if (/^https?:\/\//i.test(p) || p.charAt(0) === '/') return p;
+    if (/^(https?:|data:|blob:|\/)/i.test(p)) return p;
     return '/' + p;
   }
 
-  window.HomeBanners = {
+  function invalidate() {
+    try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+    ready = null;
+  }
+
+  global.HomeBanners = {
     TIERS: TIERS,
     load: load,
     get: function (tier) {
       return load().then(function (all) { return (all && all[tier]) || { images: [], name: '', desc: '' }; });
     },
     srcOf: srcOf,
+    invalidate: invalidate,
+    clearCache: invalidate,
   };
-})();
+})(typeof globalThis !== 'undefined' ? globalThis : window);

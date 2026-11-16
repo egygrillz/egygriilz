@@ -12,9 +12,9 @@
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="/assets/calc-engine.js?v=2"></script>
-<script src="/assets/staff-calculator.js"></script>
-<script src="/assets/catalog.js?v=1"></script>
+<script src="/assets/calc-engine.js?v=4"></script>
+<script src="/assets/staff-calculator.js?v=4"></script>
+<script src="/assets/catalog.js?v=4"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
 window.addEventListener('load', function() {
@@ -646,6 +646,8 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
               <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
                 <button class="add-btn" id="open-calc-btn"><i class="fas fa-calculator"></i> Custom Grillz</button>
                 <button class="add-btn" id="toggle-svc-btn"><i class="fas fa-concierge-bell"></i> Studio Service</button>
+                <button class="add-btn" id="paste-code-btn" title="Import any EGZ-... or EGZ1:... calculator code"><i class="fas fa-bolt"></i> Paste Code</button>
+                <button class="add-btn" id="copy-code-btn" title="Copy short EGZ-... code for current invoice items"><i class="fas fa-copy"></i> Copy Code</button>
                 <button class="add-btn" id="add-item-btn"><i class="fas fa-plus"></i> Blank Line</button>
                 <button class="add-btn" id="open-import-quote-btn"><i class="fas fa-file-import"></i> Import Quote</button>
                 <button class="design-picker-toggle" id="toggle-picker-btn">+ Browse Designs</button>
@@ -969,8 +971,8 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
   </div>
   <div class="footer-bottom">
     <div class="footer-icons">
-      <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-      <a href="#"><i class="fas fa-location-dot"></i></a>
+      <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+      <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer" aria-label="Studio Location"><i class="fas fa-location-dot"></i></a>
     </div>
     <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
     <div class="ceo-wrap">
@@ -986,12 +988,21 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 
 <!-- Firebase SDK -->
 <script type="module">
-import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, limit, serverTimestamp }
+import { getFirestore, collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, runTransaction, increment, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseApp, requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js';
 
 const fbApp = firebaseApp();
 const db = getFirestore(fbApp);
+/* Bridge v10 modular Firestore into CalcEngine / SiteConfig / StaffCalculator */
+db._egygzProjectId = 'egygrillz-studio';
+db._egygzGet = async (col, id) => {
+  const snap = await getDoc(doc(db, col, id));
+  return snap.exists() ? snap.data() : null;
+};
+db._egygzSet = async (col, id, data, merge = true) => {
+  await setDoc(doc(db, col, id), data, { merge: !!merge });
+};
 const E = window.CalcEngine;
 
 
@@ -1006,19 +1017,50 @@ function showToast(msg, type='', dur=2800) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.className = 'toast', dur);
 }
+window.showToast = (msg, isErr) => showToast(msg, isErr ? 'error-toast' : 'success');
 
-function fmt(n) { return Math.round(n).toLocaleString('en-EG'); }
+function fmt(n) { return Math.round(Number(n) || 0).toLocaleString('en-EG'); }
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
+/* Monotonic invoice numbering — scans max EGY-NNN suffix so deleting an invoice never reuses a number */
 function genInvNum() {
   const invs = getInvoices();
-  const n = invs.length + 1;
-  return 'EGY-' + String(n).padStart(3,'0');
+  let maxN = Number(localStorage.getItem('egygz_inv_seq') || 0) || 0;
+  invs.forEach(inv => {
+    const m = String((inv && inv.number) || '').match(/EGY-(\d+)/i);
+    if (m) {
+      const num = parseInt(m[1], 10);
+      if (num > maxN) maxN = num;
+    }
+  });
+  return 'EGY-' + String(maxN + 1).padStart(3, '0');
 }
+
+async function reserveNextInvNum(currentNum) {
+  try {
+    const cRef = doc(db, 'settings', 'counters');
+    const reserved = await runTransaction(db, async (tx) => {
+      const snap = await tx.get(cRef);
+      const remoteLast = snap.exists() ? (Number(snap.data().lastInvoiceNum) || 0) : 0;
+      const m = String(currentNum || '').match(/^EGY-(\d+)$/i);
+      const localTarget = m ? parseInt(m[1], 10) : 0;
+      const next = Math.max(remoteLast + 1, localTarget);
+      tx.set(cRef, { lastInvoiceNum: next, updatedAt: new Date().toISOString() }, { merge: true });
+      return next;
+    });
+    try { localStorage.setItem('egygz_inv_seq', String(reserved)); } catch (e) {}
+    return 'EGY-' + String(reserved).padStart(3, '0');
+  } catch (e) {
+    return currentNum || genInvNum();
+  }
+}
+
 function getInvoices() {
   try { return JSON.parse(localStorage.getItem('egy_invoices') || '[]'); } catch{ return []; }
 }
-function saveInvoices(arr) { localStorage.setItem('egy_invoices', JSON.stringify(arr)); }
+function saveInvoices(arr) {
+  try { localStorage.setItem('egy_invoices', JSON.stringify(arr)); } catch (e) {}
+}
 
 /* ══════════════════════════════════════════════════
    CONFIRM DIALOG (replaces window.confirm)
@@ -1099,8 +1141,8 @@ async function initApp() {
   setupItemSearchAutocomplete();
 
   await Promise.allSettled([
-    E ? E.load(null) : Promise.resolve(),
-    window.SiteConfig ? window.SiteConfig.load(null) : Promise.resolve(),
+    E ? E.load(db) : Promise.resolve(),
+    window.SiteConfig ? window.SiteConfig.load(db) : Promise.resolve(),
     preloadCatalogDesigns(),
     loadClients().catch(dbErr => {
       const code = String((dbErr && (dbErr.code || dbErr.message)) || '');
@@ -1110,6 +1152,36 @@ async function initApp() {
     }),
     loadRemoteInvoices(),
   ]);
+
+  if (E && typeof E.onChange === 'function') {
+    E.onChange(() => {
+      designCache = {};
+      allDesigns.forEach(d => {
+        const pr = designPrice(d);
+        d.priceNum = pr.num;
+        d.calcPriced = pr.priced;
+      });
+      if (currentCategory) loadDesigns(currentCategory);
+    });
+  }
+  /* Refresh design prices now that CalcEngine finished loading */
+  designCache = {};
+  allDesigns.forEach(d => { const pr = designPrice(d); d.priceNum = pr.num; d.calcPriced = pr.priced; });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    ['calc-modal', 'import-quote-modal', 'add-client-modal'].forEach(id => {
+      const m = document.getElementById(id);
+      if (m && m.classList.contains('open')) m.classList.remove('open');
+    });
+    const cm = document.getElementById('confirm-modal');
+    if (cm && cm.classList.contains('open')) {
+      const cancelBtn = document.getElementById('confirm-cancel');
+      if (cancelBtn) cancelBtn.click();
+    }
+    const nav = document.querySelector('.main-nav');
+    if (nav) nav.classList.remove('active');
+  });
 
   setDefaultDates();
   consumePendingQuoteTransfer();
@@ -1221,9 +1293,9 @@ function renderClientDropdown(matches) {
     return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div class="client-option" data-id="${c.id}">
-      <div class="client-option-name">${c.name || c.id}</div>
-      <div class="client-option-sub">${c.id}${c.email ? ' · ' + c.email : ''}</div>
+    <div class="client-option" data-id="${escHtml(c.id)}">
+      <div class="client-option-name">${escHtml(c.name || c.id)}</div>
+      <div class="client-option-sub">${escHtml(c.phone || c.id)}${c.email ? ' · ' + escHtml(c.email) : ''}</div>
     </div>
   `).join('');
   dropdown.classList.add('open');
@@ -1274,15 +1346,17 @@ function setupItemSearchAutocomplete() {
 function renderItemSearchDropdown(matches, q) {
   const dropdown = document.getElementById('item-search-dropdown');
   if (!matches.length) {
-    dropdown.innerHTML = '<div class="item-search-empty">No designs found for "' + q + '"</div>';
+    dropdown.innerHTML = '<div class="item-search-empty">No designs found for "' + escHtml(q) + '"</div>';
     dropdown.classList.add('open');
     return;
   }
   dropdown.innerHTML = matches.map(d => {
-    const imgSrc = d.images && d.images[0] ? (d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0] : '';
+    const imgSrc = d.images && d.images[0]
+      ? ((window.Catalog && window.Catalog.mediaPath) ? window.Catalog.mediaPath({ category: d.cat, folder: d.folder, id: d.id }, d.images[0]) : ((d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0]))
+      : '';
     return `
     <div class="item-search-option" data-idx="${allDesigns.indexOf(d)}">
-        ${imgSrc ? `<img src="${imgSrc}" alt="${escHtml(d.name)}" onerror="this.style.display='none'" loading="lazy" decoding="async">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
+        ${imgSrc ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(d.name)}" onerror="this.style.display='none'" loading="lazy" decoding="async">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
         <div class="item-search-option-info">
           <div class="item-search-option-name">${escHtml(d.name||d.folder)}</div>
           <div class="item-search-option-meta">${escHtml(d.cat)} · ${escHtml(d.folder)}</div>
@@ -1349,31 +1423,84 @@ async function preloadCatalogDesigns() {
   } catch (e) { console.warn('[invoice] catalog preload failed', e); }
 }
 
-async function loadRemoteInvoices() {
+let invCursor = null;
+let invHasMore = false;
+let invLoading = false;
+const INV_PAGE_SIZE = 40;
+
+async function loadRemoteInvoices(append = false) {
+  if (invLoading) return;
+  invLoading = true;
   try {
-    const q = query(collection(db, 'invoices'), orderBy('createdAt', 'desc'), limit(250));
-    const snap = await getDocs(q);
-    remoteInvoices = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    const constraints = [collection(db, 'invoices'), orderBy('createdAt', 'desc'), limit(INV_PAGE_SIZE)];
+    if (append && invCursor) constraints.push(startAfter(invCursor));
+    const snap = await getDocs(query(...constraints));
+    const batch = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    invCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : invCursor;
+    invHasMore = snap.docs.length === INV_PAGE_SIZE;
+    remoteInvoices = append ? remoteInvoices.concat(batch) : batch;
     const merged = mergeInvoices(getInvoices(), remoteInvoices);
     saveInvoices(merged);
   } catch (e) {
     console.warn('[invoice] Firestore invoices read skipped/failed', e);
+  } finally {
+    invLoading = false;
   }
 }
 
 /* ══════════════════════════════════════════════════
-   LOAD CLIENTS FROM FIREBASE
+   LOAD CLIENTS FROM FIREBASE (paginated + 5m cache)
 ══════════════════════════════════════════════════ */
-async function loadClients() {
+let clientCursor = null;
+let clientHasMore = false;
+let clientLoading = false;
+const CLIENT_PAGE_SIZE = 60;
+const INV_CLIENTS_CACHE = 'egygz_inv_clients_v1';
+
+async function loadClients(append = false, force = false) {
+  if (clientLoading) return;
+  if (!append && !force) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(INV_CLIENTS_CACHE) || 'null');
+      if (cached && Array.isArray(cached.list) && cached.at && (Date.now() - cached.at) < 5 * 60 * 1000) {
+        clients = cached.list;
+        clientHasMore = !!cached.hasMore;
+        updateHeroStats();
+        return;
+      }
+    } catch (e) {}
+  }
+  clientLoading = true;
   try {
-    const snap = await getDocs(collection(db, 'clients'));
-    clients = [];
-    snap.forEach(docSnap => { clients.push({ id: docSnap.id, ...docSnap.data() }); });
+    let snap;
+    try {
+      const constraints = [collection(db, 'clients'), orderBy('lastVisit', 'desc'), limit(CLIENT_PAGE_SIZE)];
+      if (append && clientCursor) constraints.push(startAfter(clientCursor));
+      snap = await getDocs(query(...constraints));
+    } catch (idxErr) {
+      snap = await getDocs(query(collection(db, 'clients'), limit(CLIENT_PAGE_SIZE)));
+    }
+    const batch = [];
+    snap.forEach(docSnap => { batch.push({ id: docSnap.id, ...docSnap.data() }); });
+    clientCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : clientCursor;
+    clientHasMore = snap.docs.length === CLIENT_PAGE_SIZE;
+    if (append) {
+      const seen = new Set(clients.map(c => c.id));
+      batch.forEach(c => { if (!seen.has(c.id)) clients.push(c); });
+    } else {
+      clients = batch;
+    }
     clients.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    if (!append) {
+      try { sessionStorage.setItem(INV_CLIENTS_CACHE, JSON.stringify({ at: Date.now(), list: clients, hasMore: clientHasMore })); } catch (e) {}
+    }
     updateHeroStats();
   } catch(e) {
     console.error('Firebase error:', e);
     showToast('Firebase connection error', 'error-toast');
+    throw e;
+  } finally {
+    clientLoading = false;
   }
 }
 
@@ -1472,7 +1599,7 @@ function removeItem(id) {
 function renderItems() {
   const wrap = document.getElementById('items-list');
   if (lineItems.length === 0) {
-    wrap.innerHTML = '<div class="items-empty" id="items-empty">No items added yet</div>';
+    wrap.innerHTML = '<div class="items-empty">No items added yet</div>';
     return;
   }
 
@@ -1579,9 +1706,11 @@ function renderDesignGrid(designs) {
   designs.forEach(d => {
     const thumb = document.createElement('div');
     thumb.className = 'design-thumb';
-    const imgSrc = d.images && d.images[0] ? (d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0] : '';
+    const imgSrc = d.images && d.images[0]
+      ? ((window.Catalog && window.Catalog.mediaPath) ? window.Catalog.mediaPath({ category: d.cat, folder: d.folder, id: d.id }, d.images[0]) : ((d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0]))
+      : '';
     thumb.innerHTML = `
-      ${imgSrc ? `<img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy" onerror="this.parentElement.querySelector('.design-thumb-name').textContent+=' (no img)'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
+      ${imgSrc ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(d.name)}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
       <div class="design-thumb-name">${escHtml(d.name || d.folder)}</div>
       <div class="design-thumb-price">${d.priceNum ? fmt(d.priceNum) + ' EGP' : ''}</div>
     `;
@@ -1607,7 +1736,7 @@ function ensureInvoiceCalc(){
   const host = document.getElementById('invCalcHost');
   if (!host || !window.StaffCalculator) return null;
   INVOICE_CALC = window.StaffCalculator.mount(host, {
-    db: (window.firebase && firebase.apps && firebase.apps.length) ? firebase.firestore() : null,
+    db: db,
     designMode: true,
     showApply: false,
     applyLabel: 'Add to Invoice',
@@ -1637,11 +1766,100 @@ function setupCalculatorModal() {
     const read = inst.readLine();
     if (read.error) { showToast(read.error, 'error-toast'); return; }
     const calc = E.calculateLine(read.line);
-    const label = read.line.name || (E.LABELS.material[read.line.material] + ' Custom Grillz');
+    const baseMat = calc.mixedMaterials
+      ? 'Mixed Materials'
+      : (calc.material === 'gold' ? ('Gold ' + (calc.karat || '18') + 'K') : (E.LABELS.material[calc.material] || calc.material));
+    const label = read.line.name || (baseMat + ' Custom Grillz');
     addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal, line: calc });
     close();
-    showToast('Custom grillz line added: ' + fmt(calc.subtotal) + ' EGP', 'success');
+    showToast('Custom grillz set added: ' + fmt(calc.subtotal) + ' EGP', 'success');
   });
+
+  const applyCodeToInvoice = (raw) => {
+    if (!E || typeof E.decodeCode !== 'function') { showToast('Code reader unavailable', 'error-toast'); return false; }
+    const dec = E.decodeCode(raw);
+    if (!dec) { showToast('Invalid code — paste an EGZ-... or EGZ1:... code', 'error-toast'); return false; }
+    const r = dec.rates || {};
+    const S = E.get();
+    if (r.gold && !Number(S.goldPrice)) E.set({ goldPrice: r.gold });
+    const order = E.calculateOrder(dec.lines || [], {
+      timeline: dec.timeline || 'standard',
+      mold: dec.mold || 'none',
+      depositPct: Number(dec.depositPct) || 0,
+      services: dec.services || [],
+      discount: dec.discount || null,
+    });
+    const items = [];
+    (order.lines || []).forEach(ln => {
+      const bm = ln.mixedMaterials ? 'Mixed Materials' : (ln.material === 'gold' ? ('Gold ' + (ln.karat || '18') + 'K') : (E.LABELS.material[ln.material] || 'Custom'));
+      items.push({ name: ln.name || (bm + ' Custom Grillz'), spec: E.lineLabel(ln), qty: 1, price: ln.subtotal, line: ln });
+    });
+    (order.services || []).forEach(sv => {
+      items.push({ name: sv.name || 'Studio Service', spec: 'Studio Service', qty: sv.qty || 1, price: sv.unitPrice || 0, serviceType: sv.type || 'custom' });
+    });
+    if (order.timelineAmount) items.push({ name: (E.LABELS.timeline[order.timeline] || 'Rush') + ' Timeline', spec: '+' + order.timelinePct + '% Timeline Surcharge', qty: 1, price: order.timelineAmount });
+    if (order.moldCost) items.push({ name: 'Dental Mold', spec: E.LABELS.mold[order.mold] || 'Mold Fee', qty: 1, price: order.moldCost });
+    applyImportedQuote({
+      clientName: dec.clientName || '',
+      clientPhone: dec.clientPhone || '',
+      notes: dec.notes || '',
+      discountAmount: order.discountAmount || 0,
+      depositAmount: order.deposit || 0,
+      items,
+    });
+    showToast('Calculator code imported (' + fmt(order.total) + ' EGP)', 'success');
+    return true;
+  };
+
+  const pasteBtn = document.getElementById('paste-code-btn');
+  if (pasteBtn) {
+    pasteBtn.addEventListener('click', () => {
+      const raw = prompt('Paste any EGYGRILLZ calculator code (EGZ-... or EGZ1:...) or link:');
+      if (!raw || !raw.trim()) return;
+      applyCodeToInvoice(raw.trim());
+    });
+  }
+
+  const copyBtn = document.getElementById('copy-code-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      if (!E || typeof E.encodeCode !== 'function') return;
+      const calcLines = [];
+      const svcLines = [];
+      lineItems.forEach(it => {
+        if (it.line && (it.line.material || Array.isArray(it.line.groups))) {
+          const count = Math.max(1, Number(it.qty) || 1);
+          for (let q = 0; q < count; q++) calcLines.push(Object.assign({}, it.line, { name: it.name || it.line.name || '' }));
+        } else if (Number(it.price) > 0 || it.name) {
+          svcLines.push({ type: it.serviceType || 'custom', name: it.name || 'Item', qty: Number(it.qty) || 1, unitPrice: Number(it.price) || 0 });
+        }
+      });
+      if (!calcLines.length && !svcLines.length) { showToast('Add at least one item first', 'error-toast'); return; }
+      const dVal = Number(document.getElementById('discount-val').value) || 0;
+      const dType = document.getElementById('discount-type').value === 'pct' ? 'pct' : 'flat';
+      const code = E.encodeCode({
+        lines: calcLines,
+        services: svcLines,
+        discount: dVal > 0 ? { value: dVal, type: dType } : null,
+        clientName: selectedClient ? (selectedClient.name || '') : '',
+        clientPhone: selectedClient ? (selectedClient.phone || '') : '',
+        notes: (document.getElementById('inv-notes').value || '').trim(),
+      });
+      if (!code) { showToast('Could not generate code', 'error-toast'); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => showToast('Code copied: ' + code.slice(0, 32) + (code.length > 32 ? '…' : ''), 'success'))
+          .catch(() => prompt('Copy your EGYGRILLZ code:', code));
+      } else {
+        prompt('Copy your EGYGRILLZ code:', code);
+      }
+    });
+  }
+
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const qCode = sp.get('c') || sp.get('code');
+    if (qCode) applyCodeToInvoice(qCode);
+  } catch (e) {}
 }
 
 function setupServicesBar() {
@@ -1929,35 +2147,60 @@ function buildInvoiceData() {
     clientPhone: selectedClient?.phone || '',
     quoteId: pendingQuoteId || '',
     items: lineItems.map(i => ({ name: i.name || '', spec: i.spec || '', qty: Number(i.qty)||1, price: Number(i.price)||0 })),
-    subtotal, discount, total, deposit, remaining,
+    subtotal, discount,
+    discountInput: Number(document.getElementById('discount-val').value) || 0,
+    discountType: document.getElementById('discount-type').value || 'egp',
+    total, deposit, remaining,
     paymentMethod,
     updatedAt: new Date().toISOString(),
     createdAt: new Date().toISOString()
   };
 }
 
+let isSavingInvoice = false;
 async function saveInvoice() {
+  if (isSavingInvoice) return;
   if (!selectedClient) { showToast('Select a client first', 'error-toast'); return; }
   if (lineItems.length === 0) { showToast('Add at least one item', 'error-toast'); return; }
-  const data = buildInvoiceData();
-  const invs = getInvoices();
-  const idx = invs.findIndex(i => String(i.id) === String(data.id));
-  if (idx >= 0) {
-    data.createdAt = invs[idx].createdAt || data.createdAt;
-    invs[idx] = data;
-  } else {
-    invs.unshift(data);
-  }
-  saveInvoices(invs);
-  editingInvoiceId = data.id;
-  updateHeroStats();
+
+  const btn = document.getElementById('save-invoice-btn');
+  const prevHtml = btn ? btn.innerHTML : '';
+  isSavingInvoice = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
   try {
-    await setDoc(doc(db, 'invoices', String(data.id)), data, { merge: true });
-    showToast('Invoice saved to studio database · ' + data.number, 'success');
-  } catch (e) {
-    console.warn('[invoice] Firestore save failed', e);
-    showToast('Saved locally only — check Firestore rules', 'error-toast');
+    const isNew = !editingInvoiceId;
+    if (isNew) {
+      const typed = document.getElementById('inv-number').value.trim();
+      if (!typed || /^EGY-\d+$/i.test(typed)) {
+        const reservedNum = await reserveNextInvNum(typed || genInvNum());
+        document.getElementById('inv-number').value = reservedNum;
+      }
+    }
+    const data = buildInvoiceData();
+    const invs = getInvoices();
+    const idx = invs.findIndex(i => String(i.id) === String(data.id));
+    if (idx >= 0) {
+      data.createdAt = invs[idx].createdAt || data.createdAt;
+      invs[idx] = data;
+    } else {
+      invs.unshift(data);
+    }
+    saveInvoices(invs);
+    editingInvoiceId = data.id;
+    updateHeroStats();
+    updatePreview();
+
+    try {
+      await setDoc(doc(db, 'invoices', String(data.id)), data, { merge: true });
+      showToast('Invoice saved to studio database · ' + data.number, 'success');
+    } catch (e) {
+      console.warn('[invoice] Firestore save failed', e);
+      showToast('Saved locally only — check connection or Firestore rules', 'error-toast');
+    }
+  } finally {
+    isSavingInvoice = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = prevHtml || 'Save Invoice'; }
   }
 }
 
@@ -2216,23 +2459,36 @@ function renderInvoicesList() {
     return;
   }
 
-  wrap.innerHTML = invs.map(inv => `
+  wrap.innerHTML = invs.map(inv => {
+    const st = ['paid','partial','pending'].includes(inv.status) ? inv.status : 'pending';
+    return `
     <div class="inv-list-row">
-      <div class="inv-list-num">${inv.number || '—'}</div>
-      <div class="inv-list-client">${inv.clientName || '—'}</div>
-      <div class="inv-list-date">${inv.date || ''}</div>
+      <div class="inv-list-num">${escHtml(inv.number || '—')}</div>
+      <div class="inv-list-client">${escHtml(inv.clientName || '—')}</div>
+      <div class="inv-list-date">${escHtml(inv.date || '')}</div>
       <div class="inv-list-amount">${fmt(inv.total)} EGP</div>
       <div class="inv-list-status">
-        <span class="status-dot ${inv.status}"></span>
-        <span class="status-text">${inv.status}</span>
+        <span class="status-dot ${st}"></span>
+        <span class="status-text">${escHtml(st)}</span>
       </div>
       <div class="inv-list-actions">
-        <button class="inv-mini-btn" data-edit="${inv.id}">Edit</button>
-        <button class="inv-mini-btn" data-email="${inv.id}" ${!inv.clientEmail?'disabled title="No email"':''}>Email</button>
-        <button class="inv-mini-btn danger" data-del="${inv.id}">Delete</button>
+        <button type="button" class="inv-mini-btn" data-edit="${escHtml(inv.id)}">Edit</button>
+        <button type="button" class="inv-mini-btn" data-email="${escHtml(inv.id)}" ${!inv.clientEmail?'disabled title="No email"':''}>Email</button>
+        <button type="button" class="inv-mini-btn danger" data-del="${escHtml(inv.id)}">Delete</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('') + (invHasMore ? `<div style="text-align:center;padding:16px;"><button type="button" class="inv-mini-btn" id="load-more-invs-btn">Load more invoices</button></div>` : '');
+
+  const moreInvBtn = wrap.querySelector('#load-more-invs-btn');
+  if (moreInvBtn) {
+    moreInvBtn.addEventListener('click', async () => {
+      moreInvBtn.disabled = true;
+      moreInvBtn.textContent = 'Loading…';
+      await loadRemoteInvoices(true);
+      loadAccountingTab();
+      updateHeroStats();
+    });
+  }
 
   wrap.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -2274,21 +2530,37 @@ function renderInvoicesList() {
 
 function loadInvoiceIntoBuilder(inv) {
   editingInvoiceId = inv.id;
+  pendingQuoteId = inv.quoteId || '';
   document.getElementById('inv-number').value = inv.number || '';
   document.getElementById('inv-date').value = inv.date || todayStr();
   document.getElementById('inv-due').value = inv.due || '';
   document.getElementById('inv-status').value = inv.status || 'pending';
   document.getElementById('inv-notes').value = inv.notes || '';
-  document.getElementById('deposit-val').value = inv.deposit || 0;
+  document.getElementById('deposit-val').value = Number(inv.deposit) || 0;
+  if (inv.discountInput !== undefined) {
+    document.getElementById('discount-val').value = Number(inv.discountInput) || 0;
+    document.getElementById('discount-type').value = inv.discountType || 'egp';
+  } else {
+    document.getElementById('discount-val').value = Number(inv.discount) || 0;
+    document.getElementById('discount-type').value = 'egp';
+  }
 
-  // Restore client
-  if (inv.clientId) {
-    const c = clients.find(x => x.id === inv.clientId);
+  // Restore client & visible client summary card
+  if (inv.clientId || inv.clientName) {
+    const c = inv.clientId ? clients.find(x => x.id === inv.clientId) : null;
     if (c) selectClient(c);
     else {
-      // Fake client from invoice data
-      selectedClient = { id: inv.clientId, name: inv.clientName, email: inv.clientEmail, phone: inv.clientPhone };
-      document.getElementById('client-search-input').value = inv.clientName || inv.clientId;
+      selectedClient = {
+        id: inv.clientId || inv.clientPhone || inv.clientName,
+        name: inv.clientName || inv.clientId || 'Client',
+        email: inv.clientEmail || '',
+        phone: inv.clientPhone || ''
+      };
+      document.getElementById('client-search-input').value = selectedClient.name;
+      document.getElementById('client-card').classList.add('visible');
+      document.getElementById('cc-name').textContent = selectedClient.name;
+      document.getElementById('cc-info').textContent = [selectedClient.phone, selectedClient.email].filter(Boolean).join(' · ');
+      document.getElementById('cc-badge').textContent = 'Invoice Client';
     }
   }
 
@@ -2301,7 +2573,7 @@ function loadInvoiceIntoBuilder(inv) {
   });
 
   updatePreview();
-  showToast('Invoice loaded for editing · ' + inv.number, 'success');
+  showToast('Invoice loaded for editing · ' + (inv.number || inv.id), 'success');
 }
 
 /* ══════════════════════════════════════════════════
@@ -2322,19 +2594,29 @@ function renderClientsTable(list) {
       <tbody>
         ${list.map(c => `
           <tr>
-            <td class="client-name-cell">${c.name || '—'}</td>
-            <td class="client-phone-cell">${c.id || ''}</td>
-            <td class="client-email-cell">${c.email || '—'}</td>
-            <td class="client-visits-cell">${c.totalAppointments || 0} visits</td>
-            <td class="client-visits-cell">${c.lastVisit || '—'}</td>
+            <td class="client-name-cell">${escHtml(c.name || '—')}</td>
+            <td class="client-phone-cell">${escHtml(c.phone || c.id || '')}</td>
+            <td class="client-email-cell">${escHtml(c.email || '—')}</td>
+            <td class="client-visits-cell">${Number(c.totalAppointments) || 0} visits</td>
+            <td class="client-visits-cell">${escHtml(c.lastVisit || '—')}</td>
             <td>
-              <button class="client-action-btn" data-client="${c.id}">Invoice</button>
+              <button type="button" class="client-action-btn" data-client="${escHtml(c.id)}">Invoice</button>
             </td>
           </tr>
         `).join('')}
       </tbody>
     </table>
+    ${clientHasMore ? '<div style="text-align:center;padding:16px;"><button type="button" class="client-action-btn" id="load-more-clients-btn">Load more clients</button></div>' : ''}
   `;
+  const moreCBtn = wrap.querySelector('#load-more-clients-btn');
+  if (moreCBtn) {
+    moreCBtn.addEventListener('click', async () => {
+      moreCBtn.disabled = true;
+      moreCBtn.textContent = 'Loading…';
+      await loadClients(true, true).catch(() => {});
+      renderClientsTable(clients);
+    });
+  }
   wrap.querySelectorAll('[data-client]').forEach(btn => {
     btn.addEventListener('click', () => {
       const c = clients.find(x => x.id === btn.dataset.client);
@@ -2377,23 +2659,39 @@ function setupAddClientModal() {
     const email = document.getElementById('nc-email').value.trim();
     const notes = document.getElementById('nc-notes').value.trim();
 
-    if (!name || !phone) { showToast('Name and phone are required', 'error-toast'); return; }
+    const phoneId = phone.replace(/\D/g, '');
+    if (!name || phoneId.length < 8) { showToast('Name and a valid phone number are required', 'error-toast'); return; }
 
     const btn = document.getElementById('save-new-client');
     btn.textContent = 'Saving...'; btn.disabled = true;
 
     try {
-      await setDoc(doc(db, 'clients', phone), {
-        name, phone, email, notes,
-        createdAt: serverTimestamp(),
-        firstVisit: todayStr(), lastVisit: todayStr(),
-        totalAppointments: 0, totalNoShows: 0, services: []
+      const existing = clients.find(c => c.id === phoneId);
+      const record = existing
+        ? { name, phone, email, notes, lastVisit: todayStr() }
+        : {
+            name, phone, email, notes,
+            createdAt: serverTimestamp(),
+            firstVisit: todayStr(), lastVisit: todayStr(),
+            totalAppointments: 0, totalNoShows: 0, services: []
+          };
+      await setDoc(doc(db, 'clients', phoneId), record, { merge: true });
+      if (!existing) {
+        setDoc(doc(db, 'stats', 'summary'), { totalClients: increment(1), updatedAt: new Date().toISOString() }, { merge: true }).catch(() => {});
+      }
+      const localRec = Object.assign({ totalAppointments: 0, totalNoShows: 0, services: [], firstVisit: todayStr() }, existing || {}, {
+        id: phoneId, name, phone, email, notes, lastVisit: todayStr()
       });
+      const idx = clients.findIndex(c => c.id === phoneId);
+      if (idx >= 0) clients[idx] = localRec; else clients.push(localRec);
+      clients.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      try { sessionStorage.setItem(INV_CLIENTS_CACHE, JSON.stringify({ at: Date.now(), list: clients, hasMore: clientHasMore })); } catch (e) {}
+      selectClient(localRec);
+      updateHeroStats();
+      renderClientsTable(clients);
       showToast('Client saved!', 'success');
       close();
       ['nc-name','nc-phone','nc-email','nc-notes'].forEach(id => document.getElementById(id).value = '');
-      await loadClients();
-      renderClientsTable(clients);
     } catch(e) {
       showToast('Error: ' + e.message, 'error-toast');
     } finally {

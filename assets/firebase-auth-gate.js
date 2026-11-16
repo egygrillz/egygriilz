@@ -1,9 +1,9 @@
 /**
- * EGYGRILLZ — Firebase Auth gate (shared by editx, quotes, invoice, staff panel)
+ * EGYGRILLZ — Firebase Auth gate (shared by editx, quotes, invoice, MTC)
  *
- * The page waits for a real Firebase session, then every Firestore call in the
- * page runs with that user's token. Read-only pages never show a "connection
- * error" just because the session was still loading.
+ * Waits for a real Firebase session, then every Firestore call in the page
+ * runs with that user's token. Explicit visibility:visible ensures the sign-in
+ * dialog is always visible even when the host page hides body.auth-locked.
  */
 import { initializeApp, getApps, getApp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -20,7 +20,6 @@ export const FIREBASE_CONFIG = {
   appId: '1:1022362401463:web:fec76b9c73e24d9cfeeb32',
 };
 
-/* Reuse a single Firebase app instance & auth session across internal pages */
 export function firebaseApp() {
   return getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
 }
@@ -29,23 +28,26 @@ export function firebaseAuth() {
 }
 
 let _auth = null;
+let _authPromise = null;
+
 function overlay() {
   let el = document.getElementById('egygz-auth-gate');
   if (el) return el;
   el = document.createElement('div');
   el.id = 'egygz-auth-gate';
+  el.style.cssText = 'visibility:visible!important;opacity:1!important;';
   el.innerHTML = `
-  <div style="position:fixed;inset:0;z-index:99999;background:#faf9f7;display:flex;align-items:center;justify-content:center;font-family:Helvetica,Arial,sans-serif">
-    <form id="egygz-gate-form" style="width:320px;background:#fff;border:1px solid #efefef;padding:28px">
+  <div style="position:fixed;inset:0;z-index:99999;visibility:visible!important;opacity:1!important;background:#faf9f7;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Helvetica,Arial,sans-serif">
+    <form id="egygz-gate-form" style="width:100%;max-width:340px;background:#fff;border:1px solid #efefef;padding:28px;box-sizing:border-box;visibility:visible!important">
       <div style="font-size:10px;letter-spacing:2px;color:#9a9a9a;margin-bottom:6px">EGYGRILLZ — RESTRICTED</div>
-      <div style="font-size:20px;font-weight:700;margin-bottom:18px">Staff sign-in</div>
-      <label style="font-size:12px;color:#666">Email</label>
+      <div style="font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:18px">Staff sign-in</div>
+      <label for="egygz-gate-email" style="display:block;font-size:12px;color:#666">Email</label>
       <input id="egygz-gate-email" type="email" required autocomplete="username"
-             style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;margin:6px 0 12px;font-size:14px">
-      <label style="font-size:12px;color:#666">Password</label>
+             style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;margin:6px 0 12px;font-size:14px;color:#1a1a1a;background:#fff">
+      <label for="egygz-gate-pass" style="display:block;font-size:12px;color:#666">Password</label>
       <input id="egygz-gate-pass" type="password" required autocomplete="current-password"
-             style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;margin:6px 0 12px;font-size:14px">
-      <div id="egygz-gate-err" style="color:#5a5a5a;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+             style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;margin:6px 0 12px;font-size:14px;color:#1a1a1a;background:#fff">
+      <div id="egygz-gate-err" role="alert" style="color:#b42318;font-size:12px;min-height:16px;margin-bottom:8px"></div>
       <button id="egygz-gate-btn" type="submit"
               style="width:100%;padding:11px;background:#1a1a1a;color:#fff;border:0;font-size:13px;letter-spacing:1px;cursor:pointer">
         Sign in
@@ -53,14 +55,16 @@ function overlay() {
     </form>
   </div>`;
   (document.body || document.documentElement).appendChild(el);
+  setTimeout(() => {
+    const inp = el.querySelector('#egygz-gate-email');
+    if (inp) { try { inp.focus(); } catch (e) {} }
+  }, 50);
   return el;
 }
 
 const LOG = (m, d) => { try { console.log('[gate]', m, d === undefined ? '' : d); } catch (e) {} };
 const WARN = (m, d) => { try { console.warn('[gate]', m, d === undefined ? '' : d); } catch (e) {} };
 
-/* Fallback: read persisted Firebase auth user directly from localStorage
-   if onAuthStateChanged takes too long to resolve (e.g., slow network). */
 function readStoredUser(auth) {
   try {
     const key = 'firebase:authUser:' + FIREBASE_CONFIG.apiKey + ':' + (auth && auth.name ? auth.name : '[DEFAULT]');
@@ -68,100 +72,111 @@ function readStoredUser(auth) {
     if (!raw) return null;
     const u = JSON.parse(raw);
     if (!u || !u.uid) return null;
-    LOG('stored session found', u.email || u.uid);
     return u;
   } catch (e) {
-    WARN('readStoredUser failed', e && e.message);
     return null;
   }
 }
 
 export async function requireAuth() {
-  LOG('requireAuth start');
   try { window.__gateLoaded = true; } catch (e) {}
   if (_auth && _auth.currentUser) return _auth.currentUser;
+  if (_authPromise) return _authPromise;
 
-  let auth;
-  try {
-    auth = firebaseAuth();
-  } catch (e) {
-    WARN('firebaseAuth failed', e && e.message);
-    throw e;
-  }
-  _auth = auth;
-  LOG('auth ready');
+  _authPromise = (async () => {
+    const auth = firebaseAuth();
+    _auth = auth;
 
-  /* Wait for Firebase's async session restoration before prompting for login */
-  const restored = await new Promise((resolve) => {
-    LOG('waiting for restored session');
-    let un = null;
-    let settled = false;
-    const finish = (u) => {
-      if (settled) return;
-      settled = true;
-      try { if (un) un(); } catch (e) {}
-      resolve(u || null);
-    };
-    try {
-      un = onAuthStateChanged(auth, (u) => finish(u), (err) => {
-        WARN('onAuthStateChanged error', err && err.code);
-        finish(auth.currentUser || null);
-      });
-    } catch (e) { WARN('onAuthStateChanged threw', e && e.message); finish(null); return; }
-    setTimeout(() => {
-      LOG('restore timeout — reading stored session directly');
-      const stored = readStoredUser(auth);
-      finish(stored || auth.currentUser || null);
-    }, 3000);
-  });
-
-  LOG('restore result', restored ? 'signed in' : 'no session');
-  if (restored) return restored;
-
-  await setPersistence(auth, browserLocalPersistence).catch(() => {});
-
-  const gate = overlay();
-  LOG('showing sign-in');
-  return new Promise((resolve) => {
-    let settled = false;
-    const done = (user) => {
-      if (settled) return;
-      settled = true;
-      gate.remove();
-      resolve(user);
-    };
-
-    onAuthStateChanged(auth, (user) => { if (user) done(user); });
-
-    gate.querySelector('#egygz-gate-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = gate.querySelector('#egygz-gate-email').value.trim();
-      const pass = gate.querySelector('#egygz-gate-pass').value;
-      const btn = gate.querySelector('#egygz-gate-btn');
-      const err = gate.querySelector('#egygz-gate-err');
-      err.textContent = '';
-      btn.disabled = true;
-      btn.textContent = 'Checking…';
+    const restored = await new Promise((resolve) => {
+      let un = null;
+      let settled = false;
+      const finish = (u) => {
+        if (settled) return;
+        settled = true;
+        try { if (un) un(); } catch (e) {}
+        resolve(u || null);
+      };
       try {
-        const cred = await signInWithEmailAndPassword(auth, email, pass);
-        done(cred.user);
-      } catch (ex) {
-        const map = {
-          'auth/invalid-credential': 'Wrong email or password.',
-          'auth/invalid-login-credentials': 'Wrong email or password.',
-          'auth/too-many-requests': 'Too many attempts. Wait a few minutes.',
-          'auth/network-request-failed': 'Network error. Try again.',
-          'auth/user-not-found': 'Wrong email or password.',
-          'auth/wrong-password': 'Wrong email or password.',
-        };
-        err.textContent = map[ex.code] || (ex.code || ex.message || 'Could not sign in.');
-        btn.disabled = false;
-        btn.textContent = 'Sign in';
+        un = onAuthStateChanged(auth, (u) => finish(u), (err) => {
+          WARN('onAuthStateChanged error', err && err.code);
+          finish(auth.currentUser || null);
+        });
+      } catch (e) {
+        WARN('onAuthStateChanged threw', e && e.message);
+        finish(null);
+        return;
       }
+      setTimeout(() => {
+        const stored = readStoredUser(auth);
+        finish(auth.currentUser || stored || null);
+      }, 3500);
     });
+
+    if (restored) {
+      LOG('restored session');
+      return restored;
+    }
+
+    await setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+    const gate = overlay();
+    return await new Promise((resolve) => {
+      let settled = false;
+      let un = null;
+      const done = (user) => {
+        if (settled) return;
+        settled = true;
+        try { if (un) un(); } catch (e) {}
+        gate.remove();
+        resolve(user);
+      };
+
+      un = onAuthStateChanged(auth, (user) => { if (user) done(user); });
+
+      gate.querySelector('#egygz-gate-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = gate.querySelector('#egygz-gate-email').value.trim();
+        const pass = gate.querySelector('#egygz-gate-pass').value;
+        const btn = gate.querySelector('#egygz-gate-btn');
+        const err = gate.querySelector('#egygz-gate-err');
+        if (!email || !pass) {
+          err.textContent = 'Please enter your email and password.';
+          return;
+        }
+        err.textContent = '';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.textContent = 'Signing in…';
+        try {
+          const cred = await signInWithEmailAndPassword(auth, email, pass);
+          done(cred.user);
+        } catch (ex) {
+          const map = {
+            'auth/invalid-credential': 'Wrong email or password.',
+            'auth/invalid-login-credentials': 'Wrong email or password.',
+            'auth/invalid-email': 'Please enter a valid email address.',
+            'auth/too-many-requests': 'Too many attempts. Wait a few minutes.',
+            'auth/network-request-failed': 'Network error. Check your connection and try again.',
+            'auth/user-not-found': 'Wrong email or password.',
+            'auth/wrong-password': 'Wrong email or password.',
+            'auth/user-disabled': 'This staff account has been disabled.',
+          };
+          err.textContent = map[ex && ex.code] || ((ex && (ex.code || ex.message)) || 'Could not sign in.');
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.textContent = 'Sign in';
+        }
+      });
+    });
+  })().finally(() => {
+    _authPromise = null;
   });
+
+  return _authPromise;
 }
 
 export function signOut() {
-  if (_auth) fbSignOut(_auth).catch(() => {});
+  const auth = _auth || (() => { try { return firebaseAuth(); } catch (e) { return null; } })();
+  if (auth) return fbSignOut(auth).catch(() => {});
+  return Promise.resolve();
 }
