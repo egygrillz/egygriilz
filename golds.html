@@ -166,6 +166,7 @@
 </style>
   <link rel="canonical" href="https://egygrillz.com/golds">
   <script src="/assets/set-visibility.js?v=2"></script>
+  <script src="/assets/crops.js?v=1"></script>
 </head>
 <body>
 
@@ -420,6 +421,7 @@
         sec.className = 'page-hero';
         var img = document.createElement('img');
         img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
+        img.setAttribute('data-crop', 'hero:golds');
         img.alt = 'EGYGRILLZ';
         img.fetchPriority = 'high';
         img.decoding = 'async';

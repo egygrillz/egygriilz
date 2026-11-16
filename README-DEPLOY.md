@@ -86,6 +86,33 @@ match /mould_orders/{id} {
 `settings/site` and `settings/banners` must stay readable without signing in (`allow read: if true`),
 otherwise `/moulds` falls back to the default prices and the home page cannot show a saved banner.
 
+`settings/site` may have been created before the mould fields existed. A **missing** `mouldPerArch` /
+`mouldDeliveryFee` now means "use the published rate" (450 / 100) on both the page and the Worker —
+only an explicit `0` is a real zero, so the delivery fee can no longer silently vanish. Press
+**Save prices** in /editx → Moulds once to store your own numbers.
+
+---
+
+## Image crops — one crop per placement, never destructive
+
+Every photo keeps its original file. A crop is just a framing stored next to it and applied at
+render time, so it can be changed or thrown away whenever you like — and the same photo can be
+framed one way as a hero, another as a home banner and a third as a design card.
+
+| Placement | Key | Where to edit |
+|---|---|---|
+| Page hero (home, golds, silvers, diamonds, latest designs, gallery) | `hero:<page>` | /editx → Inventory → **Page Heroes** → *Adjust crop* |
+| Home section banner (golds / silvers / diamonds) | `banner:<tier>` | /editx → **Home Banners** → *Adjust crop* |
+| Design card | `card:<category>/<folder>` for the whole design, `card:<category>/<folder>::<file>` for one photo | /editx → Inventory → card → *Crop* |
+
+* Stored in Firestore **`settings/crops`** → `{ items: [ { slot, path, x, y, zoom } ] }` (public read).
+* `assets/crops.js` draws them with `object-position` (pan) plus a scaled box (zoom) — deliberately
+  **no CSS transform**, so the card/hero hover animations keep working.
+* The editor and the pages share `Crops.applyStyles()`, so the preview is exactly what visitors get.
+* An element can claim a placement with `data-crop="hero:index"`, and opt out with `data-crop="off"`.
+* The crop editor also previews the frame in the real aspect ratio (banner 16:7, hero 16:9,
+  card 4:5) with wide/phone/square presets.
+
 ---
 
 ## Deploy — 3 paths, pick one

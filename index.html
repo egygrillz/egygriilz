@@ -362,6 +362,7 @@
     .reveal.visible { opacity:1; transform:translateY(0); }
   </style>
   <script src="/assets/set-visibility.js?v=2"></script>
+  <script src="/assets/crops.js?v=1"></script>
   <script src="/assets/home-banners.js?v=2"></script>
 </head>
 <body>
@@ -397,6 +398,7 @@
           <img src="/assets/optimized/hero-grillz-1280.jpg"
                alt="EGYGRILLZ — Egypt's First Custom Grillz"
                width="1280" height="1707"
+               data-crop="hero:index"
                fetchpriority="high" decoding="async">
         </picture>
     <div class="hero-content">
@@ -730,7 +732,7 @@
 
     /* ─── Category card slideshow ─── */
     const slideshowIntervals = new WeakMap();
-    function makeCardSlideshow(container, paths){
+    function makeCardSlideshow(container, paths, cropSlot){
       container.innerHTML = '';
       const frag = document.createDocumentFragment();
       paths.forEach((src, i) => {
@@ -738,6 +740,7 @@
         img.alt = ''; img.draggable = false;
         img.loading = 'lazy'; img.decoding = 'async';
         img.src = src;
+        if (cropSlot) img.setAttribute('data-crop', cropSlot);
         if (i === 0) { img.classList.add('active'); img.loading = 'eager'; }
         frag.appendChild(img);
       });
@@ -785,7 +788,9 @@
           paths = (d.images||[]).filter(f=>!isVidName(f)).map(img => mediaPath(d, img));
         }
         if (!paths.length) return;
-        makeCardSlideshow(document.getElementById(slidesId), paths);
+        makeCardSlideshow(document.getElementById(slidesId), paths,
+          (window.HomeBanners && window.HomeBanners.TIERS.indexOf(cat) !== -1) ? 'banner:' + cat : '');
+
       } catch(e){ console.warn(cat, e); }
     }
 
@@ -965,6 +970,7 @@
         var img = document.createElement('img');
         img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
         img.alt = 'EGYGRILLZ';
+        img.setAttribute('data-crop', 'hero:index');
         img.fetchPriority = 'high';
         img.decoding = 'async';
         pic.innerHTML = '';
