@@ -532,7 +532,9 @@ fetch('/assets/images/catalog.json')
   .then(r => r.ok ? r.json() : [])
   .then(list => {
     if (Array.isArray(list)) {
-      CATALOG_PRESETS = list.filter(x => x && x.calc && x.calc.material);
+      /* every design is quotable: ones without a saved calculator spec open
+         with the default options so the line can be configured right here */
+      CATALOG_PRESETS = list.filter(x => x && x.id && x.name);
       if (LINES.length) renderLines();
     }
   }).catch(() => {});
@@ -635,7 +637,7 @@ function lineSkeleton(i){
 
   const presetOpts = CATALOG_PRESETS.length
     ? `<label class="f" style="max-width:210px"><span>Load catalog design</span><select class="inp" data-preset><option value="">— custom —</option>` +
-      CATALOG_PRESETS.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('') + `</select></label>`
+      CATALOG_PRESETS.map(p => `<option value="${esc(p.id)}">${esc(p.name)}${p.calc && p.calc.material ? '' : ' — set options'}</option>`).join('') + `</select></label>`
     : '';
 
   return `
@@ -779,17 +781,18 @@ function onLineChange(e){
   const i = +row.dataset.i;
   if (e.target.matches('[data-preset]')) {
     const item = CATALOG_PRESETS.find(p => p.id === e.target.value);
-    if (item && item.calc) {
-      const c = item.calc;
+    if (item) {
+      const c = (item.calc && item.calc.material) ? item.calc : null;
       LINES[i] = Object.assign({
         name: item.name || '',
         material: 'chrome', karat: '18', teeth: 6, level: '1',
         plating: 'none', enamel: 'none', engraving: 'none', anodize: 'none', mode: 'none'
-      }, c, {
+      }, c || {}, c ? {
         mode: c.accent ? 'accent' : (c.full && c.full.bars ? 'bars' : (c.full ? 'full' : 'none'))
-      });
+      } : {});
       renderLines();
-      toast('Loaded catalog design: ' + item.name);
+      toast(c ? 'Loaded catalog design: ' + item.name
+              : item.name + ' — set the material, teeth and finish to price it');
       return;
     }
   }

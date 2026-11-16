@@ -217,7 +217,6 @@
         <div class="modal-name" id="modal-name"></div>
         <div class="modal-rule"></div>
         <div class="modal-desc" id="modal-desc"></div>
-        <a class="modal-price modal-price-link" id="modal-price" href="contact"></a>
         <div class="modal-actions">
           <a href="booking" class="modal-cta-primary">Schedule an Appointment</a>
           <a href="contact" class="modal-cta-secondary">Contact Us</a>
@@ -260,12 +259,14 @@
     document.querySelector('.menu-toggle').addEventListener('click',()=>{ document.querySelector('.main-nav').classList.toggle('active'); document.body.classList.toggle('menu-open'); });
     document.getElementById('search-input').addEventListener('input',function(){ const q=this.value.trim().toLowerCase(); const cards=document.querySelectorAll('.set-card'); let visible=0; cards.forEach(card=>{ const name=(card.querySelector('.name-on-img')?.textContent||'').toLowerCase(); const match=!q||name.includes(q); card.style.display=match?'':'none'; if(match)visible++; }); document.getElementById('no-results').style.display=(q&&visible===0)?'block':'none'; });
     function parseInfo(text){ let name='',desc='',price='',images=[]; text.split('\n').forEach(line=>{ line=line.replace(/\r/g,'').trim(); const ci=line.indexOf(':'); if(ci===-1)return; const key=line.slice(0,ci).trim().toLowerCase(); const val=line.slice(ci+1).trim(); if(key==='name'||key==='title')name=val; else if(key==='description'||key==='desc')desc=val; else if(key==='price')price=val; else if(key==='images')images=val.split(',').map(i=>i.trim()).filter(Boolean); }); return{name,desc,price,images}; }
-    const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
+    const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalCtr=document.getElementById('modal-counter');
     let mCur=0,mTot=0;
-    function priceTarget(price){
-      var t = String(price||'').toLowerCase();
-      if(/schedule|book|appointment/.test(t)) return 'booking';
-      return 'contact';
+    /* Public page assignment: a design appears on the page it is assigned to.
+       Items saved before the field existed fall back to their category. */
+    const PAGE_KEY = 'golds';
+    function onThisPage(x){
+      const p = (x && Object.prototype.hasOwnProperty.call(x,'page')) ? x.page : (x && x.category);
+      return p === PAGE_KEY;
     }
     /* Media paths inside each item's category folder */
     function mediaPath(item, file){
@@ -308,7 +309,7 @@
       });
     }
 
-    function openModal({name,desc,price,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
+    function openModal({name,desc,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
         if(isVideoName(src)){ s.innerHTML='<video src="'+src+'" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover"></video>'; }
         else { s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" '+(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async">'; }
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
@@ -324,11 +325,11 @@
     fetch('assets/images/catalog.json?t=' + Date.now())
       .then(r=>r.json())
       .then(all=>{
-      const items=(all||[]).filter(x=>x.category==='golds').sort((a,b)=>(a.order||999)-(b.order||999));
+      const items=(all||[]).filter(onThisPage).sort((a,b)=>(a.order||999)-(b.order||999));
       const container=document.getElementById('golds-grid');
       if(!items.length){ container.innerHTML='<p class="empty">No golds yet — check back soon.</p>'; return; }
       const promises=items.map(item=>Promise.resolve({
-        name:item.name, desc:item.description, price:item.price,
+        name:item.name, desc:item.description,
         images:(item.images||[]).concat(item.videos||[]).map(f=>mediaPath(item,f)),
         folder:item.folder||item.id
       }));
@@ -351,7 +352,7 @@
 
       });
     }).catch(e=>console.error(e));
-    function buildCard({name,desc,price,images,folder}){
+    function buildCard({name,desc,images,folder}){
       const card=document.createElement('div');
       card.className='set-card';
       const photoImgs=images.filter(s=>!isVideoName(s));
@@ -385,7 +386,6 @@
       const cardBody=document.createElement('div');
       cardBody.className='card-body';
       if(desc){ const de=document.createElement('div'); de.className='card-desc'; de.textContent=desc; cardBody.appendChild(de); }
-      const pr=document.createElement('div'); pr.className='price'; pr.textContent=price||''; cardBody.appendChild(pr);
       card.appendChild(cardBody);
 
       let c=0;
@@ -400,7 +400,7 @@
           if(pips[c]) pips[c].classList.add('active');
         },3500);
       }
-      card.addEventListener('click',function(){ openModal({name,desc,price,images}); });
+      card.addEventListener('click',function(){ openModal({name,desc,images}); });
       return card;
     }
   </script>

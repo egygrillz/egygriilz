@@ -643,6 +643,26 @@
       letter-spacing:1.2px;text-transform:uppercase;padding:3px 8px;border-radius:3px;
       backdrop-filter:blur(4px);
     }
+    /* Inventory: calculator price + public page assignment */
+    .card-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:8px 0 2px;border-top:1px solid var(--line-2);margin-top:8px;}
+    .card-price-val{font-size:13px;font-weight:700;letter-spacing:.4px;color:var(--ink);}
+    .card-price-src{font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:#b08b5a;}
+    .card-price-src.ok{color:var(--sage);}
+    .card-page-row{display:flex;align-items:center;gap:8px;padding:6px 0;}
+    .card-page-label{font-size:8px;letter-spacing:1.4px;text-transform:uppercase;color:#9a9a9a;white-space:nowrap;}
+    .card-page-select{
+      flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--glass-2);
+      font-family:'Arimo',sans-serif;font-size:10px;letter-spacing:.6px;color:var(--ink);
+      padding:5px 6px;cursor:pointer;outline:none;
+    }
+    .card-page-select:focus{border-color:var(--ink);}
+    .design-price-box{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      border:1px solid var(--line);border-left:3px solid var(--ink);border-radius:0 6px 6px 0;
+      background:var(--glass-2);padding:12px 16px;
+    }
+    .design-price-val{font-family:'Playfair Display',serif;font-size:20px;letter-spacing:1px;}
+    .design-price-spec{font-size:10px;color:#8a8a8a;letter-spacing:.6px;margin-top:2px;}
     .badge-paid{background:#eaf7f0;color:#3f7a58;}
     .badge-partial{background:#fdf3e6;color:#b8792e;}
     .inv-hero-toggle-card{margin-bottom:20px;}
@@ -963,7 +983,7 @@
           <div class="page-header-row">
             <div>
               <p class="ph-title">Inventory</p>
-              <p class="ph-sub">All collections, sets, gallery photos, and page heroes — click any field to edit inline</p>
+              <p class="ph-sub">One list for every design. Filter by category or by the public page it is assigned to, set its page from each card, and let the calculator price it.</p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn-muted2" id="inv-hero-toggle-btn" onclick="toggleHeroSection()"><i class="fas fa-panorama"></i> Page Heroes</button>
@@ -1025,6 +1045,16 @@
           <!-- Search, Sort & Count -->
           <div class="filter-bar-orig">
             <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" id="inv-search-input" placeholder="Search all inventory…" oninput="renderUnifiedInventory()"></div>
+            <select class="filter-select-orig" id="inv-page-filter" onchange="renderUnifiedInventory()" title="Filter by the public page a design is assigned to">
+              <option value="">All pages</option>
+              <option value="index">Home</option>
+              <option value="golds">Golds</option>
+              <option value="silvers">Silvers</option>
+              <option value="diamonds">Diamonds</option>
+              <option value="latest-designs">Latest Designs</option>
+              <option value="grillz-gallery">Gallery</option>
+              <option value="__none__">Not on a page</option>
+            </select>
             <select class="filter-select-orig" id="inv-sort-select" onchange="renderUnifiedInventory()">
               <option value="">Sort: Default</option>
               <option value="name">Name A–Z</option>
@@ -1042,8 +1072,8 @@
             <button class="btn-bulk-clear" onclick="clearBulkInventory()">Clear</button>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 16px;">
-            <button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPricesInventory()"><i class="fas fa-floppy-disk"></i> Save all edits</button>
-            <span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">Change any name, description, or price inline below, then press this button once</span>
+            <button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllInventoryEdits()"><i class="fas fa-floppy-disk"></i> Save all text edits</button>
+            <span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">Prices come from the calculator — edit names and descriptions inline, then press this button once. Page assignment saves instantly from each card.</span>
           </div>
 
           <!-- Unified Grid -->
@@ -1421,7 +1451,25 @@
           <option value="gallery">Gallery</option>
         </select>
       </div>
-      <div class="form-row"><div class="form-group"><label class="form-label">Name *</label><input type="text" class="form-input" id="f-name" placeholder="Item name"></div><div class="form-group"><label class="form-label">Price</label><input type="text" class="form-input" id="f-price" placeholder="e.g. 21,900 EGP"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Name *</label><input type="text" class="form-input" id="f-name" placeholder="Item name"></div><div class="form-group"><label class="form-label">Public page</label><select class="form-select" id="f-page">
+          <option value="">Not on a page</option>
+          <option value="index">Home</option>
+          <option value="golds">Golds</option>
+          <option value="silvers">Silvers</option>
+          <option value="diamonds">Diamonds</option>
+          <option value="latest-designs">Latest Designs</option>
+          <option value="grillz-gallery">Gallery</option>
+        </select></div></div>
+      <div class="form-group">
+        <label class="form-label">Price — set by the pricing calculator</label>
+        <div class="design-price-box">
+          <div>
+            <div class="design-price-val" id="f-price-preview">No price yet</div>
+            <div class="design-price-spec" id="f-price-spec">Open the Calculator to enter the material, teeth and finish — the price follows the live rates.</div>
+          </div>
+          <button type="button" class="btn-outline-sm" onclick="openDesignCalculator()"><i class="fas fa-calculator"></i> Calculator</button>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-desc" placeholder="Describe this piece…"></textarea></div>
       <div class="form-group">
         <label class="form-label" id="media-label">Images — first image is the cover</label>
@@ -1828,6 +1876,12 @@
 
   function initApp() {
     loadConfig();
+    /* live pricing rates: every design price is computed from these */
+    if (window.CalcEngine) {
+      Promise.resolve(window.CalcEngine.load(db)).then(function(){
+        if (typeof renderUnifiedInventory === 'function') renderUnifiedInventory();
+      }).catch(function(){});
+    }
     loadAllPanels();
     loadCustomPages();
     loadOverview();
@@ -3202,11 +3256,84 @@
     } catch(e){showToast('Error: '+e.message,'error');}
   }
 
+  // ‑‑ PUBLIC PAGE ASSIGNMENT ‑‑
+  /* `category` says where the files live (assets/images/<category>/<id>/).
+     `page`      says which public page the design is shown on.
+     Designs saved before `page` existed fall back to their category.   */
+  var PUBLIC_PAGES = [
+    { key: '',               label: 'Not on a page' },
+    { key: 'index',          label: 'Home' },
+    { key: 'golds',          label: 'Golds' },
+    { key: 'silvers',        label: 'Silvers' },
+    { key: 'diamonds',       label: 'Diamonds' },
+    { key: 'latest-designs', label: 'Latest Designs' },
+    { key: 'grillz-gallery', label: 'Gallery' }
+  ];
+  function pageOfItem(item){
+    if(!item) return '';
+    return Object.prototype.hasOwnProperty.call(item,'page') ? (item.page || '') : (item.category || '');
+  }
+  function pageLabel(key){
+    for(var i=0;i<PUBLIC_PAGES.length;i++){ if(PUBLIC_PAGES[i].key === (key||'')) return PUBLIC_PAGES[i].label; }
+    return key || 'Not on a page';
+  }
+  function pageOptionsHtml(current){
+    var cur = current || '';
+    return PUBLIC_PAGES.map(function(p){
+      return '<option value="'+p.key+'"'+(p.key===cur?' selected':'')+'>'+p.label+'</option>';
+    }).join('');
+  }
+
+  // ‑‑ CALCULATOR PRICING (no manual prices) ‑‑
+  function calcPriceOf(item){
+    if(!item || !item.calc || !window.CalcEngine) return 0;
+    try { return window.CalcEngine.calculateLine(item.calc).subtotal || 0; } catch(e){ return 0; }
+  }
+  function fmtEGP(n){ return Math.round(Number(n)||0).toLocaleString('en-EG') + ' EGP'; }
+  function priceLabelOf(item){
+    var n = calcPriceOf(item);
+    if(n > 0) return fmtEGP(n);
+    if(item && item.price) return item.price;      /* legacy price, flagged below */
+    return 'No price';
+  }
+  function priceSourceOf(item){
+    if(calcPriceOf(item) > 0) return 'calculator';
+    if(item && item.price) return 'legacy price';
+    return 'not set';
+  }
+  function designSpecLabel(calc){
+    if(!calc || !window.CalcEngine) return 'No calculator spec yet — open the Calculator to price this design.';
+    try { return window.CalcEngine.lineLabel(window.CalcEngine.calculateLine(calc)); } catch(e){ return ''; }
+  }
+
+  // ‑‑ ASSIGN A DESIGN TO A PUBLIC PAGE (writes catalog.json) ‑‑
+  async function assignItemPage(cat, id, page){
+    if(!GH.token||!GH.owner||!GH.repo){ showToast('Configure GitHub Setup first','error'); renderUnifiedInventory(); return; }
+    try{
+      var list = await readCatalog();
+      var entry = catalogEntry(list, id);
+      if(!entry){ showToast('Item not found in catalog.json','error'); renderUnifiedInventory(); return; }
+      entry.page = page || null;
+      await writeCatalog(list, 'Assign ' + id + ' to ' + pageLabel(page));
+      if(cache[cat] && cache[cat].items){
+        var item = cache[cat].items.find(function(i){ return i.id === id; });
+        if(item) item.page = page || null;
+      }
+      showToast('Moved to ' + pageLabel(page), 'success');
+      renderUnifiedInventory();
+    } catch(e){
+      showToast('Error: ' + e.message, 'error');
+      renderUnifiedInventory();
+    }
+  }
+
   // ‑‑ FILTER + RENDER UNIFIED GRID ‑‑
   var CAT_BADGE_LABELS = {sets:'Sets', golds:'Golds', silvers:'Silvers', diamonds:'Diamonds', latest:'Latest', gallery:'Gallery'};
 
   function renderUnifiedInventory(){
     var queryEl=document.getElementById('inv-search-input');
+    var pageEl=document.getElementById('inv-page-filter');
+    var wantPage=pageEl?pageEl.value:'';
     var sortEl=document.getElementById('inv-sort-select');
     var query=(queryEl?queryEl.value:'').trim().toLowerCase();
     var sort=sortEl?sortEl.value:'';
@@ -3219,6 +3346,11 @@
       });
     });
     var filtered=items.filter(function(item){
+      if(wantPage){
+        var p = pageOfItem(item);
+        if(wantPage === '__none__'){ if(p !== '') return false; }
+        else if(p !== wantPage) return false;
+      }
       if(!query) return true;
       var catLbl=(CAT_BADGE_LABELS[item._catKey]||item._catKey||'').toLowerCase();
       return (item.name||'').toLowerCase().includes(query) ||
@@ -3249,7 +3381,7 @@
       }).join('');
       var hasVideo=allMedia.some(function(f){return isVideoFile(f);});
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
-      return '<div class="set-card '+(isChecked?'bulk-selected':'')+'" data-id="'+item.id+'" data-cat="'+cat+'">'+
+      return '<div class="set-card '+(isChecked?'bulk-selected':'')+'" data-id="'+item.id+'" data-cat="'+cat+'" data-page="'+escAttr(pageOfItem(item))+'">'+
         '<span class="card-cat-badge">'+(CAT_BADGE_LABELS[cat]||cat)+'</span>'+
         '<input type="checkbox" class="card-checkbox" '+(isChecked?'checked':'')+' onchange="toggleBulkSelect(\''+cat+'\',\''+item.id+'\',this)">'+
         '<div class="mini-slider">'+(mediaHtml||'<div class="no-img"><i class="fas fa-camera"></i></div>')+(hasVideo?'<span class="video-badge"><i class="fas fa-play"></i> Video</span>':'')+'</div>'+
@@ -3265,10 +3397,13 @@
             '<span class="edit-hint"><i class="fas fa-pen"></i> click to edit description</span>'+
           '</div>'+
           tagHtml+
-          '<div class="editable-field price" data-field="price" data-id="'+item.id+'" data-cat="'+cat+'" onclick="startInlineEdit(this)">'+
-            '<div class="field-val price">'+escHtml(item.price||'')+'</div>'+
-            '<input type="text" value="'+escAttr(item.price||'')+'" placeholder="Price">'+
-            '<span class="edit-hint"><i class="fas fa-pen"></i> click to edit price</span>'+
+          '<div class="card-price-row">'+
+            '<span class="card-price-val">'+escHtml(priceLabelOf(item))+'</span>'+
+            '<span class="card-price-src'+(calcPriceOf(item)>0?' ok':'')+'">'+priceSourceOf(item)+'</span>'+
+          '</div>'+
+          '<div class="card-page-row">'+
+            '<label class="card-page-label" for="page-'+cat+'-'+item.id+'">Page</label>'+
+            '<select class="card-page-select" id="page-'+cat+'-'+item.id+'" onchange="assignItemPage(\''+cat+'\',\''+item.id+'\',this.value)">'+pageOptionsHtml(pageOfItem(item))+'</select>'+
           '</div>'+
           '<div class="inline-save-row" id="isave-'+cat+'-'+item.id+'">'+
             '<button class="btn-isave" onclick="saveInlineEdit(\''+cat+'\',\''+item.id+'\')">Save to Site</button>'+
@@ -3301,7 +3436,7 @@
   // ‑‑ INLINE EDIT ‑‑
 
   
-  async function saveAllPricesInventory(){
+  async function saveAllInventoryEdits(){
     var cards = Array.prototype.slice.call(document.querySelectorAll('#grid-inventory .set-card'));
     if(!cards.length){ showToast('No cards to save','error'); return; }
 
@@ -3313,12 +3448,10 @@
       if(!item) return;
       var nameInp  = card.querySelector('.editable-field.name input');
       var descInp  = card.querySelector('.editable-field.desc textarea');
-      var priceInp = card.querySelector('.editable-field.price input');
       var name  = nameInp  ? nameInp.value.trim()  : (item.name  || '');
       var desc  = descInp  ? descInp.value.trim()  : (item.desc  || '');
-      var price = priceInp ? priceInp.value.trim() : (item.price || '');
-      if(name === (item.name||'') && desc === (item.desc||'') && price === (item.price||'')) return;
-      pending.push({ id:id, item:item, name:name, desc:desc, price:price, cat:cat });
+      if(name === (item.name||'') && desc === (item.desc||'')) return;
+      pending.push({ id:id, item:item, name:name, desc:desc, cat:cat });
     });
 
     if(!pending.length){ showToast('No changes to save',''); return; }
@@ -3331,15 +3464,14 @@
         var list = await readCatalog();
         var entry = catalogEntry(list, u.id);
         if(!entry) throw new Error('not in catalogue');
-        entry.name = u.name; entry.price = u.price; entry.description = u.desc;
-        await writeCatalog(list, 'Update ' + u.id + ' name/price/desc');
-        u.item.name = u.name; u.item.desc = u.desc; u.item.price = u.price;
+        entry.name = u.name; entry.description = u.desc;
+        await writeCatalog(list, 'Update ' + u.id + ' name/description');
+        u.item.name = u.name; u.item.desc = u.desc;
         var card = document.querySelector('#grid-inventory .set-card[data-id="' + u.id + '"]');
         if(card){
           var pad = function(sel, val){ var e = card.querySelector(sel); if(e) e.textContent = val; };
           pad('.editable-field.name .field-val', u.name);
           pad('.editable-field.desc .field-val', u.desc);
-          pad('.editable-field.price .field-val', u.price);
           cancelInlineEdit(u.cat, u.id);
         }
         ok++;
@@ -3377,7 +3509,6 @@
     if(!card) return;
     var nameVal=card.querySelector('.editable-field.name input');nameVal=nameVal?nameVal.value.trim():'';
     var descVal=card.querySelector('.editable-field.desc textarea');descVal=descVal?descVal.value.trim():'';
-    var priceVal=card.querySelector('.editable-field.price input');priceVal=priceVal?priceVal.value.trim():'';
     if(!nameVal){showToast('Name cannot be empty','error');return;}
     var btn=card.querySelector('.btn-isave');btn.textContent='Saving…';btn.disabled=true;
     showToast('Saving…','');
@@ -3386,14 +3517,12 @@
       var _l = await readCatalog(); var _e = catalogEntry(_l, id);
       if(_e){
         _e.name = nameVal;
-        _e.price = priceVal;
         _e.description = descVal;
         await writeCatalog(_l, 'Update '+id+' text');
       }
-      if(item){item.name=nameVal;item.desc=descVal;item.description=descVal;item.price=priceVal;}
+      if(item){item.name=nameVal;item.desc=descVal;item.description=descVal;}
       card.querySelector('.editable-field.name .field-val').textContent=nameVal;
       card.querySelector('.editable-field.desc .field-val').textContent=descVal;
-      card.querySelector('.editable-field.price .field-val').textContent=priceVal;
       cancelInlineEdit(cat,id);
       btn.textContent='Save to Site';btn.disabled=false;
       showToast(' Saved!','success');
@@ -3497,9 +3626,36 @@
 
   // ‑‑ ITEM MODAL (Add / Edit) ‑‑
   var pendingImages=[],existingImages=[],currentMode='add',currentEditId='',currentEditCat='';
+  var modalCalc = null;   /* CalcEngine line spec for the design being edited */
+  function updateDesignPricePanel(){
+    var valEl=document.getElementById('f-price-preview');
+    var specEl=document.getElementById('f-price-spec');
+    if(!valEl) return;
+    var n = calcPriceOf({calc:modalCalc});
+    valEl.textContent = n > 0 ? fmtEGP(n) : 'No price yet';
+    if(specEl) specEl.textContent = modalCalc
+      ? designSpecLabel(modalCalc)
+      : 'Open the Calculator to enter the material, teeth and finish — the price follows the live rates.';
+  }
+  function openDesignCalculator(){
+    if(!window.CalcEngine){ showToast('Pricing engine not loaded — refresh the page','error'); return; }
+    if(typeof window.openCalcModal !== 'function'){ showToast('Calculator unavailable','error'); return; }
+    window.openCalcModal({
+      mode: 'design',
+      name: (document.getElementById('f-name')||{}).value || '',
+      calc: modalCalc,
+      onApply: function(line){
+        modalCalc = line;
+        updateDesignPricePanel();
+        showToast('Price set: ' + fmtEGP(calcPriceOf({calc:line})), 'success');
+      }
+    });
+  }
   function resetModal(){
-    pendingImages=[];existingImages=[];currentEditId='';currentEditCat='';
-    ['edit-id','edit-category','f-name','f-price','f-desc'].forEach(function(id){document.getElementById(id).value='';});
+    pendingImages=[];existingImages=[];currentEditId='';currentEditCat='';modalCalc=null;
+    ['edit-id','edit-category','f-name','f-desc'].forEach(function(id){document.getElementById(id).value='';});
+    var fp=document.getElementById('f-page'); if(fp) fp.value='';
+    updateDesignPricePanel();
     document.getElementById('file-input').value='';
     document.getElementById('image-previews').innerHTML='';
     document.getElementById('publish-btn').disabled=false;
@@ -3523,6 +3679,13 @@
   function onModalCatChange(cat){
     currentEditCat = cat;
     document.getElementById('edit-category').value = cat;
+    /* keep the page assignment in step with the media category while adding */
+    var fpEl = document.getElementById('f-page');
+    if(fpEl && currentMode === 'add'){
+      var def = (cat === 'sets') ? '' : (CAT[cat] ? CAT[cat].folder : cat);
+      if(!fpEl.value || fpEl.value === fpEl.dataset.prevDefault) fpEl.value = def;
+      fpEl.dataset.prevDefault = def;
+    }
     var catGroup = document.getElementById('modal-cat-group');
     if(catGroup) catGroup.style.display = currentMode === 'edit' ? 'none' : '';
     if(currentMode === 'add'){
@@ -3542,6 +3705,13 @@
     document.getElementById('modal-title').textContent=
       'Add ' + ((CAT[cat] && CAT[cat].label) || cap(cat));
     document.getElementById('publish-btn').textContent='Publish to Site';
+    /* new designs default to the page that matches their media category */
+    var fpEl=document.getElementById('f-page');
+    if(fpEl){
+      var defPage = (cat==='sets' ? '' : (CAT[cat] ? CAT[cat].folder : cat));
+      fpEl.value = defPage;
+      fpEl.dataset.prevDefault = defPage;
+    }
     setUploadHint(cat);
     document.getElementById('modal-overlay').classList.add('open');
   }
@@ -3557,7 +3727,9 @@
     var catGroup=document.getElementById('modal-cat-group');
     if(catGroup) catGroup.style.display='none';
     document.getElementById('f-name').value=item.name||'';
-    document.getElementById('f-price').value=item.price||'';
+    var fp=document.getElementById('f-page'); if(fp) fp.value=pageOfItem(item);
+    modalCalc = item.calc || null;
+    updateDesignPricePanel();
     document.getElementById('f-desc').value=item.desc||item.description||'';
     document.getElementById('file-input').value='';
     document.getElementById('modal-title').textContent='Edit — '+(item.name||id);
@@ -3669,8 +3841,11 @@
     if(!CAT[cat]) cat='sets';
     var catInfo=CAT[cat]||CAT.sets;
     var name=document.getElementById('f-name').value.trim();
-    var price=document.getElementById('f-price').value.trim();
     var desc=document.getElementById('f-desc').value.trim();
+    var pageVal=(document.getElementById('f-page')||{}).value || '';
+    var calcSpec=modalCalc || null;
+    /* price is never typed by hand — it is computed from the calculator spec */
+    var price=calcSpec ? fmtEGP(calcPriceOf({calc:calcSpec})) : '';
     var editId=document.getElementById('edit-id').value.trim();
     if(!name){showToast('Please enter a name.','error');return;}
     if(!editId&&existingImages.length===0&&pendingImages.length===0){showToast('Please add at least one image.','error');return;}
@@ -3740,6 +3915,8 @@
         entry.videos = vids;
         entry.category = realCat;
         entry.folder = itemId;
+        entry.calc = calcSpec;
+        entry.page = pageVal || null;
       } else {
         catalog.push({
           id: itemId,
@@ -3748,6 +3925,8 @@
           price: price,
           description: desc,
           category: realCat,
+          page: pageVal || null,
+          calc: calcSpec,
           images: imgs,
           videos: vids,
           order: catalog.length + 1,
@@ -3842,13 +4021,15 @@
           if(!item||!item.id) return;
           var e=map[item.id];
           if(!e){
-            e={id:item.id,name:item.name||item.id,price:item.price||'',description:item.desc||item.description||'',category:cat==='sets'||cat==='latest'?(item.category||'golds'):cat,images:item.images||[],order:list.length+1};
+            e={id:item.id,name:item.name||item.id,price:item.price||'',description:item.desc||item.description||'',category:cat==='sets'||cat==='latest'?(item.category||'golds'):cat,page:item.page||null,calc:item.calc||null,images:item.images||[],order:list.length+1};
             list.push(e); map[item.id]=e;
           } else {
             if(item.name) e.name=item.name;
             if(item.price!==undefined) e.price=item.price;
             if(item.desc||item.description) e.description=item.desc||item.description;
             if(item.images) e.images=item.images;
+            if(item.calc!==undefined) e.calc=item.calc;
+            if(item.page!==undefined) e.page=item.page;
           }
           if(item.tags&&item.tags.length) setTags(cat,item.id,item.tags);
         });
@@ -3994,6 +4175,10 @@
   var invAll = [];             // merged local + Firestore invoices
   var invClients = [];
   var wired = false;
+  /* 'invoice' → the calculator adds a line to the invoice;
+     'design'  → the calculator prices a catalogue design (editx inventory). */
+  var calcMode = 'invoice';
+  var calcCallback = null;
 
   /* ───────────── tiny helpers ───────────── */
   function el(id) { return document.getElementById(id); }
@@ -4116,6 +4301,19 @@
   }
 
   /* ───────────── catalogue / designs ───────────── */
+  /* Invoice prices are calculated: `calc` wins, legacy stored price is only a fallback. */
+  function designPrice(item) {
+    var E = CE();
+    if (item && item.calc && E) {
+      try {
+        var sub = E.calculateLine(item.calc).subtotal;
+        if (sub > 0) return { num: sub, priced: true };
+      } catch (e) { console.warn('[invoices] calc failed', e); }
+    }
+    var legacy = parseFloat(String((item && item.price) || '').replace(/[^0-9.]/g, '')) || 0;
+    return { num: legacy, priced: false };
+  }
+
   async function loadCatalog() {
     if (catalogAll.length) return catalogAll;
     try {
@@ -4139,7 +4337,9 @@
         cat: item.category
       };
       d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
-      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
+      var _pr = designPrice(item);
+      d.priceNum = _pr.num;
+      d.calcPriced = _pr.priced;
       allDesigns.push(d);
     });
     return catalogAll;
@@ -4158,7 +4358,7 @@
       return '<div class="inv-dropdown-opt" data-i="' + i + '">' +
         (src ? '<img src="' + escA(src) + '" alt="" loading="lazy">' : '') +
         '<div><div style="font-size:12px;font-weight:600;">' + esc(d.name) + '</div>' +
-        '<div style="font-size:10px;color:#999;">' + esc(d.price || '') +
+        '<div style="font-size:10px;color:#999;">' + (d.priceNum ? fmt(d.priceNum) + ' EGP' : 'Calc') +
         (d.cat ? ' · ' + esc(d.cat) : '') + '</div></div></div>';
     }).join('');
     dd.classList.add('open');
@@ -4166,7 +4366,7 @@
       opt.addEventListener('click', function () {
         var d = matches[parseInt(opt.dataset.i, 10)];
         if (!d) return;
-        if (d.calc && (!d.priceNum || d.priceNum <= 0) && CE()) {
+        if ((!d.priceNum || d.priceNum <= 0) && CE()) {
           openCalcWithPreset(d.name, d.calc);
         } else {
           addCustomItem({ name: d.name, spec: d.calc && CE() ? CE().lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0 });
@@ -4201,7 +4401,9 @@
         cat: item.category
       };
       d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
-      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
+      var _pr = designPrice(item);
+      d.priceNum = _pr.num;
+      d.calcPriced = _pr.priced;
       list.push(d);
     });
     designCache[cat] = list;
@@ -4221,13 +4423,13 @@
         (src ? '<img src="' + escA(src) + '" alt="" loading="lazy">'
              : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="fas fa-image"></i></div>') +
         '<div class="inv-design-thumb-name">' + esc(d.name) + '</div>' +
-        '<div class="inv-design-thumb-price">' + esc(d.price || '') + '</div></div>';
+        '<div class="inv-design-thumb-price">' + (d.priceNum ? money(d.priceNum) : '') + '</div></div>';
     }).join('');
     grid.querySelectorAll('.inv-design-thumb').forEach(function (th) {
       th.addEventListener('click', function () {
         var d = list[parseInt(th.dataset.i, 10)];
         if (!d) return;
-        if (d.calc && (!d.priceNum || d.priceNum <= 0) && CE()) { openCalcWithPreset(d.name, d.calc); return; }
+        if ((!d.priceNum || d.priceNum <= 0) && CE()) { openCalcWithPreset(d.name, d.calc); return; }
         addCustomItem({ name: d.name, spec: d.calc && CE() ? CE().lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0 });
         toast('Added: ' + d.name, 'success');
       });
@@ -4467,7 +4669,24 @@
     if (el('inv-calc-modal')) el('inv-calc-modal').classList.add('open');
   }
 
-  function closeCalc() { if (el('inv-calc-modal')) el('inv-calc-modal').classList.remove('open'); }
+  function closeCalc() {
+    if (el('inv-calc-modal')) el('inv-calc-modal').classList.remove('open');
+    calcMode = 'invoice';
+    calcCallback = null;
+    var btn = el('inv-apply-calc-modal');
+    if (btn) btn.textContent = 'Add to Invoice';
+  }
+
+  /* Bridge used by the inventory screen to price a design with the same calculator */
+  function openCalcModal(opts) {
+    var o = opts || {};
+    wire();   /* the calculator is usable from Inventory, before Invoices is ever opened */
+    calcMode = o.mode === 'design' ? 'design' : 'invoice';
+    calcCallback = typeof o.onApply === 'function' ? o.onApply : null;
+    var btn = el('inv-apply-calc-modal');
+    if (btn) btn.textContent = calcMode === 'design' ? 'Use this price' : 'Add to Invoice';
+    openCalcWithPreset(o.name || '', o.calc || null);
+  }
 
   /* ───────────── quote import ───────────── */
   function transferFromQuote(q) {
@@ -5122,6 +5341,12 @@
         return;
       }
       var calc = E.calculateLine(line);
+      if (calcMode === 'design') {
+        var cb = calcCallback;
+        closeCalc();
+        if (typeof cb === 'function') cb(line, calc);
+        return;
+      }
       var label = line.name || (E.LABELS.material[line.material] + ' Custom Grillz');
       addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal });
       closeCalc();
@@ -5261,6 +5486,7 @@
     switchInvTab('builder');
   }
 
+  window.openCalcModal = openCalcModal;
   window.openInvoicesPanel = openInvoicesPanel;
   window.switchInvTab = switchInvTab;
   window.createInvoiceForClientFromModal = createInvoiceForClientFromModal;
