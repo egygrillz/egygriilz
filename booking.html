@@ -344,29 +344,29 @@
             <div class="service-check"><i class="fas fa-check"></i></div>
             <div class="service-info">
               <span class="service-name">Impression</span>
-              <span class="service-meta">30 min</span>
+              <span class="service-meta"><span data-cfg="impressionMinutes">30</span> min</span>
               <span class="service-desc">We take a precise mold of your teeth — the essential first step to crafting your custom grillz.</span>
             </div>
           </div>
-          <span class="service-price">200 EGP / Arch</span>
+          <span class="service-price"><span data-cfg="impressionPrice">200</span> <span data-cfg="currency">EGP</span> / Arch</span>
         </div>
         <div class="service-option" onclick="toggleService(this,'Consultation')">
           <div class="service-left">
             <div class="service-check"><i class="fas fa-check"></i></div>
             <div class="service-info">
               <span class="service-name">Consultation</span>
-              <span class="service-meta">1 hour</span>
+              <span class="service-meta"><span data-cfg="consultMinutes">60</span> min</span>
               <span class="service-desc">Design your perfect set with our specialist — style, metal choice, stones, and fit, all planned together.</span>
             </div>
           </div>
-          <span class="service-price">1000 EGP / hr</span>
+          <span class="service-price"><span data-cfg="consultPrice">1000</span> <span data-cfg="currency">EGP</span> / hr</span>
         </div>
         <div class="service-option" onclick="toggleService(this,'Pickup')">
           <div class="service-left">
             <div class="service-check"><i class="fas fa-check"></i></div>
             <div class="service-info">
               <span class="service-name">Pickup</span>
-              <span class="service-meta">10 min</span>
+              <span class="service-meta"><span data-cfg="pickupMinutes">10</span> min</span>
               <span class="service-desc">Your piece is finished and ready. Come in to collect and try on your grillz in person.</span>
             </div>
           </div>
@@ -381,7 +381,7 @@
               <span class="service-desc">A single crystal or diamond bonded directly to your tooth — subtle, elegant, and completely painless.</span>
             </div>
           </div>
-          <span class="service-price">From 500 EGP</span>
+          <span class="service-price">From <span data-cfg="gemFromPrice">500</span> <span data-cfg="currency">EGP</span></span>
         </div>
       </div>
       <div class="btn-row">
@@ -510,7 +510,6 @@
     <div class="footer-bottom">
       <div class="footer-icons">
         <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-        <a href="https://wa.me/201000353839" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
         <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
@@ -825,5 +824,20 @@
 
 
 <script src="/assets/egygz-notify.js" defer></script>
+<script src="assets/calc-engine.js"></script>
+<script data-cfasync="false">
+/* Site settings: reads settings/site and fills every [data-cfg] element.
+   If the network or Firestore is unavailable the values stay as they are.
+   This does not touch the EmailJS code in any way. */
+(function () {
+  try {
+    if (!window.SiteConfig) return;
+    window.SiteConfig.apply(document);
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+      window.SiteConfig.load(firebase.firestore()).catch(function () {});
+    }
+  } catch (e) { /* never break the page */ }
+})();
+</script>
 </body>
 </html>

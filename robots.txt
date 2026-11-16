@@ -135,14 +135,12 @@ User-agent: *
 Allow: /
 
 # Block internal/admin pages from indexing
-Disallow: /admin.html
 Disallow: /editx.html
 Disallow: /x.html
 
 # ── Google ────────────────────────────────────────────────
 User-agent: Googlebot
 Allow: /
-Disallow: /admin.html
 Disallow: /editx.html
 Disallow: /x.html
 
@@ -184,11 +182,11 @@ Allow: /
 # ── Internal tools — never crawl, never index ──────────────
 Disallow: /invoice
 Disallow: /editx
+Disallow: /quotes
+Disallow: /quotes.html
 Disallow: /staff-panel-x7k2
 Disallow: /x
-Disallow: /MTC
 Disallow: /egygz-client-intake
-Disallow: /admin
 Disallow: /api/
 
 # ── Sitemap ────────────────────────────────────────────────

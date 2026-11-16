@@ -71,7 +71,6 @@
           "addressCountry": "EG"
         },
         "geo": { "@type": "GeoCoordinates", "latitude": 30.0911, "longitude": 31.3424 },
-        "telephone": "+201000353839",
         "email": "egygrillz@gmail.com",
         "openingHoursSpecification": [{
           "@type": "OpeningHoursSpecification",
@@ -161,7 +160,7 @@
     .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
 
     /* HERO */
-    .hero { position:relative; width:100%; height:100vh; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center; }
+    .hero { position:relative; width:100%; height:100vh; overflow:hidden; background:#1f1f1f; display:flex; align-items:center; justify-content:center; }
     .hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.7; will-change:transform; animation:heroZoom 10s infinite alternate linear; }
     @keyframes heroZoom { from { transform:scale(1); } to { transform:scale(1.1); } }
     .hero-content { position:absolute; z-index:10; bottom:60px; left:0; right:0; text-align:center; color:#fff; }
@@ -285,13 +284,13 @@
     .ig-post { max-width:540px; margin:0 auto; background:#fff; border:1px solid #dbdbdb; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
     .ig-post-header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #efefef; }
     .ig-post-user { display:flex; align-items:center; gap:10px; }
-    .ig-post-avatar { width:36px; height:36px; border-radius:50%; background:#000; padding:2px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-    .ig-post-avatar-inner { width:100%; height:100%; border-radius:50%; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:4px; }
+    .ig-post-avatar { width:36px; height:36px; border-radius:50%; background:#1f1f1f; padding:2px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .ig-post-avatar-inner { width:100%; height:100%; border-radius:50%; background:#1f1f1f; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:4px; }
     .ig-post-avatar-inner img { width:100%; height:100%; object-fit:contain; filter:invert(1); display:block; max-width:none; }
     .ig-post-username { font-size:14px; font-weight:700; color:#262626; }
     .ig-post-verified { color:#3897f0; font-size:13px; margin-left:2px; }
     .ig-post-more { background:none; border:none; cursor:pointer; font-size:18px; color:#262626; padding:4px; }
-    .ig-post-img-wrap { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#000; cursor:pointer; }
+    .ig-post-img-wrap { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#1f1f1f; cursor:pointer; }
     .ig-post-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s ease; }
     .ig-post-img-wrap:hover img { transform:scale(1.02); }
     .ig-post-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.15); z-index:2; pointer-events:none; }
@@ -326,7 +325,7 @@
     .lv-story-text h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,3vw,38px); letter-spacing:2px; text-transform:uppercase; line-height:1.2; margin-bottom:20px; }
     .lv-story-text p { font-size:14px; color:#555; line-height:1.85; margin-bottom:32px; max-width:420px; }
     .lv-story-text a { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #000; padding:14px 32px; color:#000; transition:background 0.25s,color 0.25s; align-self:flex-start; }
-    .lv-story-text a:hover { background:#000; color:#fff; }
+    .lv-story-text a:hover { background:#1f1f1f; color:#fff; }
     @media(max-width:768px) { .lv-story { grid-template-columns:1fr; } .lv-story-text { padding:40px 24px; } .lv-story-text p { max-width:100%; } .lv-story-img { min-height:280px; } }
 
     /* CTA */
@@ -549,7 +548,7 @@
       </div>
       <div class="ig-post-likes" id="ig-likes-count">2,847 likes</div>
       <div class="ig-post-caption">
-        <strong>egygrillz</strong> Egypt's First &amp; Only Custom Dental Jewelry Studio 🇪🇬 Gold · Silver · Diamond Grillz — All About The Bling.
+        <strong>egygrillz</strong> Egypt's First &amp; Only Custom Dental Jewelry Studio Gold · Silver · Diamond Grillz — All About The Bling.
       </div>
       <div class="ig-post-follow">
         <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener" class="ig-post-follow-btn">
@@ -604,7 +603,6 @@
     <div class="footer-bottom">
       <div class="footer-icons">
         <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-        <a href="https://wa.me/201000353839" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
         <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8" target="_blank" rel="noopener" aria-label="Location"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy">
@@ -798,7 +796,7 @@
               imgs[c].classList.add('active');
             }, 3500 + Math.random()*1000);
           }
-          card.addEventListener('click', () => window.location = href);
+          card.addEventListener('click', () => window.location = href + '?item=' + encodeURIComponent(folder));
           frag.appendChild(card);
         }
         strip.innerHTML = '';
@@ -855,7 +853,7 @@
           const card = document.createElement('div');
           card.className = 'lv-gal-card';
           card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
-          card.addEventListener('click', () => window.location = 'grillz-gallery');
+          card.addEventListener('click', () => window.location = 'grillz-gallery?item=' + encodeURIComponent(folder));
           frag.appendChild(card);
         }
         scrollEl.appendChild(frag);

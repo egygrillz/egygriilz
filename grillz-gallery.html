@@ -195,7 +195,15 @@
       .modal-actions { flex-direction:row; }
       .modal-cta-primary,.modal-cta-secondary { flex:1; font-size:9px; padding:13px 8px; letter-spacing:2px; }
     }
-  </style>
+  
+    
+    .modal-price-link { display:inline-block; cursor:pointer; text-decoration:underline;
+      text-underline-offset:3px; transition:opacity .2s; }
+    .modal-price-link:hover { opacity:.6; }
+
+    
+    .ed-panel-focus { outline:3px solid #fff; outline-offset:4px; box-shadow:0 0 0 8px rgba(0,0,0,.35); }
+</style>
   <link rel="canonical" href="https://egygrillz.com/grillz-gallery">
 </head>
 <body>
@@ -247,7 +255,7 @@
         <div class="modal-name" id="modal-name"></div>
         <div class="modal-rule"></div>
         <div class="modal-desc" id="modal-desc"></div>
-        <div class="modal-price" id="modal-price"></div>
+        <a class="modal-price modal-price-link" id="modal-price" href="contact"></a>
         <div class="modal-actions">
           <a href="booking" class="modal-cta-primary">Schedule an Appointment</a>
           <a href="contact" class="modal-cta-secondary">Contact Us</a>
@@ -274,8 +282,7 @@
       <div class="footer-col"><h4>Legal</h4><a href="privacy">Privacy Policy</a><a href="terms">Terms of Service</a><a href="shipping">Care &amp; Shipping</a></div>
     </div>
     <div class="footer-bottom">
-      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-        <a href="https://wa.me/201000353839" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a></div>
+      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a></div>
       <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
       <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
       <div class="legal-text">© 2026 EGYGRILLZ</div>
@@ -297,7 +304,12 @@
     /* ── Modal ── */
     const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
     let mCur=0,mTot=0;
-    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img alt="Handcrafted custom grillz by EGYGRILLZ"';
+    function priceTarget(price){
+      var t = String(price||'').toLowerCase();
+      if(/schedule|book|appointment/.test(t)) return 'booking';
+      return 'contact';
+    }
+    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img alt="Handcrafted custom grillz by EGYGRILLZ"';
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
@@ -312,6 +324,7 @@
     function buildPanel(item){
       const panel=document.createElement('div');
       panel.className='ed-panel loading';
+      if(item.folder) panel.setAttribute('data-folder', item.folder);
 
       const dotsHtml=item.images.length>1
         ? '<div class="ed-dots">'+item.images.map(function(_,i){ return '<span class="ed-dot'+(i===0?' active':'')+'"></span>'; }).join('')+'</div>'
@@ -319,14 +332,14 @@
 
       let imgsHtml='';
       item.images.forEach(function(s,i){
-        imgsHtml+='<img alt="Handcrafted custom grillz by EGYGRILLZ"';
+        imgsHtml+='<img src="'+s+'" alt="Handcrafted custom grillz by EGYGRILLZ" loading="lazy" decoding="async">';
       });
 
       panel.innerHTML=imgsHtml
         +'<div class="ed-panel-info">'
         +'<div class="name">'+item.name+'</div>'
         +'<div class="desc">'+item.desc+'</div>'
-        +'<div class="price">'+item.price+'</div>'
+        +'<a class="price" href="contact" onclick="event.stopPropagation()">'+item.price+'</a>'
         +'</div>'
         +dotsHtml;
 
@@ -398,6 +411,17 @@
       }
 
       newRows.forEach(function(r){ galleryWrap.appendChild(r); });
+      try{
+        var want = new URLSearchParams(location.search).get('item');
+        if(want){
+          var target = galleryWrap.querySelector('[data-folder="'+want+'"]');
+          if(target){
+            target.classList.add('ed-panel-focus');
+            setTimeout(function(){ target.scrollIntoView({behavior:'smooth', block:'center'}); }, 120);
+          }
+        }
+      }catch(e){}
+
       if(newRows.length) newRows[newRows.length-1].classList.add('is-last-row');
 
       shown+=batch.length;

@@ -153,7 +153,12 @@
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
     .empty { text-align:center; padding:80px 0; font-size:14px; color:var(--muted); }
-  </style>
+  
+    
+    .modal-price-link { display:inline-block; cursor:pointer; text-decoration:underline;
+      text-underline-offset:3px; transition:opacity .2s; }
+    .modal-price-link:hover { opacity:.6; }
+</style>
   <link rel="canonical" href="https://egygrillz.com/diamonds">
 </head>
 <body>
@@ -207,7 +212,7 @@
         <div class="modal-name" id="modal-name"></div>
         <div class="modal-rule"></div>
         <div class="modal-desc" id="modal-desc"></div>
-        <div class="modal-price" id="modal-price"></div>
+        <a class="modal-price modal-price-link" id="modal-price" href="contact"></a>
         <div class="modal-actions">
           <a href="booking" class="modal-cta-primary">Schedule an Appointment</a>
           <a href="contact" class="modal-cta-secondary">Contact Us</a>
@@ -234,8 +239,7 @@
       <div class="footer-col"><h4>Legal</h4><a href="privacy">Privacy Policy</a><a href="terms">Terms of Service</a><a href="shipping">Care &amp; Shipping</a></div>
     </div>
     <div class="footer-bottom">
-      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-        <a href="https://wa.me/201000353839" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a></div>
+      <div class="footer-icons"><a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a><a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a></div>
       <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
       <div class="ceo-wrap"><span class="ceo-label">Founder</span><span class="ceo-name">DR Mohamed Mahdy</span></div>
       <div class="legal-text">© 2026 EGYGRILLZ</div>
@@ -253,7 +257,12 @@
     function parseInfo(text){ let name='',desc='',price='',images=[]; text.split('\n').forEach(line=>{ line=line.replace(/\r/g,'').trim(); const ci=line.indexOf(':'); if(ci===-1)return; const key=line.slice(0,ci).trim().toLowerCase(); const val=line.slice(ci+1).trim(); if(key==='name'||key==='title')name=val; else if(key==='description'||key==='desc')desc=val; else if(key==='price')price=val; else if(key==='images')images=val.split(',').map(i=>i.trim()).filter(Boolean); }); return{name,desc,price,images}; }
     const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
     let mCur=0,mTot=0;
-    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img alt="Handcrafted custom grillz by EGYGRILLZ"';
+    function priceTarget(price){
+      var t = String(price||'').toLowerCase();
+      if(/schedule|book|appointment/.test(t)) return 'booking';
+      return 'contact';
+    }
+    function openModal({name,desc,price,images}){ modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':''); s.innerHTML='<img alt="Handcrafted custom grillz by EGYGRILLZ"';
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
     function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
@@ -276,6 +285,14 @@
         function renderNext(){ const batch=valid.slice(shown,shown+PAGE); let batchIdx=0; while(batchIdx<batch.length){ const globalI=shown+batchIdx; const rowType=getRowType(globalI); const count=rowType===3?3:2; const chunk=batch.slice(batchIdx,batchIdx+count); if(!chunk.length)break; const row=document.createElement('div'); row.className=rowType===3?'row-3':'row-2'; chunk.forEach((item,idx)=>{ const globalIdx=globalI+idx; const card=buildCard(item); if((globalIdx+1)%5===0)card.classList.add('mob-full'); row.appendChild(card); }); container.appendChild(row); batchIdx+=chunk.length; } shown+=batch.length; document.getElementById('see-more-wrap').style.display=shown<valid.length?'block':'none'; }
         renderNext();
         document.getElementById('see-more-btn').addEventListener('click',renderNext);
+        try{
+          var want = new URLSearchParams(location.search).get('item');
+          if(want){
+            var hit = valid.find(function(v){ return v.folder === want; });
+            if(hit){ setTimeout(function(){ openModal(hit); }, 60); }
+          }
+        }catch(e){}
+
       });
     }).catch(e=>console.error(e));
     function buildCard({name,desc,price,images,folder}){

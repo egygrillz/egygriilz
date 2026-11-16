@@ -29,10 +29,10 @@
   X-Powered-By: EGYGRILLZ
 
 # ── Pages that must never be indexed ──
-/admin.html
+/editx.html
   X-Robots-Tag: noindex, nofollow, noarchive
 
-/editx.html
+/quotes.html
   X-Robots-Tag: noindex, nofollow, noarchive
 
 /invoice.html
@@ -45,12 +45,6 @@
   X-Robots-Tag: noindex, nofollow, noarchive
 
 /egygz-client-intake.html
-  X-Robots-Tag: noindex, nofollow
-
-/x.html
-  X-Robots-Tag: noindex, nofollow
-
-/MTC.html
   X-Robots-Tag: noindex, nofollow
 
 # ── Caching: HTML revalidates, hashed assets are immutable ──
