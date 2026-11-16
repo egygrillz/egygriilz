@@ -1,780 +1,797 @@
 [
-  {
-    "id": "set1",
-    "name": "Diamond Boy Set",
-    "price": "21899 EGP",
-    "description": "This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.",
-    "category": "sets",
-    "folder": "set1",
-    "images": [
-      "000003.jpg",
-      "000004.jpg",
-      "000006.jpg"
-    ],
-    "videos": [],
-    "order": 1,
-    "thumbs": false
-  },
-  {
-    "id": "set2",
-    "name": "FLEX Set",
-    "price": "Contact us for details",
-    "description": "This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading \"Flex\" in elegant red script.",
-    "category": "sets",
-    "folder": "set2",
-    "images": [
-      "000005.jpg",
-      "000007.jpg",
-      "000008.jpg"
-    ],
-    "videos": [],
-    "order": 2,
-    "thumbs": false
-  },
-  {
-    "id": "set3",
-    "name": "Golden Tiger",
-    "price": "3099 EGP",
-    "description": "Striking custom grillz featuring a fierce tiger engraving across two Chrome teeth with rich gold plating. Crafted for maximum contrast and commanding presence. Handcrafted in Cairo. A powerful statement piece that fuses raw strength with opulent shine — made for those who lead with dominance and style.",
-    "category": "sets",
-    "folder": "set3",
-    "images": [
-      "000010.jpg"
-    ],
-    "videos": [],
-    "order": 3,
-    "thumbs": false
-  },
-  {
-    "id": "set4",
-    "name": "Selene Bloom",
-    "price": "Contact us for details",
-    "description": "Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.",
-    "category": "sets",
-    "folder": "set4",
-    "images": [
-      "000011.jpg"
-    ],
-    "videos": [],
-    "order": 4,
-    "thumbs": false
-  },
-  {
-    "id": "set5",
-    "name": "LELLA FADA's Set",
-    "price": "Contact us for details",
-    "description": "This custom silver grillz set, crafted exclusively for rapper Lela Fada, features high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
-    "category": "sets",
-    "folder": "set5",
-    "images": [
-      "000012.jpg"
-    ],
-    "videos": [],
-    "order": 5,
-    "thumbs": false
-  },
-  {
-    "id": "set6",
-    "name": "Black Gold Snake",
-    "price": "8899 EGP",
-    "description": "his exclusive black snake grillz set is masterfully crafted in 925 sterling silver with sleek black gold plating for a dark, menacing shine. A coiled, intricately detailed black snake motif slithers across the teeth, its fierce head centered with a glowing green stone eye that radiates vivid emerald intensity.",
-    "category": "sets",
-    "folder": "set6",
-    "images": [
-      "000001.jpg"
-    ],
-    "videos": [],
-    "order": 6,
-    "thumbs": false
-  },
-  {
-    "id": "set7",
-    "name": "FARES SOKAR's Set",
-    "price": "Contact us for details",
-    "description": "This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
-    "category": "sets",
-    "folder": "set7",
-    "images": [
-      "000002.jpg"
-    ],
-    "videos": [],
-    "order": 7,
-    "thumbs": false
-  },
-  {
-    "id": "set8",
-    "name": "Ancient Scorpion",
-    "price": "4799 EGP",
-    "description": "This exclusive scorpion grillz set features premium silver construction with rich gold plating for a bold two-tone glow. A fierce, intricately detailed scorpion motif dominates, crowned by a vibrant emerald green stone at its core for intense jewel-like brilliance.",
-    "category": "sets",
-    "folder": "set8",
-    "images": [
-      "000009.jpg"
-    ],
-    "videos": [],
-    "order": 8,
-    "thumbs": false
-  },
-  {
-    "id": "golds1",
-    "name": "FLEX Set",
-    "price": "Contact us for details",
-    "description": "This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading \"Flex\" in elegant red script.",
-    "category": "golds",
-    "folder": "golds1",
-    "images": [
-      "000005.jpg",
-      "000007.jpg",
-      "000008.jpg"
-    ],
-    "videos": [],
-    "order": 1,
-    "thumbs": false
-  },
-  {
-    "id": "golds2",
-    "name": "Golden Tiger",
-    "price": "3099 EGP",
-    "description": "Striking custom grillz featuring a fierce tiger engraving across two Chrome teeth with rich gold plating. Crafted for maximum contrast and commanding presence. Handcrafted in Cairo. A powerful statement piece that fuses raw strength with opulent shine — made for those who lead with dominance and style.",
-    "category": "golds",
-    "folder": "golds2",
-    "images": [
-      "000010.jpg"
-    ],
-    "videos": [],
-    "order": 2,
-    "thumbs": false
-  },
-  {
-    "id": "golds3",
-    "name": "Black Gold Snake",
-    "price": "8899 EGP",
-    "description": "his exclusive black snake grillz set is masterfully crafted in 925 sterling silver with sleek black gold plating for a dark, menacing shine. A coiled, intricately detailed black snake motif slithers across the teeth, its fierce head centered with a glowing green stone eye that radiates vivid emerald intensity.",
-    "category": "golds",
-    "folder": "golds3",
-    "images": [
-      "000001.jpg"
-    ],
-    "videos": [],
-    "order": 3,
-    "thumbs": false
-  },
-  {
-    "id": "golds4",
-    "name": "Ancient Scorpion",
-    "price": "4799 EGP",
-    "description": "This exclusive scorpion grillz set features premium silver construction with rich gold plating for a bold two-tone glow. A fierce, intricately detailed scorpion motif dominates, crowned by a vibrant emerald green stone at its core for intense jewel-like brilliance.",
-    "category": "golds",
-    "folder": "golds4",
-    "images": [
-      "000009.jpg"
-    ],
-    "videos": [],
-    "order": 4,
-    "thumbs": false
-  },
-  {
-    "id": "golds5",
-    "name": "ANE's Set",
-    "price": "11799 EGP",
-    "description": "Crafted in solid 925 sterling silver with a luxurious gold plating, featuring three elegantly floating letters \"A\", \"N\", \"E\" — spelling her name with graceful suspension — complemented by a finely detailed golden Cancer zodiac symbol in its classic crab form.",
-    "category": "golds",
-    "folder": "golds5",
-    "images": [
-      "000000.jpg",
-      "000001.jpg",
-      "000002.jpg",
-      "000003.jpg",
-      "000004.jpg",
-      "000005.jpg",
-      "000006.jpg"
-    ],
-    "videos": [],
-    "order": 5,
-    "thumbs": false
-  },
-  {
-    "id": "golds6",
-    "name": "Scorpion Cobalt Chrome Edition",
-    "price": "3599 EGP",
-    "description": "Crafted in premium cobalt chrome with a razor-sharp finish and luxurious gold coating, this fierce scorpion design features crisp, angular contours accented by vivid red enamel detailing.",
-    "category": "golds",
-    "folder": "golds6",
-    "images": [
-      "000000.jpg",
-      "000001.jpg",
-      "000002.jpg",
-      "000003.jpg"
-    ],
-    "videos": [],
-    "order": 6,
-    "thumbs": false
-  },
-  {
-    "id": "golds7",
-    "name": "Scorpion Sterling Silver Edition",
-    "price": "4799 EGP",
-    "description": "Crafted in solid 925 sterling silver with a smooth, rounded gold-plated finish, the elegant scorpion form is softly contoured for refined wear, highlighted by a luminous emerald CZ stone that captures light with serene brilliance.",
-    "category": "golds",
-    "folder": "golds7",
-    "images": [
-      "000000.jpg"
-    ],
-    "videos": [],
-    "order": 7,
-    "thumbs": false
-  },
-  {
-    "id": "golds8",
-    "name": "OpenFace & Heart CutOut Chrome Edition",
-    "price": "2899 EGP",
-    "description": "Crafted in premium cobalt chrome with a luxurious gold plating, this exclusive two-tooth design pairs one sleek open-face tooth with a refined heart-shaped cutout on the adjacent tooth. The crisp, sharp contours allow natural tooth brilliance to shine through both elements.",
-    "category": "golds",
-    "folder": "golds8",
-    "images": [
-      "000000.jpg",
-      "000001.jpg",
-      "000002.jpg",
-      "000003.jpg",
-      "000004.jpg",
-      "000005.jpg",
-      "000006.jpg",
-      "000007.jpg",
-      "000008.jpg",
-      "000009.jpg"
-    ],
-    "videos": [],
-    "order": 8,
-    "thumbs": false
-  },
-  {
-    "id": "golds9",
-    "name": "nO ruLE SET",
-    "price": "38999 EGP",
-    "description": "One-of-a-kind 20-piece grillz set. Featuring a stunning iced-out Key of Life (Ankh), sculpted 3D forms, vibrant red enamel accents, and intricate detailing across the full set for maximum brilliance. Made in gold-plated 925 sterling silver. Handcrafted in Cairo.",
-    "category": "golds",
-    "folder": "golds9",
-    "images": [
-      "000000.jpg"
-    ],
-    "videos": [],
-    "order": 9,
-    "thumbs": false
-  },
-  {
-    "id": "golds10",
-    "name": "OpenFace & Heart CutOut Silver Edition",
-    "price": "4099 EGP",
-    "description": "Created from solid 925 sterling silver bathed in rich gold plating, the design elegantly contrasts a clean open-face tooth with an adjacent heart cutout. Smooth contours frame the natural smile beneath.",
-    "category": "golds",
-    "folder": "golds10",
-    "images": [
-      "000001.jpg"
-    ],
-    "videos": [],
-    "order": 10,
-    "thumbs": false
-  },
-  {
-    "id": "golds11",
-    "name": "\"تحرير العالم العربي\" Set – Gold-Plated Edition",
-    "price": "27599 EGP",
-    "description": "Constructed in solid 925 sterling silver with rich gold plating, this 12-tooth masterpiece elegantly displays the empowering phrase \"تحرير العالم العربي\" in precisely suspended lettering that flows seamlessly over the teeth. A luminous tribute to freedom and collective identity.",
-    "category": "golds",
-    "folder": "golds11",
-    "images": [
-      "000000.jpeg"
-    ],
-    "videos": [],
-    "order": 11,
-    "thumbs": false
-  },
-  {
-    "id": "golds12",
-    "name": "Bar & Star Set",
-    "price": "4899 EGP",
-    "description": "Crafted in solid 925 sterling silver with a luxurious gold plating, this striking two-tooth design pairs one sleek open-face tooth accented by a fully iced-out horizontal bar bursting with precision-set CZ diamonds, alongside an adjacent open-face tooth featuring a radiant shine star cutout centered by a single, brilliant solitary diamond",
-    "category": "golds",
-    "folder": "golds12",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg",
-      "000002.jpeg",
-      "000003.jpeg",
-      "000004.jpeg"
-    ],
-    "videos": [],
-    "order": 12,
-    "thumbs": false
-  },
-  {
-    "id": "silvers1",
-    "name": "LELLA FADA's Set",
-    "price": "Contact us for details",
-    "description": "This custom silver grillz set, crafted exclusively for rapper Lela Fada, features high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
-    "category": "silvers",
-    "folder": "silvers1",
-    "images": [
-      "000012.jpg"
-    ],
-    "videos": [],
-    "order": 1,
-    "thumbs": false
-  },
-  {
-    "id": "silvers2",
-    "name": "FARES SOKAR's Set",
-    "price": "Contact us for details",
-    "description": "This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
-    "category": "silvers",
-    "folder": "silvers2",
-    "images": [
-      "000002.jpg"
-    ],
-    "videos": [],
-    "order": 2,
-    "thumbs": false
-  },
-  {
-    "id": "silvers3",
-    "name": "MARWAN PABLO's Set",
-    "price": "Contact us for details",
-    "description": "This custom silver grillz set, crafted exclusively for rapper Marwan Pablo, featured in his video clip Dejavu and preformed with it in his festival .Show cased in VOUGE magzine.",
-    "category": "silvers",
-    "folder": "silvers3",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg",
-      "000002.jpeg"
-    ],
-    "videos": [],
-    "order": 3,
-    "thumbs": false
-  },
-  {
-    "id": "silvers4",
-    "name": "LELLA FADA's Set",
-    "price": "Contact us for details",
-    "description": "This custom Silver grillz set, crafted exclusively for rapper Lella Fada , to complement her latest album MAGNUN.",
-    "category": "silvers",
-    "folder": "silvers4",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg",
-      "000002.jpeg"
-    ],
-    "videos": [],
-    "order": 4,
-    "thumbs": false
-  },
-  {
-    "id": "silvers5",
-    "name": "CHROME CORNERS",
-    "price": "8800 EGP",
-    "description": "Presenting a solid grillz design covering the four corners of the mouth, complemented by a sleek chrome gap filler with a teeth mamelons effect.",
-    "category": "silvers",
-    "folder": "silvers5",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg",
-      "000002.jpeg",
-      "000003.jpeg",
-      "000004.jpeg",
-      "000005.jpeg",
-      "000006.jpeg",
-      "000007.jpeg",
-      "000008.jpeg"
-    ],
-    "videos": [],
-    "order": 5,
-    "thumbs": false
-  },
-  {
-    "id": "silvers6",
-    "name": "AFRICA BOY",
-    "price": "1750 EGP",
-    "description": "Africa map cut out from 925 sterling silver tooth",
-    "category": "silvers",
-    "folder": "silvers6",
-    "images": [
-      "000000.jpg",
-      "000001.jpg"
-    ],
-    "videos": [],
-    "order": 6,
-    "thumbs": false
-  },
-  {
-    "id": "silvers7",
-    "name": "Selene Blom Set",
-    "price": "18399 EGP",
-    "description": "Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.",
-    "category": "silvers",
-    "folder": "silvers7",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg",
-      "000002.jpeg"
-    ],
-    "videos": [],
-    "order": 7,
-    "thumbs": false
-  },
-  {
-    "id": "silvers8",
-    "name": "\"تحرير العالم العربي\" Silver Set",
-    "price": "23999 EGP",
-    "description": "Crafted in solid 925 sterling silver with a high-polish finish, this full 12-tooth grillz features the powerful Arabic phrase \"تحرير العالم العربي\" elegantly suspended and integrated across the teeth in bold, floating lettering. A statement of revolutionary vision and pan-Arab unity.",
-    "category": "silvers",
-    "folder": "silvers8",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg"
-    ],
-    "videos": [],
-    "order": 8,
-    "thumbs": false
-  },
-  {
-    "id": "diamonds1",
-    "name": "Diamond Boy Set",
-    "price": "21899 EGP",
-    "description": "This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.",
-    "category": "diamonds",
-    "folder": "diamonds1",
-    "images": [
-      "000003.jpg",
-      "000004.jpg",
-      "000006.jpg"
-    ],
-    "videos": [],
-    "order": 1,
-    "thumbs": false
-  },
-  {
-    "id": "diamonds2",
-    "name": "Selene Bloom",
-    "price": "Contact us for details",
-    "description": "Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.",
-    "category": "diamonds",
-    "folder": "diamonds2",
-    "images": [
-      "000011.jpg"
-    ],
-    "videos": [],
-    "order": 2,
-    "thumbs": false
-  },
-  {
-    "id": "design1",
-    "name": "nO ruLE SET",
-    "price": "38999 EGP",
-    "description": "One-of-a-kind 20-piece grillz set. Featuring a stunning iced-out Key of Life (Ankh), sculpted 3D forms, vibrant red enamel accents, and intricate detailing across the full set for maximum brilliance. Made in gold-plated 925 sterling silver. Handcrafted in Cairo. A powerful fusion of ancient Egyptian symbolism and modern high-luxury streetwear — the ultimate statement in heritage and opulence.",
-    "category": "latest-designs",
-    "folder": "design1",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg",
-      "000002.jpeg"
-    ],
-    "videos": [],
-    "order": 1,
-    "thumbs": false
-  },
-  {
-    "id": "design2",
-    "name": "FARES SOKAR's Set",
-    "price": "Contact us for details",
-    "description": "This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .Show cased in GQ magzine.",
-    "category": "latest-designs",
-    "folder": "design2",
-    "images": [
-      "000.png",
-      "001.png",
-      "002.png"
-    ],
-    "videos": [
-      "003.mp4"
-    ],
-    "order": 2,
-    "thumbs": false
-  },
-  {
-    "id": "design4",
-    "name": "LELLA FADA's Set",
-    "price": "Contact us for details",
-    "description": "This custom Silver grillz set, crafted exclusively for rapper Lella Fada , to complement her latest album MAGNUN.",
-    "category": "latest-designs",
-    "folder": "design4",
-    "images": [
-      "000.jpeg",
-      "001.jpeg",
-      "002.jpeg"
-    ],
-    "videos": [],
-    "order": 3,
-    "thumbs": false
-  },
-  {
-    "id": "design5",
-    "name": "Ziad ZAZA's Set",
-    "price": "Contact us for details",
-    "description": "This custom Chrome grillz set, crafted exclusively for singer Ziad Zaza , featured in his video clip EH EL ARAF DA.",
-    "category": "latest-designs",
-    "folder": "design5",
-    "images": [
-      "000.jpeg",
-      "001.jpeg",
-      "002.jpeg"
-    ],
-    "videos": [
-      "003.mp4"
-    ],
-    "order": 4,
-    "thumbs": false
-  },
-  {
-    "id": "design6",
-    "name": "ELMOND's Set",
-    "price": "Contact us for details",
-    "description": "This custom Silver grillz set, crafted exclusively for rapper Muhab AKA ELMond , to be part of his unreleased vide clip HELW .",
-    "category": "latest-designs",
-    "folder": "design6",
-    "images": [
-      "000.jpeg",
-      "001.jpeg",
-      "002.jpeg"
-    ],
-    "videos": [
-      "003.mp4"
-    ],
-    "order": 5,
-    "thumbs": false
-  },
-  {
-    "id": "design7",
-    "name": "MARWAN PABLO's Set",
-    "price": "Contact us for details",
-    "description": "This custom silver grillz set, crafted exclusively for rapper Marwan Pablo, featured in his video clip Dejavu and preformed with it in his festival .Show cased in VOUGE magzine.",
-    "category": "latest-designs",
-    "folder": "design7",
-    "images": [
-      "000.jpeg",
-      "001.jpeg",
-      "002.jpeg"
-    ],
-    "videos": [
-      "003.mp4"
-    ],
-    "order": 6,
-    "thumbs": false
-  },
-  {
-    "id": "design8",
-    "name": "Maged El Kedwany Signature Fronts",
-    "price": "Contact us for details",
-    "description": "Exclusive custom grillz featuring \"Maged\" across the 6 lower anterior teeth, masterfully crafted in premium white gold and set with premium VVS diamonds for ultimate shine. Handcrafted in Cairo. This iconic design was showcased in the Madinet Masr Ramadan 2024 TV advertisement — a bold, personalized tribute to the legendary Egyptian actor, perfect for fans and statement makers.",
-    "category": "latest-designs",
-    "folder": "design8",
-    "images": [
-      "000000.jpg"
-    ],
-    "videos": [
-      "003.mp4"
-    ],
-    "order": 7,
-    "thumbs": false
-  },
-  {
-    "id": "design9",
-    "name": "ADIDAS's Set",
-    "price": "Contact us for details",
-    "description": "Latest with Adidas, showcased in the adidas Italia 60 campaign, to tell a story about what it means to be ‘Made In Italy’. Now live on the #adidasConfirmed app.",
-    "category": "latest-designs",
-    "folder": "design9",
-    "images": [
-      "000.jpeg",
-      "001.jpeg",
-      "002.jpeg"
-    ],
-    "videos": [
-      "000.mp4"
-    ],
-    "order": 8,
-    "thumbs": false
-  },
-  {
-    "id": "design10",
-    "name": "FLEX Set",
-    "price": "Contact us for details",
-    "description": "This custom Chrome grillz set, crafted exclusively for the rapper FLEX , featured in his video clip FL EX FT. NAFEA [ELMAHATA EL OLA] - ( OFFICIAL MUSIC VIDEO ).",
-    "category": "latest-designs",
-    "folder": "design10",
-    "images": [
-      "000000.jpeg",
-      "000001.jpeg",
-      "000002.jpeg"
-    ],
-    "videos": [
-      "000003.mp4"
-    ],
-    "order": 9,
-    "thumbs": false
-  },
-  {
-    "id": "gallery1",
-    "folder": "000001",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000001.jpg"
-    ],
-    "videos": [],
-    "order": 1
-  },
-  {
-    "id": "gallery2",
-    "folder": "000002",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000002.jpg"
-    ],
-    "videos": [],
-    "order": 2
-  },
-  {
-    "id": "gallery3",
-    "folder": "000003",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000003.jpg"
-    ],
-    "videos": [],
-    "order": 3
-  },
-  {
-    "id": "gallery4",
-    "folder": "000004",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000004.jpg"
-    ],
-    "videos": [],
-    "order": 4
-  },
-  {
-    "id": "gallery5",
-    "folder": "000005",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000005.jpg"
-    ],
-    "videos": [],
-    "order": 5
-  },
-  {
-    "id": "gallery6",
-    "folder": "000006",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000006.jpg"
-    ],
-    "videos": [],
-    "order": 6
-  },
-  {
-    "id": "gallery7",
-    "folder": "000007",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000007.jpg"
-    ],
-    "videos": [],
-    "order": 7
-  },
-  {
-    "id": "gallery8",
-    "folder": "000008",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000008.jpg"
-    ],
-    "videos": [],
-    "order": 8
-  },
-  {
-    "id": "gallery9",
-    "folder": "000009",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000009.jpg"
-    ],
-    "videos": [],
-    "order": 9
-  },
-  {
-    "id": "gallery10",
-    "folder": "000010",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000010.jpg"
-    ],
-    "videos": [],
-    "order": 10
-  },
-  {
-    "id": "gallery11",
-    "folder": "000011",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000011.jpg"
-    ],
-    "videos": [],
-    "order": 11
-  },
-  {
-    "id": "gallery12",
-    "folder": "000012",
-    "name": "Gallery",
-    "price": "",
-    "description": "",
-    "category": "grillz-gallery",
-    "images": [
-      "000012.jpg"
-    ],
-    "videos": [],
-    "order": 12
-  }
+ {
+  "id": "set1",
+  "name": "Diamond Boy Set",
+  "price": "21899 EGP",
+  "description": "This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.",
+  "category": "sets",
+  "folder": "set1",
+  "images": [
+   "000003.jpg",
+   "000004.jpg",
+   "000006.jpg"
+  ],
+  "videos": [],
+  "order": 1,
+  "thumbs": false
+ },
+ {
+  "id": "set2",
+  "name": "FLEX Set",
+  "price": "Contact us for details",
+  "description": "This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading \"Flex\" in elegant red script.",
+  "category": "sets",
+  "folder": "set2",
+  "images": [
+   "000005.jpg",
+   "000007.jpg",
+   "000008.jpg"
+  ],
+  "videos": [],
+  "order": 2,
+  "thumbs": false
+ },
+ {
+  "id": "set3",
+  "name": "Golden Tiger",
+  "price": "3099 EGP",
+  "description": "Striking custom grillz featuring a fierce tiger engraving across two Chrome teeth with rich gold plating. Crafted for maximum contrast and commanding presence. Handcrafted in Cairo. A powerful statement piece that fuses raw strength with opulent shine — made for those who lead with dominance and style.",
+  "category": "sets",
+  "folder": "set3",
+  "images": [
+   "000010.jpg"
+  ],
+  "videos": [],
+  "order": 3,
+  "thumbs": false
+ },
+ {
+  "id": "set4",
+  "name": "Selene Bloom",
+  "price": "Contact us for details",
+  "description": "Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.",
+  "category": "sets",
+  "folder": "set4",
+  "images": [
+   "000011.jpg"
+  ],
+  "videos": [],
+  "order": 4,
+  "thumbs": false
+ },
+ {
+  "id": "set5",
+  "name": "LELLA FADA's Set",
+  "price": "Contact us for details",
+  "description": "This custom silver grillz set, crafted exclusively for rapper Lela Fada, features high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
+  "category": "sets",
+  "folder": "set5",
+  "images": [
+   "000012.jpg"
+  ],
+  "videos": [],
+  "order": 5,
+  "thumbs": false
+ },
+ {
+  "id": "set6",
+  "name": "Black Gold Snake",
+  "price": "8899 EGP",
+  "description": "his exclusive black snake grillz set is masterfully crafted in 925 sterling silver with sleek black gold plating for a dark, menacing shine. A coiled, intricately detailed black snake motif slithers across the teeth, its fierce head centered with a glowing green stone eye that radiates vivid emerald intensity.",
+  "category": "sets",
+  "folder": "set6",
+  "images": [
+   "000001.jpg"
+  ],
+  "videos": [],
+  "order": 6,
+  "thumbs": false
+ },
+ {
+  "id": "set7",
+  "name": "FARES SOKAR's Set",
+  "price": "Contact us for details",
+  "description": "This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
+  "category": "sets",
+  "folder": "set7",
+  "images": [
+   "000002.jpg"
+  ],
+  "videos": [],
+  "order": 7,
+  "thumbs": false
+ },
+ {
+  "id": "set8",
+  "name": "Ancient Scorpion",
+  "price": "4799 EGP",
+  "description": "This exclusive scorpion grillz set features premium silver construction with rich gold plating for a bold two-tone glow. A fierce, intricately detailed scorpion motif dominates, crowned by a vibrant emerald green stone at its core for intense jewel-like brilliance.",
+  "category": "sets",
+  "folder": "set8",
+  "images": [
+   "000009.jpg"
+  ],
+  "videos": [],
+  "order": 8,
+  "thumbs": false
+ },
+ {
+  "id": "golds1",
+  "name": "FLEX Set",
+  "price": "Contact us for details",
+  "description": "This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading \"Flex\" in elegant red script.",
+  "category": "golds",
+  "folder": "golds1",
+  "images": [
+   "000000.jpg",
+   "000001.jpg",
+   "000002.jpg",
+   "000003.jpeg"
+  ],
+  "videos": [],
+  "order": 1,
+  "thumbs": false
+ },
+ {
+  "id": "golds2",
+  "name": "Golden Tiger",
+  "price": "3099 EGP",
+  "description": "Striking custom grillz featuring a fierce tiger engraving across two Chrome teeth with rich gold plating. Crafted for maximum contrast and commanding presence. Handcrafted in Cairo. A powerful statement piece that fuses raw strength with opulent shine — made for those who lead with dominance and style.",
+  "category": "golds",
+  "folder": "golds2",
+  "images": [
+   "000000.jpg",
+   "000000.png",
+   "000001.jpeg",
+   "000001.jpg",
+   "000002.jpg",
+   "000003.jpg"
+  ],
+  "videos": [],
+  "order": 2,
+  "thumbs": false
+ },
+ {
+  "id": "golds3",
+  "name": "Black Gold Snake",
+  "price": "8899 EGP",
+  "description": "his exclusive black snake grillz set is masterfully crafted in 925 sterling silver with sleek black gold plating for a dark, menacing shine. A coiled, intricately detailed black snake motif slithers across the teeth, its fierce head centered with a glowing green stone eye that radiates vivid emerald intensity.",
+  "category": "golds",
+  "folder": "golds3",
+  "images": [
+   "000000.jpg",
+   "000002.jpg",
+   "000003.jpg",
+   "000004.jpg",
+   "000005.jpg"
+  ],
+  "videos": [],
+  "order": 3,
+  "thumbs": false
+ },
+ {
+  "id": "golds4",
+  "name": "Ancient Scorpion",
+  "price": "4799 EGP",
+  "description": "This exclusive scorpion grillz set features premium silver construction with rich gold plating for a bold two-tone glow. A fierce, intricately detailed scorpion motif dominates, crowned by a vibrant emerald green stone at its core for intense jewel-like brilliance.",
+  "category": "golds",
+  "folder": "golds4",
+  "images": [
+   "000000.jpg",
+   "000001.jpg"
+  ],
+  "videos": [],
+  "order": 4,
+  "thumbs": false
+ },
+ {
+  "id": "golds5",
+  "name": "ANE's Set",
+  "price": "11799 EGP",
+  "description": "Crafted in solid 925 sterling silver with a luxurious gold plating, featuring three elegantly floating letters \"A\", \"N\", \"E\" — spelling her name with graceful suspension — complemented by a finely detailed golden Cancer zodiac symbol in its classic crab form.",
+  "category": "golds",
+  "folder": "golds5",
+  "images": [
+   "000000.jpg",
+   "000001.jpg",
+   "000002.jpg",
+   "000003.jpg",
+   "000004.jpg",
+   "000005.jpg",
+   "000006.jpg"
+  ],
+  "videos": [],
+  "order": 5,
+  "thumbs": false
+ },
+ {
+  "id": "golds6",
+  "name": "Scorpion Cobalt Chrome Edition",
+  "price": "3599 EGP",
+  "description": "Crafted in premium cobalt chrome with a razor-sharp finish and luxurious gold coating, this fierce scorpion design features crisp, angular contours accented by vivid red enamel detailing.",
+  "category": "golds",
+  "folder": "golds6",
+  "images": [
+   "000000.jpg",
+   "000001.jpg",
+   "000002.jpg",
+   "000003.jpg"
+  ],
+  "videos": [],
+  "order": 6,
+  "thumbs": false
+ },
+ {
+  "id": "golds7",
+  "name": "Scorpion Sterling Silver Edition",
+  "price": "4799 EGP",
+  "description": "Crafted in solid 925 sterling silver with a smooth, rounded gold-plated finish, the elegant scorpion form is softly contoured for refined wear, highlighted by a luminous emerald CZ stone that captures light with serene brilliance.",
+  "category": "golds",
+  "folder": "golds7",
+  "images": [
+   "000000.jpg"
+  ],
+  "videos": [],
+  "order": 7,
+  "thumbs": false
+ },
+ {
+  "id": "golds8",
+  "name": "OpenFace & Heart CutOut Chrome Edition",
+  "price": "2899 EGP",
+  "description": "Crafted in premium cobalt chrome with a luxurious gold plating, this exclusive two-tooth design pairs one sleek open-face tooth with a refined heart-shaped cutout on the adjacent tooth. The crisp, sharp contours allow natural tooth brilliance to shine through both elements.",
+  "category": "golds",
+  "folder": "golds8",
+  "images": [
+   "000000.jpg",
+   "000001.jpg",
+   "000002.jpg",
+   "000003.jpg",
+   "000004.jpg",
+   "000005.jpg",
+   "000006.jpg",
+   "000007.jpg",
+   "000008.jpg",
+   "000009.jpg"
+  ],
+  "videos": [],
+  "order": 8,
+  "thumbs": false
+ },
+ {
+  "id": "golds9",
+  "name": "nO ruLE SET",
+  "price": "38999 EGP",
+  "description": "One-of-a-kind 20-piece grillz set. Featuring a stunning iced-out Key of Life (Ankh), sculpted 3D forms, vibrant red enamel accents, and intricate detailing across the full set for maximum brilliance. Made in gold-plated 925 sterling silver. Handcrafted in Cairo.",
+  "category": "golds",
+  "folder": "golds9",
+  "images": [
+   "000000.jpg"
+  ],
+  "videos": [],
+  "order": 9,
+  "thumbs": false
+ },
+ {
+  "id": "golds10",
+  "name": "OpenFace & Heart CutOut Silver Edition",
+  "price": "4099 EGP",
+  "description": "Created from solid 925 sterling silver bathed in rich gold plating, the design elegantly contrasts a clean open-face tooth with an adjacent heart cutout. Smooth contours frame the natural smile beneath.",
+  "category": "golds",
+  "folder": "golds10",
+  "images": [
+   "000001.jpg"
+  ],
+  "videos": [],
+  "order": 10,
+  "thumbs": false
+ },
+ {
+  "id": "golds11",
+  "name": "\"تحرير العالم العربي\" Set – Gold-Plated Edition",
+  "price": "27599 EGP",
+  "description": "Constructed in solid 925 sterling silver with rich gold plating, this 12-tooth masterpiece elegantly displays the empowering phrase \"تحرير العالم العربي\" in precisely suspended lettering that flows seamlessly over the teeth. A luminous tribute to freedom and collective identity.",
+  "category": "golds",
+  "folder": "golds11",
+  "images": [
+   "000000.jpeg"
+  ],
+  "videos": [],
+  "order": 11,
+  "thumbs": false
+ },
+ {
+  "id": "golds12",
+  "name": "Bar & Star Set",
+  "price": "4899 EGP",
+  "description": "Crafted in solid 925 sterling silver with a luxurious gold plating, this striking two-tooth design pairs one sleek open-face tooth accented by a fully iced-out horizontal bar bursting with precision-set CZ diamonds, alongside an adjacent open-face tooth featuring a radiant shine star cutout centered by a single, brilliant solitary diamond",
+  "category": "golds",
+  "folder": "golds12",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg",
+   "000003.jpeg",
+   "000004.jpeg"
+  ],
+  "videos": [],
+  "order": 12,
+  "thumbs": false
+ },
+ {
+  "id": "silvers1",
+  "name": "LELLA FADA's Set",
+  "price": "Contact us for details",
+  "description": "This custom silver grillz set, crafted exclusively for rapper Lela Fada, features high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
+  "category": "silvers",
+  "folder": "silvers1",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg"
+  ],
+  "videos": [],
+  "order": 1,
+  "thumbs": false
+ },
+ {
+  "id": "silvers2",
+  "name": "FARES SOKAR's Set",
+  "price": "Contact us for details",
+  "description": "This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name \"للا\" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.",
+  "category": "silvers",
+  "folder": "silvers2",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg"
+  ],
+  "videos": [],
+  "order": 2,
+  "thumbs": false
+ },
+ {
+  "id": "silvers3",
+  "name": "MARWAN PABLO's Set",
+  "price": "Contact us for details",
+  "description": "This custom silver grillz set, crafted exclusively for rapper Marwan Pablo, featured in his video clip Dejavu and preformed with it in his festival .Show cased in VOUGE magzine.",
+  "category": "silvers",
+  "folder": "silvers3",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg"
+  ],
+  "videos": [],
+  "order": 3,
+  "thumbs": false
+ },
+ {
+  "id": "silvers4",
+  "name": "LELLA FADA's Set",
+  "price": "Contact us for details",
+  "description": "This custom Silver grillz set, crafted exclusively for rapper Lella Fada , to complement her latest album MAGNUN.",
+  "category": "silvers",
+  "folder": "silvers4",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg"
+  ],
+  "videos": [],
+  "order": 4,
+  "thumbs": false
+ },
+ {
+  "id": "silvers5",
+  "name": "CHROME CORNERS",
+  "price": "8800 EGP",
+  "description": "Presenting a solid grillz design covering the four corners of the mouth, complemented by a sleek chrome gap filler with a teeth mamelons effect.",
+  "category": "silvers",
+  "folder": "silvers5",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg",
+   "000003.jpeg",
+   "000004.jpeg",
+   "000005.jpeg",
+   "000006.jpeg",
+   "000007.jpeg",
+   "000008.jpeg"
+  ],
+  "videos": [],
+  "order": 5,
+  "thumbs": false
+ },
+ {
+  "id": "silvers6",
+  "name": "AFRICA BOY",
+  "price": "1750 EGP",
+  "description": "Africa map cut out from 925 sterling silver tooth",
+  "category": "silvers",
+  "folder": "silvers6",
+  "images": [
+   "000000.jpg",
+   "000001.jpg"
+  ],
+  "videos": [],
+  "order": 6,
+  "thumbs": false
+ },
+ {
+  "id": "silvers7",
+  "name": "Selene Blom Set",
+  "price": "18399 EGP",
+  "description": "Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.",
+  "category": "silvers",
+  "folder": "silvers7",
+  "images": [
+   "000000.jpeg",
+   "000000.jpg",
+   "000001.jpeg",
+   "000001.jpg",
+   "000002.jpeg",
+   "000002.jpg"
+  ],
+  "videos": [],
+  "order": 7,
+  "thumbs": false
+ },
+ {
+  "id": "silvers8",
+  "name": "\"تحرير العالم العربي\" Silver Set",
+  "price": "23999 EGP",
+  "description": "Crafted in solid 925 sterling silver with a high-polish finish, this full 12-tooth grillz features the powerful Arabic phrase \"تحرير العالم العربي\" elegantly suspended and integrated across the teeth in bold, floating lettering. A statement of revolutionary vision and pan-Arab unity.",
+  "category": "silvers",
+  "folder": "silvers8",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg"
+  ],
+  "videos": [],
+  "order": 8,
+  "thumbs": false
+ },
+ {
+  "id": "diamonds1",
+  "name": "Diamond Boy Set",
+  "price": "21899 EGP",
+  "description": "This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.",
+  "category": "diamonds",
+  "folder": "diamonds1",
+  "images": [
+   "000000.jpg"
+  ],
+  "videos": [],
+  "order": 1,
+  "thumbs": false
+ },
+ {
+  "id": "diamonds2",
+  "name": "Selene Bloom",
+  "price": "Contact us for details",
+  "description": "Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and sparkling CZ diamonds. Designed specially for a striking shoot with Aminaagalal. Handcrafted in Cairo. A graceful fusion of softness and strength — the perfect blend of artistry and bold elegance.",
+  "category": "diamonds",
+  "folder": "diamonds2",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg"
+  ],
+  "videos": [],
+  "order": 2,
+  "thumbs": false
+ },
+ {
+  "id": "design1",
+  "name": "nO ruLE SET",
+  "price": "38999 EGP",
+  "description": "One-of-a-kind 20-piece grillz set. Featuring a stunning iced-out Key of Life (Ankh), sculpted 3D forms, vibrant red enamel accents, and intricate detailing across the full set for maximum brilliance. Made in gold-plated 925 sterling silver. Handcrafted in Cairo. A powerful fusion of ancient Egyptian symbolism and modern high-luxury streetwear — the ultimate statement in heritage and opulence.",
+  "category": "latest-designs",
+  "folder": "design1",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg"
+  ],
+  "videos": [],
+  "order": 1,
+  "thumbs": false
+ },
+ {
+  "id": "design2",
+  "name": "FARES SOKAR's Set",
+  "price": "Contact us for details",
+  "description": "This custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .Show cased in GQ magzine.",
+  "category": "latest-designs",
+  "folder": "design2",
+  "images": [
+   "000.png",
+   "001.png",
+   "002.png"
+  ],
+  "videos": [
+   "003.mp4"
+  ],
+  "order": 2,
+  "thumbs": false
+ },
+ {
+  "id": "design4",
+  "name": "LELLA FADA's Set",
+  "price": "Contact us for details",
+  "description": "This custom Silver grillz set, crafted exclusively for rapper Lella Fada , to complement her latest album MAGNUN.",
+  "category": "latest-designs",
+  "folder": "design4",
+  "images": [
+   "000.jpeg",
+   "001.jpeg",
+   "002.jpeg"
+  ],
+  "videos": [],
+  "order": 3,
+  "thumbs": false
+ },
+ {
+  "id": "design5",
+  "name": "Ziad ZAZA's Set",
+  "price": "Contact us for details",
+  "description": "This custom Chrome grillz set, crafted exclusively for singer Ziad Zaza , featured in his video clip EH EL ARAF DA.",
+  "category": "latest-designs",
+  "folder": "design5",
+  "images": [
+   "000.jpeg",
+   "001.jpeg",
+   "002.jpeg"
+  ],
+  "videos": [
+   "003.mp4"
+  ],
+  "order": 4,
+  "thumbs": false
+ },
+ {
+  "id": "design6",
+  "name": "ELMOND's Set",
+  "price": "Contact us for details",
+  "description": "This custom Silver grillz set, crafted exclusively for rapper Muhab AKA ELMond , to be part of his unreleased vide clip HELW .",
+  "category": "latest-designs",
+  "folder": "design6",
+  "images": [
+   "000.jpeg",
+   "001.jpeg",
+   "002.jpeg"
+  ],
+  "videos": [
+   "003.mp4"
+  ],
+  "order": 5,
+  "thumbs": false
+ },
+ {
+  "id": "design7",
+  "name": "MARWAN PABLO's Set",
+  "price": "Contact us for details",
+  "description": "This custom silver grillz set, crafted exclusively for rapper Marwan Pablo, featured in his video clip Dejavu and preformed with it in his festival .Show cased in VOUGE magzine.",
+  "category": "latest-designs",
+  "folder": "design7",
+  "images": [
+   "000.jpeg",
+   "001.jpeg",
+   "002.jpeg"
+  ],
+  "videos": [
+   "003.mp4"
+  ],
+  "order": 6,
+  "thumbs": false
+ },
+ {
+  "id": "design8",
+  "name": "Maged El Kedwany Signature Fronts",
+  "price": "Contact us for details",
+  "description": "Exclusive custom grillz featuring \"Maged\" across the 6 lower anterior teeth, masterfully crafted in premium white gold and set with premium VVS diamonds for ultimate shine. Handcrafted in Cairo. This iconic design was showcased in the Madinet Masr Ramadan 2024 TV advertisement — a bold, personalized tribute to the legendary Egyptian actor, perfect for fans and statement makers.",
+  "category": "latest-designs",
+  "folder": "design8",
+  "images": [
+   "000000.jpg"
+  ],
+  "videos": [
+   "003.mp4"
+  ],
+  "order": 7,
+  "thumbs": false
+ },
+ {
+  "id": "design9",
+  "name": "ADIDAS's Set",
+  "price": "Contact us for details",
+  "description": "Latest with Adidas, showcased in the adidas Italia 60 campaign, to tell a story about what it means to be ‘Made In Italy’. Now live on the #adidasConfirmed app.",
+  "category": "latest-designs",
+  "folder": "design9",
+  "images": [
+   "000.jpeg",
+   "001.jpeg",
+   "002.jpeg"
+  ],
+  "videos": [
+   "000.mp4"
+  ],
+  "order": 8,
+  "thumbs": false
+ },
+ {
+  "id": "design10",
+  "name": "FLEX Set",
+  "price": "Contact us for details",
+  "description": "This custom Chrome grillz set, crafted exclusively for the rapper FLEX , featured in his video clip FL EX FT. NAFEA [ELMAHATA EL OLA] - ( OFFICIAL MUSIC VIDEO ).",
+  "category": "latest-designs",
+  "folder": "design10",
+  "images": [
+   "000000.jpeg",
+   "000001.jpeg",
+   "000002.jpeg"
+  ],
+  "videos": [
+   "000003.mp4"
+  ],
+  "order": 9,
+  "thumbs": false
+ },
+ {
+  "id": "gallery1",
+  "folder": "000001",
+  "name": "Black Snake",
+  "price": "",
+  "description": "Black snake in dark metal with emerald eyes, worked across the front six on the cast.",
+  "category": "grillz-gallery",
+  "images": [
+   "000001.jpg"
+  ],
+  "videos": [],
+  "order": 1
+ },
+ {
+  "id": "gallery2",
+  "folder": "000002",
+  "name": "Do You Love Me",
+  "price": "",
+  "description": "Gold script lettering set across the front teeth on a white working cast.",
+  "category": "grillz-gallery",
+  "images": [
+   "000002.jpg"
+  ],
+  "videos": [],
+  "order": 2
+ },
+ {
+  "id": "gallery3",
+  "folder": "000003",
+  "name": "Twin Stone Wings",
+  "price": "",
+  "description": "Pave side wings closing on a green and a magenta stone, with polished front caps.",
+  "category": "grillz-gallery",
+  "images": [
+   "000003.jpg"
+  ],
+  "videos": [],
+  "order": 3
+ },
+ {
+  "id": "gallery4",
+  "folder": "000004",
+  "name": "Grey Halo",
+  "price": "",
+  "description": "Pave wings with a grey centre stone and a ruby accent, on the working cast.",
+  "category": "grillz-gallery",
+  "images": [
+   "000004.jpg"
+  ],
+  "videos": [],
+  "order": 4
+ },
+ {
+  "id": "gallery5",
+  "folder": "000005",
+  "name": "Butterfly Flex",
+  "price": "",
+  "description": "Gold butterfly and a black enamelled Flex bar, one of the most requested builds.",
+  "category": "grillz-gallery",
+  "images": [
+   "000005.jpg"
+  ],
+  "videos": [],
+  "order": 5
+ },
+ {
+  "id": "gallery6",
+  "folder": "000006",
+  "name": "Emerald Edge",
+  "price": "",
+  "description": "Silver front caps with emerald ends and pave shoulders.",
+  "category": "grillz-gallery",
+  "images": [
+   "000006.jpg"
+  ],
+  "videos": [],
+  "order": 6
+ },
+ {
+  "id": "gallery7",
+  "folder": "000007",
+  "name": "Golden Butterfly",
+  "price": "",
+  "description": "Solid gold butterfly paired with a slim gold bar across the arch.",
+  "category": "grillz-gallery",
+  "images": [
+   "000007.jpg"
+  ],
+  "videos": [],
+  "order": 7
+ },
+ {
+  "id": "gallery8",
+  "folder": "000008",
+  "name": "Flex Script",
+  "price": "",
+  "description": "Gold bar carrying the Flex signature in script, with a smaller butterfly.",
+  "category": "grillz-gallery",
+  "images": [
+   "000008.jpg"
+  ],
+  "videos": [],
+  "order": 8
+ },
+ {
+  "id": "gallery9",
+  "folder": "000009",
+  "name": "Emerald Nugget",
+  "price": "",
+  "description": "Hand-built gold nugget cluster holding a single emerald.",
+  "category": "grillz-gallery",
+  "images": [
+   "000009.jpg"
+  ],
+  "videos": [],
+  "order": 9
+ },
+ {
+  "id": "gallery10",
+  "folder": "000010",
+  "name": "Nugget Single",
+  "price": "",
+  "description": "One rounded gold nugget piece on a single tooth, textured by hand.",
+  "category": "grillz-gallery",
+  "images": [
+   "000010.jpg"
+  ],
+  "videos": [],
+  "order": 10
+ },
+ {
+  "id": "gallery11",
+  "folder": "000011",
+  "name": "Blue Ice Row",
+  "price": "",
+  "description": "Blue and cyan stones running beside white metal work along the front.",
+  "category": "grillz-gallery",
+  "images": [
+   "000011.jpg"
+  ],
+  "videos": [],
+  "order": 11
+ },
+ {
+  "id": "gallery12",
+  "folder": "000012",
+  "name": "Silver Crown",
+  "price": "",
+  "description": "Silver piece with a diamond cluster set above a sculpted crown motif.",
+  "category": "grillz-gallery",
+  "images": [
+   "000012.jpg"
+  ],
+  "videos": [],
+  "order": 12
+ }
 ]

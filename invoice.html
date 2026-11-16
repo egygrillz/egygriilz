@@ -1016,6 +1016,9 @@ let accStatusFilter = 'all';
    INIT
 ══════════════════════════════════════════════════ */
 async function initApp() {
+  /* #app مخفي في CSS لحد ما الجلسة تتأكد — من غير السطر ده الصفحة تفضل فاضية */
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.style.display = 'block';
   setupHeader();
   setupTabs();
   setupReveal();

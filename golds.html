@@ -58,7 +58,7 @@
     .row-2 .card-img { aspect-ratio:4/5; }
     .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.45s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
     /* الغلاف ظاهر من أول لحظة — مش مستني أي كلاس */
-    .card-img img:first-child, .card-img img.active { opacity:1; }
+    .card-img img.active { opacity:1; }
     /* lớp lót: النسخة المصغّرة تظهر في الحال، والصورة الأصلية تطلع فوقها لما تجهز */
     .modal-slide { background-size:cover; background-position:center; background-color:#e8e5e1; }
     .modal-slide img { opacity:1; }
@@ -377,7 +377,8 @@
       // images html
       let imgsHtml='';
       images.forEach(function(s,i){
-        imgsHtml+='<img src="'+s+'" '
+        /* أول صورة بتبقى active من أول لحظة — مفيش انتظار لدورة التبديل */
+        imgsHtml+='<img src="'+s+'" class="'+(i===0?'active':'')+'" '
           +(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async"'
           +' alt="Handcrafted custom grillz by EGYGRILLZ">';
       });

@@ -63,8 +63,8 @@
       if(name==='gallery') loadCategory('gallery');
       if(name==='schedule') loadScheduleSettings();
       if(name==='settings') loadSiteSettings();
-      if(name==='quotes') loadFrame('frame-quotes','quotes');
-      if(name==='invoices') loadFrame('frame-invoices','invoice');
+      if(name==='quotes') loadFrame('frame-quotes','quotes.html');
+      if(name==='invoices') loadFrame('frame-invoices','invoice.html');
       if(name==='sets'||name==='golds'||name==='silvers'||name==='diamonds'||name==='latest') loadCategory(name);
     }
 
@@ -1149,6 +1149,21 @@
       document.getElementById('lockout-msg').textContent = 'Too many failed attempts. Try again in '+mins+' minute(s).';
     }
   })();
+
+  /* ── auto-login: نفس الجلسة اللي سجلت بيها قبل كده ── */
+  window.addEventListener('load', function () {
+    try {
+      firebase.auth().onAuthStateChanged(function (u) {
+        if (!u) { localStorage.removeItem('eq_staff_in'); return; }
+        if (document.getElementById('app').style.display === 'block') return;
+        localStorage.setItem('eq_staff_in', '1');
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        initApp();
+        try { syncSlots(); } catch (e) {}
+      });
+    } catch (e) {}
+  });
 
   function initApp() {
     loadConfig();
@@ -3055,7 +3070,10 @@
     });
   }
 
-  try { firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION); } catch (e) {}
+  /* LOCAL مش SESSION: الـ iframe بيقرا الجلسة من المتصفح، وجلسة SESSION
+     مابتنفعش للـ iframe على بعض المتصفحات. نفس سبب إن الكوتس والفاتورة
+     كانوا بيطلبوا دخول تاني جوه /editx. */
+  try { firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
 
   // ‑‑ Login / logout with Firebase Auth ‑‑
   window.doLogin = async function () {
@@ -3070,6 +3088,7 @@
     try {
       await firebase.auth().signInWithEmailAndPassword(email, pass);
       setLockout({ attempts: 0, until: 0 });
+      localStorage.setItem('eq_staff_in', '1');
       document.getElementById('pw-err').textContent = '';
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
@@ -3093,6 +3112,7 @@
 
   window.logout = function () {
     try { firebase.auth().signOut(); } catch (e) {}
+    localStorage.removeItem('eq_staff_in');
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('app').style.display = 'none';
     document.getElementById('pw-input').value = '';

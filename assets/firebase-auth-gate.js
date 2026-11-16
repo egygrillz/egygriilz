@@ -57,15 +57,31 @@ function overlay() {
 }
 
 export async function requireAuth() {
-  if (_auth) {
-    if (_auth.currentUser) return _auth.currentUser;
-  }
+  if (_auth && _auth.currentUser) return _auth.currentUser;
+
   const auth = firebaseAuth();
   _auth = auth;
-  await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-  /* لو فيه جلسة محفوظة، بنرجع فوراً من غير ما نعرض شاشة الدخول */
-  if (auth.currentUser) return auth.currentUser;
+  /* ══ استرجاع الجلسة قبل أي حاجة ══
+     Firebase بيرجّع الجلسة المحفوظة بشكل غير متزامن، فلازم نستنى إشارة
+     onAuthStateChanged الأول. قبل كده كنا بنستدعي setPersistence(LOCAL)
+     على طول، وده كان بيلغي جلسة اتعملت في /editx بـ SESSION — فالنتيجة
+     إن الـ iframe جوه /editx كان بيطلب تسجيل دخول تاني. */
+  const restored = await new Promise((resolve) => {
+    let un = null;
+    let settled = false;
+    const finish = (u) => { if (settled) return; settled = true; if (un) un(); resolve(u || null); };
+    try {
+      un = onAuthStateChanged(auth, (u) => finish(u));
+    } catch (e) { finish(null); return; }
+    /* لو الـ SDK مارجّعش حاجة خلال 4 ثواني، نكمل عادي */
+    setTimeout(() => finish(auth.currentUser || null), 4000);
+  });
+
+  if (restored) return restored;
+
+  /* مفيش جلسة — نخلي المرة الجاية تتشال من المتصفح مباشرة */
+  await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
   const gate = overlay();
   return new Promise((resolve) => {
