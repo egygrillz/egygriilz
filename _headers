@@ -1,0 +1,99 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# EGYGRILLZ — Cloudflare Pages headers
+# Put this file in the repo root (Cloudflare Pages reads "_headers" automatically).
+# GitHub Pages CANNOT set custom headers — this is one reason to move to Pages.
+# Test after deploy: https://securityheaders.com/?q=egyrillz.com
+# ─────────────────────────────────────────────────────────────────────────────
+
+/*
+  # ── Transport ──
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+  # ── Clickjacking / sniffing / referrer ──
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(self "https://accept.paymob.com"), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+
+  # ── Content Security Policy ──
+  # Start in report-only if you are unsure, then enforce.
+  # NOTE: 'unsafe-inline' is required only while your CSS/JS stay inline;
+  #       move them to /assets/app.css + /assets/app.js and drop it.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://res.cloudinary.com https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.emailjs.com https://api.gold-api.com https://data-asg.goldprice.org https://challenges.cloudflare.com https://*.workers.dev; frame-src https://accept.paymob.com https://challenges.cloudflare.com https://my.spline.design; form-action 'self' https://accept.paymob.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
+
+  # Nothing here needs cross-origin reads
+  Access-Control-Allow-Origin: https://egyrillz.com
+
+  # ── Don't leak the platform ──
+  X-Powered-By: EGYGRILLZ
+
+# ── Pages that must never be indexed ──
+/editx.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/quotes.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/invoice.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/staff-panel-x7k2.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/staff-panel-x7k2/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/egygz-client-intake.html
+  X-Robots-Tag: noindex, nofollow
+
+# ── Caching: HTML revalidates, hashed assets are immutable ──
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+# ── Clean URLs: /booking works without the .html suffix ──
+/booking
+  Content-Type: text/html; charset=utf-8
+/about
+  Content-Type: text/html; charset=utf-8
+/contact
+  Content-Type: text/html; charset=utf-8
+/golds
+  Content-Type: text/html; charset=utf-8
+/diamonds
+  Content-Type: text/html; charset=utf-8
+/silvers
+  Content-Type: text/html; charset=utf-8
+/grillz-gallery
+  Content-Type: text/html; charset=utf-8
+/latest-designs
+  Content-Type: text/html; charset=utf-8
+/privacy
+  Content-Type: text/html; charset=utf-8
+/terms
+  Content-Type: text/html; charset=utf-8
+/shipping
+  Content-Type: text/html; charset=utf-8
+/atelier
+  Content-Type: text/html; charset=utf-8
+
+/assets/optimized/*
+  Cache-Control: public, max-age=31536000, immutable

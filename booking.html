@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Schedule – EGYGRILLZ</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 
   <!-- Firebase Compat SDK -->
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
   <!-- EmailJS -->
   <script data-cfasync="false" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
@@ -287,7 +289,7 @@
     .footer-col a { display:block; color:#333; font-size:12px; margin-bottom:8px; transition:0.3s; }
     .footer-col a:hover { color:#000; }
     .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
-    .footer-logo-img { height:10px; filter:brightness(0); }
+    .footer-logo-img { height:40px; width:auto; filter:brightness(0); }
     .ceo-wrap { display:flex; align-items:center; gap:8px; }
     .ceo-label { font-size:7px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
     .ceo-name { font-family:'Alex Brush'; font-size:14px; color:#666; }
@@ -296,24 +298,25 @@
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
   </style>
+  <link rel="canonical" href="https://egygrillz.com/booking">
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-  <div class="floating-logo" id="floating-logo"><a href="index.html">EGYGRILLZ</a></div>
+  <div class="floating-logo" id="floating-logo"><a href="/">EGYGRILLZ</a></div>
 
   <header id="site-header">
-    <a href="index.html" class="logo-text">EGYGRILLZ</a>
+    <a href="/" class="logo-text">EGYGRILLZ</a>
     <button class="menu-toggle" aria-label="Menu" onclick="toggleMenu()"><span></span><span></span><span></span></button>
     <nav class="main-nav">
-      <a href="index.html">Home</a>
-      <a href="latest-designs.html">Latest</a>
-      <a href="booking.html" class="nav-active">Schedule</a>
-      <a href="grillz-gallery.html">Gallery</a>
-      <a href="golds.html">Golds</a>
-      <a href="diamonds.html">Diamonds</a>
-      <a href="silvers.html">Silvers</a>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
+      <a href="/">Home</a>
+      <a href="latest-designs">Latest</a>
+      <a href="booking" class="nav-active">Schedule</a>
+      <a href="grillz-gallery">Gallery</a>
+      <a href="golds">Golds</a>
+      <a href="diamonds">Diamonds</a>
+      <a href="silvers">Silvers</a>
+      <a href="about">About</a>
+      <a href="contact">Contact</a>
     </nav>
   </header>
 
@@ -341,29 +344,29 @@
             <div class="service-check"><i class="fas fa-check"></i></div>
             <div class="service-info">
               <span class="service-name">Impression</span>
-              <span class="service-meta">30 min</span>
+              <span class="service-meta"><span data-cfg="impressionMinutes">30</span> min</span>
               <span class="service-desc">We take a precise mold of your teeth — the essential first step to crafting your custom grillz.</span>
             </div>
           </div>
-          <span class="service-price">200 EGP / Arch</span>
+          <span class="service-price"><span data-cfg="impressionPrice">200</span> <span data-cfg="currency">EGP</span> / Arch</span>
         </div>
         <div class="service-option" onclick="toggleService(this,'Consultation')">
           <div class="service-left">
             <div class="service-check"><i class="fas fa-check"></i></div>
             <div class="service-info">
               <span class="service-name">Consultation</span>
-              <span class="service-meta">1 hour</span>
+              <span class="service-meta"><span data-cfg="consultMinutes">60</span> min</span>
               <span class="service-desc">Design your perfect set with our specialist — style, metal choice, stones, and fit, all planned together.</span>
             </div>
           </div>
-          <span class="service-price">1000 EGP / hr</span>
+          <span class="service-price"><span data-cfg="consultPrice">1000</span> <span data-cfg="currency">EGP</span> / hr</span>
         </div>
         <div class="service-option" onclick="toggleService(this,'Pickup')">
           <div class="service-left">
             <div class="service-check"><i class="fas fa-check"></i></div>
             <div class="service-info">
               <span class="service-name">Pickup</span>
-              <span class="service-meta">10 min</span>
+              <span class="service-meta"><span data-cfg="pickupMinutes">10</span> min</span>
               <span class="service-desc">Your piece is finished and ready. Come in to collect and try on your grillz in person.</span>
             </div>
           </div>
@@ -378,7 +381,7 @@
               <span class="service-desc">A single crystal or diamond bonded directly to your tooth — subtle, elegant, and completely painless.</span>
             </div>
           </div>
-          <span class="service-price">From 500 EGP</span>
+          <span class="service-price">From <span data-cfg="gemFromPrice">500</span> <span data-cfg="currency">EGP</span></span>
         </div>
       </div>
       <div class="btn-row">
@@ -443,7 +446,7 @@
         <div class="terms-container">
           <input type="checkbox" id="termsBox" onchange="checkStep3()">
           <label for="termsBox" class="terms-text">
-            I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>. I understand a 50% deposit is required to confirm the appointment.
+            I agree to the <a href="terms" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>. I understand a 50% deposit is required to confirm the appointment.
           </label>
         </div>
         <div class="btn-row">
@@ -480,8 +483,8 @@
     <h2>Book Your Appointment</h2>
     <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
     <div class="cta-btns">
-      <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
-      <a href="contact.html" class="cta-btn-outline">Contact Us</a>
+      <a href="booking" class="cta-btn-dark">Schedule Appointment</a>
+      <a href="contact" class="cta-btn-outline">Contact Us</a>
     </div>
   </div>
 
@@ -493,23 +496,23 @@
       </div>
       <div class="footer-col">
         <h4>Information</h4>
-        <a href="about.html">About Us</a>
-        <a href="booking.html">Schedule</a>
-        <a href="contact.html">Contact</a>
+        <a href="about">About Us</a>
+        <a href="booking">Schedule</a>
+        <a href="contact">Contact</a>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="shipping.html">Care &amp; Shipping</a>
+        <a href="privacy">Privacy Policy</a>
+        <a href="terms">Terms of Service</a>
+        <a href="shipping">Care &amp; Shipping</a>
       </div>
     </div>
     <div class="footer-bottom">
       <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
-        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a>
+        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
       </div>
-      <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+      <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
       <div class="ceo-wrap">
         <span class="ceo-label">Founder</span>
         <span class="ceo-name">DR Mohamed Mahdy</span>
@@ -530,7 +533,8 @@
         messagingSenderId: "1022362401463",
         appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
       });
-      db = firebase.firestore();
+      firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true);
+    db = firebase.firestore();
     } catch(e) { console.error('Firebase init failed:', e); }
 
     emailjs.init('rvcNsK9pAj-jhd9RE');
@@ -549,12 +553,6 @@
       }, { passive: true });
     })();
 
-    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-    document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-    document.addEventListener('keydown', function(e) {
-      if ((e.ctrlKey||e.metaKey) && ['s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
-      if (e.key === 'F12') e.preventDefault();
-    });
 
     // ── LOAD SETTINGS ──
     async function loadSettings() {
@@ -795,17 +793,12 @@
         } catch(emailErr) { console.warn('EmailJS error:', emailErr); }
 
         try {
-          var msg = encodeURIComponent(
-            '📅 New Appointment — EGYGRILLZ\n' +
-            '👤 ' + name + '\n' +
-            '📞 ' + phone + '\n' +
-            '✉️ ' + email + '\n' +
-            '💎 ' + selectedServices.join(', ') + '\n' +
-            '📆 ' + selectedDate + ' at ' + selectedTime +
-            (notes ? '\n📝 ' + notes : '')
-          );
-          await fetch('https://api.callmebot.com/whatsapp.php?phone=+201000353839&text=' + msg + '&apikey=5240719');
-        } catch(waErr) { console.warn('WhatsApp error:', waErr); }
+          await (window.EGYGZ ? EGYGZ.notify.booking({
+            name: name, phone: phone, email: email,
+            service: selectedServices.join(', '),
+            date: selectedDate, time: selectedTime, notes: notes || ''
+          }) : Promise.resolve());
+        } catch (e) { console.warn('notify skipped', e); }
 
         document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
         document.getElementById('step5').classList.add('active');
@@ -826,5 +819,25 @@
       loadTakenSlots();
     });
   </script>
+
+  <script src="/assets/booking-secure.js"></script>
+
+
+<script src="/assets/egygz-notify.js" defer></script>
+<script src="assets/calc-engine.js"></script>
+<script data-cfasync="false">
+/* Site settings: reads settings/site and fills every [data-cfg] element.
+   If the network or Firestore is unavailable the values stay as they are.
+   This does not touch the EmailJS code in any way. */
+(function () {
+  try {
+    if (!window.SiteConfig) return;
+    window.SiteConfig.apply(document);
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+      window.SiteConfig.load(firebase.firestore()).catch(function () {});
+    }
+  } catch (e) { /* never break the page */ }
+})();
+</script>
 </body>
 </html>

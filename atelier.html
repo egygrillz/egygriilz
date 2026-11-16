@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Price Estimator — EGYGRILLZ</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --bg:#ffffff;--off:#f5f5f5;--text:#1a1a1a;--text2:#6e6e73;--text3:#aeaeb2;--border:rgba(0,0,0,0.08);
-  --gold:#c9a227;--gold-light:#fffbea;--gold-border:#e8d87a;
+  --gold:#3a3a3a;--gold-light:#f2f2f2;--gold-border:#e0e0e0;
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Arimo',sans-serif;background:#fff;color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -98,7 +99,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .pb-secondary{font-size:11px;color:var(--text3);margin-top:2px;}
 .pb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .pb-note{font-size:11px;color:var(--text3);background:var(--off);border-radius:20px;padding:5px 12px;}
-.gold-badge{font-size:10px;color:#9a7f1a;background:#fffbea;border:1px solid #e8d87a;border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.gold-badge{font-size:10px;color:#9a7f1a;background:#f2f2f2;border:1px solid #e0e0e0;border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
 .gold-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:gp 2s infinite;}
 @keyframes gp{0%,100%{opacity:1;}50%{opacity:.3;}}
 .cta-book{background:var(--text);color:#fff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 22px;border-radius:2px;transition:opacity .2s,transform .2s;display:inline-block;}
@@ -347,7 +348,7 @@ header.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .mat-single-desc .mn{font-size:13px;font-weight:700;letter-spacing:.5px;margin-bottom:6px;}
 .mat-single-desc .md{font-size:13px;color:var(--text2);line-height:1.65;}
 .mat-single-desc .mt{font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;}
-.mat-single-desc .mg{font-size:12px;color:#9a7f1a;background:#fffbea;border-radius:6px;padding:5px 10px;margin-top:8px;display:inline-block;}
+.mat-single-desc .mg{font-size:12px;color:#9a7f1a;background:#f2f2f2;border-radius:6px;padding:5px 10px;margin-top:8px;display:inline-block;}
 
 /* ── ADD-ONS ── */
 .addons-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border-radius:16px;overflow:hidden;}
@@ -465,7 +466,7 @@ footer{background:#fff;color:var(--text);padding:50px 5% 20px;}
 .footer-col a{display:block;color:#333;font-size:12px;margin-bottom:8px;transition:.3s;}
 .footer-col a:hover{color:#000;}
 .footer-bottom{padding-top:25px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;}
-.footer-logo-img{height:10px;filter:brightness(0);}
+.footer-logo-img { height:40px; width:auto; filter:brightness(0); }
 .ceo-wrap{display:flex;align-items:center;gap:8px;}
 .ceo-label{font-size:7px;color:#aaa;text-transform:uppercase;letter-spacing:1px;}
 .ceo-name{font-family:'Alex Brush';font-size:14px;color:#666;}
@@ -506,11 +507,12 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 /* ── INTERACTIVE NUMBER GLOW ── */
 @keyframes priceGlow{
   0%{text-shadow:none;}
-  50%{text-shadow:0 0 30px rgba(201,162,39,0.15);}
+  50%{text-shadow:0 0 30px rgba(58,58,58,0.15);}
   100%{text-shadow:none;}
 }
 .pb-price.pop{animation:numPop .22s ease, priceGlow .6s ease;}
 </style>
+  <link rel="canonical" href="https://egygrillz.com/atelier">
 </head>
 <body>
 
@@ -531,20 +533,20 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 
 <!-- HEADER -->
 <header id="site-header">
-  <a href="index.html" class="logo-text">EGYGRILLZ</a>
+  <a href="/" class="logo-text">EGYGRILLZ</a>
   <button class="menu-toggle" aria-label="Menu" onclick="document.querySelector('.main-nav').classList.toggle('active')">
     <span></span><span></span><span></span>
   </button>
   <nav class="main-nav">
-    <a href="index.html">Home</a>
-    <a href="latest-designs.html">Latest</a>
-    <a href="booking.html">Schedule</a>
-    <a href="grillz-gallery.html">Gallery</a>
-    <a href="golds.html">Golds</a>
-    <a href="diamonds.html">Diamonds</a>
-    <a href="silvers.html">Silvers</a>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
+    <a href="/">Home</a>
+    <a href="latest-designs">Latest</a>
+    <a href="booking">Schedule</a>
+    <a href="grillz-gallery">Gallery</a>
+    <a href="golds">Golds</a>
+    <a href="diamonds">Diamonds</a>
+    <a href="silvers">Silvers</a>
+    <a href="about">About</a>
+    <a href="contact">Contact</a>
   </nav>
 </header>
 
@@ -572,7 +574,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
       </div>
       <span class="pb-note">Estimate only — final quote at studio</span>
       <button class="sf-ghost-btn" onclick="openModal()" id="breakdown-btn" style="display:none">View Breakdown</button>
-      <a href="booking.html" class="cta-book">Book Now</a>
+      <a href="booking" class="cta-book">Book Now</a>
     </div>
   </div>
   <!-- Collapsed mini -->
@@ -739,7 +741,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
           <span class="ao-chev"><i class="fas fa-chevron-down"></i></span>
         </div>
         <div class="ao-body" onclick="event.stopPropagation()">
-          <div class="ao-avail-note" id="stones-avail-note">⚠️ Diamond setting is only available for Silver 925 and Gold 18K.</div>
+          <div class="ao-avail-note" id="stones-avail-note"><i class="fas fa-triangle-exclamation"></i> Diamond setting is only available for Silver 925 and Gold 18K.</div>
           <div class="ao-sub-row">
             <div class="ao-sub" style="margin-top:0;">Stone Style</div>
             <span class="info-trigger" style="margin-left:6px;margin-bottom:10px;" onclick="toggleInfo('info-stones')">i</span>
@@ -956,7 +958,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
       </div>
     </div>
     <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-      <a href="booking.html" class="sf-cta">Book Your Appointment</a>
+      <a href="booking" class="sf-cta">Book Your Appointment</a>
     </div>
     <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
       <button class="sf-ghost-btn" onclick="openModal()">View Price Breakdown</button>
@@ -996,8 +998,8 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
   <h2>Book Your Appointment</h2>
   <p>Ready for a set that's uniquely yours? Schedule a fitting or reach out — we serve clients across Egypt and ship worldwide.</p>
   <div class="cta-btns">
-    <a href="booking.html" class="cta-btn-dark">Schedule Appointment</a>
-    <a href="contact.html" class="cta-btn-outline">Contact Us</a>
+    <a href="booking" class="cta-btn-dark">Schedule Appointment</a>
+    <a href="contact" class="cta-btn-outline">Contact Us</a>
   </div>
 </div>
 
@@ -1010,23 +1012,23 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
     </div>
     <div class="footer-col">
       <h4>Information</h4>
-      <a href="about.html">About Us</a>
-      <a href="booking.html">Schedule</a>
-      <a href="contact.html">Contact</a>
+      <a href="about">About Us</a>
+      <a href="booking">Schedule</a>
+      <a href="contact">Contact</a>
     </div>
     <div class="footer-col">
       <h4>Legal</h4>
-      <a href="privacy.html">Privacy Policy</a>
-      <a href="terms.html">Terms of Service</a>
-      <a href="shipping.html">Care &amp; Shipping</a>
+      <a href="privacy">Privacy Policy</a>
+      <a href="terms">Terms of Service</a>
+      <a href="shipping">Care &amp; Shipping</a>
     </div>
   </div>
   <div class="footer-bottom">
     <div class="footer-icons">
-      <a href="https://instagram.com/egygrillz" target="_blank"><i class="fab fa-instagram"></i></a>
-      <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank"><i class="fas fa-location-dot"></i></a>
+      <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+      <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
     </div>
-    <img src="logo/logo_white.png" class="footer-logo-img" alt="EGYGRILLZ">
+    <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
     <div class="ceo-wrap">
       <span class="ceo-label">Founder</span>
       <span class="ceo-name">DR Mohamed Mahdy</span>
@@ -1061,8 +1063,8 @@ const CURRENCIES = {
   EGP: { symbol: 'EGP', sign: '',    rate: 1,       decimals: 0  },
   USD: { symbol: 'USD', sign: '$',   rate: 0.021,   decimals: 0  },
   EUR: { symbol: 'EUR', sign: '€',   rate: 0.019,   decimals: 0  },
-  SAR: { symbol: 'SAR', sign: 'ر.س', rate: 0.079,   decimals: 0  },
-  AED: { symbol: 'AED', sign: 'د.إ', rate: 0.077,   decimals: 0  },
+  SAR: { symbol: 'SAR', sign: '.', rate: 0.079,   decimals: 0  },
+  AED: { symbol: 'AED', sign: '.', rate: 0.077,   decimals: 0  },
 };
 let activeCurrency = 'EGP';
 // EGP/USD rate updated after live gold fetch
@@ -1573,7 +1575,7 @@ function calcBreakdown() {
   if(S.stones && S.sg !== 'None') {
     const isPrecious = mat.precious;
     if(!isPrecious) {
-      rows.push({label:'⚠️ Stones (not available for this material)', val:0});
+      rows.push({label:'<i class="fas fa-triangle-exclamation"></i> Stones (not available for this material)', val:0});
     } else if(S.sg === 'Single') {
       const settingFee = (SETTING_PRICE[S.set] || 150) * S.stoneN;
       const gemFee     = S.gem === 'Natural' ? 0 : (GEM_SINGLE[S.gem] || 0) * S.stoneN;
@@ -1778,7 +1780,7 @@ function updateShareText(tags, total) {
     `Total: ${priceStr}`,
     '',
     'Estimate only — final price confirmed at studio.',
-    'Book: egygrillz.com/booking.html'
+    'Book: egygrillz.com/booking'
   ].join('\n');
   const el = document.getElementById('share-text');
   if(el) el.textContent = txt;

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found – EGYGRILLZ</title>
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://egygillz.com/404">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#FAFAF9">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root { --bg:#FAFAF9; --text:#1a1a1a; --muted:#888; --border:rgba(0,0,0,0.08); }
+    *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Arimo',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
+    body.menu-open { overflow:hidden; }
+    a { text-decoration:none; color:inherit; }
+    img,video { display:block; max-width:100%; }
+
+    /* HEADER — identical to the rest of the site */
+    header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--bg); border-bottom:1px solid var(--border); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); }
+    header.hidden { transform:translateY(-100%); }
+    .floating-logo { position:fixed; top:20px; left:0; right:0; display:flex; align-items:center; justify-content:center; z-index:999; pointer-events:none; opacity:0; transform:translateY(-10px); transition:opacity 0.4s ease,transform 0.4s ease; }
+    .floating-logo.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .floating-logo a { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:4px; color:#fff; text-decoration:none; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
+    .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; text-decoration:none; color:var(--text); }
+    .main-nav { display:flex; gap:20px; }
+    .main-nav a { color:var(--text); font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color 0.3s; }
+    .main-nav a:hover { color:#666; }
+    .menu-toggle { display:none; flex-direction:column; gap:6px; background:none; border:none; cursor:pointer; }
+    .menu-toggle span { width:25px; height:1.5px; background:var(--text); display:block; }
+    @media(max-width:980px) {
+      .menu-toggle { display:flex; }
+      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:var(--bg); flex-direction:column; padding:10px 5%; transition:0.4s cubic-bezier(0.4,0,0.2,1); box-shadow:0 5px 10px rgba(0,0,0,0.05); z-index:1100; }
+      .main-nav.active { right:0; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,0.06); width:100%; }
+    }
+
+    /* PAGE */
+    .container { max-width:1100px; margin:0 auto; padding:100px 6% 60px; }
+    .notfound { text-align:center; padding:40px 0 10px; }
+    .eyebrow { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:#aaa; margin-bottom:18px; }
+    .big-404 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(80px,22vw,180px); letter-spacing:6px; line-height:0.9; margin-bottom:6px; color:var(--text); }
+    .rule { width:60px; height:1px; background:var(--border); margin:26px auto; }
+    h1.title { font-family:'Playfair Display',serif; text-transform:uppercase; letter-spacing:3px; font-size:clamp(20px,4vw,30px); font-weight:400; margin-bottom:16px; }
+    .lead { font-size:14px; color:#777; max-width:460px; margin:0 auto; line-height:1.8; }
+    .cta-btns { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:40px; }
+    .cta-btn-dark { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #aaa; padding:15px 38px; color:#666; transition:background 0.25s,color 0.25s,border-color 0.25s; }
+    .cta-btn-dark:hover { background:#666; color:#fff; border-color:#666; }
+    .cta-btn-outline { display:inline-block; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:1px solid #ddd; padding:15px 38px; color:#aaa; transition:border-color 0.25s,color 0.25s; }
+    .cta-btn-outline:hover { border-color:#aaa; color:#666; }
+
+    /* suggestions */
+    h2 { font-family:'Playfair Display',serif; font-size:15px; text-transform:uppercase; letter-spacing:3px; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:26px; font-weight:400; }
+    .sugg { margin-top:70px; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
+    .card { display:block; background:#fff; border:1px solid var(--border); padding:26px 20px; text-align:center; transition:transform 0.25s,box-shadow 0.25s; }
+    .card:hover { transform:translateY(-3px); box-shadow:0 10px 26px rgba(0,0,0,0.06); }
+    .card i { font-size:18px; color:#bbb; margin-bottom:14px; display:block; }
+    .card span { display:block; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text); }
+    .card small { display:block; font-size:11px; color:var(--muted); margin-top:6px; letter-spacing:0; text-transform:none; }
+    .help { text-align:center; margin-top:50px; font-size:12px; color:#999; }
+    .help a { border-bottom:1px solid #ddd; padding-bottom:2px; }
+    .help a:hover { color:var(--text); border-color:var(--text); }
+
+    /* FOOTER — identical to the rest of the site */
+    footer { background:#fff; color:var(--text); padding:50px 5% 20px; }
+    .footer-main { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:40px; padding-bottom:40px; border-bottom:1px solid #eee; }
+    .footer-col h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:#999; }
+    .footer-col p { font-size:13px; color:#888; max-width:300px; line-height:1.6; }
+    .footer-col a { display:block; color:#333; font-size:12px; margin-bottom:8px; transition:0.3s; }
+    .footer-col a:hover { color:#000; }
+    .footer-bottom { padding-top:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+    .footer-logo-img { height:40px; width:auto; filter:brightness(0); }
+    .ceo-wrap { display:flex; align-items:center; gap:8px; }
+    .ceo-label { font-size:7px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+    .ceo-name { font-family:'Alex Brush'; font-size:14px; color:#666; }
+    .legal-text { font-size:9px; color:#aaa; text-transform:uppercase; }
+    .footer-icons a { color:#333; margin-right:14px; font-size:16px; transition:0.3s; }
+    .footer-icons a:hover { color:#000; }
+    @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } }
+    @media(max-width:480px) { .cta-btns { flex-direction:column; align-items:center; } .cta-btn-dark,.cta-btn-outline { width:100%; max-width:280px; text-align:center; } }
+  </style>
+</head>
+<body>
+
+  <div class="floating-logo" id="floating-logo"><a href="/">EGYGRILLZ</a></div>
+
+  <header>
+    <a href="/" class="logo-text">EGYGRILLZ</a>
+    <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <nav class="main-nav">
+      <a href="/">Home</a>
+      <a href="latest-designs">Latest</a>
+      <a href="booking">Schedule</a>
+      <a href="grillz-gallery">Gallery</a>
+      <a href="golds">Golds</a>
+      <a href="diamonds">Diamonds</a>
+      <a href="silvers">Silvers</a>
+      <a href="about">About</a>
+      <a href="contact">Contact</a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <div class="notfound">
+      <div class="eyebrow">Error · 404</div>
+      <div class="big-404">404</div>
+      <div class="rule"></div>
+      <h1 class="title">This page has been melted down</h1>
+      <p class="lead">
+        The link you followed no longer exists — or the page moved to a cleaner address.
+        Everything else is still here, shining.
+      </p>
+      <div class="cta-btns">
+        <a href="/" class="cta-btn-dark">Back to Home</a>
+        <a href="booking" class="cta-btn-outline">Book a fitting</a>
+      </div>
+    </div>
+
+    <section class="sugg">
+      <h2>Where would you like to go?</h2>
+      <div class="cards">
+        <a class="card" href="grillz-gallery">
+          <i class="fa-regular fa-images"></i>
+          <span>Gallery</span>
+          <small>Our finest sets</small>
+        </a>
+        <a class="card" href="latest-designs">
+          <i class="fa-regular fa-gem"></i>
+          <span>Latest Designs</span>
+          <small>New this season</small>
+        </a>
+        <a class="card" href="golds">
+          <i class="fa-solid fa-crown"></i>
+          <span>Golds</span>
+          <small>18K &amp; 21K solid gold</small>
+        </a>
+        <a class="card" href="diamonds">
+          <i class="fa-regular fa-star"></i>
+          <span>Diamonds</span>
+          <small>VVS iced-out sets</small>
+        </a>
+        <a class="card" href="silvers">
+          <i class="fa-solid fa-ring"></i>
+          <span>Silvers</span>
+          <small>925 sterling</small>
+        </a>
+        <a class="card" href="contact">
+          <i class="fa-regular fa-comment-dots"></i>
+          <span>Contact</span>
+          <small>Talk to the studio</small>
+        </a>
+      </div>
+      <p class="help">
+        Can't find what you were looking for?
+        <a href="mailto:egygrillz@gmail.com">Email the studio</a>.
+      </p>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="footer-main">
+      <div class="footer-col">
+        <h4>EGYGRILLZ Egypt</h4>
+        <p>Handcrafting Egypt's most exclusive dental jewelry. Gold, Silver, and VVS Diamonds tailored to your smile.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Information</h4>
+        <a href="about">About Us</a>
+        <a href="booking">Schedule</a>
+        <a href="contact">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="privacy">Privacy Policy</a>
+        <a href="terms">Terms of Service</a>
+        <a href="shipping">Care &amp; Shipping</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-icons">
+        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer"><i class="fas fa-location-dot"></i></a>
+      </div>
+      <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy" decoding="async">
+      <div class="ceo-wrap">
+        <span class="ceo-label">Founder</span>
+        <span class="ceo-name">DR Mohamed Mahdy</span>
+      </div>
+      <div class="legal-text">© 2026 EGYGRILLZ</div>
+    </div>
+  </footer>
+
+  <script>
+    (function(){
+      const header = document.querySelector('header');
+      const floatLogo = document.getElementById('floating-logo');
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        const hiding = y > lastY && y > 80;
+        header.classList.toggle('hidden', hiding);
+        floatLogo.classList.toggle('visible', hiding);
+        lastY = y;
+      }, { passive: true });
+    })();
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.main-nav').classList.toggle('active');
+      document.body.classList.toggle('menu-open');
+    });
+  </script>
+</body>
+</html>
