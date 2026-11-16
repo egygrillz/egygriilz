@@ -34,33 +34,57 @@ Local test results: every nav link resolves (0 broken), 0 HTML nesting errors, 0
 
 | Piece | Where | What it does |
 |---|---|---|
-| `moulds.html` | `/moulds` | Teeth-chart order page. Saves to Firestore **`mould_orders`**, then pings the Worker (`/api/notify`, `type: "mould"`). |
-| `editx` → **Moulds** | `/editx` | Lists orders (`Pending` / `Approved & Email Sent` / `Delivered`), pastes a payment link, sends the email, edits the template (`settings/moulds_email`). |
+| `moulds.html` | `/moulds` | Teeth-chart order page. Posts the order to the Worker (`/api/moulds/order`), which saves it to Firestore **`mould_orders`** and alerts Telegram. If the Worker is unreachable the page falls back to writing straight to Firestore. Prices (`settings/site` → `mouldPerArch`, `mouldDeliveryFee`) are applied to every total. |
+| `editx` → **Moulds** | `/editx` | Lists orders (`Pending` / `Approved` / `Delivered`), edits the kit prices, pastes the payment link. **Approve & open Gmail** saves the link + `approved`, then opens Gmail with the client's address, subject and your template filled in — **you press Send**. |
 | `editx` → **Home Banners** | `/editx` | Uploads or picks the wide image for the Golds / Silvers / Diamonds home sections (`settings/banners`). |
-| Telegram bot | Worker | `/moulds`, `/mould`, `/pay`, `/deliver`, `/sets`, `/setvis`, `/status`, `/calc`, `/invoice` + inline buttons on each order. |
+| Telegram bot | Worker | `/moulds`, `/mould`, `/pay`, `/deliver`, `/sets`, `/setvis`, `/status`, `/calc`, `/invoice` + inline buttons. `/pay <ref> <link>` marks the order approved and replies with a **tap-to-open Gmail draft** (subject + body already written) so you can send it from your phone. |
 | `assets/set-visibility.js` | public pages | Hides sets switched off from `/setvis` (`settings/visibility`). |
 
-### Secrets to add in Cloudflare (Worker → Settings → Variables and Secrets)
+### No mail secrets — everything is sent by hand from Gmail
 
-**Gmail payment emails** (the “Approve & Send Payment” button and `/pay`):
+The Worker **does not send email**. There is no Gmail API integration, no Resend key and no EmailJS
+template for moulds, so there is nothing to configure in Google Cloud:
 
-| Secret | Value |
-|---|---|
-| `GMAIL_CLIENT_ID` | Google Cloud → APIs & Services → Credentials → OAuth client |
-| `GMAIL_CLIENT_SECRET` | same client |
-| `GMAIL_REFRESH_TOKEN` | one-off consent for `https://www.googleapis.com/auth/gmail.send` (scope only — the Worker can send, never read) |
-| `GMAIL_SENDER` | e.g. `EGYGRILLZ <studio@egygrillz.com>` (must be the Gmail/Workspace account that owns the refresh token) |
+* `/api/moulds/approve` only writes `paymentLink`, `status: "approved"` and `approvedAt`.
+* The response includes a Gmail compose URL (`view=cm&fs=1&to=…&su=…&body=…`) built from the
+  template in `settings/moulds_email`. `/editx` opens it in a new tab; Telegram replies with the same
+  link as a button.
+* `/api/health` no longer lists any email channel — if an `email_*` flag still shows up there, the
+  old Worker is still deployed.
 
-The Gmail API must be enabled in the Google Cloud project (`gmail.googleapis.com`).
-
-**Fallbacks** — if Gmail is not set up the same email goes out through `RESEND_KEY`, then
-`EMAILJS_PRIVATE_KEY` + `EMAILJS_MOULD_TEMPLATE`. If none is configured the editx panel says so and
-offers a “Compose in Gmail” draft, so a client is never left without an answer.
-
-**Optional:** `MOULDS_KEY` — when set, `/api/moulds/approve` and `/api/moulds/status` also require the
+**Optional:** `MOULDS_KEY` — when set, `/api/moulds/status` and `/api/moulds/approve` also require the
 `X-Moulds-Key` header (the pages call them from the studio domain, which is always allowed).
 
-Verify: `curl -s https://<worker>/api/health | grep -E "email_gmail|moulds_"`
+Verify: `curl -s https://<worker>/api/health | grep -E "moulds_|email"`
+
+### Worker secrets the mould flow relies on
+
+| Secret | Why |
+|---|---|
+| `FIREBASE_API_KEY` | Reads/writes Firestore over REST. |
+| `STAFF_EMAIL` + `STAFF_PASSWORD` | The Worker signs in as the studio account, so it can create a `mould_orders` document even though visitors are anonymous. **Without these two the public order can only be saved by the browser.** |
+| `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | The new-order alert with the order's buttons. |
+
+### Firestore rules — `mould_orders`
+
+The order page writes as a visitor. If your rules only let signed-in staff write to `mould_orders`,
+the Worker's staff sign-in covers it (see above). If you would rather allow the public create, add
+this inside `match /databases/{database}/documents { … }` and publish it:
+
+```
+match /mould_orders/{id} {
+  allow read: if request.auth != null;
+  allow create: if request.resource.data.status == 'pending'
+                && request.resource.data.name is string
+                && request.resource.data.name.size() < 100
+                && request.resource.data.phone is string
+                && request.resource.data.total is number;
+  allow update, delete: if request.auth != null;
+}
+```
+
+`settings/site` and `settings/banners` must stay readable without signing in (`allow read: if true`),
+otherwise `/moulds` falls back to the default prices and the home page cannot show a saved banner.
 
 ---
 
@@ -108,7 +132,7 @@ Use `/MTC` (Catalog &amp; Media Diagnostics) to audit asset references in `catal
 1. `index.html` → replace the comment `<!-- Google Search Console: paste your real verification meta here -->`
    with your real `<meta name="google-site-verification" content="…">`.
 2. `assets/egygz-notify.js` → set `ENDPOINT` to your deployed Worker URL.
-3. Firebase Console → create the staff user, then deploy `deploy/firestore.rules`.
+3. Firebase Console → create the staff user, then paste the `mould_orders` rules from the section above.
 
 ## Verify the clean-URL behaviour locally
 ```bash

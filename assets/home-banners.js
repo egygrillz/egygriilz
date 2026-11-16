@@ -16,11 +16,16 @@
   'use strict';
 
   var PROJECT = 'egygrillz-studio';
+  /* Public web key of the project (already shipped in every page).
+     Firestore's REST API refuses keyless reads, which made the banner
+     document unreachable — the home page then always fell back to the
+     first design, so a banner saved in /editx never showed up. */
+  var API_KEY = 'AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk';
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
-    '/databases/(default)/documents/settings/banners';
+    '/databases/(default)/documents/settings/banners?key=' + API_KEY;
   var TIERS = ['golds', 'silvers', 'diamonds'];
   var CACHE_KEY = 'egygz_banners_v1';
-  var CACHE_TTL = 60 * 1000;         // one minute — the studio edits rarely
+  var CACHE_TTL = 20 * 1000;         // seconds — so a saved banner shows up fast
   var ready = null;
 
   /** Firestore REST value → plain JS */

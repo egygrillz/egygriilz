@@ -14,7 +14,7 @@
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
-  <script data-cfasync="false" src="/assets/calc-engine.js"></script>
+  <script data-cfasync="false" src="/assets/calc-engine.js?v=2"></script>
   <script data-cfasync="false" src="/assets/egygz-notify.js"></script>
 
   <style>
@@ -349,7 +349,7 @@
         <div class="sum-row"><span id="sumArchLabel">Moulds — no arch selected</span><span class="v" id="sumMoulds">0 EGP</span></div>
         <div class="sum-row" id="sumDeliveryRow"><span>Delivery (flat)</span><span class="v" id="sumDelivery">100 EGP</span></div>
         <div class="sum-row total"><span>Total</span><span class="v" id="sumTotal">0 EGP</span></div>
-        <p class="sum-note">450 EGP per arch · 100 EGP flat delivery. We email the payment link once your order is confirmed.</p>
+        <p class="sum-note" id="sumNote">450 EGP per arch · 100 EGP flat delivery. We email the payment link once your order is confirmed.</p>
         <div class="submit-wrap">
           <button type="submit" class="btn-main" id="submitBtn">Confirm My Mould Kit</button>
         </div>
@@ -386,6 +386,10 @@
     var PRICES = { perArch: 450, delivery: 100 };
     var ARCH = { upper: false, lower: false };
     var GEO = null;
+    /* The Worker (same one the rest of the site pings) can save the order
+       with the studio's own credentials, which is what Firestore's rules
+       ask for. The direct browser write stays as the fallback. */
+    var WORKER_BASE = localStorage.getItem('egygz_worker') || 'https://egygillz-api.egygrillz.workers.dev';
 
     // ── Firebase (same project as booking) ──
     var db = null;
@@ -420,21 +424,35 @@
       }, { passive: true });
     })();
 
-    /* ── prices from the database (fallback to the published rates) ── */
+    /* ── prices from the database (fallback to the published rates) ──
+       settings/site holds both numbers: the price per arch and the flat
+       delivery fee. Both are read here so the total shown to the client is
+       exactly what the studio configured in /editx → Site Settings. */
     async function loadPrices() {
       try {
         if (window.SiteConfig) {
           await window.SiteConfig.load(null);
-          PRICES.perArch = Number(window.SiteConfig.num('mouldPerArch')) || 450;
+          var perArch = Number(window.SiteConfig.num('mouldPerArch'));
+          if (perArch > 0) PRICES.perArch = perArch;
           var fee = Number(window.SiteConfig.num('mouldDeliveryFee'));
-          PRICES.delivery = Number.isFinite(fee) ? fee : 100;
+          if (isFinite(fee) && fee >= 0) PRICES.delivery = fee;
         }
       } catch (e) { /* keep published rates */ }
+      paintPriceLabels();
+      renderTotal();
+    }
+
+    function paintPriceLabels() {
       document.querySelectorAll('[data-price]').forEach(function (el) {
         var arches = Number(el.getAttribute('data-price')) || 1;
         el.textContent = egp(arches * PRICES.perArch);
       });
-      renderTotal();
+      var note = document.getElementById('sumNote');
+      if (note) {
+        note.textContent = egp(PRICES.perArch) + ' per arch · '
+          + (PRICES.delivery > 0 ? egp(PRICES.delivery) + ' flat delivery' : 'free delivery')
+          + '. We email the payment link once your order is confirmed.';
+      }
     }
 
     /* ══ TEETH CHART — row selection ══ */
@@ -619,33 +637,72 @@
       };
 
       var savedId = '';
+      var savedBy = '';
+
+      /* 1) The Worker saves the order. It signs in as the studio account
+            before writing, which is what Firestore's rules require — a
+            visitor's browser is anonymous, so a direct write is refused.
+            It also recalculates the price from settings/site and alerts
+            Telegram / WhatsApp / email in the same call. */
       try {
-        if (!db) throw new Error('No database connection');
-        var ref = await db.collection('mould_orders').add(Object.assign({}, order, {
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }));
-        savedId = ref && ref.id ? ref.id : '';
-      } catch (err) {
-        console.error('[moulds] save failed', err);
-        btn.disabled = false;
-        btn.textContent = 'Confirm My Mould Kit';
-        return showError('We could not send your request — check your connection and try again, or message us on Instagram.');
+        var resp = await fetch(WORKER_BASE + '/api/moulds/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(order)
+        });
+        var res = await resp.json().catch(function () { return null; });
+        if (res && res.ok) {
+          savedId = String(res.id || '');
+          savedBy = 'worker';
+          if (Number(res.total) > 0) {
+            total = Number(res.total);
+            if (Number(res.deliveryFee) >= 0) delivery = Number(res.deliveryFee);
+            if (Number(res.mouldPrice) >= 0) moulds = Number(res.mouldPrice);
+          }
+        } else if (res && res.error) {
+          console.warn('[moulds] worker declined:', res.error);
+        }
+      } catch (e) {
+        console.warn('[moulds] worker unreachable', e);
       }
 
-      // ── ping the studio (non-blocking; the order is already saved) ──
-      try {
-        if (window.EGYGZ && window.EGYGZ.notify) {
-          window.EGYGZ.notify.mould({
-            name: name, phone: phone, email: email,
-            arches: archLabel(),
-            archCount: n,
-            total: total,
-            address: address,
-            mapLink: order.mapLink,
-            ref: savedId
-          });
+      /* 2) Fallback: write straight from the browser (works whenever the
+            Firestore rules allow the public create). */
+      if (!savedBy) {
+        try {
+          if (!db) throw new Error('No database connection');
+          var ref = await db.collection('mould_orders').add(Object.assign({}, order, {
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }));
+          savedId = ref && ref.id ? ref.id : '';
+          savedBy = 'browser';
+        } catch (err) {
+          console.error('[moulds] save failed', err);
+          btn.disabled = false;
+          btn.textContent = 'Confirm My Mould Kit';
+          return showError('We could not send your request — check your connection and try again, or message us on Instagram.');
         }
-      } catch (e) { console.warn('notify skipped', e); }
+      }
+
+      // ── ping the studio only when the browser did the save (the Worker
+      //    already alerted everyone when it saved the order itself) ──
+      if (savedBy === 'browser') {
+        try {
+          if (window.EGYGZ && window.EGYGZ.notify) {
+            window.EGYGZ.notify.mould({
+              name: name, phone: phone, email: email,
+              arches: archLabel(),
+              archCount: n,
+              mouldPrice: moulds,
+              deliveryFee: delivery,
+              total: total,
+              address: address,
+              mapLink: order.mapLink,
+              ref: savedId
+            });
+          }
+        } catch (e) { console.warn('notify skipped', e); }
+      }
 
       // ── confirmation ──
       $('mouldForm').style.display = 'none';
