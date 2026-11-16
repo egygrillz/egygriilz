@@ -63,6 +63,28 @@ browser read the collection — the dashboard used to try anyway and showed
 to a direct read when the rules allow it, and if both fail the message now names the reason and the
 account the dashboard is signed in as.
 
+### Firestore’s free plan runs out of reads
+
+The Spark plan allows **50,000 document reads a day** and then stops answering with
+`429 RESOURCE_EXHAUSTED`. It is project-wide, so *everything* that talks to Firestore goes down at
+once — the dashboard, the mould list, the Telegram bot, the public settings documents — and the
+browser SDK often shows it as the misleading *“Missing or insufficient permissions”*.
+
+It resets at **midnight Pacific**, or you can enable billing on the project (Blaze): the same free
+daily allowance still applies, you simply are not cut off when it is used up. Set a budget alert of a
+few dollars so a surprise is impossible.
+
+What the site does about it:
+
+| Where | Behaviour when the quota is gone |
+|---|---|
+| `/editx → Moulds` | says *quota used up*, and shows the last list saved on that device (buttons explain instead of pretending) |
+| Public pages | `settings/catalog`, `settings/crops`, `settings/banners` and `settings/visibility` are cached in `localStorage` for 10–30 minutes, so a visitor who browses several pages costs one read, not one per page; with no answer the pages fall back to the seed file |
+| Worker | `429` is reported as `quota` (with a readable sentence for Telegram), and it does **not** repeat the query — a wasted retry would only burn more |
+
+The dashboard clears its own copy the moment you save, so an edit is visible to you immediately;
+visitors pick it up within the cache window.
+
 **Optional:** `MOULDS_KEY` — when set, `/api/moulds/orders`, `/api/moulds/status` and
 `/api/moulds/approve` also require the `X-Moulds-Key` header (the pages call them from the studio
 domain, which is always allowed).

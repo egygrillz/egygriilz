@@ -23,7 +23,9 @@
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
     '/databases/(default)/documents/settings/visibility?key=' + API_KEY;
   var CACHE_KEY = 'egygz_visibility_v1';
-  var CACHE_TTL = 5 * 60 * 1000;   // 5 minutes, so a toggle shows up quickly
+  /* 30 minutes: every page view used to cost one Firestore read, which is what
+     burns through the free 50k/day. A toggle still shows up the same day. */
+  var CACHE_TTL = 30 * 60 * 1000;
 
   var ready = null;                 // Promise<string[]>
   var nativeFetch = window.fetch ? window.fetch.bind(window) : null;

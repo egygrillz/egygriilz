@@ -35,7 +35,11 @@
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
     '/databases/(default)/documents/settings/crops?key=' + API_KEY;
   var CACHE_KEY = 'egygz_crops_v1';
-  var CACHE_TTL = 20 * 1000;      // seconds — edits show up on the next visit
+  /* Firestore's free plan allows 50,000 reads a day and stops answering when
+     they are gone, so a visitor re-reads this document at most every 10 min.
+     /editx clears the copy in its own browser after saving, so the studio
+     always sees its change immediately. */
+  var CACHE_TTL = 10 * 60 * 1000;
   var SKIP = '.modal-slide, .modal, [data-crop="off"]';
 
   var map = {};                   // slot → { x, y, zoom }
