@@ -35,6 +35,11 @@
   var SEED = 'assets/images/catalog.json';
   var TTL = 15 * 1000;          // one page view, several sections
   var TIMEOUT = 2500;           // never stall the grid on a slow database
+  /* Firestore's free plan stops answering after 50,000 reads a day, so the
+     saved copy of the overlay is reused for 10 minutes — browsing five pages
+     costs one read instead of five. /editx clears it after every save. */
+  var OVERLAY_KEY = 'egygz_catalog_overlay_v1';
+  var OVERLAY_TTL = 10 * 60 * 1000;
 
   var cache = null;             // last merged list
   var cachedAt = 0;
@@ -70,8 +75,27 @@
       .catch(function () { return []; });
   }
 
+  function readOverlayCache() {
+    try {
+      var o = JSON.parse(localStorage.getItem(OVERLAY_KEY) || 'null');
+      if (!o || !Array.isArray(o.items) || !o.at) return null;
+      if (Date.now() - o.at > OVERLAY_TTL) return null;
+      return { items: o.items, deleted: Array.isArray(o.deleted) ? o.deleted : [] };
+    } catch (e) { return null; }
+  }
+
+  function writeOverlayCache(overlay) {
+    try {
+      localStorage.setItem(OVERLAY_KEY, JSON.stringify({
+        at: Date.now(), items: overlay.items, deleted: overlay.deleted,
+      }));
+    } catch (e) { /* quota / private mode — cost nothing */ }
+  }
+
   function readOverlay() {
     var empty = { items: [], deleted: [] };
+    var saved = readOverlayCache();
+    if (saved) return Promise.resolve(saved);
     if (!window.fetch) return Promise.resolve(empty);
     var timer;
     var slow = new Promise(function (resolve) {
@@ -82,10 +106,12 @@
       .then(function (doc) {
         if (!doc) return empty;
         var data = decodeFields(doc.fields || {});
-        return {
+        var overlay = {
           items: Array.isArray(data.items) ? data.items : [],
           deleted: Array.isArray(data.deleted) ? data.deleted : [],
         };
+        writeOverlayCache(overlay);
+        return overlay;
       })
       .catch(function () { return empty; });
     return Promise.race([real, slow]).then(function (v) { clearTimeout(timer); return v || empty; });
@@ -141,5 +167,11 @@
     load: load,
     /** the merge rule, exposed for tools that already have both halves */
     merge: merge,
+    /** forget the saved overlay — /editx calls this after a save */
+    clearCache: function (force) {
+      try { localStorage.removeItem(OVERLAY_KEY); } catch (e) {}
+      cache = null; cachedAt = 0;
+      if (force) inflight = null;
+    },
   };
 })();

@@ -25,7 +25,9 @@
     '/databases/(default)/documents/settings/banners?key=' + API_KEY;
   var TIERS = ['golds', 'silvers', 'diamonds'];
   var CACHE_KEY = 'egygz_banners_v1';
-  var CACHE_TTL = 20 * 1000;         // seconds — so a saved banner shows up fast
+  /* 10 minutes keeps visitors from re-reading the document on every section;
+     /editx clears this browser's copy the moment a banner is saved. */
+  var CACHE_TTL = 10 * 60 * 1000;
   var ready = null;
 
   /** Firestore REST value → plain JS */

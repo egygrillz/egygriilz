@@ -807,6 +807,8 @@
     .mould-btn.ghost:hover{background:#f4f4f4;}
     .mould-sent{font-size:11px;color:#8c8c8c;margin-top:10px;}
     .mould-empty{text-align:center;padding:60px 20px;color:#a0a0a0;font-size:13px;border:1px dashed #e8e8e8;border-radius:3px;}
+    .mould-warn{display:flex;gap:12px;align-items:flex-start;background:#fffaf0;border:1px solid #f0e2c4;color:#6b5a33;font-size:12px;line-height:1.8;padding:14px 16px;border-radius:3px;margin-bottom:16px;}
+    .mould-warn i{color:#c69b3e;font-size:15px;margin-top:2px;}
     .mould-empty i{display:block;font-size:26px;margin-bottom:14px;color:#d0d0d0;}
     .mould-tpl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:22px 26px;border-bottom:1px solid #f2f2f2;}
     .mould-label{display:block;font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:#8c8c8c;font-weight:700;margin-bottom:6px;}
@@ -1411,6 +1413,7 @@
             <button class="mould-tab" data-status="all" onclick="setMouldFilter('all')">All <span id="mt-all">0</span></button>
           </div>
 
+          <div id="mould-note"></div>
           <div id="mould-list"></div>
 
           <!-- EMAIL TEMPLATE -->
@@ -2883,6 +2886,9 @@
 
     try{
       await db.collection(CATALOG_COLLECTION).doc(CATALOG_DOC).set(payload);
+      /* the pages keep the overlay for 10 minutes to spare the read quota —
+         drop this browser's copy so the change shows up at once */
+      try { localStorage.removeItem('egygz_catalog_overlay_v1'); } catch (e) {}
     }catch(e){
       if(/permission|insufficient/i.test(e.message||'')){
         throw new Error('The database refused the write — settings/catalog needs the same write rule as settings/banners.');
@@ -5528,13 +5534,44 @@
     return false;
   }
 
+  /* ── last good list, kept on this device ────────────────────────────────
+     Firestore's free plan stops answering when the day's reads are gone
+     (HTTP 429). The panel then shows this copy instead of an empty screen. */
+  var MOULD_CACHE_KEY = 'egygz_mould_orders_v1';
+
+  function readMouldCache() {
+    try {
+      var o = JSON.parse(localStorage.getItem(MOULD_CACHE_KEY) || 'null');
+      return (o && Array.isArray(o.orders)) ? o : null;
+    } catch (e) { return null; }
+  }
+
+  function writeMouldCache(orders) {
+    try {
+      localStorage.setItem(MOULD_CACHE_KEY, JSON.stringify({ at: Date.now(), orders: orders }));
+    } catch (e) { /* private mode / full storage — cost nothing */ }
+  }
+
+  function setMouldNote(html) {
+    var el = document.getElementById('mould-note');
+    if (!el) return;
+    el.innerHTML = html || '';
+  }
+
+  function quotaHint() {
+    return 'The database quota for today is used up (Firestore free plan: 50,000 reads a day). ' +
+           'It resets at midnight Pacific time — or enable billing on the Firebase project to lift the cap.';
+  }
+
   async function loadMouldOrders(force) {
     var box = document.getElementById('mould-list');
     if (!box) return;
     box.innerHTML = '<p class="ph-sub" style="padding:20px 0;">Loading orders…</p>';
+    setMouldNote('');
 
     var list = null;
     var failure = '';
+    var quota = false;
 
     /* 1) ask the Worker (works with no browser credentials) */
     try {
@@ -5546,7 +5583,9 @@
                   'Paste cloudflare-worker.js in the Cloudflare dashboard, then reload this page.';
       } else {
         var why = (w.data && w.data.error) || ('HTTP ' + w.status);
-        failure = 'Worker: ' + why;
+        /* the currently deployed Worker may still answer 502 "firestore-429" */
+        if (why === 'quota' || w.status === 429 || /429|quota|exhaust/i.test(why)) { quota = true; failure = quotaHint(); }
+        else failure = 'Worker: ' + why;
         if (why === 'permission-denied' || why === 'firestore-403') {
           failure += ' — the database refuses to let the studio account read mould_orders. ' +
                      'Firebase console → Firestore → Rules must allow that account to read the collection.';
@@ -5572,11 +5611,28 @@
         });
       } catch (e) {
         var dbMsg = (e && e.message) || 'database error';
-        failure = failure ? (failure + ' · ' + dbMsg) : dbMsg;
+        if (/resource-exhausted|quota|429/i.test(dbMsg)) { quota = true; failure = quotaHint(); }
+        else if (!quota) failure = failure ? (failure + ' · ' + dbMsg) : dbMsg;
       }
     }
 
     if (!list) {
+      var cached = readMouldCache();
+      if (cached && cached.orders.length) {
+        mouldOrders = cached.orders;
+        mouldOrders.sort(function (a, b) {
+          var da = mouldCreatedAt(a), db_ = mouldCreatedAt(b);
+          return (db_ ? db_.getTime() : 0) - (da ? da.getTime() : 0);
+        });
+        setMouldNote('<div class="mould-warn"><i class="fas fa-clock-rotate-left"></i><div><strong>Showing the list saved on this device</strong>' +
+          ' — ' + escHtml(new Date(cached.at).toLocaleString('en-GB')) + '.<br>' +
+          escHtml(failure || 'The database is not answering right now.') +
+          '<br><small>Buttons will try again and save when the database is back.</small></div></div>');
+        renderMouldOrders();
+        updateMouldBadge();
+        return;
+      }
+
       var who = 'not signed in';
       try {
         var u = firebase.auth && firebase.auth().currentUser;
@@ -5588,6 +5644,7 @@
       return;
     }
 
+    writeMouldCache(list);
     mouldOrders = list;
     mouldOrders.sort(function (a, b) {
       var da = mouldCreatedAt(a), db_ = mouldCreatedAt(b);
@@ -5896,7 +5953,7 @@
       } catch (e) { ok = false; }
     }
 
-    if (!ok) { showToast('Could not update the order status', 'error'); return; }
+    if (!ok) { showToast('Could not update the order status — ' + quotaHint(), 'error'); return; }
     showToast(okMessage, 'success');
     await loadMouldOrders(true);
   }

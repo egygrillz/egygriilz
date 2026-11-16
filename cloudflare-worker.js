@@ -672,6 +672,10 @@ function fsErrorText(err) {
     case 'firestore-400':
       return 'The Firebase key in Cloudflare is not accepted.\n'
         + 'Copy it again from Firebase -> Project settings -> Web app -> apiKey.';
+    case 'quota':
+    case 'firestore-429':
+      return 'The database quota for today is used up (Firestore free plan: 50k reads).\n'
+        + 'It resets at midnight Pacific — or enable billing on the project to remove the cap.';
     default:
       return 'Could not read the database. Reason: ' + (err || 'unknown');
   }
@@ -682,6 +686,7 @@ function fsCause(status) {
   if (status === 403) return 'permission-denied';
   if (status === 404) return 'not-found';
   if (status === 400) return 'bad-key';
+  if (status === 429) return 'quota';          // free-plan reads for the day are gone
   return 'firestore-' + status;
 }
 
@@ -2246,7 +2251,8 @@ async function fetchMouldOrders(env, opts = {}, fetchImpl = fetch) {
     // a status filter needs the matching composite index; fall back to a client-side filter
   }
   let res = await fsQuery(env, q, fetchImpl);
-  if (!res.ok) {
+  /* a missing index / bad shape is worth one plain retry — an empty quota is not */
+  if (!res.ok && res.error !== 'quota' && res.error !== 'permission-denied' && res.error !== 'no-firebase-key') {
     delete q.where;
     delete q.orderBy;
     res = await fsQuery(env, q, fetchImpl);
@@ -3692,7 +3698,9 @@ export default {
       const r = await fetchMouldOrders(env, { limit, status: status || 'all' }, env.fetchImpl || fetch)
         .catch(e => ({ ok: false, error: String(e), orders: [] }));
       if (!r.ok) {
-        return json({ ok: false, error: r.error || 'firestore', orders: [] }, 502, { origin });
+        const err = r.error || 'firestore';
+        const status = err === 'quota' ? 429 : (err === 'permission-denied' ? 403 : 502);
+        return json({ ok: false, error: err, orders: [] }, status, { origin });
       }
       return json({ ok: true, count: r.orders.length, orders: r.orders }, 200, { origin });
     }
