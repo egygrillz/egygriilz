@@ -622,8 +622,14 @@
     const CACHE_VER = 'v1';
     const memCache = new Map();
 
+    /* ── مسار الوسائط: كل تصميم في مجلده داخل تصنيفه ── */
+    function mediaPath(item, file){
+      return 'assets/images/' + (item.category || 'sets') + '/' + (item.folder || item.id) + '/' + file;
+    }
+    function isVidName(n){ return /\.(mp4|mov|webm|ogg)$/i.test(String(n||'')); }
+
     /* ── النسخة الصغيرة للكروت ── */
-    function thumbOf(u){ return /\.(jpe?g|png|webp)$/i.test(u) ? u.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : u; }
+    function thumbOf(u){ return u; }   /* الصور على الريبو مش معاها نسخة صغيرة */
 
     async function getJSON(url){
       if (memCache.has('json:'+url)) return memCache.get('json:'+url);
@@ -725,9 +731,7 @@
         const img = document.createElement('img');
         img.alt = ''; img.draggable = false;
         img.loading = 'lazy'; img.decoding = 'async';
-        img.dataset.full = src;
-        img.onerror = function(){ if(img.dataset.full){ img.src = img.dataset.full; img.removeAttribute('data-full'); } };
-        img.src = thumbOf(src);
+        img.src = src;
         if (i === 0) { img.classList.add('active'); img.loading = 'eager'; }
         frag.appendChild(img);
       });
@@ -753,7 +757,7 @@
         const d = mine[0];
         if (d.name) document.getElementById(nameId).textContent = d.name;
         if (d.description) document.getElementById(descId).textContent = d.description;
-        const paths = (d.images||[]).map(img => `assets/images/sets/${d.id}/${img}`);
+        const paths = (d.images||[]).filter(f=>!isVidName(f)).map(img => mediaPath(d, img));
         makeCardSlideshow(document.getElementById(slidesId), paths);
       } catch(e){ console.warn(cat, e); }
     }
@@ -763,10 +767,12 @@
       buildSkeleton(strip, 5);
       try {
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
+        /* اسم التصنيف في الكتالوج ممكن يكون مختلف (latest ← latest-designs) */
+        const want = cat === 'latest' ? 'latest-designs' : cat;
         const results = (all||[])
-          .filter(x => x.category === cat)
-          .slice(0, 12)
-          .map(x => ({ folder: x.id, data: { name: x.name, desc: x.description, price: x.price, images: x.images || [] } }));
+          .filter(x => (x.category || '') === want)
+          .slice(0, 8)
+          .map(x => ({ folder: x.folder || x.id, item: x, data: { name: x.name, desc: x.description, price: x.price, images: (x.images || []).filter(f=>!isVidName(f)) } }));
         const frag = document.createDocumentFragment();
         for (const r of results) {
           if (!r || !r.data.images[0]) continue;
@@ -778,12 +784,10 @@
           imgWrap.className = 'lv-prod-img';
           d.images.forEach((img, i) => {
             const el = document.createElement('img');
-            el.src = thumbOf(`assets/images/sets/${folder}/${img}`);
-            el.dataset.full = `assets/images/sets/${folder}/${img}`;
-            el.onerror = function(){ if(el.dataset.full){ el.src = el.dataset.full; el.removeAttribute('data-full'); } };
+            el.src = mediaPath(r.item || { category: cat, folder: folder }, img);
             el.alt = d.name || folder;
             el.draggable = false;
-            el.loading = 'lazy';
+            el.loading = i === 0 ? 'eager' : 'lazy';   /* الغلاف يظهر فوراً */
             el.decoding = 'async';
             if (i === 0) el.classList.add('active');
             imgWrap.appendChild(el);
@@ -817,17 +821,18 @@
       try {
         // one catalogue file — every design is stored once in sets/
         const list = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        const slice = list.slice(0, 10);
+        const slice = list.slice(0, 8);
         const frag = document.createDocumentFragment();
         for (const r of slice) {
           if (!r) continue;
           const folder = r.id;
-          const d = { name: r.name, price: r.price, images: r.images || [] };
-          const src = d.images[0] ? `assets/images/sets/${folder}/${d.images[0]}` : '';
+          const imgs = (r.images || []).filter(f => !isVidName(f));
+          const d = { name: r.name, price: r.price, images: imgs };
+          const src = imgs[0] ? mediaPath(r, imgs[0]) : '';
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-new-card';
-          card.innerHTML = `<div class="lv-new-card-img"><img src="${thumbOf(src)}" data-full="${src}" onerror="this.src=this.dataset.full" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
+          card.innerHTML = `<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
           card.addEventListener('click', () => window.location = 'latest-designs?item=' + encodeURIComponent(folder));
           frag.appendChild(card);
         }
@@ -844,14 +849,15 @@
         const list = await getJSON('assets/images/catalog.json?t=' + Date.now());
         if (!Array.isArray(list) || !list.length) return;
         const frag = document.createDocumentFragment();
-        for (const r of list.slice(0, 10)) {
-          const folder = r.id;
-          const d = { name: r.name, desc: r.description, price: r.price, images: r.images || [] };
-          const src = d.images[0] ? `assets/images/sets/${folder}/${d.images[0]}` : '';
+        for (const r of list.slice(0, 8)) {
+          const folder = r.folder || r.id;
+          const imgs = (r.images || []).filter(f => !isVidName(f));
+          const d = { name: r.name, desc: r.description, price: r.price, images: imgs };
+          const src = imgs[0] ? mediaPath(r, imgs[0]) : '';
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-gal-card';
-          card.innerHTML = `<div class="lv-gal-card-img"><img src="${thumbOf(src)}" data-full="${src}" onerror="this.src=this.dataset.full" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
+          card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
           card.addEventListener('click', () => window.location = 'grillz-gallery?item=' + encodeURIComponent(folder));
           frag.appendChild(card);
         }

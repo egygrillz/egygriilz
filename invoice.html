@@ -1202,7 +1202,7 @@ function renderItemSearchDropdown(matches, q) {
     return;
   }
   dropdown.innerHTML = matches.map(d => {
-    const imgSrc = d.images && d.images[0] ? `assets/images/sets/${d.folder}/${d.images[0]}` : '';
+    const imgSrc = d.images && d.images[0] ? (d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0] : '';
     return `
       <div class="item-search-option" data-name="${d.name||d.folder}" data-price="${d.priceNum||0}">
         ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" onerror="this.style.display='none'" loading="lazy" decoding="async">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
@@ -1412,9 +1412,11 @@ async function loadDesigns(cat) {
         name: item.name || item.id,
         desc: item.description || '',
         price: item.price || '',
-        images: item.images || [],
+        images: (item.images || []).concat(item.videos || []),
       };
-      d.folder = item.id; d.cat = item.category || cat;
+      d.folder = item.folder || item.id;
+      d.cat = item.category || cat;
+      d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
       d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g,'')) || 0;
       designs.push(d);
     }

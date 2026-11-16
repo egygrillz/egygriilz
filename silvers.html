@@ -265,14 +265,20 @@
       if(/schedule|book|appointment/.test(t)) return 'booking';
       return 'contact';
     }
+    /* ── مكان الصورة الصح ──
+       كل تصميم في مجلده: golds/golds5، latest-designs/design9، sets/set3 …
+       بنستخدم folder اللي في الكتالوج. مفيش نقل ولا تكرار لأي صورة. */
+    function mediaPath(item, file){
+      const dir = item.folder || item.id;
+      const cat = item.category || 'sets';
+      return 'assets/images/' + cat + '/' + dir + '/' + file;
+    }
+    function isVideoName(n){ return /\.(mp4|mov|webm|ogg)$/i.test(String(n||'')); }
     /* ── اسم النسخة الصغيرة لنفس الصورة ── */
-    function thumbOf(src){
-      return /\.(jpe?g|png|webp)$/i.test(src) ? src.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : src;
-    }
+    /* الصور مش معاها نسخة صغيرة على الريبو */
+    function thumbOf(src){ return src; }
     /* لو المصغّرة مش موجودة (تصميم قديم) نرجع للأصلية بدل ما تبان مكسورة */
-    function imgFallback(el){
-      if (el && el.dataset && el.dataset.full) { el.src = el.dataset.full; el.removeAttribute('data-full'); }
-    }
+    function imgFallback(el){}
     /* ── صور جاهزة قبل الضغط ───────────────────────────────────────
        بنحمّل الصور كلها في الخلفية أول ما التصميمات توصل، وبعد ما كل
        صورة تخلص تحميل بنحوّلها من متأخرة (lazy) لجاهزة. النتيجة: أول ما
@@ -311,7 +317,7 @@
     }
 
     function openModal({name,desc,price,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
-        s.style.backgroundImage='url("'+thumbOf(src)+'")';
+
         s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" loading="eager" decoding="async" onload="this.style.opacity=1">';
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
     function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
@@ -332,8 +338,8 @@
       if(!items.length){ container.innerHTML='<p class="empty">No silvers yet — check back soon.</p>'; return; }
       const promises=items.map(item=>Promise.resolve({
         name:item.name, desc:item.description, price:item.price,
-        images:(item.images||[]).map(img=>`${base}/${item.id}/${img}`),
-        folder:item.id
+        images:(item.images||[]).concat(item.videos||[]).map(f=>mediaPath(item,f)),
+        folder:item.folder||item.id
       }));
       Promise.all(promises).then(items=>{
         const valid=items.filter(Boolean);
@@ -370,7 +376,7 @@
       // images html
       let imgsHtml='';
       images.forEach(function(s,i){
-        imgsHtml+='<img src="'+thumbOf(s)+'" data-full="'+s+'" onerror="imgFallback(this)" '
+        imgsHtml+='<img src="'+s+'" '
           +(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async"'
           +' alt="Handcrafted custom grillz by EGYGRILLZ">';
       });

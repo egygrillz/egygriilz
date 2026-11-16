@@ -2087,12 +2087,14 @@
   /* ONE catalogue. Every image lives in assets/images/sets/<id>/.
      Images are never duplicated — a design belongs to exactly one folder
      and the catalogue records which collection it shows in. */
+  /* كل تصنيف في مجلده — زي ما هو على الريبو بالظبط.
+     مفيش نقل ولا تكرار: golds في golds/، latest في latest-designs/ … */
   var CAT = {
-    sets:     {folder:'sets', label:'Set'},
-    golds:    {folder:'sets', label:'Gold Design'},
-    silvers:  {folder:'sets', label:'Silver Design'},
-    diamonds: {folder:'sets', label:'Diamond Design'},
-    latest:   {folder:'sets', label:'Design'},
+    sets:     {folder:'sets',           label:'Set',          prefix:'set'},
+    golds:    {folder:'golds',          label:'Gold Design',  prefix:'golds'},
+    silvers:  {folder:'silvers',        label:'Silver Design',prefix:'silvers'},
+    diamonds: {folder:'diamonds',       label:'Diamond Design',prefix:'diamonds'},
+    latest:   {folder:'latest-designs', label:'Design',       prefix:'design'},
   };
   var CATALOG = 'assets/images/catalog.json';
 
@@ -2101,7 +2103,18 @@
   function thumbOf(name){
     return /\.(jpe?g|png|webp)$/i.test(name) ? name.replace(/\.(jpe?g|png|webp)$/i, '_thumb.$1') : name;
   }
-  var IMG_ROOT = 'assets/images/sets/';
+  var IMG_ROOT = 'assets/images/sets/';   /* الافتراضي — والمسار الحقيقي بيتحدد من التصنيف */
+  /* مجلد التصنيف على الريبو */
+  function catRoot(cat){
+    var c = (cat === 'latest') ? 'latest-designs' : (cat || 'sets');
+    return 'assets/images/' + c + '/';
+  }
+  /* مسار الصورة لتصميم معيّن */
+  function itemRoot(item){
+    var c = (item && (item.catFolder || item.category)) || 'sets';
+    var d = (item && (item.folder || item.id)) || '';
+    return 'assets/images/' + c + '/' + d + '/';
+  }
 
   /* ── الكتالوج: المكان الوحيد اللي فيه بيانات كل التصميمات ── */
   async function readCatalog(){
@@ -2149,10 +2162,15 @@
     var all=[];
     try{ all=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); }catch(e){ all=[]; }
     all=Array.isArray(all)?all:[];
-    /* التصنيف بيختار من الكتالوج — مفيش ملف منفصل لكل تصنيف */
-    var mine = all.filter(function(x){ return x.category===cat || cat==='sets' || cat==='latest'; });
-    mine.forEach(function(x){ x.id=x.id||x.folder; });
-    cache[cat]={list:mine.map(function(x){return x.id;}), items:mine, folder:'sets', catalog:all};
+    /* كل تصنيف بيشوف بتاعه بس — من غير ما يخلط مع غيره */
+    var want = (cat === 'latest') ? 'latest-designs' : cat;
+    var mine = all.filter(function(x){ return x.category === want; });
+    mine.forEach(function(x){
+      x.id = x.id || x.folder;
+      x.folder = x.folder || x.id;
+      x.catFolder = x.category || want;
+    });
+    cache[cat]={list:mine.map(function(x){return x.id;}), items:mine, folder:want, catalog:all};
     renderGrid(cat);
   }
 
@@ -2307,9 +2325,9 @@
       var tags=getTags(cat,item.id);
       var tagHtml=tags.length?'<div class="tag-row">'+tags.map(function(t){return '<span class="tag '+(TAGS_MAP[t]&&TAGS_MAP[t].cls||'')+'">'+( TAGS_MAP[t]&&TAGS_MAP[t].label||t)+'</span>';}).join('')+'</div>':'';
       var mediaHtml=item.images.map(function(file,i){
-        if(isVideoFile(file)) return '<video src="'+raw+IMG_ROOT+item.id+'/'+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
+        if(isVideoFile(file)) return '<video src="'+raw+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
         /* الكارت في اللوحة بياخد النسخة المصغّرة — أسرع بكتير، والأصلية بتيجي في الدرج */
-        return '<img src="'+raw+IMG_ROOT+item.id+'/'+thumbOf(file)+'" data-full="'+raw+IMG_ROOT+item.id+'/'+file+'" onerror="this.src=this.dataset.full" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
+        return '<img src="'+raw+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
       }).join('');
       var hasVideo=item.images.some(function(f){return isVideoFile(f);});
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
@@ -2469,7 +2487,9 @@
   function openDrawer(cat,id){
     var item=cache[cat]&&cache[cat].items.find(function(i){return i.id===id;});
     if(!item){showToast('Could not load item','error');return;}
-    drawerCat=cat;drawerId=id;drawerImages=[...item.images];
+    drawerCat=cat;drawerId=id;
+    drawerRoot = itemRoot(item);                       /* assets/images/<cat>/<id>/ */
+    drawerImages = [...(item.images||[])].concat(item.videos||[]);
     document.getElementById('drawer-item-name').textContent=item.name||id;
     renderDrawerGrid();
     document.getElementById('drawer-overlay').classList.add('open');
@@ -2482,12 +2502,12 @@
     document.body.style.overflow='';
     drawerCat='';drawerId='';drawerImages=[];drawerDragIdx=null;
   }
+  var drawerRoot = '';
   function renderDrawerGrid(){
     var grid=document.getElementById('reorder-grid');
     var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
-    var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
     var html=drawerImages.map(function(file,i){
-      var src=raw+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now();   /* الدرج: الصورة الكاملة */
+      var src=raw+drawerRoot+file+'?t='+Date.now();   /* الدرج: الصورة الكاملة */
       var isVid=isVideoFile(file);
       var media=isVid?'<video src="'+src+'" muted playsinline></video>':'<img src="'+src+'" alt="" loading="lazy" decoding="async">';
       return '<div class="reorder-item" draggable="true" data-idx="'+i+'" ondragstart="drawerDragStart('+i+')" ondragover="drawerDragOver(event,this,'+i+')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="drawerDrop(event,'+i+')" ondragend="drawerDragEnd()">'+
@@ -2506,7 +2526,7 @@
     showToast('Uploading…','');
     var btn=document.getElementById('drawer-save-btn');btn.disabled=true;btn.textContent='Uploading…';
     var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
-    var basePath=IMG_ROOT+drawerId;
+    var basePath=drawerRoot.replace(/^assets\/images\//,'');
     var existing=drawerImages.map(function(n){return parseInt(n.replace(/\D/g,''),10);}).filter(function(n){return !isNaN(n);});
     var counter=existing.length>0?Math.max.apply(null,existing)+1:drawerImages.length;
     var fileArr=Array.from(files);var done=0;
@@ -2542,8 +2562,8 @@
         var raw2='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
         var slider=card.querySelector('.mini-slider');
         slider.innerHTML=drawerImages.map(function(file,i){
-          if(isVideoFile(file)) return '<video src="'+raw2+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
-          return '<img src="'+raw2+IMG_ROOT+drawerId+'/'+thumbOf(file)+'?t='+Date.now()+'" data-full="'+raw2+IMG_ROOT+drawerId+'/'+file+'" onerror="this.src=this.dataset.full" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
+          if(isVideoFile(file)) return '<video src="'+raw2+drawerRoot+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
+          return '<img src="'+raw2+drawerRoot+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
         }).join('');
       }
       showToast(' Order saved!','success');closeDrawer();
@@ -2717,16 +2737,21 @@
       /* ── 1) رقم التصميم ──
          كل تصميم بياخد مجلد واحد ثابت: assets/images/sets/setN/ */
       var catalog = await readCatalog();
+      var catFolder = catInfo.folder;                 /* golds / silvers / latest-designs … */
+      var prefix = catInfo.prefix || 'item';
       var itemId = editId;
       if(!itemId){
+        /* الرقم اللي بعده في نفس المجلد بس — مش في الكتالوج كله */
         var maxN = 0;
         catalog.forEach(function(x){
-          var m = /^set(\d+)$/.exec(x.id || '');
+          if((x.category || '') !== (cat === 'latest' ? 'latest-designs' : cat)) return;
+          var id = String(x.folder || x.id || '');
+          var m = new RegExp('^' + prefix + '(\\d+)$').exec(id);
           if(m) maxN = Math.max(maxN, parseInt(m[1], 10));
         });
-        itemId = 'set' + (maxN + 1);
+        itemId = prefix + (maxN + 1);
       }
-      var basePath = IMG_ROOT + itemId;
+      var basePath = 'assets/images/' + catFolder + '/' + itemId;
 
       /* ── 2) الصور: تتصغّر في المتصفح، وبعدين تتحفظ على GitHub ── */
       var allExistingNums = existingImages
@@ -2748,39 +2773,37 @@
         await putFile(basePath + '/' + fname, b64,
                       'Add ' + fname + ' to ' + itemId + ' (' + MEDIA.human(blob.size) + ')');
 
-        /* نسخة الكارت المصغّرة — بتتصنع أوتوماتيك من نفس الصورة */
-        if (/^image\//.test(blob.type || 'image/jpeg')) {
-          btn.textContent = 'Thumbnail ' + (i+1) + ' / ' + pendingImages.length + '…';
-          var thumb = await MEDIA.makeThumb(blob);
-          if (thumb) {
-            await putFile(basePath + '/' + MEDIA.thumbName(fname), await MEDIA.toBase64(thumb),
-                          'Add thumbnail for ' + fname + ' (' + MEDIA.human(thumb.size) + ')');
-          }
-        }
-
         newNames.push(fname);
         imgCounter++;
       }
 
       /* ── 3) الكتالوج: سطر واحد لكل تصميم ──
          هنا بس بيتحفظ الاسم والسعر والوصف والصور والتصنيف. */
-      var allImages = existingImages.concat(newNames);
+      var allImages = existingImages.concat(newNames);   /* صور + فيديو مع بعض */
       var entry = catalogEntry(catalog, itemId);
+
+      var realCat = catInfo.folder;                     /* latest-designs / golds / sets … */
+      var imgs = allImages.filter(function(f){ return !isVideoFile(f); });
+      var vids = allImages.filter(function(f){ return  isVideoFile(f); });
 
       if(entry){
         entry.name = name;
         entry.price = price;
         entry.description = desc;
-        entry.images = allImages;
-        if(!entry.category) entry.category = (cat === 'sets' || cat === 'latest') ? 'golds' : cat;
+        entry.images = imgs;
+        entry.videos = vids;
+        entry.category = realCat;
+        entry.folder = itemId;
       } else {
         catalog.push({
           id: itemId,
+          folder: itemId,
           name: name,
           price: price,
           description: desc,
-          category: (cat === 'sets' || cat === 'latest') ? 'golds' : cat,
-          images: allImages,
+          category: realCat,
+          images: imgs,
+          videos: vids,
           order: catalog.length + 1,
         });
       }
