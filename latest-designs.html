@@ -261,6 +261,12 @@
     .footer-icons a { color:#333; margin-right:14px; font-size:16px; transition:0.3s; }
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main{grid-template-columns:1fr;text-align:center;gap:30px;} .footer-col{display:flex;flex-direction:column;align-items:center;} .footer-bottom{flex-direction:column;text-align:center;} }
+
+    /* ── صورة الهيدر لكل صفحة — بتتحكم فيها من /editx → Page Heroes ── */
+    .page-hero { position:relative; width:100%; height:52vh; min-height:320px; overflow:hidden; background:#1f1f1f; }
+    .page-hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.82; }
+    .page-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.55)); }
+    .page-hero[hidden] { display:none; }
   </style>
   <link rel="canonical" href="https://egygrillz.com/latest-designs">
 </head>
@@ -701,6 +707,40 @@
         loadEl.style.display = 'none';
         errEl.style.display = 'block';
       });
+  </script>
+
+  <script>
+  /* صورة الهيدر: بتتقرا من settings/pageMeta — لو مفيش، الصفحة تفضل زي ما هي */
+  (function () {
+    var PAGE = 'latest-designs';
+    function ready() {
+      if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) return false;
+      return true;
+    }
+    function apply() {
+      try {
+        firebase.firestore().collection('settings').doc('pageMeta').get().then(function (snap) {
+          if (!snap.exists) return;
+          var m = snap.data() || {};
+          var hero = (m[PAGE] || {}).hero;
+          if (!hero) return;
+          var sec = document.createElement('div');
+          sec.className = 'page-hero';
+          sec.innerHTML = '<img src="' + hero + '" alt="EGYGRILLZ" fetchpriority="high" decoding="async">';
+          var head = document.querySelector('.page-header');
+          if (head && head.parentNode) head.parentNode.insertBefore(sec, head);
+          else document.body.insertBefore(sec, document.body.firstChild);
+        }).catch(function () {});
+      } catch (e) {}
+    }
+    /* نستنى Firebase يتحمّل */
+    var tries = 0;
+    (function wait() {
+      if (ready()) { apply(); return; }
+      if (++tries > 40) return;
+      setTimeout(wait, 250);
+    })();
+  })();
   </script>
 </body>
 </html>

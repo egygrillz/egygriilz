@@ -394,8 +394,10 @@
         +'</div>'
         +dotsHtml;
 
+      /* أول صورة ظاهرة فوراً — الباقي بيتقلّب تلقائياً كل 3.5 ثانية */
       const firstImg=panel.querySelector('img');
       if(firstImg){
+        firstImg.classList.add('active');
         if(firstImg.complete&&firstImg.naturalWidth) panel.classList.remove('loading');
         else firstImg.addEventListener('load',function(){ panel.classList.remove('loading'); },{once:true});
       }
@@ -523,6 +525,40 @@
         document.getElementById('see-more-btn').addEventListener('click',()=>renderBatch(allItems));
       })
       .catch(e=>{ console.error(e); document.getElementById('no-results').style.display='block'; });
+  </script>
+
+  <script>
+  /* صورة الهيدر: بتتقرا من settings/pageMeta — لو مفيش، الصفحة تفضل زي ما هي */
+  (function () {
+    var PAGE = 'grillz-gallery';
+    function ready() {
+      if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) return false;
+      return true;
+    }
+    function apply() {
+      try {
+        firebase.firestore().collection('settings').doc('pageMeta').get().then(function (snap) {
+          if (!snap.exists) return;
+          var m = snap.data() || {};
+          var hero = (m[PAGE] || {}).hero;
+          if (!hero) return;
+          var sec = document.createElement('div');
+          sec.className = 'page-hero';
+          sec.innerHTML = '<img src="' + hero + '" alt="EGYGRILLZ" fetchpriority="high" decoding="async">';
+          var head = document.querySelector('.page-header');
+          if (head && head.parentNode) head.parentNode.insertBefore(sec, head);
+          else document.body.insertBefore(sec, document.body.firstChild);
+        }).catch(function () {});
+      } catch (e) {}
+    }
+    /* نستنى Firebase يتحمّل */
+    var tries = 0;
+    (function wait() {
+      if (ready()) { apply(); return; }
+      if (++tries > 40) return;
+      setTimeout(wait, 250);
+    })();
+  })();
   </script>
 </body>
 </html>

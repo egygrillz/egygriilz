@@ -632,8 +632,8 @@
    "000001.jpg"
   ],
   "videos": [],
-  "order": 1,
-  "sourceDesign": "assets/images/golds/golds3"
+  "sourceDesign": "assets/images/golds/golds3",
+  "order": 1
  },
  {
   "id": "gallery2",
@@ -646,8 +646,8 @@
    "000002.jpg"
   ],
   "videos": [],
-  "order": 2,
-  "sourceDesign": "assets/images/sets/set7"
+  "sourceDesign": "assets/images/sets/set7",
+  "order": 2
  },
  {
   "id": "gallery3",
@@ -657,25 +657,13 @@
   "price": "21899 EGP",
   "description": "This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.",
   "images": [
-   "000003.jpg"
+   "000003.jpg",
+   "000004.jpg",
+   "000006.jpg"
   ],
   "videos": [],
-  "order": 3,
-  "sourceDesign": "assets/images/diamonds/diamonds1"
- },
- {
-  "id": "gallery4",
-  "folder": "000004",
-  "category": "grillz-gallery",
-  "name": "Diamond Boy Set",
-  "price": "21899 EGP",
-  "description": "This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.",
-  "images": [
-   "000004.jpg"
-  ],
-  "videos": [],
-  "order": 4,
-  "sourceDesign": "assets/images/diamonds/diamonds1"
+  "sourceDesign": "assets/images/diamonds/diamonds1",
+  "order": 3
  },
  {
   "id": "gallery5",
@@ -685,53 +673,13 @@
   "price": "Contact us for details",
   "description": "This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading \"Flex\" in elegant red script.",
   "images": [
-   "000005.jpg"
-  ],
-  "videos": [],
-  "order": 5,
-  "sourceDesign": "assets/images/golds/golds1"
- },
- {
-  "id": "gallery6",
-  "folder": "000006",
-  "category": "grillz-gallery",
-  "name": "Diamond Boy Set",
-  "price": "21899 EGP",
-  "description": "This premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom row for fierce elegance. The top dazzles with full CZ diamond pavé, accented by a deep emerald and regal ruby, each halo-framed by CZ for brilliant contrast and symmetry. Bold luxury meets refined style.",
-  "images": [
-   "000006.jpg"
-  ],
-  "videos": [],
-  "order": 6,
-  "sourceDesign": "assets/images/diamonds/diamonds1"
- },
- {
-  "id": "gallery7",
-  "folder": "000007",
-  "category": "grillz-gallery",
-  "name": "FLEX Set",
-  "price": "Contact us for details",
-  "description": "This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading \"Flex\" in elegant red script.",
-  "images": [
-   "000007.jpg"
-  ],
-  "videos": [],
-  "order": 7,
-  "sourceDesign": "assets/images/golds/golds1"
- },
- {
-  "id": "gallery8",
-  "folder": "000008",
-  "category": "grillz-gallery",
-  "name": "FLEX Set",
-  "price": "Contact us for details",
-  "description": "This exclusive chrome gold-plated grillz set, custom-made for rapper Flex, shines with precision laser-engraved details and vibrant red enamel accents. Bold butterfly motifs and sharp heart-shaped fangs flank a standout nameplate reading \"Flex\" in elegant red script.",
-  "images": [
+   "000005.jpg",
+   "000007.jpg",
    "000008.jpg"
   ],
   "videos": [],
-  "order": 8,
-  "sourceDesign": "assets/images/golds/golds1"
+  "sourceDesign": "assets/images/golds/golds1",
+  "order": 4
  },
  {
   "id": "gallery9",
@@ -744,8 +692,8 @@
    "000009.jpg"
   ],
   "videos": [],
-  "order": 9,
-  "sourceDesign": "assets/images/golds/golds4"
+  "sourceDesign": "assets/images/golds/golds4",
+  "order": 5
  },
  {
   "id": "gallery10",
@@ -758,8 +706,8 @@
    "000010.jpg"
   ],
   "videos": [],
-  "order": 10,
-  "sourceDesign": "assets/images/golds/golds2"
+  "sourceDesign": "assets/images/golds/golds2",
+  "order": 6
  },
  {
   "id": "gallery11",
@@ -772,8 +720,8 @@
    "000011.jpg"
   ],
   "videos": [],
-  "order": 11,
-  "sourceDesign": "assets/images/diamonds/diamonds2"
+  "sourceDesign": "assets/images/diamonds/diamonds2",
+  "order": 7
  },
  {
   "id": "gallery12",
@@ -786,7 +734,7 @@
    "000012.jpg"
   ],
   "videos": [],
-  "order": 12,
-  "sourceDesign": "assets/images/sets/set5"
+  "sourceDesign": "assets/images/sets/set5",
+  "order": 8
  }
 ]

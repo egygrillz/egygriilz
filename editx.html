@@ -61,6 +61,7 @@
       if(name==='clients') loadClients();
       if(name==='messages') loadMessages();
       if(name==='gallery') loadCategory('gallery');
+      if(name==='heroes') loadHeroPanel(document.getElementById('hero-page').value);
       if(name==='schedule') loadScheduleSettings();
       if(name==='settings') loadSiteSettings();
       if(name==='quotes') loadFrame('frame-quotes','quotes.html');
@@ -91,7 +92,7 @@
     }
 
     function pageTitle(n){
-      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',quotes:'Quotes',invoices:'Invoices',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',gallery:'Gallery',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
+      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',quotes:'Quotes',invoices:'Invoices',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',gallery:'Gallery',heroes:'Page Heroes',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
       return map[n]||n;
     }
   </script>
@@ -672,6 +673,7 @@
         <button class="nav-item" data-page="golds" onclick="showPage('golds')"><i class="fas fa-circle-dollar-to-slot"></i> Golds</button>
         <button class="nav-item" data-page="silvers" onclick="showPage('silvers')"><i class="fas fa-gem"></i> Silvers</button>
         <button class="nav-item" data-page="gallery" onclick="showPage('gallery')"><i class="fas fa-images"></i> Gallery</button>
+        <button class="nav-item" data-page="heroes" onclick="showPage('heroes')"><i class="fas fa-panorama"></i> Page Heroes</button>
         <button class="nav-item" data-page="diamonds" onclick="showPage('diamonds')"><i class="fas fa-gem"></i> Diamonds</button>
         <button class="nav-item" data-page="latest" onclick="showPage('latest')"><i class="fas fa-fire"></i> Latest Designs</button>
         <div class="nav-section">Site</div>
@@ -950,6 +952,48 @@
           <div class="page-header-row"><div><p class="ph-title">Invoices</p><p class="ph-sub">Create and print invoices</p></div></div>
           <div class="section-card" style="padding:0;overflow:hidden;">
             <iframe id="frame-invoices" title="Invoices" style="width:100%;height:calc(100vh - 190px);border:0;display:block;"></iframe>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-heroes">
+          <div class="page-header-row">
+            <div>
+              <p class="ph-title">Page Heroes</p>
+              <p class="ph-sub">اختار الصورة اللي تظهر فوق في كل صفحة، ورتّب ظهور التصميمات فيها</p>
+            </div>
+          </div>
+
+          <div class="section-card" style="padding:22px;margin-bottom:18px;">
+            <label style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#999;">Page</label>
+            <select id="hero-page" class="form-input" style="margin:8px 0 18px;" onchange="loadHeroPanel(this.value)">
+              <option value="index">Home — index</option>
+              <option value="golds">Golds</option>
+              <option value="silvers">Silvers</option>
+              <option value="diamonds">Diamonds</option>
+              <option value="latest-designs">Latest Designs</option>
+              <option value="grillz-gallery">Gallery</option>
+            </select>
+
+            <label style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#999;">Hero image</label>
+            <div id="hero-current" style="margin:10px 0 14px;font-size:12px;color:#666;"></div>
+
+            <div class="filter-bar-orig" style="padding:0;border:0;margin-bottom:12px;">
+              <div class="search-input-wrap"><i class="fas fa-search"></i>
+                <input class="search-input" id="hero-search" placeholder="Search designs…" oninput="renderHeroPicker()">
+              </div>
+            </div>
+            <div id="hero-picker" class="grid" style="max-height:420px;overflow-y:auto;"></div>
+          </div>
+
+          <div class="section-card" style="padding:22px;">
+            <p style="font-size:12px;color:#666;line-height:1.7;margin-bottom:14px;">
+              ترتيب الظهور في هذه الصفحة — اضغط السهم لتحريك التصميم فوق أو تحت.
+              الترتيب بيتحفظ في الكتالوج وبيطبّق على الموقع كله.
+            </p>
+            <div id="order-list"></div>
+            <button class="btn-black" style="margin-top:16px;" onclick="saveHeroOrder()">
+              <i class="fas fa-floppy-disk"></i> Save order
+            </button>
           </div>
         </div>
         <div class="panel" id="panel-settings">
@@ -2245,6 +2289,162 @@
   }
   function catalogEntry(list, id){
     return list.find(function(x){ return x.id === id; });
+  }
+
+
+  /* ═══════════════════════════════════════════════════════════════════
+     PAGE HEROES — صورة كل صفحة + ترتيب ظهور التصميمات
+     البيانات بتتحفظ في settings/pageMeta بصيغة:
+       { index: { hero: 'golds/golds1/000005.jpg' }, golds: {...} }
+     والترتيب بيتحفظ في حقل order جوه الكتالوج نفسه.
+     ═══════════════════════════════════════════════════════════════════ */
+  var _heroState = { page: 'index', meta: {}, items: [] };
+
+  async function loadPageMeta() {
+    if (!db) return {};
+    try {
+      var snap = await db.collection('settings').doc('pageMeta').get();
+      return snap.exists ? (snap.data() || {}) : {};
+    } catch (e) { console.warn('pageMeta read failed', e); return {}; }
+  }
+
+  async function savePageMeta(meta) {
+    if (!db) throw new Error('No database');
+    await db.collection('settings').doc('pageMeta').set(meta, { merge: true });
+  }
+
+  async function loadHeroPanel(page) {
+    _heroState.page = page || 'index';
+    var box = document.getElementById('hero-picker');
+    var list = document.getElementById('order-list');
+    if (box) box.innerHTML = '<div class="empty-state"><p>Loading…</p></div>';
+    if (list) list.innerHTML = '';
+
+    /* 1) الكتالوج */
+    var all = [];
+    try {
+      var raw = 'https://raw.githubusercontent.com/' + GH.owner + '/' + GH.repo + '/' + GH.branch + '/';
+      all = await (await fetch(raw + CATALOG + '?t=' + Date.now())).json();
+    } catch (e) { all = []; }
+    all = Array.isArray(all) ? all : [];
+
+    /* 2) إعدادات الصفحة */
+    var meta = await loadPageMeta();
+    _heroState.meta = meta || {};
+
+    /* 3) التصميمات — كل تصنيف بياخد اللي بتاعه، والجallery الكل بيتاح */
+    var want = _heroState.page;
+    var items = all.filter(function (x) {
+      if (want === 'index') return true;                 /* الرئيسية: كل التصميمات */
+      if (want === 'grillz-gallery') return x.category === 'grillz-gallery';
+      return x.category === want;
+    });
+    items.forEach(function (x) {
+      x.id = x.id || x.folder;
+      x.folder = x.folder || x.id;
+      x._cat = x.category;
+    });
+    items.sort(function (a, b) { return (a.order || 999) - (b.order || 999); });
+    _heroState.items = items;
+
+    /* 4) الصورة الحالية */
+    var cur = (meta[_heroState.page] || {}).hero || '';
+    var curBox = document.getElementById('hero-current');
+    if (curBox) {
+      if (cur) {
+        var base = (location.origin && location.origin !== 'null') ? location.origin + '/' : '';
+        curBox.innerHTML = '<img src="' + base + cur + '" style="width:100%;max-width:360px;border:1px solid #eee;display:block;margin-bottom:8px;" alt="">' +
+          '<span>Current hero — ' + cur.split('/').slice(-2).join('/') + '</span>';
+      } else {
+        curBox.innerHTML = '<span style="color:#999;">No hero set — the page keeps its default image.</span>';
+      }
+    }
+
+    renderHeroPicker();
+    renderOrderList();
+  }
+
+  function heroMediaUrl(item, file) {
+    /* من نفس الموقع — مش GitHub raw (اللي بيرفض التحميل المتكرر) */
+    var base = (location.origin && location.origin !== 'null') ? location.origin + '/' : '';
+    return base + itemRoot(item) + file;
+  }
+
+  function renderHeroPicker() {
+    var box = document.getElementById('hero-picker');
+    if (!box) return;
+    var q = (document.getElementById('hero-search').value || '').toLowerCase();
+    var items = _heroState.items.filter(function (x) {
+      return !q || (x.name || '').toLowerCase().includes(q);
+    });
+    if (!items.length) { box.innerHTML = '<div class="empty-state"><p>No designs.</p></div>'; return; }
+
+    box.innerHTML = items.map(function (x) {
+      var img = (x.images || []).filter(function (f) { return !isVideoFile(f); })[0] || '';
+      var src = img ? heroMediaUrl(x, img) : '';
+      var isCur = ((_heroState.meta[_heroState.page] || {}).hero || '') === (itemRoot(x) + img);
+      return '<div class="set-card" style="cursor:pointer;' + (isCur ? 'outline:2px solid #1f1f1f;' : '') + '"' +
+        ' onclick="pickHero(\'' + x._cat + '\',\'' + x.folder + '\',\'' + img + '\')">' +
+        '<div class="card-img" style="position:relative;aspect-ratio:4/3;overflow:hidden;background:#f4f2ef;">' +
+        (src ? '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy" alt="">' : '') +
+        (isCur ? '<span style="position:absolute;top:8px;right:8px;background:#1f1f1f;color:#fff;font-size:9px;padding:3px 7px;letter-spacing:1px;">HERO</span>' : '') +
+        '</div>' +
+        '<div class="card-body" style="padding:8px 10px;"><div style="font-size:11px;font-weight:600;">' +
+        (x.name || x.folder) + '</div><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:1px;">' +
+        x._cat + '</div></div></div>';
+    }).join('');
+  }
+
+  async function pickHero(cat, folder, file) {
+    var path = 'assets/images/' + cat + '/' + folder + '/' + file;
+    try {
+      showToast('Saving hero…', '');
+      _heroState.meta[_heroState.page] = Object.assign({}, _heroState.meta[_heroState.page], { hero: path });
+      await savePageMeta(_heroState.meta);
+      showToast('Hero saved for ' + _heroState.page, 'success');
+      loadHeroPanel(_heroState.page);
+    } catch (e) {
+      showToast('Could not save: ' + e.message, 'error');
+    }
+  }
+
+  function renderOrderList() {
+    var box = document.getElementById('order-list');
+    if (!box) return;
+    if (!_heroState.items.length) { box.innerHTML = '<p style="color:#999;font-size:12px;">No designs.</p>'; return; }
+    box.innerHTML = _heroState.items.map(function (x, i) {
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f2f0ed;">' +
+        '<span style="font-size:11px;color:#bbb;width:22px;">' + (i + 1) + '</span>' +
+        '<span style="flex:1;font-size:12px;">' + (x.name || x.folder) + '</span>' +
+        '<button class="show-btn" onclick="moveHeroItem(' + i + ',-1)" ' + (i === 0 ? 'disabled' : '') + '>&#8593;</button>' +
+        '<button class="show-btn" onclick="moveHeroItem(' + i + ',1)" ' + (i === _heroState.items.length - 1 ? 'disabled' : '') + '>&#8595;</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  function moveHeroItem(i, dir) {
+    var j = i + dir;
+    if (j < 0 || j >= _heroState.items.length) return;
+    var arr = _heroState.items;
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    renderOrderList();
+  }
+
+  async function saveHeroOrder() {
+    try {
+      showToast('Saving order…', '');
+      var raw = 'https://raw.githubusercontent.com/' + GH.owner + '/' + GH.repo + '/' + GH.branch + '/';
+      var all = await (await fetch(raw + CATALOG + '?t=' + Date.now())).json();
+      _heroState.items.forEach(function (x, i) {
+        var e = all.find(function (y) { return y.id === x.id; });
+        if (e) e.order = i + 1;
+      });
+      await writeCatalog(all, 'Reorder ' + _heroState.page);
+      showToast('Order saved to GitHub', 'success');
+      loadHeroPanel(_heroState.page);
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+    }
   }
 
   var cache = {};

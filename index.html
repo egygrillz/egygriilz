@@ -384,8 +384,8 @@
   </header>
 
   <!-- HERO -->
-  <section class="hero">
-    <picture class="hero-picture">
+  <section class="hero" id="home-hero">
+    <picture class="hero-picture" id="home-hero-pic">
           <source type="image/webp"
             srcset="/assets/optimized/hero-grillz-828.webp 828w,
                     /assets/optimized/hero-grillz-1280.webp 1280w,
@@ -920,6 +920,35 @@
     saveBtn?.addEventListener('click', function(){ saved=!saved; this.classList.toggle('saved', saved); });
     commentBtn?.addEventListener('click', () => window.open('https://instagram.com/egygrillz','_blank'));
     shareBtn?.addEventListener('click', () => window.open('https://instagram.com/egygrillz','_blank'));
+  })();
+  </script>
+
+  <script>
+  /* صورة الهيرو في الرئيسية — بتتحكم فيها من /editx → Page Heroes */
+  (function () {
+    function ready() {
+      return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length;
+    }
+    function apply() {
+      try {
+        firebase.firestore().collection('settings').doc('pageMeta').get().then(function (snap) {
+          if (!snap.exists) return;
+          var m = snap.data() || {};
+          var hero = (m['index'] || {}).hero;
+          if (!hero) return;
+          var pic = document.getElementById('home-hero-pic');
+          if (!pic) return;
+          /* بنستبدل الصورة الافتراضية بالصورة المختارة */
+          pic.innerHTML = '<img src="' + hero + '" alt="EGYGRILLZ" fetchpriority="high" decoding="async">';
+        }).catch(function () {});
+      } catch (e) {}
+    }
+    var tries = 0;
+    (function wait() {
+      if (ready()) { apply(); return; }
+      if (++tries > 40) return;
+      setTimeout(wait, 250);
+    })();
   })();
   </script>
 </body>
