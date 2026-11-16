@@ -270,6 +270,7 @@
   </style>
   <link rel="canonical" href="https://egygrillz.com/latest-designs">
   <script src="/assets/set-visibility.js?v=2"></script>
+  <script src="/assets/catalog.js?v=1"></script>
   <script src="/assets/crops.js?v=1"></script>
 </head>
 <body>
@@ -638,8 +639,7 @@
     /* Single-item view support via ?item=<folder> */
     const WANTED = new URLSearchParams(location.search).get('item') || '';
 
-    fetch('assets/images/catalog.json?t=' + Date.now())
-      .then(r => r.json())
+    window.Catalog.load()
       .then(async designs => {
         if(!Array.isArray(designs)||!designs.length) throw new Error('empty');
         loadEl.style.display = 'none';
@@ -687,32 +687,5 @@
       });
   </script>
 
-  <script>
-  /* Hero override from Firestore settings/pageMeta */
-  (function () {
-    var PAGE = 'latest-designs';
-    fetch('https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents/settings/pageMeta')
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (doc) {
-        var pf = doc && doc.fields && doc.fields[PAGE] && doc.fields[PAGE].mapValue && doc.fields[PAGE].mapValue.fields;
-        var hero = pf && pf.hero && pf.hero.stringValue;
-        if (!hero) return;
-        var sec = document.createElement('div');
-        sec.className = 'page-hero';
-        var img = document.createElement('img');
-        img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
-        img.setAttribute('data-crop', 'hero:latest-designs');
-        img.alt = 'EGYGRILLZ';
-        img.fetchPriority = 'high';
-        img.decoding = 'async';
-        sec.appendChild(img);
-        var mh = document.querySelector('.masthead');
-        if (mh && mh.parentNode) {
-          mh.parentNode.insertBefore(sec, mh);
-          mh.style.paddingTop = '44px';
-        }
-      }).catch(function () {});
-  })();
-  </script>
 </body>
 </html>

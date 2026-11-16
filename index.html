@@ -362,6 +362,7 @@
     .reveal.visible { opacity:1; transform:translateY(0); }
   </style>
   <script src="/assets/set-visibility.js?v=2"></script>
+  <script src="/assets/catalog.js?v=1"></script>
   <script src="/assets/crops.js?v=1"></script>
   <script src="/assets/home-banners.js?v=2"></script>
 </head>
@@ -398,7 +399,6 @@
           <img src="/assets/optimized/hero-grillz-1280.jpg"
                alt="EGYGRILLZ — Egypt's First Custom Grillz"
                width="1280" height="1707"
-               data-crop="hero:index"
                fetchpriority="high" decoding="async">
         </picture>
     <div class="hero-content">
@@ -772,7 +772,7 @@
         const banner = (window.HomeBanners && HomeBanners.TIERS.indexOf(cat) !== -1)
           ? await HomeBanners.get(cat).catch(() => null)
           : null;
-        const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
+        const all = await window.Catalog.load();
         const mine = (all||[]).filter(x => pageOf(x) === cat).sort((a,b)=>(a.order||999)-(b.order||999));
         const d = mine[0];
 
@@ -798,7 +798,7 @@
       const strip = document.getElementById(stripId);
       buildSkeleton(strip, 5);
       try {
-        const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
+        const all = await window.Catalog.load();
         const want = cat === 'latest' ? 'latest-designs' : cat;
         const results = (all||[])
           .filter(x => pageOf(x) === want)
@@ -851,7 +851,7 @@
       const strip = document.getElementById('lv-new-strip');
       buildSkeleton(strip, 5);
       try {
-        const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
+        const all = await window.Catalog.load();
         /* "Latest" strip = latest designs plus anything assigned to the Home page */
         const latestList = (all||[]).filter(x => { const p = pageOf(x); return p === 'latest-designs' || p === 'index'; })
           .sort((a,b) => (a.order||999) - (b.order||999));
@@ -879,7 +879,7 @@
     async function loadGallery(){
       const scrollEl = document.getElementById('lv-gallery-scroll');
       try {
-        const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
+        const all = await window.Catalog.load();
         const list = (all || []).filter(x => pageOf(x) === 'grillz-gallery')
           .sort((a,b) => (a.order||999) - (b.order||999));
         if (!list.length) return;
@@ -956,27 +956,5 @@
   })();
   </script>
 
-  <script>
-  /* Homepage hero override from Firestore settings/pageMeta */
-  (function () {
-    fetch('https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents/settings/pageMeta')
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (doc) {
-        var idx = doc && doc.fields && doc.fields.index && doc.fields.index.mapValue && doc.fields.index.mapValue.fields;
-        var hero = idx && idx.hero && idx.hero.stringValue;
-        if (!hero) return;
-        var pic = document.getElementById('home-hero-pic');
-        if (!pic) return;
-        var img = document.createElement('img');
-        img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
-        img.alt = 'EGYGRILLZ';
-        img.setAttribute('data-crop', 'hero:index');
-        img.fetchPriority = 'high';
-        img.decoding = 'async';
-        pic.innerHTML = '';
-        pic.appendChild(img);
-      }).catch(function () {});
-  })();
-  </script>
 </body>
 </html>
