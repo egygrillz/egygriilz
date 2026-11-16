@@ -5502,31 +5502,97 @@
 
   function mouldShortRef(o) { return String((o && o.id) || '').slice(0, 8).toUpperCase(); }
 
+  /* ── Worker bridge ─────────────────────────────────────────────────────
+     `mould_orders` holds client phone numbers and addresses, so Firestore
+     refuses to let a browser read it. The Worker reads it with the studio's
+     own credentials and hands the dashboard the list. ─────────────────── */
+  async function mouldWorkerJSON(path, body) {
+    var opts = { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    var r = await fetch(WORKER_BASE + path, opts);
+    var data = null;
+    try { data = await r.json(); } catch (e) { data = null; }
+    return { status: r.status, ok: r.ok, data: data };
+  }
+
+  /* one order's fields, via the Worker — status, payment link */
+  async function mouldWorkerUpdate(id, fields) {
+    if (fields.status) {
+      var r = await mouldWorkerJSON('/api/moulds/status', { id: id, status: fields.status });
+      if (r.ok && r.data && r.data.ok) return true;
+    }
+    if (fields.paymentLink) {
+      var a = await mouldWorkerJSON('/api/moulds/approve', { id: id, paymentLink: fields.paymentLink });
+      if (a.ok && a.data && a.data.ok) return true;
+    }
+    return false;
+  }
+
   async function loadMouldOrders(force) {
     var box = document.getElementById('mould-list');
     if (!box) return;
     box.innerHTML = '<p class="ph-sub" style="padding:20px 0;">Loading orders…</p>';
+
+    var list = null;
+    var failure = '';
+
+    /* 1) ask the Worker (works with no browser credentials) */
     try {
-      var snap;
-      try {
-        snap = await db.collection('mould_orders').orderBy('createdAt', 'desc').limit(120).get();
-      } catch (orderErr) {
-        snap = await db.collection('mould_orders').limit(120).get();
+      var w = await mouldWorkerJSON('/api/moulds/orders?limit=120');
+      if (w.ok && w.data && w.data.ok && Array.isArray(w.data.orders)) {
+        list = w.data.orders;
+      } else if (w.status === 404) {
+        failure = 'The Cloudflare Worker deployed right now is an older version — it has no /api/moulds/orders. ' +
+                  'Paste cloudflare-worker.js in the Cloudflare dashboard, then reload this page.';
+      } else {
+        var why = (w.data && w.data.error) || ('HTTP ' + w.status);
+        failure = 'Worker: ' + why;
+        if (why === 'permission-denied' || why === 'firestore-403') {
+          failure += ' — the database refuses to let the studio account read mould_orders. ' +
+                     'Firebase console → Firestore → Rules must allow that account to read the collection.';
+        }
       }
-      mouldOrders = snap.docs.map(function (doc) {
-        var data = doc.data() || {};
-        data.id = doc.id;
-        return data;
-      });
-      mouldOrders.sort(function (a, b) {
-        var da = mouldCreatedAt(a), db_ = mouldCreatedAt(b);
-        return (db_ ? db_.getTime() : 0) - (da ? da.getTime() : 0);
-      });
     } catch (e) {
+      failure = 'Worker unreachable: ' + (e.message || e);
+    }
+
+    /* 2) fall back to the database, for projects whose rules allow staff reads */
+    if (!list) {
+      try {
+        var snap;
+        try {
+          snap = await db.collection('mould_orders').orderBy('createdAt', 'desc').limit(120).get();
+        } catch (orderErr) {
+          snap = await db.collection('mould_orders').limit(120).get();
+        }
+        list = snap.docs.map(function (doc) {
+          var data = doc.data() || {};
+          data.id = doc.id;
+          return data;
+        });
+      } catch (e) {
+        var dbMsg = (e && e.message) || 'database error';
+        failure = failure ? (failure + ' · ' + dbMsg) : dbMsg;
+      }
+    }
+
+    if (!list) {
+      var who = 'not signed in';
+      try {
+        var u = firebase.auth && firebase.auth().currentUser;
+        if (u) who = u.email || u.uid;
+      } catch (e) {}
       box.innerHTML = '<div class="mould-empty"><i class="fas fa-triangle-exclamation"></i>Could not load mould orders.<br>' +
-        escHtml(e.message || 'database error') + '</div>';
+        escHtml(failure || 'unknown error') +
+        '<br><small style="opacity:.7;">Dashboard signed in as: ' + escHtml(who) + '</small></div>';
       return;
     }
+
+    mouldOrders = list;
+    mouldOrders.sort(function (a, b) {
+      var da = mouldCreatedAt(a), db_ = mouldCreatedAt(b);
+      return (db_ ? db_.getTime() : 0) - (da ? da.getTime() : 0);
+    });
     renderMouldOrders();
     updateMouldBadge();
   }
@@ -5773,30 +5839,31 @@
 
     var now = new Date().toISOString();
     var saved = false;
+
+    /* the Worker writes with the studio's own credentials — try it first */
     try {
-      await db.collection('mould_orders').doc(id).update({
-        paymentLink: link,
-        status: 'approved',
-        approvedAt: now,
-        statusUpdatedAt: now
+      var r = await fetch(WORKER_BASE + '/api/moulds/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, paymentLink: link })
       });
-      saved = true;
-    } catch (e) {
-      console.warn('[editx] direct save failed, trying the Worker', e);
-    }
+      var res = await r.json().catch(function () { return null; });
+      saved = !!(res && res.ok);
+    } catch (e) { saved = false; }
 
     if (!saved) {
-      /* the Worker writes with the studio's own credentials, so it works even
-         when the browser's write is refused */
+      /* older Worker / rules that allow it: write straight to the document */
       try {
-        var r = await fetch(WORKER_BASE + '/api/moulds/approve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: id, paymentLink: link })
+        await db.collection('mould_orders').doc(id).update({
+          paymentLink: link,
+          status: 'approved',
+          approvedAt: now,
+          statusUpdatedAt: now
         });
-        var res = await r.json().catch(function () { return null; });
-        saved = !!(res && res.ok);
-      } catch (e) { saved = false; }
+        saved = true;
+      } catch (e) {
+        console.warn('[editx] could not save the approval', e);
+      }
     }
 
     if (!saved) {
@@ -5812,31 +5879,30 @@
     if (saved) await loadMouldOrders(true);
   }
 
-  async function markMouldDelivered(id) {
+  async function setMouldStatus(id, status, okMessage) {
+    var ok = false;
     try {
-      await db.collection('mould_orders').doc(id).update({
-        status: 'delivered',
-        statusUpdatedAt: new Date().toISOString()
-      });
-      showToast('Marked delivered', 'success');
-      await loadMouldOrders(true);
-    } catch (e) {
-      showToast('Could not update: ' + e.message, 'error');
+      var r = await mouldWorkerJSON('/api/moulds/status', { id: id, status: status });
+      ok = !!(r.ok && r.data && r.data.ok);
+    } catch (e) { ok = false; }
+
+    if (!ok) {
+      try {
+        await db.collection('mould_orders').doc(id).update({
+          status: status,
+          statusUpdatedAt: new Date().toISOString()
+        });
+        ok = true;
+      } catch (e) { ok = false; }
     }
+
+    if (!ok) { showToast('Could not update the order status', 'error'); return; }
+    showToast(okMessage, 'success');
+    await loadMouldOrders(true);
   }
 
-  async function reopenMouldOrder(id) {
-    try {
-      await db.collection('mould_orders').doc(id).update({
-        status: 'pending',
-        statusUpdatedAt: new Date().toISOString()
-      });
-      showToast('Moved back to pending', 'success');
-      await loadMouldOrders(true);
-    } catch (e) {
-      showToast('Could not update: ' + e.message, 'error');
-    }
-  }
+  function markMouldDelivered(id) { return setMouldStatus(id, 'delivered', 'Marked delivered'); }
+  function reopenMouldOrder(id) { return setMouldStatus(id, 'pending', 'Moved back to pending'); }
 
   /* ════════════════════════════════════════════════════════════════════
      HOME BANNERS — the wide image on each home page collection section
