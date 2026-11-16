@@ -1548,173 +1548,12 @@
   <div class="drawer-footer"><button class="btn-muted2" onclick="closeDrawer()">Done</button><button class="btn-black" id="drawer-save-btn" onclick="saveDrawerOrder()">Save Order</button></div>
 </div>
 
-<!-- INVOICE: CUSTOM GRILLZ CALCULATOR MODAL -->
+<!-- INVOICE: CUSTOM GRILLZ CALCULATOR MODAL (the staff panel calculator) -->
 <div class="modal-overlay" id="inv-calc-modal">
-  <div class="modal" style="max-width:600px;">
+  <div class="modal" style="max-width:640px;">
     <div class="modal-header"><h2>Custom Grillz Calculator</h2><button class="modal-close" id="inv-close-calc-modal">&times;</button></div>
     <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Design Label (optional)</label>
-        <input type="text" class="form-input" id="inv-cm-name" placeholder="e.g. Top 6 Silver · Bottom Bars">
-      </div>
-      <div class="inv-calc-grid-2">
-        <div class="form-group">
-          <label class="form-label">Material</label>
-          <select class="form-select" id="inv-cm-material">
-            <option value="chrome">Cobalt Chrome</option>
-            <option value="titanium">Titanium</option>
-            <option value="silver">Sterling Silver 925</option>
-            <option value="gold">Gold</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Teeth (1-16)</label>
-          <input type="number" class="form-input" id="inv-cm-teeth" min="1" max="16" value="6">
-        </div>
-      </div>
-      <div class="inv-calc-grid-2" id="inv-cm-gold-wrap" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">Karat</label>
-          <select class="form-select" id="inv-cm-karat">
-            <option value="10">10K</option>
-            <option value="14">14K</option>
-            <option value="18" selected>18K</option>
-            <option value="21">21K</option>
-            <option value="22">22K</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Today's 24K Gold (EGP/g)</label>
-          <input type="number" class="form-input" id="inv-cm-gold-rate" min="0" step="any" placeholder="Enter EGP/g">
-        </div>
-      </div>
-      <div class="inv-calc-grid-2">
-        <div class="form-group">
-          <label class="form-label">Design Level</label>
-          <select class="form-select" id="inv-cm-level">
-            <option value="0.5">0.5 Bars (Half Base)</option>
-            <option value="1">1 Solid (+0%)</option>
-            <option value="2">2 Open Face (+10%)</option>
-            <option value="3">3 Mid Detail (+15%)</option>
-            <option value="4">4 Complex (+25%)</option>
-            <option value="5">5 Scorpion (+40%)</option>
-            <option value="6">6 Ultimate (+60%)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Stones</label>
-          <select class="form-select" id="inv-cm-stones">
-            <option value="none">No Stones</option>
-            <option value="accent">Accent Stones</option>
-            <option value="full">Full Iced</option>
-            <option value="bars">Full Iced on Bars</option>
-          </select>
-        </div>
-      </div>
-      <div class="inv-calc-grid-3" id="inv-cm-accent-wrap" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">Count</label>
-          <input type="number" class="form-input" id="inv-cm-acount" min="1" value="1">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Type</label>
-          <select class="form-select" id="inv-cm-atype">
-            <option value="cz">CZ</option>
-            <option value="moissanite">Moissanite</option>
-            <option value="labgrown">Lab-Grown</option>
-            <option value="natural">Natural</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Setting</label>
-          <select class="form-select" id="inv-cm-asetting">
-            <option value="flush">Flush</option>
-            <option value="twoprong">2-Prong</option>
-            <option value="threeprong">3-Prong</option>
-            <option value="fourprong">4-Prong</option>
-            <option value="sixprong">6-Prong</option>
-            <option value="bezelfull">Bezel Full</option>
-            <option value="bezelhalf">Bezel Half</option>
-            <option value="bar">Bar</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" id="inv-cm-acustom-wrap" style="display:none;">
-        <label class="form-label">Stone Price (EGP / stone)</label>
-        <input type="number" class="form-input" id="inv-cm-acustom" min="0" step="any" placeholder="Enter today's rate">
-      </div>
-      <div class="inv-calc-grid-2" id="inv-cm-full-wrap" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">Stone Type</label>
-          <select class="form-select" id="inv-cm-ftype">
-            <option value="cz">CZ</option>
-            <option value="moissanite">Moissanite</option>
-            <option value="labgrown">Lab-Grown</option>
-            <option value="natural">Natural</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Coverage</label>
-          <select class="form-select" id="inv-cm-fcov">
-            <option value="standardpave">Standard Pave</option>
-            <option value="frenchpave">French Pave</option>
-            <option value="micropave">Micro-Pave</option>
-            <option value="channel">Channel</option>
-            <option value="invisible">Invisible</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" id="inv-cm-fcustom-wrap" style="display:none;">
-        <label class="form-label">Full-Iced Price (EGP / tooth)</label>
-        <input type="number" class="form-input" id="inv-cm-fcustom" min="0" step="any" placeholder="Enter today's rate">
-      </div>
-      <div class="inv-calc-grid-3">
-        <div class="form-group">
-          <label class="form-label">Plating</label>
-          <select class="form-select" id="inv-cm-plating">
-            <option value="none">None</option>
-            <option value="yellowgold">Yellow Gold</option>
-            <option value="blackgold">Black Gold</option>
-            <option value="whitegold">White Gold</option>
-            <option value="rosegold">Rose Gold</option>
-            <option value="silverplating">Silver Plating</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Enamel</label>
-          <select class="form-select" id="inv-cm-enamel">
-            <option value="none">None</option>
-            <option value="single">Single</option>
-            <option value="multi">Multi</option>
-            <option value="master">Master</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Engraving</label>
-          <select class="form-select" id="inv-cm-engraving">
-            <option value="none">None</option>
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" id="inv-cm-ano-wrap" style="display:none;">
-        <label class="form-label">Titanium Anodizing</label>
-        <select class="form-select" id="inv-cm-anodize">
-          <option value="none">None</option>
-          <option value="single">Single Color</option>
-          <option value="dual">Dual Color</option>
-          <option value="multi">Multi Color</option>
-        </select>
-      </div>
-      <div class="inv-calc-total-bar">
-        <div>
-          <div class="form-label" style="margin:0;">Calculated Line Total</div>
-          <div id="inv-cm-spec-preview" style="font-size:11px;color:#666;margin-top:2px;">—</div>
-        </div>
-        <div style="font-family:'Playfair Display',serif;font-size:22px;" id="inv-cm-total-preview">0 EGP</div>
-      </div>
+      <div id="invCalcHost"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-muted2" id="inv-cancel-calc-modal">Cancel</button>
@@ -4148,6 +3987,7 @@
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script data-cfasync="false" src="assets/calc-engine.js"></script>
+<script data-cfasync="false" src="assets/staff-calculator.js"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
 <script data-cfasync="false">
@@ -4571,101 +4411,26 @@
     setTxt('inv-prev-notes', notes || '');
   }
 
-  /* ───────────── calculator modal ───────────── */
-  function syncCalcModal() {
-    var E = CE();
-    if (!E) return;
-    var S = E.get();
-    var mat = el('inv-cm-material') ? el('inv-cm-material').value : 'chrome';
-    var isGold = mat === 'gold';
-    var isTi = mat === 'titanium';
-    var noStones = !E.allowsStones(mat);
-    if (el('inv-cm-gold-wrap')) el('inv-cm-gold-wrap').style.display = isGold ? '' : 'none';
-    if (el('inv-cm-ano-wrap')) el('inv-cm-ano-wrap').style.display = isTi ? '' : 'none';
-
-    var st = el('inv-cm-stones');
-    if (st) {
-      if (noStones) { st.value = 'none'; st.disabled = true; } else { st.disabled = false; }
-    }
-    var mode = st ? st.value : 'none';
-    if (el('inv-cm-accent-wrap')) el('inv-cm-accent-wrap').style.display = mode === 'accent' ? '' : 'none';
-    if (el('inv-cm-full-wrap')) el('inv-cm-full-wrap').style.display = mode === 'full' ? '' : 'none';
-
-    var aType = el('inv-cm-atype') ? el('inv-cm-atype').value : 'cz';
-    var fType = el('inv-cm-ftype') ? el('inv-cm-ftype').value : 'cz';
-    if (el('inv-cm-acustom-wrap')) el('inv-cm-acustom-wrap').style.display = (mode === 'accent' && S.accentPrice[aType] === null) ? '' : 'none';
-    if (el('inv-cm-fcustom-wrap')) el('inv-cm-fcustom-wrap').style.display = (mode === 'full' && S.fullPrice[fType] === null) ? '' : 'none';
-
-    var calc = E.calculateLine(readCalcLine());
-    setTxt('inv-cm-spec-preview', E.lineLabel(calc));
-    setTxt('inv-cm-total-preview', money(calc.subtotal));
-  }
-
-  function readCalcLine() {
-    var E = CE();
-    var mat = el('inv-cm-material') ? el('inv-cm-material').value : 'chrome';
-    var noStones = E ? !E.allowsStones(mat) : false;
-    var mode = noStones ? 'none' : (el('inv-cm-stones') ? el('inv-cm-stones').value : 'none');
-    var gp = numVal('inv-cm-gold-rate');
-    var line = {
-      name: strVal('inv-cm-name'),
-      material: mat,
-      karat: el('inv-cm-karat') ? el('inv-cm-karat').value : '18',
-      goldPrice: gp > 0 ? gp : undefined,
-      teeth: Math.max(1, Math.min(16, parseInt(strVal('inv-cm-teeth'), 10) || 6)),
-      level: el('inv-cm-level') ? el('inv-cm-level').value : '1',
-      plating: el('inv-cm-plating') ? el('inv-cm-plating').value : 'none',
-      enamel: el('inv-cm-enamel') ? el('inv-cm-enamel').value : 'none',
-      engraving: el('inv-cm-engraving') ? el('inv-cm-engraving').value : 'none',
-      anodize: mat === 'titanium' && el('inv-cm-anodize') ? el('inv-cm-anodize').value : 'none'
-    };
-    if (mode === 'accent') {
-      var cp = strVal('inv-cm-acustom');
-      line.accent = {
-        count: Math.max(1, parseInt(strVal('inv-cm-acount'), 10) || 1),
-        type: el('inv-cm-atype') ? el('inv-cm-atype').value : 'cz',
-        setting: el('inv-cm-asetting') ? el('inv-cm-asetting').value : 'flush',
-        customPrice: cp !== '' ? Number(cp) : undefined
-      };
-    } else if (mode === 'full') {
-      var fp = strVal('inv-cm-fcustom');
-      line.full = {
-        type: el('inv-cm-ftype') ? el('inv-cm-ftype').value : 'cz',
-        coverage: el('inv-cm-fcov') ? el('inv-cm-fcov').value : 'standardpave',
-        customPrice: fp !== '' ? Number(fp) : undefined
-      };
-    } else if (mode === 'bars') {
-      line.full = { bars: true };
-    }
-    return line;
+  /* ───────────── calculator modal (the staff panel calculator) ───────────── */
+  var INVOICE_CALC = null;
+  function ensureInvoiceCalc() {
+    if (INVOICE_CALC) return INVOICE_CALC;
+    var host = el('invCalcHost');
+    if (!host || !window.StaffCalculator) return null;
+    INVOICE_CALC = window.StaffCalculator.mount(host, {
+      db: db(),
+      designMode: true,
+      showApply: false
+    });
+    return INVOICE_CALC;
   }
 
   function openCalcWithPreset(name, calc) {
-    var c = calc || {};
     var E = CE();
     if (!E) { toast('Pricing engine not loaded', 'error'); return; }
-    if (el('inv-cm-name')) el('inv-cm-name').value = name || c.name || '';
-    if (el('inv-cm-material')) el('inv-cm-material').value = c.material || 'chrome';
-    if (el('inv-cm-karat')) el('inv-cm-karat').value = c.karat || '18';
-    if (el('inv-cm-gold-rate')) el('inv-cm-gold-rate').value = E.get().goldPrice || '';
-    if (el('inv-cm-teeth')) el('inv-cm-teeth').value = c.teeth || 6;
-    if (el('inv-cm-level')) el('inv-cm-level').value = String(c.level || '1');
-    if (el('inv-cm-plating')) el('inv-cm-plating').value = c.plating || 'none';
-    if (el('inv-cm-enamel')) el('inv-cm-enamel').value = c.enamel || 'none';
-    if (el('inv-cm-engraving')) el('inv-cm-engraving').value = c.engraving || 'none';
-    if (el('inv-cm-anodize')) el('inv-cm-anodize').value = c.anodize || 'none';
-    var mode = c.accent ? 'accent' : (c.full && c.full.bars ? 'bars' : (c.full ? 'full' : 'none'));
-    if (el('inv-cm-stones')) el('inv-cm-stones').value = mode;
-    if (c.accent) {
-      if (el('inv-cm-acount')) el('inv-cm-acount').value = c.accent.count || 1;
-      if (el('inv-cm-atype')) el('inv-cm-atype').value = c.accent.type || 'cz';
-      if (el('inv-cm-asetting')) el('inv-cm-asetting').value = c.accent.setting || 'flush';
-    }
-    if (c.full && !c.full.bars) {
-      if (el('inv-cm-ftype')) el('inv-cm-ftype').value = c.full.type || 'moissanite';
-      if (el('inv-cm-fcov')) el('inv-cm-fcov').value = c.full.coverage || 'standardpave';
-    }
-    syncCalcModal();
+    var inst = ensureInvoiceCalc();
+    if (!inst) { toast('Calculator unavailable', 'error'); return; }
+    inst.loadLine(calc || {}, name || (calc && calc.name) || '');
     if (el('inv-calc-modal')) el('inv-calc-modal').classList.add('open');
   }
 
@@ -5323,31 +5088,21 @@
     on('inv-cancel-calc-modal', 'click', closeCalc);
     var calcModal = el('inv-calc-modal');
     if (calcModal) calcModal.addEventListener('click', function (e) { if (e.target === calcModal) closeCalc(); });
-    ['inv-cm-name', 'inv-cm-material', 'inv-cm-teeth', 'inv-cm-karat', 'inv-cm-gold-rate', 'inv-cm-level',
-     'inv-cm-stones', 'inv-cm-acount', 'inv-cm-atype', 'inv-cm-asetting', 'inv-cm-acustom',
-     'inv-cm-ftype', 'inv-cm-fcov', 'inv-cm-fcustom', 'inv-cm-plating', 'inv-cm-enamel',
-     'inv-cm-engraving', 'inv-cm-anodize'].forEach(function (id) {
-      var e = el(id);
-      if (!e) return;
-      e.addEventListener('input', syncCalcModal);
-      e.addEventListener('change', syncCalcModal);
-    });
     on('inv-apply-calc-modal', 'click', function () {
       var E = CE();
       if (!E) { toast('Pricing engine not loaded', 'error'); return; }
-      var line = readCalcLine();
-      if (line.material === 'gold' && (!line.goldPrice || line.goldPrice <= 0)) {
-        toast("Enter today's 24K gold rate (EGP/g)", 'error');
-        return;
-      }
-      var calc = E.calculateLine(line);
+      var inst = ensureInvoiceCalc();
+      if (!inst) { toast('Calculator unavailable', 'error'); return; }
+      var read = inst.readLine();
+      if (read.error) { toast(read.error, 'error'); return; }
+      var calc = E.calculateLine(read.line);
       if (calcMode === 'design') {
         var cb = calcCallback;
         closeCalc();
-        if (typeof cb === 'function') cb(line, calc);
+        if (typeof cb === 'function') cb(read.line, calc);
         return;
       }
-      var label = line.name || (E.LABELS.material[line.material] + ' Custom Grillz');
+      var label = read.line.name || (E.LABELS.material[read.line.material] + ' Custom Grillz');
       addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal });
       closeCalc();
       toast('Custom line added · ' + money(calc.subtotal), 'success');

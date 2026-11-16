@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Your Moulds — At-Home Impression Kit – EGYGRILLZ</title>
+  <meta name="description" content="Order an at-home dental impression kit from EGYGRILLZ. Take your own teeth moulds at home and we courier the kit straight to your door — 450 EGP per arch.">
+  <link rel="canonical" href="https://egygrillz.com/moulds">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+
+  <!-- Firebase Compat SDK (same project as the rest of the site) -->
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
+  <script data-cfasync="false" src="/assets/calc-engine.js"></script>
+  <script data-cfasync="false" src="/assets/egygz-notify.js"></script>
+
+  <style>
+    :root { --bg:#FAFAF9; --text:#1a1a1a; --muted:#888; --border:rgba(0,0,0,0.08); --gold:#c8a96e; --green:#3f7a58; }
+    *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Arimo',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
+    body.menu-open { overflow:hidden; }
+    a { text-decoration:none; color:inherit; }
+    ::selection { background:transparent; }
+
+    /* HEADER */
+    header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--bg); border-bottom:1px solid var(--border); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform .4s cubic-bezier(.4,0,.2,1); }
+    header.hidden { transform:translateY(-100%); }
+    .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; }
+    .main-nav { display:flex; gap:20px; }
+    .main-nav a { font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color .3s; }
+    .main-nav a:hover { color:#666; }
+    .nav-active { font-weight:900; border-bottom:1px solid var(--text); }
+    .menu-toggle { display:none; flex-direction:column; gap:6px; background:none; border:none; cursor:pointer; }
+    .menu-toggle span { width:25px; height:1.5px; background:var(--text); display:block; }
+    @media(max-width:980px) {
+      .menu-toggle { display:flex; }
+      .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:var(--bg); flex-direction:column; padding:10px 5%; transition:.4s cubic-bezier(.4,0,.2,1); box-shadow:0 5px 10px rgba(0,0,0,.05); z-index:1100; }
+      .main-nav.active { right:0; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,.06); width:100%; }
+    }
+
+    /* PAGE */
+    .container { max-width:820px; margin:0 auto; padding:104px 5% 110px; }
+    .eyebrow { font-size:9px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:12px; }
+    h1 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(30px,7vw,52px); letter-spacing:2px; text-transform:uppercase; line-height:1.1; }
+    .lede { font-size:14px; color:#555; max-width:600px; margin-top:16px; }
+
+    /* EXPLANATION BANNER */
+    .banner { border:1px solid var(--border); border-radius:4px; background:#fff; padding:30px 28px; }
+    .banner .rule { width:32px; height:1px; background:#000; margin:18px 0 22px; }
+    .compare { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:6px; }
+    @media(max-width:680px) { .compare { grid-template-columns:1fr; } }
+    .cmp { border:1px solid var(--border); border-radius:4px; padding:18px 18px 20px; background:var(--bg); }
+    .cmp.now { border-color:#1a1a1a; background:#fff; }
+    .cmp .tag { font-size:8px; letter-spacing:3px; text-transform:uppercase; color:#999; }
+    .cmp.now .tag { color:var(--gold); }
+    .cmp h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:19px; letter-spacing:1px; margin:4px 0 8px; }
+    .cmp p { font-size:12.5px; color:#555; }
+    .cmp ul { list-style:none; margin-top:10px; }
+    .cmp li { font-size:11.5px; color:#555; padding-left:16px; position:relative; margin-top:4px; }
+    .cmp li::before { content:'—'; position:absolute; left:0; color:#bbb; }
+    .cmp a { display:inline-block; margin-top:12px; font-size:10px; letter-spacing:2px; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px; }
+
+    /* STEPS */
+    .step-block { margin-top:56px; }
+    .step-head { display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+    .step-num { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); }
+    .step-block h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:22px; letter-spacing:1px; }
+    .step-sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
+
+    /* ARCH CARDS */
+    .arch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    @media(max-width:680px) { .arch-grid { grid-template-columns:1fr; } }
+    .arch-card { position:relative; text-align:left; background:#fff; border:1px solid var(--border); border-radius:4px; padding:22px 20px; cursor:pointer; font-family:inherit; color:inherit; transition:border-color .2s, box-shadow .2s, transform .2s; }
+    .arch-card:hover { border-color:#bbb; transform:translateY(-2px); }
+    .arch-card.on { border-color:#1a1a1a; box-shadow:inset 0 0 0 1px #1a1a1a; }
+    .arch-ico { display:block; color:#cfcfcf; margin-bottom:10px; transition:color .2s; }
+    .arch-svg { width:64px; height:auto; display:block; }
+    .arch-card.on .arch-ico { color:var(--gold); }
+    .arch-name { display:block; font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+    .arch-note { display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+    .arch-price { display:block; font-family:'Playfair Display',serif; font-size:21px; margin-top:14px; }
+    .arch-check { float:right; font-size:11px; color:var(--gold); opacity:0; transition:opacity .2s; }
+    .arch-card.on .arch-check { opacity:1; }
+
+    /* FIELDS */
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:#999; margin-bottom:6px; }
+    .field input, .field textarea { width:100%; font-family:inherit; font-size:13px; color:var(--text); background:#fff; border:1px solid var(--border); border-radius:3px; padding:12px 14px; outline:none; transition:border-color .2s; }
+    .field input:focus, .field textarea:focus { border-color:#1a1a1a; }
+    .field textarea { resize:vertical; min-height:76px; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:600px) { .field-row { grid-template-columns:1fr; } }
+    .hint { font-size:11px; color:#aaa; margin-top:6px; }
+
+    /* LOCATION */
+    .geo-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn-geo { display:inline-flex; align-items:center; gap:8px; background:#fff; border:1px solid #1a1a1a; color:#1a1a1a; font-family:inherit; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:12px 18px; border-radius:3px; cursor:pointer; transition:background .2s,color .2s; }
+    .btn-geo:hover { background:#1a1a1a; color:#fff; }
+    .btn-geo[disabled] { opacity:.6; cursor:progress; }
+    .geo-status { font-size:11.5px; color:var(--muted); }
+    .geo-status.ok { color:var(--green); }
+    .geo-status.err { color:#b04a3a; }
+    .geo-map { display:none; margin-top:12px; border:1px solid var(--border); border-radius:3px; overflow:hidden; background:#fff; }
+    .geo-map.show { display:block; }
+    .geo-map iframe { display:block; width:100%; height:180px; border:0; }
+
+    /* SUMMARY */
+    .summary { margin-top:44px; background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+    .summary-in { padding:22px 24px; }
+    .sum-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; font-size:12.5px; color:#555; padding:6px 0; }
+    .sum-row .v { font-variant-numeric:tabular-nums; }
+    .sum-row.total { border-top:1px solid var(--border); margin-top:10px; padding-top:14px; font-size:15px; color:var(--text); font-weight:700; letter-spacing:.4px; }
+    .sum-row.total .v { font-family:'Playfair Display',serif; font-size:26px; font-weight:400; letter-spacing:1px; }
+    .sum-note { font-size:11px; color:#aaa; margin-top:10px; }
+    .submit-wrap { margin-top:24px; }
+    .btn-main { width:100%; background:#1a1a1a; color:#fff; border:1px solid #1a1a1a; border-radius:3px; font-family:inherit; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; padding:18px 20px; cursor:pointer; transition:background .2s,letter-spacing .25s; }
+    .btn-main:hover { background:#000; letter-spacing:3px; }
+    .btn-main[disabled] { opacity:.6; cursor:progress; letter-spacing:2.5px; }
+    .form-error { display:none; margin-top:12px; font-size:12px; color:#b04a3a; }
+    .form-error.show { display:block; }
+
+    /* SUCCESS */
+    .success { display:none; text-align:center; background:#fff; border:1px solid var(--border); border-radius:4px; padding:56px 28px; margin-top:40px; }
+    .success.show { display:block; }
+    .success .tick { width:56px; height:56px; margin:0 auto 22px; border:1px solid #1a1a1a; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
+    .success h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,5vw,32px); letter-spacing:1px; line-height:1.25; }
+    .success p { font-size:13px; color:#666; margin-top:14px; }
+    .success .ref { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#aaa; margin-top:18px; }
+    .success .again { display:inline-block; margin-top:26px; font-size:10px; letter-spacing:2px; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px; }
+
+    /* FOOTER */
+    footer { border-top:1px solid var(--border); padding:36px 5%; text-align:center; }
+    footer .footer-icons { display:flex; justify-content:center; gap:18px; margin-bottom:18px; }
+    footer .footer-icons a { font-size:15px; color:#1a1a1a; }
+    footer .legal-text { font-size:10px; letter-spacing:1.5px; color:#aaa; }
+    .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  </style>
+</head>
+<body>
+
+  <header id="site-header">
+    <a href="/" class="logo-text">EGYGRILLZ</a>
+    <button class="menu-toggle" aria-label="Menu" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+    <nav class="main-nav">
+      <a href="/">Home</a>
+      <a href="latest-designs">Latest</a>
+      <a href="booking">Schedule</a>
+      <a href="grillz-gallery">Gallery</a>
+      <a href="golds">Golds</a>
+      <a href="diamonds">Diamonds</a>
+      <a href="silvers">Silvers</a>
+      <a href="about">About</a>
+      <a href="contact">Contact</a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- ══ WHAT IT IS / HOW IT DIFFERS ══ -->
+    <section class="banner">
+      <p class="eyebrow">At-Home Impression Kit</p>
+      <h1>Get Your Moulds</h1>
+      <p class="lede">
+        An at-home dental impression kit delivered straight to your door, so you can take your own teeth moulds easily — no studio visit needed.
+        We courier everything you need, you take the impressions at home, and we build your grillz from them.
+      </p>
+      <div class="rule"></div>
+      <div class="compare">
+        <div class="cmp now">
+          <span class="tag">This page</span>
+          <h3>Get Your Moulds</h3>
+          <p>We deliver a DIY impression kit to your address. Ideal if you're outside Cairo, busy, or simply prefer doing it from home.</p>
+          <ul>
+            <li>Kit couriered to your door</li>
+            <li>Take the impressions on your own schedule</li>
+            <li>Works anywhere in Egypt</li>
+          </ul>
+        </div>
+        <div class="cmp">
+          <span class="tag">In-person</span>
+          <h3>Schedule Now</h3>
+          <p>Book an appointment at our Heliopolis studio and we take your impressions for you, then talk through the design in person.</p>
+          <ul>
+            <li>Our team takes the impressions</li>
+            <li>Design consultation on the spot</li>
+            <li>Best if you're in Cairo</li>
+          </ul>
+          <a href="booking">Book an appointment →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ ORDER FORM ══ -->
+    <form id="mouldForm" novalidate>
+
+      <!-- STEP 1 -->
+      <section class="step-block" id="stepArch">
+        <div class="step-head"><span class="step-num">Step 1</span><h2>Choose your arch</h2></div>
+        <p class="step-sub">One kit per arch. Most clients start with both.</p>
+        <div class="arch-grid" role="radiogroup" aria-label="Which arch">
+          <button type="button" class="arch-card" data-arch="upper" data-arches="1" aria-pressed="false">
+            <span class="arch-check"><i class="fas fa-check"></i></span>
+            <span class="arch-ico"><svg class="arch-svg" viewBox="0 0 72 44" aria-hidden="true"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.3"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></svg></span>
+            <span class="arch-name">Upper Arch</span>
+            <span class="arch-note">Top teeth</span>
+            <span class="arch-price" data-price="1">450 EGP</span>
+          </button>
+          <button type="button" class="arch-card" data-arch="lower" data-arches="1" aria-pressed="false">
+            <span class="arch-check"><i class="fas fa-check"></i></span>
+            <span class="arch-ico"><svg class="arch-svg" viewBox="0 0 72 44" aria-hidden="true"><g transform="translate(0,44) scale(1,-1)"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.3"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></g></svg></span>
+            <span class="arch-name">Lower Arch</span>
+            <span class="arch-note">Bottom teeth</span>
+            <span class="arch-price" data-price="1">450 EGP</span>
+          </button>
+          <button type="button" class="arch-card" data-arch="both" data-arches="2" aria-pressed="false">
+            <span class="arch-check"><i class="fas fa-check"></i></span>
+            <span class="arch-ico"><svg class="arch-svg" viewBox="0 0 72 56" aria-hidden="true"><g transform="translate(8,2) scale(.78)"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.5"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></g><g transform="translate(8,20) scale(.78) translate(0,44) scale(1,-1)"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.5"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></g></svg></span>
+            <span class="arch-name">Both Arches</span>
+            <span class="arch-note">Top &amp; bottom · best value</span>
+            <span class="arch-price" data-price="2">900 EGP</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section class="step-block" id="stepDetails">
+        <div class="step-head"><span class="step-num">Step 2</span><h2>Your details</h2></div>
+        <p class="step-sub">Three quick fields — we use them to send your payment link.</p>
+        <div class="field-row">
+          <div class="field">
+            <label for="mName">Full name *</label>
+            <input id="mName" name="name" type="text" autocomplete="name" placeholder="e.g. Ahmed Mostafa" required>
+          </div>
+          <div class="field">
+            <label for="mPhone">Phone / WhatsApp *</label>
+            <input id="mPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="01000000000" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="mEmail">Email *</label>
+          <input id="mEmail" name="email" type="email" autocomplete="email" placeholder="name@email.com" required>
+          <p class="hint">We send the payment link here — please double-check it.</p>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section class="step-block" id="stepLocation">
+        <div class="step-head"><span class="step-num">Step 3</span><h2>Where should we deliver?</h2></div>
+        <p class="step-sub">Tap the button to drop your exact pin, or just describe the area — no long address needed.</p>
+        <div class="geo-row">
+          <button type="button" class="btn-geo" id="geoBtn"><i class="fas fa-location-crosshairs"></i> Use My Current Location</button>
+          <span class="geo-status" id="geoStatus">Not set yet.</span>
+        </div>
+        <div class="geo-map" id="geoMap">
+          <iframe id="geoFrame" title="Your delivery location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+        <div class="field" style="margin-top:16px">
+          <label for="mAddress">Address or landmark</label>
+          <textarea id="mAddress" name="address" placeholder="e.g. Building 12, Street 9, Maadi — near the metro station, 3rd floor" autocomplete="street-address"></textarea>
+          <p class="hint">A short landmark is enough. You can also paste a Maps link.</p>
+        </div>
+      </section>
+
+      <!-- LIVE PRICE -->
+      <div class="summary">
+        <div class="summary-in">
+          <div class="sum-row"><span id="sumArchLabel">Moulds — choose an arch</span><span class="v" id="sumMoulds">0 EGP</span></div>
+          <div class="sum-row"><span>Delivery (flat)</span><span class="v" id="sumDelivery">100 EGP</span></div>
+          <div class="sum-row total"><span>Total</span><span class="v" id="sumTotal">0 EGP</span></div>
+          <p class="sum-note">450 EGP per arch · 100 EGP flat delivery. Payment link by email once we confirm your order.</p>
+          <div class="submit-wrap">
+            <button type="submit" class="btn-main" id="submitBtn">Confirm My Mould Kit</button>
+          </div>
+          <p class="form-error" id="formError"></p>
+        </div>
+      </div>
+    </form>
+
+    <!-- SUCCESS -->
+    <section class="success" id="successPanel" aria-live="polite">
+      <div class="tick"><i class="fas fa-check"></i></div>
+      <h2>Done, wait for an email for the payment.</h2>
+      <p id="successDetail">Your mould kit request is with the studio.</p>
+      <p class="ref" id="successRef"></p>
+      <a href="/" class="again">Back to the studio</a>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="footer-icons">
+      <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+      <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8?g_st=ic" target="_blank" rel="noopener noreferrer" aria-label="Location"><i class="fas fa-location-dot"></i></a>
+    </div>
+    <div class="legal-text">© 2026 EGYGRILLZ · DR Mohamed Mahdy</div>
+  </footer>
+
+  <script data-cfasync="false">
+    /* ═══════════════════════════════════════════════════
+       GET YOUR MOULDS — order flow
+       Prices come from the studio settings (settings/site)
+       so the staff panel stays the single source of truth.
+       ═══════════════════════════════════════════════════ */
+
+    var PRICES = { perArch: 450, delivery: 100 };
+
+    // ── Firebase (same project as booking) ──
+    var db = null;
+    try {
+      firebase.initializeApp({
+        apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
+        authDomain: "egygrillz-studio.firebaseapp.com",
+        projectId: "egygrillz-studio",
+        storageBucket: "egygrillz-studio.firebasestorage.app",
+        messagingSenderId: "1022362401463",
+        appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
+      });
+      try { firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true); } catch (e) {}
+      db = firebase.firestore();
+    } catch (e) { console.error('Firebase init failed:', e); }
+
+    // ── UI helpers ──
+    function $(id) { return document.getElementById(id); }
+    function egp(n) { return Math.round(Number(n) || 0).toLocaleString('en-US') + ' EGP'; }
+    function toggleMenu() {
+      document.querySelector('.main-nav').classList.toggle('active');
+      document.body.classList.toggle('menu-open');
+    }
+    // ── header hide on scroll ──
+    (function () {
+      var header = $('site-header'), lastY = window.scrollY;
+      window.addEventListener('scroll', function () {
+        var y = window.scrollY;
+        header.classList.toggle('hidden', y > lastY && y > 80);
+        lastY = y;
+      }, { passive: true });
+    })();
+
+    /* ── prices from the database (fallback to the published rates) ── */
+    async function loadPrices() {
+      try {
+        if (window.SiteConfig) {
+          await window.SiteConfig.load(null);
+          PRICES.perArch = Number(window.SiteConfig.num('mouldPerArch')) || 450;
+          PRICES.delivery = Number(window.SiteConfig.num('mouldDeliveryFee'));
+          if (!Number.isFinite(PRICES.delivery)) PRICES.delivery = 100;
+        }
+      } catch (e) { /* keep published rates */ }
+      document.querySelectorAll('[data-price]').forEach(function (el) {
+        var arches = Number(el.getAttribute('data-price')) || 1;
+        el.textContent = egp(archCount(arches) * PRICES.perArch);
+      });
+      renderTotal();
+    }
+    // a "both" card counts as two arches
+    function archCount(n) { return n === 2 ? 2 : 1; }
+
+    /* ── Step 1: arch ── */
+    var ARCH = null;          // 'upper' | 'lower' | 'both'
+    var cardEls = Array.prototype.slice.call(document.querySelectorAll('.arch-card'));
+
+    cardEls.forEach(function (card) {
+      card.addEventListener('click', function () {
+        var key = card.getAttribute('data-arch');
+        ARCH = (ARCH === key) ? null : key;   // tap again to clear
+        cardEls.forEach(function (c) {
+          var on = c.getAttribute('data-arch') === ARCH;
+          c.classList.toggle('on', on);
+          c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderTotal();
+      });
+    });
+
+    function archCount_() { return ARCH === null ? 0 : (ARCH === 'both' ? 2 : 1); }
+    function archLabel() {
+      if (ARCH === 'upper') return 'Upper arch';
+      if (ARCH === 'lower') return 'Lower arch';
+      if (ARCH === 'both') return 'Both arches';
+      return '';
+    }
+
+    function renderTotal() {
+      var n = archCount_();
+      var moulds = n * PRICES.perArch;
+      var delivery = n > 0 ? PRICES.delivery : 0;
+      $('sumArchLabel').textContent = n > 0
+        ? 'Moulds — ' + archLabel() + ' (' + n + ' × ' + egp(PRICES.perArch) + ')'
+        : 'Moulds — choose an arch';
+      $('sumMoulds').textContent = egp(moulds);
+      $('sumDelivery').textContent = egp(delivery);
+      $('sumTotal').textContent = egp(moulds + delivery);
+      $('sumDelivery').parentElement.style.opacity = n > 0 ? '1' : '.45';
+    }
+
+    /* ── Step 3: location ── */
+    var GEO = null;
+
+    function setGeoStatus(text, cls) {
+      var el = $('geoStatus');
+      el.textContent = text;
+      el.className = 'geo-status' + (cls ? ' ' + cls : '');
+    }
+
+    function showMap(lat, lng) {
+      $('geoFrame').src = 'https://maps.google.com/maps?q=' + lat + ',' + lng + '&z=16&output=embed';
+      $('geoMap').classList.add('show');
+    }
+
+    $('geoBtn').addEventListener('click', function () {
+      if (!navigator.geolocation) {
+        setGeoStatus('Your browser cannot share a location — type the area instead.', 'err');
+        return;
+      }
+      var btn = this;
+      btn.disabled = true;
+      setGeoStatus('Finding your location…');
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        GEO = {
+          lat: Number(pos.coords.latitude.toFixed(6)),
+          lng: Number(pos.coords.longitude.toFixed(6)),
+          accuracy: Math.round(pos.coords.accuracy || 0)
+        };
+        setGeoStatus('Location pinned' + (GEO.accuracy ? ' (±' + GEO.accuracy + ' m)' : '') + ' — add a landmark if it helps.', 'ok');
+        showMap(GEO.lat, GEO.lng);
+        btn.disabled = false;
+      }, function (err) {
+        var msg = err && err.code === 1
+          ? 'Location permission was blocked — type the area instead.'
+          : 'Could not get your location — type the area instead.';
+        setGeoStatus(msg, 'err');
+        btn.disabled = false;
+      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+    });
+
+    /* ── Submit ── */
+    function showError(msg) {
+      var el = $('formError');
+      el.textContent = msg;
+      el.classList.add('show');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function clearError() { $('formError').classList.remove('show'); }
+
+    function validPhone(v) {
+      var digits = String(v).replace(/[^0-9]/g, '');
+      return digits.length >= 8 && digits.length <= 15;
+    }
+
+    $('mouldForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      clearError();
+
+      var name = $('mName').value.trim();
+      var phone = $('mPhone').value.trim();
+      var email = $('mEmail').value.trim();
+      var address = $('mAddress').value.trim();
+
+      if (!ARCH) return showError('Choose an arch first — upper, lower, or both.');
+      if (name.length < 2) return showError('Please type your full name.');
+      if (!validPhone(phone)) return showError('Please type a phone or WhatsApp number we can reach you on.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return showError('Please type a valid email — the payment link goes there.');
+      if (!address && !GEO) return showError('Add your area or landmark, or tap “Use My Current Location”.');
+
+      var n = archCount_();
+      var moulds = n * PRICES.perArch;
+      var delivery = PRICES.delivery;
+      var total = moulds + delivery;
+
+      var btn = $('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+
+      var order = {
+        arches: ARCH,
+        archCount: n,
+        mouldPrice: moulds,
+        perArch: PRICES.perArch,
+        deliveryFee: delivery,
+        total: total,
+        currency: 'EGP',
+        name: name,
+        phone: phone,
+        email: email,
+        address: address,
+        location: GEO,
+        status: 'pending_payment',
+        source: 'moulds-page',
+        createdAt: new Date().toISOString()
+      };
+
+      var savedId = '';
+      try {
+        if (!db) throw new Error('No database connection');
+        var ref = await db.collection('mould_orders').add(Object.assign({}, order, {
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }));
+        savedId = ref && ref.id ? ref.id : '';
+      } catch (err) {
+        console.error('[moulds] save failed', err);
+        btn.disabled = false;
+        btn.textContent = 'Confirm My Mould Kit';
+        return showError('We could not send your request — check your connection and try again, or message us on Instagram.');
+      }
+
+      // ── tell the studio (non-blocking; the order is already saved) ──
+      try {
+        if (window.EGYGZ && window.EGYGZ.notify) {
+          window.EGYGZ.notify.message({
+            name: name,
+            phone: phone,
+            email: email,
+            ref: savedId,
+            message: 'Mould kit order — ' + archLabel() + ' · ' + egp(total)
+              + ' (' + egp(moulds) + ' moulds + ' + egp(delivery) + ' delivery). '
+              + 'Address: ' + (address || 'location pin shared') + '.'
+          });
+        }
+      } catch (e) { console.warn('notify skipped', e); }
+
+      // ── confirmation ──
+      $('mouldForm').style.display = 'none';
+      $('successDetail').textContent = archLabel() + ' · ' + egp(total) + ' (' + egp(moulds) + ' moulds + ' + egp(delivery) + ' delivery). We will email ' + email + ' with the payment link.';
+      $('successRef').textContent = savedId ? ('Order ' + String(savedId).slice(0, 8).toUpperCase()) : '';
+      $('successPanel').classList.add('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    /* ── boot ── */
+    renderTotal();
+    loadPrices();
+  </script>
+</body>
+</html>

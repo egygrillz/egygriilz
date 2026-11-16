@@ -505,6 +505,10 @@ const SITE_DEFAULTS = {
   bookingLeadDays: 30,
   maxBookingsPerDay: 8,
 
+  /* At-home mould kit (Get Your Moulds) */
+  mouldPerArch: 450,
+  mouldDeliveryFee: 100,
+
   /* Reminders */
   reminderHour: 12,
   reminderDaysBefore: 1,
@@ -539,6 +543,8 @@ const SITE_LABELS = {
   cancelFreeHours: 'Free cancellation (hours)',
   bookingLeadDays: 'Book this many days ahead',
   maxBookingsPerDay: 'Max bookings per day',
+  mouldPerArch: 'Mould kit — price per arch',
+  mouldDeliveryFee: 'Mould kit — flat delivery fee',
   reminderHour: 'Reminder hour (24h)',
   reminderDaysBefore: 'Remind days before',
   quoteValidDays: 'Quote valid (days)',
@@ -553,6 +559,7 @@ const SITE_LABELS = {
 const SITE_GROUPS = [
   { id:'identity', title:'Brand',  keys:['studioName','tagline','addressLine1','addressLine2','addressLine3','currency'] },
   { id:'booking',  title:'Booking', keys:['impressionPrice','impressionMinutes','gemFromPrice','consultPrice','consultMinutes','pickupMinutes','fittingMinutes','bookingSlotMinutes','cancelFreeHours','bookingLeadDays','maxBookingsPerDay'] },
+  { id:'moulds',   title:'Mould kit', keys:['mouldPerArch','mouldDeliveryFee'] },
   { id:'hours',    title:'Working hours', keys:['openHour','closeHour','workingDays'] },
   { id:'quotes',   title:'Quotations', keys:['quoteValidDays','quoteDepositDefaultPct','quoteRoundTo','vatPct'] },
   { id:'auto',     title:'Automatic', keys:['reminderHour','reminderDaysBefore'] },
