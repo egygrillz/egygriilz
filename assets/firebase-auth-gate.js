@@ -25,7 +25,7 @@
  *
  * ── What it does ──────────────────────────────────────────────────────────
  * • Blocks the page with a login overlay until a real Firebase session exists.
- * • Uses SESSION persistence (closing the browser logs you out).
+ * • Uses LOCAL persistence — you stay signed in on this device until you sign out.
  * • Exposes signOut() for the panel's logout button.
  * • Never contains a password, a key or a bypass.
  */
@@ -71,17 +71,17 @@ function overlay() {
     </div>`;
   const css = document.createElement('style');
   css.textContent = `
-    #egygz-auth-gate{position:fixed;inset:0;z-index:2147483000;background:#0b0b0c;color:#fff;
+    #egygz-auth-gate{position:fixed;inset:0;z-index:2147483000;background:#fafaf9;color:#1f1f1f;
       display:flex;align-items:center;justify-content:center;font:15px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    #egygz-auth-gate .egygz-gate-box{width:min(360px,92vw);background:#131316;border:1px solid #2a2a31;
-      border-radius:14px;padding:28px}
-    #egygz-auth-gate .egygz-gate-kicker{font-size:10px;letter-spacing:.3em;color:#d9b56b;text-transform:uppercase}
+    #egygz-auth-gate .egygz-gate-box{width:min(360px,92vw);background:#ffffff;border:1px solid rgba(0,0,0,0.10);
+      border-radius:4px;padding:32px}
+    #egygz-auth-gate .egygz-gate-kicker{font-size:10px;letter-spacing:.3em;color:#9a9a9a;text-transform:uppercase}
     #egygz-auth-gate h2{margin:8px 0 18px;font-size:22px}
-    #egygz-auth-gate label{display:block;font-size:12px;color:#9a9aa6;margin:12px 0 6px}
-    #egygz-auth-gate input{width:100%;padding:11px 12px;border-radius:8px;border:1px solid #34343d;
-      background:#0b0b0c;color:#fff;font-size:15px;box-sizing:border-box}
-    #egygz-auth-gate button{width:100%;margin-top:18px;padding:12px;border:0;border-radius:8px;
-      background:#d9b56b;color:#101010;font-weight:700;letter-spacing:.02em;cursor:pointer}
+    #egygz-auth-gate label{display:block;font-size:12px;color:#8a8a8a;margin:12px 0 6px}
+    #egygz-auth-gate input{width:100%;padding:11px 12px;border-radius:4px;border:1px solid #e2e2e2;
+      background:#fff;color:#1f1f1f;font-size:15px;box-sizing:border-box}
+    #egygz-auth-gate button{width:100%;margin-top:18px;padding:13px;border:0;border-radius:2px;
+      background:#1f1f1f;color:#fff;font-weight:700;letter-spacing:.02em;cursor:pointer}
     #egygz-auth-gate button:disabled{opacity:.6;cursor:progress}
     #egygz-auth-gate p{min-height:18px;margin:12px 0 0;font-size:12.5px;color:#ff6b6b}`;
   document.head.appendChild(css);
@@ -110,7 +110,7 @@ export async function requireAuth(opts = {}) {
     };
 
     // session persistence: closing the tab ends the session
-    authMod.setPersistence(_auth, authMod.browserSessionPersistence).catch(() => {});
+    authMod.setPersistence(_auth, authMod.browserLocalPersistence).catch(() => {});
 
     authMod.onAuthStateChanged(_auth, (user) => {
       if (user) done(user);

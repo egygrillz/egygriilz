@@ -442,6 +442,12 @@
 
     function isVid(f) { return /\.(mp4|mov|webm|avi|m4v)$/i.test(f); }
 
+    /** assets/images/latest-designs/<folder>/<file> -> <folder> */
+    function folderOf(src) {
+      const parts = String(src).split('/');
+      return parts.length >= 2 ? parts[parts.length - 2] : '';
+    }
+
     function makeMedia(src, alt, click) {
       const box = document.createElement('div');
       box.className = 'media-box';
@@ -477,7 +483,14 @@
 
       if(click) {
         box.style.cursor = 'pointer';
-        box.addEventListener('click', () => openLB(src, isVid(src)));
+        box.addEventListener('click', () => {
+          // الصفحة الخاصة بالقطعة — كل تصميم ليه صفحته
+          if (!isVid(src)) {
+            window.location.href = 'latest-designs?item=' + encodeURIComponent(folderOf(src));
+            return;
+          }
+          openLB(src, true);
+        });
       }
       return box;
     }
@@ -610,14 +623,19 @@
     const errEl     = document.getElementById('error-state');
     const layouts   = [buildA, buildB, buildC, buildD];
 
+    /* ── ?item=<folder> — عرض تصميم واحد في صفحته ── */
+    const WANTED = new URLSearchParams(location.search).get('item') || '';
+
     fetch('assets/images/latest-designs/designs.json')
       .then(r => r.json())
       .then(async names => {
         if(!Array.isArray(names)||!names.length) throw new Error('empty');
         loadEl.style.display = 'none';
         container.style.display = 'block';
-        for(let i=0; i<names.length; i++) {
-          const folder = names[i];
+        const list = WANTED ? names.filter(n => n === WANTED) : names;
+        if (WANTED && !list.length) { loadEl.style.display='none'; errEl.style.display='block'; return; }
+        for(let i=0; i<list.length; i++) {
+          const folder = list[i];
           try {
             const txt = await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r=>r.text());
             const d = parseInfo(txt);

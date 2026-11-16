@@ -1491,7 +1491,7 @@ ${currentSettings.materials || ""}
             if (isUser) {
                 div.innerHTML = `
                     <div class="max-w-[90%] sm:max-w-[85%] md:max-w-[70%]">
-                        ${data.imageUrl ? `<img alt="Handcrafted custom grillz by EGYGRILLZ"` : ''}
+                        ${data.imageUrl ? `<img src="${data.imageUrl}" alt="Handcrafted custom grillz by EGYGRILLZ" loading="lazy" decoding="async">` : ''}
                         <div class="msg-bubble bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm">
                             ${formatMessageHtml(raw)}
                         </div>

@@ -62,21 +62,31 @@
       if(name==='messages') loadMessages();
       if(name==='schedule') loadScheduleSettings();
       if(name==='settings') loadSiteSettings();
+      if(name==='quotes') loadFrame('frame-quotes','quotes');
+      if(name==='invoices') loadFrame('frame-invoices','invoice');
       if(name==='sets'||name==='golds'||name==='silvers'||name==='diamonds'||name==='latest') loadCategory(name);
+    }
+
+    /** iframe بيتحمّل أول مرة بس — بعد كده بيفضل عايش */
+    function loadFrame(id, url){
+      var f = document.getElementById(id);
+      if(!f) return;
+      if(!f.getAttribute('src')) f.setAttribute('src', url);
+      return f;
     }
 
     function loadSiteSettings(){
       var box = document.getElementById('site-settings-box');
       if (!box || !window.SiteConfig) return;
       SiteConfig.load(db).then(function(){
-        SiteConfig.renderSettings(box, db, function(){ toast('Settings saved'); });
+        SiteConfig.renderSettings(box, db, function(){ showToast('Settings saved',''); });
       }).catch(function(){
-        SiteConfig.renderSettings(box, db, function(){ toast('Settings saved'); });
+        SiteConfig.renderSettings(box, db, function(){ showToast('Settings saved',''); });
       });
     }
 
     function pageTitle(n){
-      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
+      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',quotes:'Quotes',invoices:'Invoices',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
       return map[n]||n;
     }
   </script>
@@ -646,8 +656,8 @@
         <button class="nav-item active" data-page="overview" onclick="showPage('overview')"><i class="fas fa-chart-bar"></i> Overview</button>
         <button class="nav-item" data-page="appointments" onclick="showPage('appointments')"><i class="fas fa-calendar-check"></i> Appointments</button>
         <button class="nav-item" data-page="clients" onclick="showPage('clients')"><i class="fas fa-users"></i> Clients</button>
-        <a class="nav-item" href="quotes" style="text-decoration:none;"><i class="fas fa-file-invoice-dollar"></i> Quotes</a>
-        <a class="nav-item" href="invoice" style="text-decoration:none;"><i class="fas fa-receipt"></i> Invoices</a>
+        <button class="nav-item" data-page="quotes" onclick="showPage('quotes')"><i class="fas fa-file-invoice-dollar"></i> Quotes</button>
+        <button class="nav-item" data-page="invoices" onclick="showPage('invoices')"><i class="fas fa-receipt"></i> Invoices</button>
         <button class="nav-item" data-page="messages" onclick="showPage('messages')"><i class="fas fa-envelope"></i> Messages <span class="badge" id="unread-badge" style="display:none">0</span></button>
         <button class="nav-item" data-page="schedule" onclick="showPage('schedule')"><i class="fas fa-clock"></i> Schedule Settings</button>
         <button class="nav-item" data-page="settings" onclick="showPage('settings')"><i class="fas fa-sliders"></i> Site Settings</button>
@@ -908,6 +918,20 @@
 
         <!-- BACKUP -->
 
+
+        <div class="panel" id="panel-quotes">
+          <div class="page-header-row"><div><p class="ph-title">Quotes</p><p class="ph-sub">Build a quotation, print it, or send it to Telegram</p></div></div>
+          <div class="section-card" style="padding:0;overflow:hidden;">
+            <iframe id="frame-quotes" title="Quotes" style="width:100%;height:calc(100vh - 190px);border:0;display:block;"></iframe>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-invoices">
+          <div class="page-header-row"><div><p class="ph-title">Invoices</p><p class="ph-sub">Create and print invoices</p></div></div>
+          <div class="section-card" style="padding:0;overflow:hidden;">
+            <iframe id="frame-invoices" title="Invoices" style="width:100%;height:calc(100vh - 190px);border:0;display:block;"></iframe>
+          </div>
+        </div>
         <div class="panel" id="panel-settings">
           <div class="page-header-row"><div><p class="ph-title">Site Settings</p><p class="ph-sub">Every number and label on the website, in one place</p></div></div>
           <div class="section-card" style="padding:26px;">
@@ -1386,7 +1410,7 @@
     if(!a.email){ showToast('No email for this client','error'); return; }
     var when = (a.date || '') + (a.time ? ' at ' + a.time : '');
     if(!confirm('Open Gmail with the reminder for ' + (a.name || 'this client') + '?\n\n' + when + '\n\nSubject and message are already written. You only press Send.')) return;
-    window.open(gmailCompose(a), '_blank');
+    openGmail(gmailCompose(a));
     markReminderSent(a);
     showToast('Gmail opened - press Send there','success');
   }
@@ -1396,10 +1420,47 @@
     var list = (cache.messages && cache.messages.items) || [];
     var m = list.find(function(x){ return x.id === id; });
     if(!m) return;
-    if(!m.email){ showToast('No email for this message','error'); return; }
+    if(!m.email){ showToast('No email — save the client with an email first','error'); return; }
     if(!confirm('Open Gmail with a reply to ' + (m.name || 'this client') + '?\n\nSubject and message are already written. You only press Send.')) return;
-    window.open(gmailReply(m), '_blank');
+    openGmail(gmailReply(m));
     showToast('Gmail opened - press Send there','success');
+  }
+
+
+  /* ══ EMAIL HELPERS — one place, one style ══ */
+  var STUDIO = {
+    name: 'EGYGRILLZ',
+    tag: 'Custom Grillz Studio - Cairo',
+    addr: 'Inside Smart Smile Clinics, 38 Abou Bakr EL-Sdeek, Heliopolis, Floor 5, Apt 504, Cairo',
+    site: 'https://egygrillz.com'
+  };
+
+  /** Build a Gmail compose URL. Never fails, never needs a server. */
+  function gmailUrl(to, subject, body){
+    return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1'
+      + '&to='   + encodeURIComponent(to || '')
+      + '&su='   + encodeURIComponent(subject || '')
+      + '&body=' + encodeURIComponent(body || '');
+  }
+
+  /** Universal mailto fallback — works everywhere, no Gmail needed. */
+  function mailtoUrl(to, subject, body){
+    return 'mailto:' + encodeURIComponent(to || '')
+      + '?subject=' + encodeURIComponent(subject || '')
+      + '&body=' + encodeURIComponent(body || '');
+  }
+
+  /** Open Gmail in a way the browser never blocks.
+   *  window.open() after a confirm() is treated as a pop-up and killed by
+   *  every modern browser — that is why the button looked dead. */
+  function openGmail(url){
+    var w = window.open(url, '_blank');
+    if (w) { w.focus && w.focus(); return; }
+    // pop-up blocked → go there in this tab instead
+    var a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ if(!w) location.href = url; }, 400);
   }
 
   /** Reminder email — fully composed, press Send */
@@ -1434,7 +1495,7 @@
     + 'Kind regards,\n'
     + 'EGYGRILLZ\n'
     + 'Custom Grillz Studio - Cairo';
-    return 'https://mail.google.com/mail/?view=cm&fs=1'
+    return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1'
       + '&to='  + encodeURIComponent(a.email || '')
       + '&su='  + encodeURIComponent(subj)
       + '&body=' + encodeURIComponent(body);
@@ -1464,7 +1525,7 @@
     + 'Kind regards,\n'
     + 'EGYGRILLZ\n'
     + 'Custom Grillz Studio - Cairo';
-    return 'https://mail.google.com/mail/?view=cm&fs=1'
+    return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1'
       + '&to='  + encodeURIComponent(m.email || '')
       + '&su='  + encodeURIComponent(subj)
       + '&body=' + encodeURIComponent(body);
@@ -1987,9 +2048,12 @@
 
   var toastTimer;
   function showToast(msg,type){
-    var t=document.getElementById('toast');t.textContent=msg;
-    t.className='toast show '+(type||'');clearTimeout(toastTimer);
-    if(type!=='') toastTimer=setTimeout(function(){t.classList.remove('show');},3500);
+    var t=document.getElementById('toast');
+    if(!t) return;
+    t.textContent=msg;
+    t.className='toast show '+(type||'');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ t.classList.remove('show'); }, 3000);
   }
 </script>
 
