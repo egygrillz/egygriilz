@@ -150,6 +150,9 @@
 /calculator
   Content-Type: text/html; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
+  X-Robots-Tag: noindex, nofollow, noarchive
+/calculator.html
+  X-Robots-Tag: noindex, nofollow, noarchive
 
 # ── Shared scripts & seed catalogue: fast edge cache with background revalidation ──
 /assets/calc-engine.js
