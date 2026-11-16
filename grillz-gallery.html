@@ -62,15 +62,23 @@
        Pattern cycles: A(2/3+1/3) → B(1/3+2/3) → C(3×equal) → repeat
        Last row (or single leftover) expands to 100vh
     ══════════════════════════════════════ */
-    .gallery-wrap { padding:8px 0 0; }
+    .gallery-wrap {
+      max-width:1320px; margin:0 auto; padding:56px 28px 80px;
+      display:grid; gap:34px;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+    }
 
-    .ed-row { display:grid; gap:24px; margin-bottom:24px; padding:0 24px; }
+    .ed-row { display:grid; gap:34px; margin:0; padding:0; grid-template-columns:1fr; }
     .ed-row.layout-a { grid-template-columns:2fr 1fr; }
     .ed-row.layout-b { grid-template-columns:1fr 2fr; }
     .ed-row.layout-c { grid-template-columns:1fr 1fr 1fr; }
 
     /* PANEL */
-    .ed-panel { position:relative; overflow:hidden; cursor:pointer; background:#e8e5e1; }
+    .ed-panel {
+      position:relative; overflow:hidden; cursor:pointer; background:#e8e5e1;
+      border:1px solid #e6e3df;
+    }
+    .ed-panel:hover { border-color:#c9c5be; }
 
     /* Standard aspect ratios */
     .ed-row.layout-a .ed-panel:first-child  { aspect-ratio:4/3; }
@@ -80,19 +88,19 @@
     .ed-row.layout-c .ed-panel             { aspect-ratio:1/1; }
 
     /* Last row in the current batch gets 100vh */
-    .ed-row.is-last-row .ed-panel { aspect-ratio:3/2; max-height:78vh; }
+    .ed-row.is-last-row .ed-panel { aspect-ratio:4/5; }
 
     /* Single leftover panels also get 100vh */
-    .ed-row.layout-single .ed-panel { aspect-ratio:3/2 !important; height:auto; max-height:78vh; }
+    .ed-row.layout-single .ed-panel { aspect-ratio:4/5 !important; height:auto; }
     .ed-row.layout-single { grid-template-columns:1fr; }
 
     .ed-panel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; opacity:1; transition:opacity 0.9s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
     .ed-panel img { opacity:0.001; }
     .ed-panel img:first-child, .ed-panel img.active { opacity:1; }
     .ed-panel:hover img.active { transform:scale(1.04); }
-    .ed-panel::after { content:''; position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,0.58) 0%,rgba(0,0,0,0.1) 45%,transparent 70%); z-index:2; pointer-events:none; transition:opacity 0.4s; }
+    .ed-panel::after { content:''; position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,0.62) 0%,rgba(0,0,0,0.12) 42%,transparent 62%); z-index:2; pointer-events:none; transition:opacity 0.4s; }
 
-    .ed-panel-info { position:absolute; bottom:0; left:0; right:0; padding:40px 28px 26px; z-index:3; pointer-events:none; }
+    .ed-panel-info { position:absolute; bottom:0; left:0; right:0; padding:46px 24px 22px; z-index:3; pointer-events:none; }
     .ed-panel-info .name { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(15px,1.7vw,22px); letter-spacing:0.4px; color:#fff; line-height:1.3; margin-bottom:3px; }
     .ed-panel-info .desc { font-size:12px; color:rgba(255,255,255,0.78); line-height:1.5; margin-bottom:6px; max-height:60px; overflow:hidden; opacity:1; }
     
@@ -108,6 +116,7 @@
     /* ── MOBILE ── */
     @media(max-width:680px) {
       .gallery-wrap { padding-bottom:0; }
+      .gallery-wrap { grid-template-columns:1fr; padding:32px 16px 56px; gap:22px; }
       .ed-row.layout-a, .ed-row.layout-b { grid-template-columns:1fr 1fr; }
       .ed-row.layout-a .ed-panel:first-child,
       .ed-row.layout-a .ed-panel:last-child,
@@ -118,7 +127,7 @@
       .ed-row.layout-c .ed-panel:nth-child(3) { grid-column:1/-1; aspect-ratio:16/7; }
       /* last-row and single on mobile: use 60vw height instead */
       .ed-row.is-last-row .ed-panel,
-      .ed-row.layout-single .ed-panel { aspect-ratio:3/2 !important; height:auto !important; max-height:none; }
+      .ed-row.layout-single .ed-panel { aspect-ratio:4/5 !important; height:auto !important; }
       .ed-panel-info .name { font-size:12px; }
       .ed-panel-info .desc { max-height:40px; opacity:1; font-size:10px; }
     }

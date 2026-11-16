@@ -930,6 +930,50 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- تشخيص: أي حاجة بتفشل بتظهر هنا على الشاشة، مش في الكونسول بس -->
+<div id="diag" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:99998;
+     background:#1a1a1a;color:#fff;font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;
+     padding:12px 16px;max-height:38vh;overflow:auto;">
+  <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;">
+    <strong style="letter-spacing:1px">DIAGNOSTIC</strong>
+    <span>
+      <a href="#" id="diag-copy" style="color:#9ec9ff">copy</a>
+      &nbsp;·&nbsp;
+      <a href="#" id="diag-close" style="color:#9ec9ff">hide</a>
+    </span>
+  </div>
+  <div id="diag-body"></div>
+</div>
+<script>
+(function(){
+  var box = document.getElementById('diag'), body = document.getElementById('diag-body');
+  var lines = [];
+  function push(kind, msg){
+    lines.push('[' + kind + '] ' + msg);
+    if (!box) return;
+    box.style.display = 'block';
+    body.textContent = lines.slice(-14).join('\n');
+  }
+  window.diag = push;
+  window.addEventListener('error', function(e){
+    push('error', (e.message || 'error') + (e.filename ? '  @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var r = e.reason || {};
+    push('promise', (r.code ? r.code + ' — ' : '') + (r.message || String(r)));
+  });
+  document.addEventListener('DOMContentLoaded', function(){
+    var c = document.getElementById('diag-close');
+    if (c) c.addEventListener('click', function(ev){ ev.preventDefault(); box.style.display='none'; });
+    var cp = document.getElementById('diag-copy');
+    if (cp) cp.addEventListener('click', function(ev){
+      ev.preventDefault();
+      try { navigator.clipboard.writeText(lines.join('\n')); cp.textContent = 'copied'; } catch(e){}
+    });
+  });
+})();
+</script>
+
 <!-- Firebase SDK -->
 <script type="module">
 import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp }
@@ -1016,6 +1060,9 @@ let accStatusFilter = 'all';
    INIT
 ══════════════════════════════════════════════════ */
 async function initApp() {
+  window.diag && window.diag('boot', 'initApp started');
+  const appEl0 = document.getElementById('app');
+  if (appEl0) appEl0.style.display = 'block';   /* الصفحة تظهر فوراً */
   /* #app مخفي في CSS لحد ما الجلسة تتأكد — من غير السطر ده الصفحة تفضل فاضية */
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'block';
@@ -1032,7 +1079,12 @@ async function initApp() {
   setupResetBtn();
   setupClientSearchAutocomplete();
   setupItemSearchAutocomplete();
-  await loadClients();
+  window.diag && window.diag('db', 'loading clients…');
+  try { await loadClients(); window.diag && window.diag('db', 'clients OK'); }
+  catch (dbErr) {
+    window.diag && window.diag('db', 'FAILED: ' + (dbErr && (dbErr.code || dbErr.message)));
+    throw dbErr;
+  }
   loadAccountingTab();
   setDefaultDates();
   updatePreview();
@@ -1047,6 +1099,7 @@ try {
   EGYGZ_USER = await requireAuth();
 } catch (authErr) {
   console.error('[invoice] auth gate failed', authErr);
+  window.diag && window.diag('auth', 'FAILED: ' + (authErr && (authErr.code || authErr.message)));
   showToast('Sign-in could not load. Refresh the page.', 'error-toast');
   throw authErr;
 }
@@ -1980,6 +2033,7 @@ try {
   await initApp();
 } catch (bootErr) {
   console.error('[invoice] boot failed', bootErr);
+  window.diag && window.diag('boot', 'FAILED: ' + (bootErr && (bootErr.code || bootErr.message)));
   const a = document.getElementById('app');
   if (a) a.style.display = 'block';   /* الصفحة تظهر حتى لو حاجة وقعت */
   showToast('Some parts failed to load. Refresh to try again.', 'error-toast');
