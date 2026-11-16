@@ -120,8 +120,22 @@
 
   let S = deepClone(DEFAULTS);
   let _customServiceKeys = new Set();
+  const _subs = [];
 
   function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function emitChange() {
+    _subs.forEach((fn) => { try { fn(S); } catch (e) {} });
+  }
+
+  function onChange(fn) {
+    if (typeof fn !== 'function') return function () {};
+    _subs.push(fn);
+    return function () {
+      const idx = _subs.indexOf(fn);
+      if (idx !== -1) _subs.splice(idx, 1);
+    };
+  }
 
   function apply(saved) {
     if (!saved || typeof saved !== 'object') return S;
@@ -132,8 +146,24 @@
       const d = DEFAULTS[key];
       const v = saved[key];
       if (v === undefined || v === null) continue;
-      if (d && typeof d === 'object' && !Array.isArray(d)) {
-        S[key] = Object.assign({}, d, typeof v === 'object' ? v : {});
+      if (key === 'goldKarat' && typeof v === 'object' && !Array.isArray(v)) {
+        const nextK = Object.assign({}, deepClone(d), deepClone(S.goldKarat || {}));
+        for (const kk of Object.keys(v)) {
+          const kv = v[kk];
+          if (!kv || typeof kv !== 'object') continue;
+          const base = nextK[kk] || d[kk] || { purity: 0.75, margin: 2.8 };
+          const pur = Number(kv.purity);
+          const mar = Number(kv.margin);
+          nextK[kk] = {
+            purity: Number.isFinite(pur) && pur > 0 ? pur : base.purity,
+            margin: Number.isFinite(mar) && mar > 0 ? mar : base.margin,
+          };
+        }
+        S.goldKarat = nextK;
+      } else if (d && typeof d === 'object' && !Array.isArray(d)) {
+        if (typeof v === 'object' && !Array.isArray(v)) {
+          S[key] = Object.assign({}, d, S[key] || {}, v);
+        }
       } else {
         S[key] = v;
       }
@@ -142,20 +172,24 @@
       'coveragePrice', 'plating', 'enamel', 'engraving', 'anodize', 'servicePrices',
       'timelinePct', 'moldFlat', 'goldGramsPerTooth']) {
       const m = S[key];
+      const dm = DEFAULTS[key] || {};
       if (!m || typeof m !== 'object') continue;
       for (const k of Object.keys(m)) {
         if (m[k] === null || m[k] === '') {
           if (key === 'accentPrice' || key === 'fullPrice') m[k] = null;
+          else if (dm[k] !== undefined) m[k] = dm[k];
           continue;
         }
         const n = Number(m[k]);
-        if (!Number.isNaN(n)) m[k] = n;
+        if (Number.isFinite(n)) m[k] = n;
+        else if (dm[k] !== undefined) m[k] = dm[k];
       }
     }
     ['goldPrice', 'goldCastFee', 'goldWeightFactor', 'barsStonesPerTooth', 'roundTo', 'depositPct'].forEach((k) => {
       const n = Number(S[k]);
-      S[k] = Number.isNaN(n) ? DEFAULTS[k] : n;
+      S[k] = Number.isFinite(n) ? n : DEFAULTS[k];
     });
+    emitChange();
     return S;
   }
 
@@ -164,6 +198,7 @@
   const reset = () => {
     S = deepClone(DEFAULTS);
     _customServiceKeys = new Set();
+    emitChange();
     return S;
   };
 
@@ -204,8 +239,24 @@
     return material !== 'chrome' && material !== 'titanium';
   }
 
-  /** Full price breakdown for one design line. Returns a new object. */
-  function calculateLine(input) {
+  /** Sanitize tooth IDs array (e.g. ['UR3','UR2','UR1','UL1','UL2','UL3']). */
+  function cleanToothIds(arr) {
+    if (!Array.isArray(arr)) return [];
+    const seen = new Set();
+    const out = [];
+    arr.forEach((id) => {
+      const s = String(id || '').trim().toUpperCase().slice(0, 6);
+      if (s && /^[UL][RL][1-8]$/.test(s) && !seen.has(s)) {
+        seen.add(s);
+        out.push(s);
+      }
+    });
+    return out;
+  }
+
+  /** Price breakdown for a single uniform tooth group / line. */
+  function calculateSingleGroup(input, maxTeeth) {
+    const cap = maxTeeth || 16;
     const line = Object.assign({
       teeth: 6,
       material: 'chrome',
@@ -214,23 +265,39 @@
       enamel: 'none',
       engraving: 'none',
       anodize: 'none',
-    }, input);
+    }, input || {});
 
-    line.teeth = Math.max(1, Math.min(16, Number(line.teeth) || 6));
+    delete line.groups;
+    delete line.isMixed;
+    delete line.mixedMaterials;
+
+    const tids = cleanToothIds(line.toothIds);
+    if (tids.length) line.toothIds = tids;
+    else delete line.toothIds;
+
+    line.level = String(line.level || '1');
+    if (S.designPct[line.level] === undefined && line.level !== '0.5') line.level = '1';
+    line.teeth = Math.max(1, Math.min(cap, Math.round(Number(line.teeth) || (tids.length || 6))));
+    if (line.material === 'gold') {
+      line.karat = String(line.karat || '18');
+      if (!S.goldKarat[line.karat]) line.karat = '18';
+      line.goldPrice = Number(line.goldPrice || S.goldPrice || 0);
+    }
     line.base = basePerTooth(line);
 
     const isBars = String(line.level) === '0.5';
     line.materialTotal = isBars ? line.base * 0.5 * line.teeth : line.base * line.teeth;
 
     const pct = Number(S.designPct[line.level] || 0);
-    line.designPct = isBars ? 0 : pct;
-    line.designCost = isBars ? 0 : line.materialTotal * (pct / 100);
+    line.designPct = pct;
+    line.designCost = line.materialTotal * (pct / 100);
 
     // Stones (precious metals only: Silver 925 & Gold)
     line.stoneCost = 0;
     line.stoneDetail = 'none';
     if (allowsStones(line.material)) {
       if (line.accent && Number(line.accent.count) > 0) {
+        const count = Math.max(1, Math.round(Number(line.accent.count) || 1));
         const type = line.accent.type || 'cz';
         const setting = line.accent.setting || 'flush';
         let unit = S.accentPrice[type];
@@ -238,14 +305,18 @@
           unit = Number(line.accent.customPrice !== undefined ? line.accent.customPrice : line.accent.price) || 0;
         }
         const sp = Number(S.settingPrice[setting] || 0);
+        line.accent = Object.assign({}, line.accent, { count, type, setting });
         line.stoneDetail = 'accent';
         line.accentUnit = Number(unit);
         line.settingUnit = sp;
-        line.stoneCost = Number(line.accent.count) * (Number(unit) + sp);
+        line.stoneCost = count * (Number(unit) + sp);
       } else if (line.full && (line.full.bars || isBars)) {
+        delete line.accent;
+        line.full = { bars: true };
         line.stoneDetail = 'bars';
         line.stoneCost = line.teeth * Number(S.barsStonesPerTooth || 0);
       } else if (line.full) {
+        delete line.accent;
         const type = line.full.type || 'moissanite';
         const cov = line.full.coverage || 'standardpave';
         let unit = S.fullPrice[type];
@@ -253,30 +324,243 @@
           unit = Number(line.full.customPrice !== undefined ? line.full.customPrice : line.full.price) || 0;
         }
         const cp = Number(S.coveragePrice[cov] || 0);
+        line.full = Object.assign({}, line.full, { type, coverage: cov });
         line.stoneDetail = 'full';
         line.fullUnit = Number(unit);
         line.coverageUnit = cp;
         line.stoneCost = line.teeth * (Number(unit) + cp);
+      } else {
+        delete line.accent;
+        delete line.full;
       }
+    } else {
+      delete line.accent;
+      delete line.full;
     }
 
     // Per-tooth finishes
+    line.plating = line.plating || 'none';
+    line.enamel = line.enamel || 'none';
+    line.engraving = line.engraving || 'none';
+    line.anodize = line.material === 'titanium' ? (line.anodize || 'none') : 'none';
+
     line.platingCost = Number(S.plating[line.plating] || 0) * line.teeth;
     line.enamelCost = Number(S.enamel[line.enamel] || 0) * line.teeth;
     line.engravingCost = Number(S.engraving[line.engraving] || 0) * line.teeth;
     line.anodizeCost = line.material === 'titanium' ? Number(S.anodize[line.anodize] || 0) * line.teeth : 0;
 
-    line.subtotal = money(
+    const rawTotal =
       line.materialTotal +
       line.designCost +
       line.stoneCost +
       line.platingCost +
       line.enamelCost +
       line.engravingCost +
-      line.anodizeCost
+      line.anodizeCost;
+
+    line.subtotal = money(rawTotal);
+    return { line, rawTotal };
+  }
+
+  /** Merge parent set defaults into a child tooth-group without clobbering overrides. */
+  function mergeGroupDefaults(parent, grp) {
+    const p = parent || {};
+    const g = Object.assign({}, grp || {});
+    if (!g.material) g.material = p.material || 'chrome';
+    if (g.material === 'gold') {
+      if (!g.karat) g.karat = (p.material === 'gold' && p.karat) ? p.karat : '18';
+      if (!g.goldPrice && p.goldPrice) g.goldPrice = p.goldPrice;
+      if (g.goldCastFee === undefined && p.goldCastFee !== undefined) g.goldCastFee = p.goldCastFee;
+      if (g.goldWeightFactor === undefined && p.goldWeightFactor !== undefined) g.goldWeightFactor = p.goldWeightFactor;
+    }
+    if (g.plating === undefined && p.plating && p.plating !== 'mixed') g.plating = p.plating;
+    if (g.enamel === undefined && p.enamel && p.enamel !== 'mixed') g.enamel = p.enamel;
+    if (g.engraving === undefined && p.engraving && p.engraving !== 'mixed') g.engraving = p.engraving;
+    if (g.anodize === undefined && g.material === 'titanium' && p.anodize && p.anodize !== 'mixed') g.anodize = p.anodize;
+    if (g.label) g.label = String(g.label).trim().slice(0, 40);
+    else delete g.label;
+    delete g.name;
+    return g;
+  }
+
+  function commonField(groups, key, fallback) {
+    if (!groups.length) return fallback;
+    const first = groups[0][key] !== undefined ? groups[0][key] : fallback;
+    for (let i = 1; i < groups.length; i++) {
+      const cur = groups[i][key] !== undefined ? groups[i][key] : fallback;
+      if (String(cur) !== String(first)) return 'mixed';
+    }
+    return first;
+  }
+
+  /**
+   * Full price breakdown for one set/design line.
+   * Supports BOTH:
+   *   1) Uniform set: { name, material, karat, goldPrice, teeth, level, accent|full, plating, enamel, engraving, anodize }
+   *   2) Mixed-teeth set: { name, material?, karat?, goldPrice?, groups: [ { teeth, level, accent|full, plating, ... }, ... ] }
+   */
+  function calculateLine(input) {
+    const src = input || {};
+    const rawGroups = Array.isArray(src.groups) ? src.groups.filter((g) => g && typeof g === 'object') : [];
+
+    // Single-group array collapses cleanly into a uniform line
+    if (rawGroups.length === 1) {
+      const merged = mergeGroupDefaults(src, rawGroups[0]);
+      if (src.name) merged.name = String(src.name).trim().slice(0, 40);
+      else if (rawGroups[0].label) merged.name = String(rawGroups[0].label).trim().slice(0, 40);
+      if (!merged.toothIds && Array.isArray(src.toothIds)) merged.toothIds = src.toothIds;
+      return calculateSingleGroup(merged, 32).line;
+    }
+
+    // Standard uniform line (100% backward-compatible)
+    if (rawGroups.length === 0) {
+      return calculateSingleGroup(src, src.toothIds && src.toothIds.length > 16 ? 32 : 16).line;
+    }
+
+    // Mixed-teeth set (2+ tooth groups inside one single set)
+    let rawSum = 0;
+    const pricedGroups = rawGroups.map((g) => {
+      const res = calculateSingleGroup(mergeGroupDefaults(src, g), 16);
+      rawSum += res.rawTotal;
+      return res.line;
+    });
+
+    const sum = (k) => pricedGroups.reduce((acc, g) => acc + (Number(g[k]) || 0), 0);
+    const teeth = sum('teeth');
+    const materialTotal = sum('materialTotal');
+    const designCost = sum('designCost');
+    const stoneCost = sum('stoneCost');
+    const platingCost = sum('platingCost');
+    const enamelCost = sum('enamelCost');
+    const engravingCost = sum('engravingCost');
+    const anodizeCost = sum('anodizeCost');
+
+    const matKey = (g) => g.material === 'gold' ? ('gold:' + (g.karat || '18')) : g.material;
+    const firstMatKey = matKey(pricedGroups[0]);
+    const mixedMaterials = pricedGroups.some((g) => matKey(g) !== firstMatKey);
+    const firstGold = pricedGroups.find((g) => g.material === 'gold');
+
+    const allToothIds = cleanToothIds(
+      pricedGroups.reduce((arr, g) => arr.concat(g.toothIds || []), []).concat(src.toothIds || [])
     );
 
-    return line;
+    const level = commonField(pricedGroups, 'level', '1');
+    const designPct = level !== 'mixed'
+      ? Number(pricedGroups[0].designPct || 0)
+      : (materialTotal > 0 ? Math.round((designCost / materialTotal) * 1000) / 10 : 0);
+
+    const out = {
+      name: src.name ? String(src.name).trim().slice(0, 40) : '',
+      isMixed: true,
+      mixedMaterials,
+      material: pricedGroups[0].material,
+      teeth,
+      level,
+      base: teeth > 0 ? materialTotal / teeth : 0,
+      materialTotal,
+      designPct,
+      designCost,
+      stoneDetail: stoneCost > 0 ? 'mixed' : 'none',
+      stoneCost,
+      plating: commonField(pricedGroups, 'plating', 'none'),
+      platingCost,
+      enamel: commonField(pricedGroups, 'enamel', 'none'),
+      enamelCost,
+      engraving: commonField(pricedGroups, 'engraving', 'none'),
+      engravingCost,
+      anodize: commonField(pricedGroups, 'anodize', 'none'),
+      anodizeCost,
+      groups: pricedGroups,
+      subtotal: money(rawSum),
+    };
+    if (firstGold) {
+      out.karat = firstGold.karat || '18';
+      out.goldPrice = Number(firstGold.goldPrice || S.goldPrice || 0);
+    }
+    if (allToothIds.length) out.toothIds = allToothIds;
+    return out;
+  }
+
+  /** Strip runtime/undefined keys from a group or line for safe Firestore/JSON storage. */
+  function cleanGroupSpec(g) {
+    if (!g || typeof g !== 'object') return null;
+    const out = {
+      material: g.material || 'chrome',
+      teeth: Math.max(1, Math.min(32, Math.round(Number(g.teeth) || 1))),
+      level: String(g.level && g.level !== 'mixed' ? g.level : '1'),
+      plating: (g.plating && g.plating !== 'mixed') ? g.plating : 'none',
+      enamel: (g.enamel && g.enamel !== 'mixed') ? g.enamel : 'none',
+      engraving: (g.engraving && g.engraving !== 'mixed') ? g.engraving : 'none',
+      anodize: g.material === 'titanium' && g.anodize && g.anodize !== 'mixed' ? g.anodize : 'none',
+    };
+    if (g.label) out.label = String(g.label).trim().slice(0, 40);
+    if (out.material === 'gold') {
+      out.karat = String(g.karat || '18');
+      const gp = Number(g.goldPrice || S.goldPrice || 0);
+      if (gp > 0) out.goldPrice = gp;
+    }
+    if (allowsStones(out.material)) {
+      if (g.accent && Number(g.accent.count) > 0) {
+        const a = {
+          count: Math.max(1, Math.round(Number(g.accent.count) || 1)),
+          type: g.accent.type || 'cz',
+          setting: g.accent.setting || 'flush',
+        };
+        const ap = g.accent.customPrice !== undefined ? g.accent.customPrice : g.accent.price;
+        if (ap !== undefined && ap !== null && Number.isFinite(Number(ap))) {
+          a.price = Number(ap);
+          a.customPrice = Number(ap);
+        }
+        out.accent = a;
+      } else if (g.full && (g.full.bars || out.level === '0.5')) {
+        out.full = { bars: true };
+      } else if (g.full) {
+        const f = {
+          type: g.full.type || 'moissanite',
+          coverage: g.full.coverage || 'standardpave',
+        };
+        const fp = g.full.customPrice !== undefined ? g.full.customPrice : g.full.price;
+        if (fp !== undefined && fp !== null && Number.isFinite(Number(fp))) {
+          f.price = Number(fp);
+          f.customPrice = Number(fp);
+        }
+        out.full = f;
+      }
+    }
+    const tids = cleanToothIds(g.toothIds);
+    if (tids.length) out.toothIds = tids;
+    return out;
+  }
+
+  function cleanLineSpec(line) {
+    if (!line || typeof line !== 'object') return null;
+    if (Array.isArray(line.groups) && line.groups.length > 1) {
+      const gs = line.groups.map((g) => cleanGroupSpec(mergeGroupDefaults(line, g))).filter(Boolean);
+      const out = {
+        material: gs[0] ? gs[0].material : (line.material || 'chrome'),
+        teeth: gs.reduce((s, g) => s + g.teeth, 0),
+        level: 'mixed',
+        isMixed: true,
+        groups: gs,
+      };
+      if (line.name) out.name = String(line.name).trim().slice(0, 40);
+      const fg = gs.find((g) => g.material === 'gold');
+      if (fg) {
+        out.karat = fg.karat;
+        if (fg.goldPrice) out.goldPrice = fg.goldPrice;
+      }
+      const tids = cleanToothIds(line.toothIds);
+      if (tids.length) out.toothIds = tids;
+      return out;
+    }
+    const base = Array.isArray(line.groups) && line.groups.length === 1
+      ? mergeGroupDefaults(line, line.groups[0])
+      : line;
+    const single = cleanGroupSpec(base);
+    if (!single) return null;
+    delete single.label;
+    if (line.name) single.name = String(line.name).trim().slice(0, 40);
+    return single;
   }
 
   /** Calculate one studio service item */
@@ -354,17 +638,35 @@
   }
 
   /** Plain-text breakdown, ready for a PDF, email, or WhatsApp */
-  function describeOrder(order) {
+  function describeOrder(order, opts) {
+    const o = opts || {};
     const out = [];
     (order.lines || []).forEach((l, i) => {
-      out.push(`DESIGN ${i + 1}: ${lineLabel(l)}`);
-      out.push(`  Material: ${L.material[l.material] || l.material} x ${l.teeth} teeth = ${fmt(l.materialTotal)} ${S.currency}`);
-      out.push(`  Design:   ${l.level === '0.5' ? 'Bars (0.5x base, no surcharge)' : `+${l.designPct}% = ${fmt(l.designCost)} ${S.currency}`}`);
-      if (l.stoneCost) out.push(`  Stones:   ${fmt(l.stoneCost)} ${S.currency}`);
-      if (l.platingCost) out.push(`  Plating:  ${L.plating[l.plating]} = ${fmt(l.platingCost)} ${S.currency}`);
-      if (l.enamelCost) out.push(`  Enamel:   ${L.enamel[l.enamel]} = ${fmt(l.enamelCost)} ${S.currency}`);
-      if (l.engravingCost) out.push(`  Engraving: ${L.engraving[l.engraving]} = ${fmt(l.engravingCost)} ${S.currency}`);
-      if (l.anodizeCost) out.push(`  Anodize:  ${L.anodize[l.anodize]} = ${fmt(l.anodizeCost)} ${S.currency}`);
+      const title = l.name ? `${l.name} — ${lineLabel(l)}` : lineLabel(l);
+      out.push(`DESIGN ${i + 1}: ${title}`);
+      if (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) {
+        l.groups.forEach((g, gi) => {
+          const gName = g.label ? `${g.label}: ` : '';
+          out.push(`  [${gi + 1}] ${gName}${groupLabel(g, { includeMaterial: !!l.mixedMaterials })} = ${fmt(g.subtotal)} ${S.currency}`);
+        });
+        out.push(`  Breakdown: Material ${fmt(l.materialTotal)}`
+          + (l.designCost ? ` + Complexity ${fmt(l.designCost)}` : '')
+          + (l.stoneCost ? ` + Stones ${fmt(l.stoneCost)}` : '')
+          + (l.platingCost ? ` + Plating ${fmt(l.platingCost)}` : '')
+          + (l.enamelCost ? ` + Enamel ${fmt(l.enamelCost)}` : '')
+          + (l.engravingCost ? ` + Engraving ${fmt(l.engravingCost)}` : '')
+          + (l.anodizeCost ? ` + Anodize ${fmt(l.anodizeCost)}` : '')
+          + ` ${S.currency}`);
+      } else {
+        const matTitle = l.material === 'gold' ? `Gold ${l.karat || '18'}K` : (L.material[l.material] || l.material);
+        out.push(`  Material: ${matTitle} x ${l.teeth} ${l.teeth === 1 ? 'tooth' : 'teeth'} = ${fmt(l.materialTotal)} ${S.currency}`);
+        out.push(`  Design:   ${l.level === '0.5' && !l.designPct ? 'Bars (0.5x base, no surcharge)' : l.level === '0.5' ? `Bars (0.5x base, +${l.designPct}%) = ${fmt(l.designCost)} ${S.currency}` : `+${l.designPct}% = ${fmt(l.designCost)} ${S.currency}`}`);
+        if (l.stoneCost) out.push(`  Stones:   ${fmt(l.stoneCost)} ${S.currency}`);
+        if (l.platingCost) out.push(`  Plating:  ${L.plating[l.plating] || l.plating} = ${fmt(l.platingCost)} ${S.currency}`);
+        if (l.enamelCost) out.push(`  Enamel:   ${L.enamel[l.enamel] || l.enamel} = ${fmt(l.enamelCost)} ${S.currency}`);
+        if (l.engravingCost) out.push(`  Engraving: ${L.engraving[l.engraving] || l.engraving} = ${fmt(l.engravingCost)} ${S.currency}`);
+        if (l.anodizeCost) out.push(`  Anodize:  ${L.anodize[l.anodize] || l.anodize} = ${fmt(l.anodizeCost)} ${S.currency}`);
+      }
       out.push(`  Subtotal: ${fmt(l.subtotal)} ${S.currency}`);
       out.push('');
     });
@@ -385,15 +687,70 @@
       out.push(`Deposit (${order.depositPct}%): ${fmt(order.deposit)} ${S.currency}`);
       out.push(`Balance before delivery: ${fmt(order.balance)} ${S.currency}`);
     }
+    if (o.includeCode) {
+      try {
+        const code = typeof o.includeCode === 'string' ? o.includeCode : encodeCode(order);
+        if (code) { out.push(''); out.push(`Quote Code: ${code}`); }
+      } catch (e) {}
+    }
     return out.join('\n');
   }
 
   const L = LABELS;
   const fmt = (n) => String(money(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
+  const SHORT_LEVEL = {
+    '0.5': 'L0.5 Bars',
+    '1': 'L1 Simple',
+    '2': 'L2 Moderate',
+    '3': 'L3 Detailed',
+    '4': 'L4 Complex',
+    '5': 'L5 Intricate',
+    '6': 'L6 Master',
+  };
+
+  function groupLabel(g, opts) {
+    if (!g) return '';
+    const o = opts || {};
+    const tWord = Number(g.teeth) === 1 ? '1 tooth' : `${g.teeth} teeth`;
+    const parts = [];
+    if (o.includeMaterial) {
+      const m = g.material === 'gold' ? `Gold ${g.karat || '18'}K` : (L.material[g.material] || g.material);
+      parts.push(`${tWord} ${m}`);
+    } else {
+      parts.push(tWord);
+    }
+    parts.push(SHORT_LEVEL[String(g.level)] || L.level[g.level] || ('L' + g.level));
+    if (g.accent && g.accent.count) parts.push(`${g.accent.count}x ${L.accentType[g.accent.type] || g.accent.type}`.trim());
+    else if (g.full && (g.full.bars || String(g.level) === '0.5')) parts.push('Full iced bars');
+    else if (g.full) parts.push(`Full iced ${L.accentType[g.full.type] || g.full.type}`.trim());
+    if (g.plating && g.plating !== 'none') parts.push(L.plating[g.plating] || g.plating);
+    if (g.enamel && g.enamel !== 'none') parts.push('Enamel ' + (L.enamel[g.enamel] || g.enamel));
+    if (g.engraving && g.engraving !== 'none') parts.push('Engraving ' + (L.engraving[g.engraving] || g.engraving));
+    if (g.anodize && g.anodize !== 'none' && g.material === 'titanium') parts.push('Anodize ' + (L.anodize[g.anodize] || g.anodize));
+    return parts.join(' · ');
+  }
+
   function lineLabel(line) {
+    if (!line) return '';
+    if (Array.isArray(line.groups) && line.groups.length > 1) {
+      const gs = line.groups;
+      const totalT = Number(line.teeth) || gs.reduce((s, g) => s + (Number(g.teeth) || 0), 0);
+      const mk = (g) => g.material === 'gold' ? `Gold ${g.karat || '18'}K` : (L.material[g.material] || g.material);
+      const firstMat = mk(gs[0]);
+      const mixedMat = gs.some((g) => mk(g) !== firstMat);
+      const head = mixedMat
+        ? `Mixed Materials / ${totalT} teeth`
+        : `${firstMat} / ${totalT} teeth (Mixed)`;
+      const detail = gs.map((g) => {
+        const lbl = g.label ? `${g.label}: ` : '';
+        return lbl + groupLabel(g, { includeMaterial: mixedMat });
+      }).join(' + ');
+      return `${head} — ${detail}`;
+    }
     const mat = line.material === 'gold' ? `Gold ${line.karat || '18'}K` : (L.material[line.material] || line.material);
-    const bits = [`${mat} / ${line.teeth} teeth / ${L.level[line.level] || line.level}`];
+    const tWord = Number(line.teeth) === 1 ? '1 tooth' : `${line.teeth} teeth`;
+    const bits = [`${mat} / ${tWord} / ${L.level[line.level] || line.level}`];
     if (line.accent && line.accent.count) bits.push(`${line.accent.count}x ${L.accentType[line.accent.type] || ''}`.trim());
     if (line.full && (line.full.bars || String(line.level) === '0.5')) bits.push('Full iced on bars');
     else if (line.full) bits.push(`Full iced ${L.accentType[line.full.type] || ''}`.trim());
@@ -404,9 +761,1053 @@
     return bits.join(' · ');
   }
 
-  /* ─────────────────────────── persistence ─────────────────────────── */
+  /* ───────────── universal compact transfer code (EGZ- / EGZ1:) ─────────────
+   *
+   *  Ultra-short human-copyable code shared by EVERY calculator on the site:
+   *    • Single uniform set:  EGZ-g18.6.3.pr               (14 chars)
+   *    • Mixed-teeth set:     EGZ-(s.2.4.fms+s.4.1.vs)     (24 chars)
+   *    • Multi-set + options: EGZ-g18.6.3.pr/s.6.1|tr.mn   (26 chars)
+   *    • Optional UTF-8 metadata (names, tooth IDs, notes): ...~<base64url>
+   *    • Also imports legacy intake codes: EGZ1:<base64url> and share URLs.
+   * ─────────────────────────────────────────────────────────────────────── */
+
+  function b64uEnc(str) {
+    const s = String(str || '');
+    let bin = '';
+    if (typeof TextEncoder === 'function') {
+      const bytes = new TextEncoder().encode(s);
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    } else {
+      bin = unescape(encodeURIComponent(s));
+    }
+    const b64 = typeof btoa === 'function'
+      ? btoa(bin)
+      : Buffer.from(bin, 'binary').toString('base64');
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function b64uDec(str) {
+    const clean = String(str || '').trim().replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+    const pad = clean.length % 4 ? '='.repeat(4 - (clean.length % 4)) : '';
+    const bin = typeof atob === 'function'
+      ? atob(clean + pad)
+      : Buffer.from(clean + pad, 'base64').toString('binary');
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    if (typeof TextDecoder === 'function') {
+      return new TextDecoder().decode(bytes);
+    }
+    let out = '';
+    for (let i = 0; i < bytes.length; i++) out += '%' + ('0' + bytes[i].toString(16)).slice(-2);
+    return decodeURIComponent(out);
+  }
+
+  function flipMap(m) {
+    const r = {};
+    Object.keys(m).forEach((k) => { r[m[k]] = k; });
+    return r;
+  }
+
+  const CODE_MAT = { chrome: 'c', titanium: 't', silver: 's', gold: 'g' };
+  const CODE_MAT_R = flipMap(CODE_MAT);
+  const CODE_STYPE = { cz: 'c', moissanite: 'm', labgrown: 'l', natural: 'n' };
+  const CODE_STYPE_R = flipMap(CODE_STYPE);
+  const CODE_SET = { flush: 'f', prong: 'p', bezel: 'b', invisible: 'i', channel: 'h', pave: 'v' };
+  const CODE_SET_R = flipMap(CODE_SET);
+  const CODE_COV = { standardpave: 's', honeycomb: 'h', micro: 'i', baguette: 'b' };
+  const CODE_COV_R = flipMap(CODE_COV);
+  const CODE_PL = { yellowgold: 'py', whitegold: 'pw', rosegold: 'pr', blackrhodium: 'pb', silverplating: 'ps' };
+  const CODE_PL_R = flipMap(CODE_PL);
+  const CODE_EN = { '1color': 'e1', '2color': 'e2', '3plus': 'e3' };
+  const CODE_EN_R = flipMap(CODE_EN);
+  const CODE_EG = { small: 'vs', medium: 'vm', large: 'vl' };
+  const CODE_EG_R = flipMap(CODE_EG);
+  const CODE_AN = { single: 'ns', dual: 'nd', rainbow: 'nr' };
+  const CODE_AN_R = flipMap(CODE_AN);
+  const CODE_TL = { rush: 'tr', emergency: 'te' };
+  const CODE_TL_R = flipMap(CODE_TL);
+  const CODE_MD = { normalperarch: 'mn', digitalfullmouth: 'md' };
+  const CODE_MD_R = flipMap(CODE_MD);
+  const CODE_SVC = {
+    impression: 'i', consultation: 'c', toothgem: 'g', polishing: 'p',
+    deepclean: 'b', repair: 'r', resize: 'e', remake: 'w', custom: 'x',
+  };
+  const CODE_SVC_R = flipMap(CODE_SVC);
+
+  function fmtRateTok(n) {
+    const v = Math.round((Number(n) || 0) * 100) / 100;
+    return v > 0 ? String(v) : '';
+  }
+
+  function encodeGroupToken(g, state) {
+    const c = cleanGroupSpec(g);
+    if (!c) return '';
+    let matTok = CODE_MAT[c.material] || 'c';
+    if (c.material === 'gold') {
+      matTok = 'g' + (c.karat || '18');
+      const gp = Number(c.goldPrice || 0);
+      if (gp > 0 && gp !== state.lastGoldRate) {
+        matTok += '@' + fmtRateTok(gp);
+        state.lastGoldRate = gp;
+      }
+    }
+    const lvlTok = String(c.level) === '0.5' ? '0' : String(c.level || '1');
+    const toks = [matTok, String(c.teeth || 1), lvlTok];
+
+    if (allowsStones(c.material)) {
+      if (c.accent && c.accent.count > 0) {
+        let at = 'a' + c.accent.count + (CODE_STYPE[c.accent.type] || 'c') + (CODE_SET[c.accent.setting] || 'f');
+        if ((c.accent.type === 'labgrown' || c.accent.type === 'natural') && Number(c.accent.price) > 0) {
+          at += '@' + fmtRateTok(c.accent.price);
+        }
+        toks.push(at);
+      } else if (c.full && (c.full.bars || String(c.level) === '0.5')) {
+        toks.push('fb');
+      } else if (c.full) {
+        let ft = 'f' + (CODE_STYPE[c.full.type] || 'm') + (CODE_COV[c.full.coverage] || 's');
+        if ((c.full.type === 'labgrown' || c.full.type === 'natural') && Number(c.full.price) > 0) {
+          ft += '@' + fmtRateTok(c.full.price);
+        }
+        toks.push(ft);
+      }
+    }
+    if (CODE_PL[c.plating]) toks.push(CODE_PL[c.plating]);
+    if (CODE_EN[c.enamel]) toks.push(CODE_EN[c.enamel]);
+    if (CODE_EG[c.engraving]) toks.push(CODE_EG[c.engraving]);
+    if (c.material === 'titanium' && CODE_AN[c.anodize]) toks.push(CODE_AN[c.anodize]);
+    return toks.join('.');
+  }
+
+  function decodeGroupToken(rawTok, state) {
+    const parts = String(rawTok || '').toLowerCase().split('.').filter(Boolean);
+    if (parts.length < 2) return null;
+    const mPart = parts[0];
+    let material = 'chrome';
+    let karat = '18';
+    let goldPrice = 0;
+
+    if (mPart.startsWith('g')) {
+      material = 'gold';
+      const atIdx = mPart.indexOf('@');
+      const kStr = (atIdx >= 0 ? mPart.slice(1, atIdx) : mPart.slice(1)) || '18';
+      karat = S.goldKarat[kStr] ? kStr : '18';
+      if (atIdx >= 0) {
+        const gp = parseFloat(mPart.slice(atIdx + 1));
+        if (Number.isFinite(gp) && gp > 0) {
+          goldPrice = gp;
+          state.lastGoldRate = gp;
+        }
+      } else if (state.lastGoldRate > 0) {
+        goldPrice = state.lastGoldRate;
+      } else if (Number(S.goldPrice) > 0) {
+        goldPrice = Number(S.goldPrice);
+      }
+    } else if (CODE_MAT_R[mPart[0]]) {
+      material = CODE_MAT_R[mPart[0]];
+    } else {
+      return null;
+    }
+
+    const teeth = Math.max(1, Math.min(32, parseInt(parts[1], 10) || 1));
+    const lvRaw = parts[2] || '1';
+    const level = (lvRaw === '0' || lvRaw === '05') ? '0.5' : (S.designPct[lvRaw] !== undefined ? lvRaw : '1');
+
+    const g = {
+      material,
+      teeth,
+      level,
+      plating: 'none',
+      enamel: 'none',
+      engraving: 'none',
+      anodize: 'none',
+    };
+    if (material === 'gold') {
+      g.karat = karat;
+      if (goldPrice > 0) g.goldPrice = goldPrice;
+    }
+
+    // Handle 0.5 stored as "0.5" across two dot tokens if ever hand-typed
+    let startIdx = 3;
+    if (parts[2] === '0' && parts[3] === '5') {
+      g.level = '0.5';
+      startIdx = 4;
+    }
+
+    for (let i = startIdx; i < parts.length; i++) {
+      const tk = parts[i];
+      if (!tk) continue;
+      if (CODE_PL_R[tk]) { g.plating = CODE_PL_R[tk]; continue; }
+      if (CODE_EN_R[tk]) { g.enamel = CODE_EN_R[tk]; continue; }
+      if (CODE_EG_R[tk]) { g.engraving = CODE_EG_R[tk]; continue; }
+      if (CODE_AN_R[tk]) { if (material === 'titanium') g.anodize = CODE_AN_R[tk]; continue; }
+      if (tk === 'fb') {
+        if (allowsStones(material)) g.full = { bars: true };
+        continue;
+      }
+      if (tk[0] === 'a' && allowsStones(material)) {
+        const am = tk.match(/^a(\d+)([cmln])([fpbihv])(?:@(\d+(?:\.\d+)?))?$/);
+        if (am) {
+          const count = Math.max(1, parseInt(am[1], 10) || 1);
+          const type = CODE_STYPE_R[am[2]] || 'cz';
+          const setting = CODE_SET_R[am[3]] || 'flush';
+          const acc = { count, type, setting };
+          if (am[4] !== undefined) {
+            const pr = parseFloat(am[4]);
+            if (Number.isFinite(pr) && pr >= 0) { acc.price = pr; acc.customPrice = pr; }
+          } else if (S.accentPrice[type] !== null && S.accentPrice[type] !== undefined) {
+            acc.price = Number(S.accentPrice[type]);
+          }
+          g.accent = acc;
+        }
+        continue;
+      }
+      if (tk[0] === 'f' && allowsStones(material)) {
+        const fm = tk.match(/^f([cmln])([shib])(?:@(\d+(?:\.\d+)?))?$/);
+        if (fm) {
+          if (g.level === '0.5') {
+            g.full = { bars: true };
+          } else {
+            const type = CODE_STYPE_R[fm[1]] || 'moissanite';
+            const coverage = CODE_COV_R[fm[2]] || 'standardpave';
+            const fl = { type, coverage };
+            if (fm[3] !== undefined) {
+              const pr = parseFloat(fm[3]);
+              if (Number.isFinite(pr) && pr >= 0) { fl.price = pr; fl.customPrice = pr; }
+            } else if (S.fullPrice[type] !== null && S.fullPrice[type] !== undefined) {
+              fl.price = Number(S.fullPrice[type]);
+            }
+            g.full = fl;
+          }
+        }
+      }
+    }
+    return g;
+  }
+
+  /**
+   * Encode a single line OR a full order into a short universal `EGZ-...` code.
+   * Options: { compact: true } omits optional text metadata for the shortest possible code.
+   */
+  function encodeCode(input, opts) {
+    const o = opts || {};
+    if (!input || typeof input !== 'object') return '';
+
+    // Allow passing a single line directly
+    const isOrder = Array.isArray(input.lines) || Array.isArray(input.services);
+    const rawLines = isOrder ? (input.lines || []) : [input];
+    const rawServices = isOrder ? (input.services || []) : [];
+
+    const state = { lastGoldRate: 0 };
+    const lineTokens = [];
+    const meta = {};
+    const lineNames = [];
+    const groupLabels = [];
+    const toothMap = [];
+    let hasLineNames = false;
+    let hasGroupLabels = false;
+    let hasTeeth = false;
+
+    rawLines.forEach((rawLine, li) => {
+      const c = cleanLineSpec(rawLine);
+      if (!c) return;
+      if (c.isMixed && Array.isArray(c.groups) && c.groups.length > 1) {
+        const gToks = c.groups.map((g) => encodeGroupToken(g, state)).filter(Boolean);
+        if (!gToks.length) return;
+        lineTokens.push('(' + gToks.join('+') + ')');
+        const gl = c.groups.map((g) => g.label || '');
+        groupLabels[li] = gl;
+        if (gl.some(Boolean)) hasGroupLabels = true;
+        const gt = c.groups.map((g) => (Array.isArray(g.toothIds) && g.toothIds.length ? g.toothIds.join(',') : ''));
+        toothMap[li] = gt;
+        if (gt.some(Boolean)) hasTeeth = true;
+      } else {
+        const tok = encodeGroupToken(c, state);
+        if (!tok) return;
+        lineTokens.push(tok);
+        if (Array.isArray(c.toothIds) && c.toothIds.length) {
+          toothMap[li] = c.toothIds.join(',');
+          hasTeeth = true;
+        }
+      }
+      const nm = String(c.name || '').trim().slice(0, 40);
+      lineNames[li] = nm;
+      if (nm) hasLineNames = true;
+    });
+
+    const optTokens = [];
+    const svcNames = [];
+    let hasSvcNames = false;
+
+    rawServices.forEach((sv, si) => {
+      if (!sv || typeof sv !== 'object') return;
+      const type = sv.type || 'custom';
+      const qty = Math.max(1, Math.round(Number(sv.qty) || 1));
+      const defP = Number((S.servicePrices && S.servicePrices[type]) || 0);
+      const unit = sv.unitPrice !== undefined && sv.unitPrice !== null && sv.unitPrice !== ''
+        ? Math.max(0, Number(sv.unitPrice) || 0)
+        : defP;
+      const sc = CODE_SVC[type] || 'x';
+      let st = 'u' + sc + qty;
+      if (sc === 'x' || unit !== defP) st += '@' + fmtRateTok(unit || 0);
+      optTokens.push(st);
+      const defName = L.service[type] || 'Studio Service';
+      const customName = sv.name && String(sv.name).trim() !== defName ? String(sv.name).trim().slice(0, 40) : '';
+      svcNames[si] = customName;
+      if (customName) hasSvcNames = true;
+    });
+
+    if (!lineTokens.length && !optTokens.length) return '';
+
+    if (isOrder) {
+      if (CODE_TL[input.timeline]) optTokens.push(CODE_TL[input.timeline]);
+      if (CODE_MD[input.mold]) optTokens.push(CODE_MD[input.mold]);
+      const dep = Number(input.depositPct);
+      if (dep > 0) optTokens.push('d' + Math.round(dep));
+      const disc = input.discount;
+      if (disc && Number(disc.value) > 0) {
+        optTokens.push('k' + (disc.type === 'pct' ? 'p' : 'f') + fmtRateTok(disc.value));
+      } else if (Number(input.discountAmount) > 0) {
+        optTokens.push('kf' + fmtRateTok(input.discountAmount));
+      }
+    }
+
+    if (!o.compact) {
+      if (hasLineNames) meta.n = lineNames;
+      if (hasGroupLabels) meta.g = groupLabels;
+      if (hasTeeth) meta.t = toothMap;
+      if (hasSvcNames) meta.s = svcNames;
+      const cn = String(input.clientName || '').trim().slice(0, 60);
+      const cp = String(input.clientPhone || '').trim().slice(0, 30);
+      const nt = String(input.notes || '').trim().slice(0, 160);
+      if (cn) meta.c = cn;
+      if (cp) meta.p = cp;
+      if (nt) meta.m = nt;
+    }
+
+    let body = lineTokens.length ? lineTokens.join('/') : '_';
+    if (optTokens.length) body += '|' + optTokens.join('.');
+    if (Object.keys(meta).length) body += '~' + b64uEnc(JSON.stringify(meta));
+    return 'EGZ-' + body;
+  }
+
+  function encodeLineCode(line, opts) {
+    return encodeCode(line, opts);
+  }
+
+  /** Decode legacy `EGZ1:<base64url(query)>` intake codes into the unified shape. */
+  function decodeLegacyEgz1(payload) {
+    try {
+      const qs = b64uDec(payload);
+      const p = new URLSearchParams(qs);
+      if (!p.has('m') && !p.has('t') && !p.has('mx')) return null;
+
+      // Mixed groups inside EGZ1 if `mx` param is present
+      if (p.get('mx')) {
+        const inner = decodeCode(p.get('mx'));
+        if (inner) {
+          if (p.get('c') && !inner.clientName) inner.clientName = p.get('c');
+          if (p.get('ph') && !inner.clientPhone) inner.clientPhone = p.get('ph');
+          if (p.get('nt') && !inner.notes) inner.notes = p.get('nt');
+          if (p.get('k')) inner.token = p.get('k');
+          inner.version = 1;
+          return inner;
+        }
+      }
+
+      const material = p.get('m') || 'chrome';
+      const teeth = Math.max(1, Math.min(16, parseInt(p.get('t'), 10) || 6));
+      const level = p.get('l') || '1';
+      const line = {
+        name: (p.get('n') || '').trim().slice(0, 40),
+        material,
+        teeth,
+        level,
+        plating: p.get('pl') || 'none',
+        enamel: p.get('en') || 'none',
+        engraving: p.get('eg') || 'none',
+        anodize: material === 'titanium' ? (p.get('an') || 'none') : 'none',
+      };
+      if (material === 'gold') {
+        const rawK = p.get('krt') || p.get('k') || '18';
+        line.karat = S.goldKarat[rawK] ? rawK : '18';
+        const rg = parseFloat(p.get('rg') || p.get('gr'));
+        if (Number.isFinite(rg) && rg > 0) line.goldPrice = rg;
+        else if (Number(S.goldPrice) > 0) line.goldPrice = Number(S.goldPrice);
+      }
+      const st = p.get('s') || 'none';
+      if (allowsStones(material)) {
+        if (st === 'accent') {
+          const count = Math.max(1, parseInt(p.get('sc'), 10) || 1);
+          const type = p.get('at') || 'cz';
+          const setting = p.get('ss') || 'flush';
+          const acc = { count, type, setting };
+          const ra = parseFloat(p.get('ra'));
+          if (Number.isFinite(ra) && ra >= 0) { acc.price = ra; acc.customPrice = ra; }
+          else if (S.accentPrice[type] !== null && S.accentPrice[type] !== undefined) acc.price = Number(S.accentPrice[type]);
+          line.accent = acc;
+        } else if (st === 'fulliced') {
+          if (String(level) === '0.5') {
+            line.full = { bars: true };
+          } else {
+            const type = p.get('ft') || 'moissanite';
+            const coverage = p.get('cv') || 'standardpave';
+            const fl = { type, coverage };
+            const rf = parseFloat(p.get('rf'));
+            if (Number.isFinite(rf) && rf >= 0) { fl.price = rf; fl.customPrice = rf; }
+            else if (S.fullPrice[type] !== null && S.fullPrice[type] !== undefined) fl.price = Number(S.fullPrice[type]);
+            line.full = fl;
+          }
+        }
+      }
+      return {
+        version: 1,
+        token: p.get('k') || '',
+        lines: [line],
+        services: [],
+        timeline: p.get('tl') || 'standard',
+        mold: p.get('md') || 'none',
+        depositPct: 0,
+        discount: null,
+        clientName: (p.get('c') || '').trim(),
+        clientPhone: (p.get('ph') || '').trim(),
+        notes: (p.get('nt') || '').trim(),
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** Extract a valid code string out of arbitrary text, WhatsApp message, or URL. */
+  function extractCode(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    // URL query/hash ?c=... or ?code=... or #c=...
+    const urlC = s.match(/[?#&](?:c|code)=([^&#\s]+)/i);
+    if (urlC) {
+      try {
+        const dec = decodeURIComponent(urlC[1]).trim();
+        if (/^EGZ-/i.test(dec) || /^EGZ1[:\uff1a]/i.test(dec)) return dec;
+        return 'EGZ-' + dec;
+      } catch (e) {}
+    }
+    // URL hash/query #d=... (legacy intake share link)
+    const urlD = s.match(/[?#&]d=([A-Za-z0-9\-_=+/%]+)/);
+    if (urlD) {
+      try { return 'EGZ1:' + decodeURIComponent(urlD[1]); } catch (e) {}
+    }
+    // Embedded EGZ- code inside text
+    const m2 = s.match(/EGZ-([A-Za-z0-9.+()/@|~_-]+)/i);
+    if (m2) return 'EGZ-' + m2[1].replace(/[.,;:]+$/, '');
+    // Embedded legacy EGZ1: code inside text
+    const m1 = s.match(/EGZ1[:\uff1a]\s*([A-Za-z0-9\-_=+/]+)/i);
+    if (m1) return 'EGZ1:' + m1[1];
+    return s;
+  }
+
+  /** Decode any `EGZ-...`, `EGZ1:...`, or share URL into a ready-to-load order spec. */
+  function decodeCode(raw) {
+    const extracted = extractCode(raw);
+    if (!extracted) return null;
+
+    if (/^EGZ1[:\uff1a]/i.test(extracted)) {
+      const legacy = decodeLegacyEgz1(extracted.replace(/^EGZ1[:\uff1a]\s*/i, ''));
+      if (legacy) legacy.code = extracted;
+      return legacy;
+    }
+
+    let body = extracted.replace(/^EGZ-/i, '').trim().replace(/[.,;:]+$/, '');
+    if (!body) return null;
+
+    // Split optional ~<base64url> metadata first (case-sensitive!)
+    let meta = {};
+    const tildeIdx = body.indexOf('~');
+    if (tildeIdx >= 0) {
+      const metaRaw = body.slice(tildeIdx + 1);
+      body = body.slice(0, tildeIdx);
+      try {
+        const parsed = JSON.parse(b64uDec(metaRaw));
+        if (parsed && typeof parsed === 'object') meta = parsed;
+      } catch (e) {}
+    }
+
+    // Split lines and |options
+    const pipeIdx = body.indexOf('|');
+    const linesPart = pipeIdx >= 0 ? body.slice(0, pipeIdx) : body;
+    const optsPart = pipeIdx >= 0 ? body.slice(pipeIdx + 1) : '';
+
+    const state = { lastGoldRate: 0 };
+    const lines = [];
+
+    if (linesPart && linesPart !== '_') {
+      const rawSets = linesPart.split('/').filter(Boolean);
+      for (let li = 0; li < rawSets.length; li++) {
+        const seg = rawSets[li].trim();
+        if (!seg) continue;
+        const name = (Array.isArray(meta.n) && meta.n[li]) ? String(meta.n[li]).slice(0, 40) : '';
+        if (seg.startsWith('(') && seg.endsWith(')')) {
+          const inner = seg.slice(1, -1);
+          const gSegs = inner.split('+').filter(Boolean);
+          const gLabels = (Array.isArray(meta.g) && Array.isArray(meta.g[li])) ? meta.g[li] : [];
+          const gTeeth = (Array.isArray(meta.t) && Array.isArray(meta.t[li])) ? meta.t[li] : [];
+          const groups = [];
+          for (let gi = 0; gi < gSegs.length; gi++) {
+            const g = decodeGroupToken(gSegs[gi], state);
+            if (!g) return null;
+            if (gLabels[gi]) g.label = String(gLabels[gi]).slice(0, 40);
+            if (gTeeth[gi]) {
+              const tids = cleanToothIds(String(gTeeth[gi]).split(','));
+              if (tids.length) g.toothIds = tids;
+            }
+            groups.push(g);
+          }
+          if (!groups.length) return null;
+          if (groups.length === 1) {
+            const single = groups[0];
+            delete single.label;
+            if (name) single.name = name;
+            lines.push(single);
+          } else {
+            const mixed = {
+              name,
+              isMixed: true,
+              material: groups[0].material,
+              teeth: groups.reduce((s, g) => s + g.teeth, 0),
+              level: 'mixed',
+              groups,
+            };
+            const fg = groups.find((g) => g.material === 'gold');
+            if (fg) {
+              mixed.karat = fg.karat;
+              if (fg.goldPrice) mixed.goldPrice = fg.goldPrice;
+            }
+            const allT = cleanToothIds(groups.reduce((a, g) => a.concat(g.toothIds || []), []));
+            if (allT.length) mixed.toothIds = allT;
+            lines.push(mixed);
+          }
+        } else {
+          const single = decodeGroupToken(seg, state);
+          if (!single) return null;
+          if (name) single.name = name;
+          if (Array.isArray(meta.t) && typeof meta.t[li] === 'string' && meta.t[li]) {
+            const tids = cleanToothIds(meta.t[li].split(','));
+            if (tids.length) single.toothIds = tids;
+          }
+          lines.push(single);
+        }
+      }
+    }
+
+    let timeline = 'standard';
+    let mold = 'none';
+    let depositPct = 0;
+    let discount = null;
+    const services = [];
+    const svcNames = Array.isArray(meta.s) ? meta.s : [];
+    let svcIdx = 0;
+
+    if (optsPart) {
+      // Split on dots that are NOT decimal points inside numbers (e.g. kf12.5 or ux1@12.5)
+      const optSegs = optsPart.toLowerCase().split(/\.(?=[a-z])/).filter(Boolean);
+      optSegs.forEach((op) => {
+        if (CODE_TL_R[op]) { timeline = CODE_TL_R[op]; return; }
+        if (CODE_MD_R[op]) { mold = CODE_MD_R[op]; return; }
+        const dm = op.match(/^d(\d+)$/);
+        if (dm) { depositPct = Math.max(0, Math.min(100, parseInt(dm[1], 10) || 0)); return; }
+        const km = op.match(/^k([pf])(\d+(?:\.\d+)?)$/);
+        if (km) {
+          const val = parseFloat(km[2]);
+          if (val > 0) discount = { type: km[1] === 'p' ? 'pct' : 'flat', value: val };
+          return;
+        }
+        const um = op.match(/^u([a-z])(\d+)(?:@(\d+(?:\.\d+)?))?$/);
+        if (um) {
+          const type = CODE_SVC_R[um[1]] || 'custom';
+          const qty = Math.max(1, parseInt(um[2], 10) || 1);
+          const defP = Number((S.servicePrices && S.servicePrices[type]) || 0);
+          const unitPrice = um[3] !== undefined ? Math.max(0, parseFloat(um[3]) || 0) : defP;
+          const customName = svcNames[svcIdx] ? String(svcNames[svcIdx]).slice(0, 40) : '';
+          svcIdx++;
+          services.push({
+            type,
+            name: customName || L.service[type] || 'Studio Service',
+            qty,
+            unitPrice,
+          });
+        }
+      });
+    }
+
+    if (!lines.length && !services.length) return null;
+
+    // Detect custom market rates carried inside the decoded lines
+    const rates = {};
+    lines.forEach((ln) => {
+      const list = Array.isArray(ln.groups) ? ln.groups : [ln];
+      list.forEach((g) => {
+        if (g.material === 'gold' && Number(g.goldPrice) > 0 && !rates.gold) rates.gold = Number(g.goldPrice);
+        if (g.accent && Number(g.accent.customPrice) > 0) {
+          if (g.accent.type === 'labgrown') rates.labAccent = Number(g.accent.customPrice);
+          if (g.accent.type === 'natural') rates.natAccent = Number(g.accent.customPrice);
+        }
+        if (g.full && Number(g.full.customPrice) > 0) {
+          if (g.full.type === 'labgrown') rates.labFull = Number(g.full.customPrice);
+          if (g.full.type === 'natural') rates.natFull = Number(g.full.customPrice);
+        }
+      });
+    });
+
+    return {
+      version: 2,
+      code: extracted.startsWith('EGZ-') ? extracted : ('EGZ-' + extracted.replace(/^EGZ-/i, '')),
+      lines,
+      services,
+      timeline,
+      mold,
+      depositPct,
+      discount,
+      rates,
+      clientName: meta.c ? String(meta.c) : '',
+      clientPhone: meta.p ? String(meta.p) : '',
+      notes: meta.m ? String(meta.m) : '',
+    };
+  }
+
+  /* ───────────── zero-dependency branded client/staff PDF builder ───────────── */
+
+  function pdfClean(str) {
+    return String(str == null ? '' : str)
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\u00B7|\u2022/g, ' - ')
+      .replace(/\u00D7/g, 'x')
+      .replace(/\u2192/g, '->')
+      .replace(/\u00E9/g, 'e')
+      .replace(/[^\x20-\x7E]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function pdfEsc(str) {
+    return pdfClean(str).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  }
+
+  function pdfWrap(text, maxChars) {
+    const clean = pdfClean(text);
+    if (!clean) return [];
+    if (clean.length <= maxChars) return [clean];
+    const words = clean.split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach((w) => {
+      if (!cur) {
+        cur = w.slice(0, maxChars);
+      } else if ((cur + ' ' + w).length <= maxChars) {
+        cur += ' ' + w;
+      } else {
+        lines.push(cur);
+        cur = w.slice(0, maxChars);
+      }
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  /**
+   * Build a genuine A4 EGYGRILLZ Bespoke Estimate PDF (Uint8Array).
+   * Works everywhere (offline, mobile Safari, Chrome, WhatsApp webview) with zero external libs.
+   */
+  function buildQuotePdfBytes(rawOrder, meta) {
+    const m = meta || {};
+    const order = (rawOrder && typeof rawOrder.total === 'number' && Array.isArray(rawOrder.lines))
+      ? rawOrder
+      : calculateOrder((rawOrder && rawOrder.lines) || [], rawOrder || {});
+    const cur = order.currency || S.currency || 'EGP';
+    const site = (_g.SiteConfig && _g.SiteConfig.data) ? _g.SiteConfig.data : {};
+    const studioName = pdfClean(m.studioName || site.studioName || 'EGYGRILLZ') || 'EGYGRILLZ';
+    const addr = pdfClean([site.addressLine1, site.addressLine2, site.addressLine3].filter(Boolean).join(', '))
+      || '38 Abou Bakr El-Sdeek, Heliopolis, Cairo, Egypt';
+    const validDays = Number(m.validDays || site.quoteValidDays || 7);
+    const dateStr = pdfClean(m.date || new Date().toISOString().slice(0, 10));
+    const refId = pdfClean(m.id || ('EGZ-' + dateStr.replace(/-/g, '').slice(2) + '-' + String(Math.floor(1000 + Math.random() * 9000))));
+    const code = pdfClean(m.code || encodeCode(Object.assign({}, order, {
+      clientName: m.clientName || '',
+      clientPhone: m.clientPhone || '',
+      notes: m.notes || '',
+    })));
+
+    const W = 595.28;
+    const H = 841.89;
+    const ML = 44;
+    const MR = 44;
+    const CW = W - ML - MR;
+
+    const pages = [];
+    let cmds = [];
+    let y = H;
+
+    const f2 = (n) => Number(n).toFixed(2);
+    const push = (s) => cmds.push(s);
+    const rectFill = (x, topY, w, h, r, g, b) => {
+      push(`${f2(r)} ${f2(g)} ${f2(b)} rg ${f2(x)} ${f2(topY - h)} ${f2(w)} ${f2(h)} re f`);
+    };
+    const rectStroke = (x, topY, w, h, r, g, b, lw) => {
+      push(`${f2(lw || 0.6)} w ${f2(r)} ${f2(g)} ${f2(b)} RG ${f2(x)} ${f2(topY - h)} ${f2(w)} ${f2(h)} re S`);
+    };
+    const hLine = (x1, x2, py, r, g, b, lw) => {
+      push(`${f2(lw || 0.5)} w ${f2(r)} ${f2(g)} ${f2(b)} RG ${f2(x1)} ${f2(py)} m ${f2(x2)} ${f2(py)} l S`);
+    };
+    const textAt = (txt, x, py, font, size, r, g, b) => {
+      const s = pdfEsc(txt);
+      if (!s) return;
+      push(`BT /${font} ${f2(size)} Tf ${f2(r)} ${f2(g)} ${f2(b)} rg 1 0 0 1 ${f2(x)} ${f2(py)} Tm (${s}) Tj ET`);
+    };
+    const textRight = (txt, rightX, py, font, size, r, g, b) => {
+      const clean = pdfClean(txt);
+      if (!clean) return;
+      const approxW = clean.length * size * (font === 'F2' || font === 'F4' ? 0.54 : 0.50);
+      textAt(clean, Math.max(ML, rightX - approxW), py, font, size, r, g, b);
+    };
+
+    function startPage(isFirst) {
+      cmds = [];
+      rectFill(0, H, W, H, 1, 1, 1);
+      if (isFirst) {
+        // Luxury charcoal header band with gold rule
+        rectFill(0, H, W, 108, 0.08, 0.08, 0.08);
+        rectFill(0, H - 108, W, 2.2, 0.72, 0.58, 0.32);
+        textAt(studioName, ML, H - 46, 'F4', 24, 1, 1, 1);
+        textAt('BESPOKE DENTAL JEWELRY  -  CAIRO ATELIER', ML, H - 64, 'F1', 8, 0.76, 0.64, 0.40);
+        textAt(addr, ML, H - 82, 'F1', 7.5, 0.72, 0.72, 0.72);
+
+        textRight('BESPOKE ESTIMATE', W - MR, H - 42, 'F2', 10, 0.85, 0.73, 0.48);
+        textRight('Ref: ' + refId, W - MR, H - 58, 'F1', 8.5, 0.90, 0.90, 0.90);
+        textRight('Date: ' + dateStr, W - MR, H - 72, 'F1', 8.5, 0.78, 0.78, 0.78);
+        textRight('Valid for ' + validDays + ' days', W - MR, H - 86, 'F1', 7.5, 0.65, 0.65, 0.65);
+        y = H - 130;
+      } else {
+        rectFill(0, H, W, 46, 0.08, 0.08, 0.08);
+        rectFill(0, H - 46, W, 1.5, 0.72, 0.58, 0.32);
+        textAt(studioName + '  -  BESPOKE ESTIMATE (CONTINUED)', ML, H - 28, 'F2', 9, 1, 1, 1);
+        textRight('Ref: ' + refId, W - MR, H - 28, 'F1', 8, 0.8, 0.8, 0.8);
+        y = H - 68;
+      }
+    }
+
+    function finishPage() {
+      hLine(ML, W - MR, 46, 0.88, 0.88, 0.88, 0.5);
+      textAt('egygrillz.com   -   Instagram @egygrillz   -   Handcrafted in Cairo, Egypt', ML, 32, 'F1', 7.5, 0.50, 0.50, 0.50);
+      pages.push(cmds.join('\n'));
+    }
+
+    function need(h) {
+      if (y - h < 66) {
+        finishPage();
+        startPage(false);
+      }
+    }
+
+    startPage(true);
+
+    // Optional client info strip
+    const cName = pdfClean(m.clientName || '');
+    const cPhone = pdfClean(m.clientPhone || '');
+    const cNotes = pdfClean(m.notes || '');
+    if (cName || cPhone) {
+      rectFill(ML, y, CW, 34, 0.97, 0.97, 0.96);
+      rectStroke(ML, y, CW, 34, 0.88, 0.88, 0.86, 0.5);
+      textAt('PREPARED FOR', ML + 12, y - 13, 'F2', 7, 0.52, 0.52, 0.52);
+      textAt([cName, cPhone].filter(Boolean).join('   |   '), ML + 12, y - 26, 'F2', 9.5, 0.12, 0.12, 0.12);
+      textRight(`${order.teethTotal || 0} ${(order.teethTotal === 1) ? 'Tooth' : 'Teeth'}  -  ${order.lineCount || 0} ${(order.lineCount === 1) ? 'Set' : 'Sets'}`, W - MR - 12, y - 22, 'F1', 8.5, 0.35, 0.35, 0.35);
+      y -= 48;
+    }
+
+    // Section heading: Custom Sets
+    if ((order.lines || []).length) {
+      textAt('CUSTOM GRILLZ SPECIFICATION', ML, y, 'F2', 8.5, 0.45, 0.36, 0.18);
+      textRight('AMOUNT (' + cur + ')', W - MR, y, 'F2', 8, 0.48, 0.48, 0.48);
+      y -= 7;
+      hLine(ML, W - MR, y, 0.15, 0.15, 0.15, 0.8);
+      y -= 16;
+
+      order.lines.forEach((ln, idx) => {
+        need(64);
+        const setTitle = ln.name
+          ? `Set ${idx + 1}: ${ln.name}`
+          : `Set ${idx + 1}: ${ln.mixedMaterials ? 'Custom Mixed Grillz' : ((ln.material === 'gold' ? 'Gold ' + (ln.karat || '18') + 'K' : (L.material[ln.material] || ln.material)) + ' Grillz')}`;
+        textAt(setTitle, ML, y, 'F2', 10.5, 0.10, 0.10, 0.10);
+        textRight(fmt(ln.subtotal) + ' ' + cur, W - MR, y, 'F2', 10.5, 0.10, 0.10, 0.10);
+        y -= 13;
+
+        if (Array.isArray(ln.toothIds) && ln.toothIds.length) {
+          const tLines = pdfWrap('Selected teeth (' + ln.teeth + '): ' + ln.toothIds.join(', '), 86);
+          tLines.forEach((tl) => { need(12); textAt(tl, ML + 8, y, 'F1', 7.8, 0.42, 0.42, 0.42); y -= 11; });
+        }
+
+        if (ln.isMixed && Array.isArray(ln.groups) && ln.groups.length > 1) {
+          textAt(`Mixed Set - ${ln.teeth} teeth across ${ln.groups.length} custom tooth groups:`, ML + 8, y, 'F2', 8, 0.30, 0.30, 0.30);
+          y -= 12;
+          ln.groups.forEach((g, gi) => {
+            const prefix = g.label ? `${g.label} - ` : `Group ${gi + 1} - `;
+            const gSpec = prefix + groupLabel(g, { includeMaterial: true })
+              + (Array.isArray(g.toothIds) && g.toothIds.length ? ` [${g.toothIds.join(', ')}]` : '');
+            const wrapped = pdfWrap(gSpec, 72);
+            wrapped.forEach((wl, wi) => {
+              need(13);
+              textAt((wi === 0 ? '- ' : '  ') + wl, ML + 14, y, 'F1', 8.2, 0.22, 0.22, 0.22);
+              if (wi === 0) textRight(fmt(g.subtotal) + ' ' + cur, W - MR, y, 'F1', 8.2, 0.32, 0.32, 0.32);
+              y -= 11.5;
+            });
+          });
+        } else {
+          const specWrapped = pdfWrap(lineLabel(ln), 78);
+          specWrapped.forEach((sl) => { need(12); textAt(sl, ML + 8, y, 'F1', 8.3, 0.28, 0.28, 0.28); y -= 11.5; });
+        }
+
+        // Itemized sub-costs line
+        const parts = [`Base: ${fmt(ln.materialTotal)}`];
+        if (ln.designCost) parts.push(`Complexity: +${fmt(ln.designCost)}`);
+        if (ln.stoneCost) parts.push(`Stones: +${fmt(ln.stoneCost)}`);
+        if (ln.platingCost) parts.push(`Plating: +${fmt(ln.platingCost)}`);
+        if (ln.enamelCost) parts.push(`Enamel: +${fmt(ln.enamelCost)}`);
+        if (ln.engravingCost) parts.push(`Engraving: +${fmt(ln.engravingCost)}`);
+        if (ln.anodizeCost) parts.push(`Anodize: +${fmt(ln.anodizeCost)}`);
+        const costWrapped = pdfWrap(parts.join('  |  ') + ' ' + cur, 86);
+        costWrapped.forEach((cl) => { need(12); textAt(cl, ML + 8, y, 'F1', 7.5, 0.50, 0.50, 0.50); y -= 11; });
+
+        y -= 3;
+        hLine(ML, W - MR, y, 0.90, 0.90, 0.90, 0.5);
+        y -= 14;
+      });
+    }
+
+    // Studio services
+    if ((order.services || []).length) {
+      need(44);
+      textAt('STUDIO SERVICES', ML, y, 'F2', 8.5, 0.45, 0.36, 0.18);
+      y -= 6;
+      hLine(ML, W - MR, y, 0.80, 0.80, 0.80, 0.5);
+      y -= 14;
+      order.services.forEach((sv) => {
+        need(16);
+        const lbl = sv.name + (sv.qty > 1 ? `  (x${sv.qty})` : '');
+        textAt(lbl, ML + 4, y, 'F1', 8.8, 0.18, 0.18, 0.18);
+        textRight(fmt(sv.subtotal) + ' ' + cur, W - MR, y, 'F1', 8.8, 0.18, 0.18, 0.18);
+        y -= 14;
+      });
+      y -= 6;
+    }
+
+    // Totals block
+    need(120);
+    const sumX = W - MR - 225;
+    const addSumRow = (lbl, val, bold) => {
+      need(16);
+      textAt(lbl, sumX, y, bold ? 'F2' : 'F1', 8.8, 0.25, 0.25, 0.25);
+      textRight(val, W - MR, y, bold ? 'F2' : 'F1', 8.8, 0.12, 0.12, 0.12);
+      y -= 14;
+    };
+    if (order.linesSubtotal) addSumRow('Custom Grillz Subtotal', fmt(order.linesSubtotal) + ' ' + cur, false);
+    if (order.servicesSubtotal) addSumRow('Studio Services', fmt(order.servicesSubtotal) + ' ' + cur, false);
+    if (order.timelineAmount) addSumRow(`${L.timeline[order.timeline] || 'Rush'} (+${order.timelinePct}%)`, '+' + fmt(order.timelineAmount) + ' ' + cur, false);
+    else addSumRow('Timeline', L.timeline[order.timeline] || 'Standard (21 business days)', false);
+    if (order.moldCost) addSumRow(`Dental Mold (${L.mold[order.mold] || order.mold})`, '+' + fmt(order.moldCost) + ' ' + cur, false);
+    if (order.discountAmount) addSumRow('Studio Discount', '-' + fmt(order.discountAmount) + ' ' + cur, false);
+
+    y -= 2;
+    rectFill(sumX - 10, y + 8, 235, 30, 0.08, 0.08, 0.08);
+    textAt('ESTIMATED TOTAL', sumX, y - 10, 'F2', 9, 0.85, 0.73, 0.48);
+    textRight(fmt(order.total) + ' ' + cur, W - MR - 8, y - 10.5, 'F2', 12, 1, 1, 1);
+    y -= 34;
+
+    if (order.depositPct > 0) {
+      addSumRow(`Deposit to Begin (${order.depositPct}%)`, fmt(order.deposit) + ' ' + cur, true);
+      addSumRow('Balance on Delivery', fmt(order.balance) + ' ' + cur, false);
+    }
+
+    if (cNotes) {
+      need(40);
+      y -= 6;
+      textAt('NOTES', ML, y, 'F2', 7.5, 0.48, 0.48, 0.48);
+      y -= 12;
+      pdfWrap(cNotes, 90).forEach((nl) => { need(12); textAt(nl, ML, y, 'F1', 8.2, 0.25, 0.25, 0.25); y -= 11; });
+    }
+
+    // Instant Transfer Code card
+    if (code) {
+      const codeLines = pdfWrap(code, 76);
+      const boxH = 38 + codeLines.length * 12;
+      need(boxH + 14);
+      y -= 10;
+      rectFill(ML, y, CW, boxH, 0.98, 0.97, 0.94);
+      rectStroke(ML, y, CW, boxH, 0.76, 0.64, 0.40, 0.8);
+      textAt('INSTANT DESIGN CODE  -  SEND TO EGYGRILLZ OR PASTE IN ANY CALCULATOR', ML + 12, y - 14, 'F2', 7.3, 0.48, 0.38, 0.18);
+      let cy = y - 28;
+      codeLines.forEach((cl) => {
+        textAt(cl, ML + 12, cy, 'F2', 9.2, 0.10, 0.10, 0.10);
+        cy -= 12;
+      });
+      textAt('Send this PDF or code on WhatsApp / Instagram @egygrillz or book your impression at egygrillz.com/booking', ML + 12, y - boxH + 8, 'F1', 7.2, 0.42, 0.42, 0.42);
+      y -= (boxH + 12);
+    }
+
+    // Studio notes
+    need(42);
+    textAt('Good to know: Gold & natural diamond estimates follow live daily market rates and are locked upon deposit confirmation.', ML, y, 'F1', 7.2, 0.48, 0.48, 0.48);
+    y -= 11;
+    textAt('Every EGYGRILLZ piece is custom-fitted to your exact dental impression in our Cairo studio.', ML, y, 'F1', 7.2, 0.48, 0.48, 0.48);
+
+    finishPage();
+
+    // Assemble valid PDF-1.4 document
+    const enc = (s) => {
+      const a = new Uint8Array(s.length);
+      for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i) & 0xff;
+      return a;
+    };
+    const objs = [];
+    const addObj = (body) => { objs.push(body); return objs.length; };
+
+    const catalogId = addObj('');
+    const pagesId = addObj('');
+    const f1 = addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    const f2Id = addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    const f4 = addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding /WinAnsiEncoding >>');
+
+    const pageIds = pages.map((stream) => {
+      const contentId = addObj(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+      return addObj(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${f2(W)} ${f2(H)}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2Id} 0 R /F4 ${f4} 0 R >> >> /Contents ${contentId} 0 R >>`);
+    });
+
+    objs[catalogId - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+    objs[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+
+    let out = '%PDF-1.4\n';
+    const offsets = [0];
+    objs.forEach((body, i) => {
+      offsets.push(out.length);
+      out += `${i + 1} 0 obj\n${body}\nendobj\n`;
+    });
+    const xrefPos = out.length;
+    out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i < offsets.length; i++) {
+      out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    out += `trailer\n<< /Size ${objs.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
+    return enc(out);
+  }
+
+  function downloadQuotePdf(rawOrder, meta) {
+    const m = meta || {};
+    const bytes = buildQuotePdfBytes(rawOrder, m);
+    if (typeof Blob !== 'function' || typeof document === 'undefined') return bytes;
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const fname = (pdfClean(m.filename || m.id || 'EGYGRILLZ-Estimate').replace(/[^A-Za-z0-9_-]+/g, '-') || 'EGYGRILLZ-Estimate')
+      .replace(/\.pdf$/i, '') + '.pdf';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 15000);
+    return bytes;
+  }
+
+  /* ─────────────────────────── persistence & caching ─────────────────────────── */
 
   const SETTINGS_DOC = 'pricing';
+  const SETTINGS_TTL_MS = 30 * 60 * 1000;      // 30 minutes fresh cache (invalidated immediately on save)
+  const QUOTA_COOLDOWN_MS = 15 * 60 * 1000;    // 15 minutes pause after HTTP 429 / resource-exhausted
+  const QUOTA_KEY = 'egygz_fs_quota_until_v1';
+  const FETCH_TIMEOUT_MS = 8000;
+  const _inflight = {};
+
+  function lsGet(key) {
+    try { return global.localStorage ? global.localStorage.getItem(key) : null; } catch (e) { return null; }
+  }
+  function lsSet(key, val) {
+    try { if (global.localStorage) global.localStorage.setItem(key, val); } catch (e) {}
+  }
+  function lsDel(key) {
+    try { if (global.localStorage) global.localStorage.removeItem(key); } catch (e) {}
+  }
+
+  function isQuotaPaused() {
+    const until = Number(lsGet(QUOTA_KEY) || 0);
+    return Number.isFinite(until) && until > Date.now();
+  }
+  function markQuotaPaused(ms) {
+    lsSet(QUOTA_KEY, String(Date.now() + (Number(ms) || QUOTA_COOLDOWN_MS)));
+  }
+  function isQuotaErr(err) {
+    if (!err) return false;
+    const code = String(err.code || '').toLowerCase();
+    const msg = String(err.message || err || '').toLowerCase();
+    return code === 'resource-exhausted' || /resource-exhausted|quota|429/.test(msg);
+  }
+
+  function dbProjectId(db) {
+    try {
+      if (db && db._egygzProjectId) return String(db._egygzProjectId);
+      if (db && db.app && db.app.options && db.app.options.projectId) return String(db.app.options.projectId);
+    } catch (e) {}
+    return FIRESTORE_PROJECT;
+  }
+
+  function settingsCacheKey(docId, projectId) {
+    const proj = projectId && projectId !== FIRESTORE_PROJECT ? projectId + '_' : '';
+    return 'egygz_settings_v1_' + proj + docId;
+  }
+
+  function readSettingsCache(docId, allowStale, projectId) {
+    try {
+      const raw = lsGet(settingsCacheKey(docId, projectId));
+      if (!raw) return null;
+      const entry = JSON.parse(raw);
+      if (!entry || typeof entry !== 'object' || !entry.data || typeof entry.data !== 'object') return null;
+      if (!allowStale && (Date.now() - Number(entry.at || 0)) > SETTINGS_TTL_MS) return null;
+      return entry.data;
+    } catch (e) { return null; }
+  }
+
+  function writeSettingsCache(docId, data, projectId) {
+    if (!data || typeof data !== 'object') return;
+    lsSet(settingsCacheKey(docId, projectId), JSON.stringify({ at: Date.now(), data }));
+  }
+
+  function clearSettingsCache(docId, projectId) {
+    lsDel(settingsCacheKey(docId, projectId));
+  }
+
+  async function dbReadSettings(db, docId) {
+    if (!db || !docId) return { supported: false, exists: false, data: null };
+    if (typeof db.collection === 'function') {
+      const snap = await db.collection('settings').doc(docId).get();
+      const exists = !!(snap && (typeof snap.exists === 'function' ? snap.exists() : snap.exists));
+      return { supported: true, exists, data: exists ? (snap.data() || {}) : null };
+    }
+    if (typeof db._egygzGet === 'function') {
+      const res = await db._egygzGet('settings', docId);
+      return { supported: true, exists: !!(res && res.exists), data: (res && res.exists) ? (res.data || {}) : null };
+    }
+    return { supported: false, exists: false, data: null };
+  }
+
+  async function dbWriteSettings(db, docId, payload, merge) {
+    if (!db) throw new Error('Database not connected');
+    if (typeof db.collection === 'function') {
+      await db.collection('settings').doc(docId).set(payload, merge === false ? {} : { merge: true });
+      return;
+    }
+    if (typeof db._egygzSet === 'function') {
+      await db._egygzSet('settings', docId, payload, merge !== false);
+      return;
+    }
+    throw new Error('Database write adapter unavailable');
+  }
 
   function decodeFirestoreValue(v) {
     if (!v || typeof v !== 'object') return v;
@@ -415,6 +1816,7 @@
     if (v.integerValue !== undefined) return Number(v.integerValue);
     if (v.doubleValue !== undefined) return Number(v.doubleValue);
     if (v.booleanValue !== undefined) return v.booleanValue;
+    if (v.timestampValue !== undefined) return v.timestampValue;
     if (v.arrayValue) return (v.arrayValue.values || []).map(decodeFirestoreValue);
     if (v.mapValue) {
       const out = {};
@@ -425,43 +1827,147 @@
     return undefined;
   }
 
-  async function fetchSettingsRest(docId) {
-    const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/settings/${encodeURIComponent(docId)}?key=${FIRESTORE_KEY}`;
-    const r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) return null;
-    const doc = await r.json().catch(() => null);
-    if (!doc || !doc.fields) return null;
-    const out = {};
-    for (const k of Object.keys(doc.fields)) out[k] = decodeFirestoreValue(doc.fields[k]);
-    return out;
+  function fetchWithTimeout(url, opts, timeoutMs) {
+    const ms = timeoutMs || FETCH_TIMEOUT_MS;
+    if (typeof AbortController === 'undefined') return fetch(url, opts);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, ms);
+    return fetch(url, Object.assign({}, opts, { signal: ctrl.signal }))
+      .finally(() => clearTimeout(timer));
   }
 
-  async function load(db) {
-    try {
-      if (db && typeof db.collection === 'function') {
-        const snap = await db.collection('settings').doc(SETTINGS_DOC).get();
-        if (snap && snap.exists) {
-          apply(snap.data() || {});
-          return { ok: true, source: 'firestore' };
+  async function fetchSettingsRest(docId, opts) {
+    if (!docId || typeof docId !== 'string') return null;
+    const force = !!(opts && opts.force);
+    if (!force) {
+      const fresh = readSettingsCache(docId, false, FIRESTORE_PROJECT);
+      if (fresh) return fresh;
+    }
+    if (isQuotaPaused() && !force) {
+      return readSettingsCache(docId, true, FIRESTORE_PROJECT);
+    }
+    const flightKey = 'rest:' + docId;
+    if (_inflight[flightKey]) return _inflight[flightKey];
+
+    _inflight[flightKey] = (async () => {
+      try {
+        const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/settings/${encodeURIComponent(docId)}?key=${FIRESTORE_KEY}`;
+        const r = await fetchWithTimeout(url, { cache: 'default' }, FETCH_TIMEOUT_MS);
+        if (r.status === 429) {
+          markQuotaPaused();
+          return readSettingsCache(docId, true, FIRESTORE_PROJECT);
         }
-        return { ok: true, source: 'defaults' };
+        if (r.status === 404) return null;
+        if (!r.ok) return readSettingsCache(docId, true, FIRESTORE_PROJECT);
+        const doc = await r.json().catch(() => null);
+        if (!doc || !doc.fields) return null;
+        const out = {};
+        for (const k of Object.keys(doc.fields)) out[k] = decodeFirestoreValue(doc.fields[k]);
+        writeSettingsCache(docId, out, FIRESTORE_PROJECT);
+        return out;
+      } catch (e) {
+        return readSettingsCache(docId, true, FIRESTORE_PROJECT);
+      } finally {
+        delete _inflight[flightKey];
       }
-      const data = await fetchSettingsRest(SETTINGS_DOC);
-      if (data) {
-        apply(data);
-        return { ok: true, source: 'rest' };
+    })();
+
+    return _inflight[flightKey];
+  }
+
+  async function load(db, opts) {
+    const force = !!(opts && opts.force);
+    const canDb = !!(db && (typeof db.collection === 'function' || typeof db._egygzGet === 'function'));
+    const proj = canDb ? dbProjectId(db) : FIRESTORE_PROJECT;
+
+    if (!force) {
+      const cached = readSettingsCache(SETTINGS_DOC, false, proj);
+      if (cached) {
+        apply(cached);
+        return { ok: true, source: 'cache' };
+      }
+    }
+
+    if (isQuotaPaused() && !force) {
+      const stale = readSettingsCache(SETTINGS_DOC, true, proj)
+        || readSettingsCache(SETTINGS_DOC, true, FIRESTORE_PROJECT);
+      if (stale) {
+        apply(stale);
+        return { ok: true, source: 'stale-cache' };
       }
       return { ok: true, source: 'defaults' };
-    } catch (e) {
-      return { ok: false, error: String(e && e.message || e), source: 'defaults' };
     }
+
+    const flightKey = 'load:' + proj + ':' + (canDb ? 'db' : 'rest');
+    if (_inflight[flightKey] && !force) return _inflight[flightKey];
+
+    const run = (async () => {
+      try {
+        if (canDb) {
+          try {
+            const res = await dbReadSettings(db, SETTINGS_DOC);
+            if (res.exists && res.data) {
+              writeSettingsCache(SETTINGS_DOC, res.data, proj);
+              apply(res.data);
+              return { ok: true, source: 'firestore' };
+            }
+            if (proj !== FIRESTORE_PROJECT) {
+              const pub = await fetchSettingsRest(SETTINGS_DOC, { force });
+              if (pub) {
+                apply(pub);
+                return { ok: true, source: 'rest' };
+              }
+            }
+            return { ok: true, source: 'defaults' };
+          } catch (dbErr) {
+            if (isQuotaErr(dbErr)) markQuotaPaused();
+            const stale = readSettingsCache(SETTINGS_DOC, true, proj);
+            if (stale) {
+              apply(stale);
+              return { ok: true, source: 'stale-cache' };
+            }
+            const restFallback = await fetchSettingsRest(SETTINGS_DOC);
+            if (restFallback) {
+              apply(restFallback);
+              return { ok: true, source: 'rest' };
+            }
+            return { ok: false, error: String((dbErr && dbErr.message) || dbErr), source: 'defaults' };
+          }
+        }
+        const data = await fetchSettingsRest(SETTINGS_DOC, { force });
+        if (data) {
+          apply(data);
+          return { ok: true, source: 'rest' };
+        }
+        return { ok: true, source: 'defaults' };
+      } catch (e) {
+        if (isQuotaErr(e)) markQuotaPaused();
+        const stale = readSettingsCache(SETTINGS_DOC, true, proj)
+          || readSettingsCache(SETTINGS_DOC, true, FIRESTORE_PROJECT);
+        if (stale) {
+          apply(stale);
+          return { ok: true, source: 'stale-cache' };
+        }
+        return { ok: false, error: String((e && e.message) || e), source: 'defaults' };
+      } finally {
+        delete _inflight[flightKey];
+      }
+    })();
+
+    if (!force) _inflight[flightKey] = run;
+    return run;
   }
 
   async function save(db, extra) {
-    const payload = Object.assign({}, S, extra || {}, {
+    if (extra && typeof extra === 'object') apply(extra);
+    const payload = Object.assign({}, deepClone(S), extra || {}, {
       updatedAt: new Date().toISOString(),
     });
-    await db.collection('settings').doc(SETTINGS_DOC).set(payload, { merge: true });
+    const proj = dbProjectId(db);
+    await dbWriteSettings(db, SETTINGS_DOC, payload, true);
+    writeSettingsCache(SETTINGS_DOC, payload, proj);
+    if (proj === FIRESTORE_PROJECT) writeSettingsCache(SETTINGS_DOC, payload, FIRESTORE_PROJECT);
+    emitChange();
     return { ok: true };
   }
 
@@ -470,13 +1976,20 @@
   global.CalcEngine = {
     DEFAULTS,
     LABELS,
-    get, set, reset, apply,
-    calculateLine, calculateService, calculateOrder, describeOrder, lineLabel,
+    SHORT_LEVEL,
+    get, set, reset, apply, onChange,
+    calculateLine, calculateService, calculateOrder, describeOrder,
+    lineLabel, groupLabel, cleanLineSpec, cleanGroupSpec, cleanToothIds,
+    encodeCode, encodeLineCode, decodeCode, extractCode,
+    buildQuotePdfBytes, downloadQuotePdf,
     basePerTooth, allowsStones, money, fmt, syncServiceDefaults,
     load, save, fetchSettingsRest,
+    readSettingsCache, writeSettingsCache, clearSettingsCache,
+    dbReadSettings, dbWriteSettings, dbProjectId,
+    isQuotaPaused, markQuotaPaused, isQuotaErr, fetchWithTimeout,
     SETTINGS_DOC,
   };
-})(window);
+})(typeof globalThis !== 'undefined' ? globalThis : window);
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -569,6 +2082,8 @@ const SITE_GROUPS = [
   { id:'auto',     title:'Automatic', keys:['reminderHour','reminderDaysBefore'] },
 ];
 
+const _g = typeof globalThis !== 'undefined' ? globalThis : window;
+
 const SiteConfig = {
   DEFAULTS: SITE_DEFAULTS,
   LABELS: SITE_LABELS,
@@ -588,10 +2103,10 @@ const SiteConfig = {
 
   set(key, value) {
     this.data[key] = value;
-    if (window.CalcEngine && window.CalcEngine.syncServiceDefaults) {
-      window.CalcEngine.syncServiceDefaults(this.data);
+    if (_g.CalcEngine && _g.CalcEngine.syncServiceDefaults) {
+      _g.CalcEngine.syncServiceDefaults(this.data);
     }
-    this.apply(document);
+    this.apply(typeof document !== 'undefined' ? document : null);
     this._emit();
   },
 
@@ -609,13 +2124,15 @@ const SiteConfig = {
   apply(root) {
     const scope = root || (typeof document !== 'undefined' ? document : null);
     if (!scope || !scope.querySelectorAll) return;
+    const fmtFn = (_g.CalcEngine && _g.CalcEngine.fmt)
+      ? _g.CalcEngine.fmt
+      : (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     scope.querySelectorAll('[data-cfg]').forEach(el => {
       const key = el.getAttribute('data-cfg');
       const val = this.get(key);
       const fmt = el.getAttribute('data-cfg-format');
       let out = val;
-      if (fmt === 'money') out = window.CalcEngine.fmt(val);
-      else if (fmt === 'num') out = window.CalcEngine.fmt(val);
+      if (fmt === 'money' || fmt === 'num') out = fmtFn(val);
       else if (fmt === 'upper') out = String(val).toUpperCase();
       if (el.hasAttribute('data-cfg-attr')) el.setAttribute(el.getAttribute('data-cfg-attr'), out);
       else el.textContent = out;
@@ -629,39 +2146,74 @@ const SiteConfig = {
   },
   _emit() { (this._subs || []).forEach(fn => { try { fn(this.data); } catch (e) {} }); },
 
-  async load(db) {
+  async load(db, opts) {
+    const E = _g.CalcEngine;
+    const force = !!(opts && opts.force);
+    const canDb = !!(db && E && (typeof db.collection === 'function' || typeof db._egygzGet === 'function'));
+    const proj = canDb ? E.dbProjectId(db) : 'egygrillz-studio';
+
     try {
-      if (db && typeof db.collection === 'function') {
-        const snap = await db.collection('settings').doc(SITE_DOC).get();
-        if (snap.exists) Object.assign(this.data, snap.data() || {});
-      } else if (window.CalcEngine && window.CalcEngine.fetchSettingsRest) {
-        const data = await window.CalcEngine.fetchSettingsRest(SITE_DOC);
+      if (E && !force) {
+        const cached = E.readSettingsCache(SITE_DOC, false, proj);
+        if (cached) {
+          Object.assign(this.data, cached);
+          if (E.syncServiceDefaults) E.syncServiceDefaults(this.data);
+          this._loaded = true;
+          this.apply(typeof document !== 'undefined' ? document : null);
+          this._emit();
+          return this.data;
+        }
+      }
+      if (canDb && !(E.isQuotaPaused() && !force)) {
+        try {
+          const res = await E.dbReadSettings(db, SITE_DOC);
+          if (res.exists && res.data) {
+            Object.assign(this.data, res.data);
+            E.writeSettingsCache(SITE_DOC, res.data, proj);
+          } else if (proj !== 'egygrillz-studio') {
+            const pub = await E.fetchSettingsRest(SITE_DOC, { force });
+            if (pub) Object.assign(this.data, pub);
+          }
+        } catch (dbErr) {
+          if (E.isQuotaErr(dbErr)) E.markQuotaPaused();
+          const stale = E.readSettingsCache(SITE_DOC, true, proj) || await E.fetchSettingsRest(SITE_DOC);
+          if (stale) Object.assign(this.data, stale);
+        }
+      } else if (E && E.fetchSettingsRest) {
+        const data = await E.fetchSettingsRest(SITE_DOC, { force });
         if (data) Object.assign(this.data, data);
       }
     } catch (e) {
-      /* offline or unavailable — fall back to defaults */
+      if (E) {
+        const stale = E.readSettingsCache(SITE_DOC, true, proj) || E.readSettingsCache(SITE_DOC, true, 'egygrillz-studio');
+        if (stale) Object.assign(this.data, stale);
+      }
     }
-    if (window.CalcEngine && window.CalcEngine.syncServiceDefaults) {
-      window.CalcEngine.syncServiceDefaults(this.data);
-    }
+    if (E && E.syncServiceDefaults) E.syncServiceDefaults(this.data);
     this._loaded = true;
-    this.apply(document);
+    this.apply(typeof document !== 'undefined' ? document : null);
     this._emit();
     return this.data;
   },
 
   async save(db) {
+    const E = _g.CalcEngine;
     const payload = {};
     for (const k of Object.keys(SITE_DEFAULTS)) {
       const v = this.data[k];
       payload[k] = v === undefined ? SITE_DEFAULTS[k] : v;
     }
-    await db.collection('settings').doc(SITE_DOC).set(payload, { merge: true });
-    if (window.CalcEngine && window.CalcEngine.syncServiceDefaults) {
-      window.CalcEngine.syncServiceDefaults(this.data);
+    payload.updatedAt = new Date().toISOString();
+    if (E && E.dbWriteSettings) {
+      await E.dbWriteSettings(db, SITE_DOC, payload, true);
+      const proj = E.dbProjectId(db);
+      E.writeSettingsCache(SITE_DOC, payload, proj);
+    } else {
+      await db.collection('settings').doc(SITE_DOC).set(payload, { merge: true });
     }
+    if (E && E.syncServiceDefaults) E.syncServiceDefaults(this.data);
     this._loaded = true;
-    this.apply(document);
+    this.apply(typeof document !== 'undefined' ? document : null);
     this._emit();
     return payload;
   },
@@ -669,10 +2221,13 @@ const SiteConfig = {
   async reset(db) {
     this.data = Object.assign({}, SITE_DEFAULTS);
     if (db) await this.save(db);
-    if (window.CalcEngine && window.CalcEngine.syncServiceDefaults) {
-      window.CalcEngine.syncServiceDefaults(this.data);
+    else if (_g.CalcEngine && _g.CalcEngine.clearSettingsCache) {
+      _g.CalcEngine.clearSettingsCache(SITE_DOC, 'egygrillz-studio');
     }
-    this.apply(document);
+    if (_g.CalcEngine && _g.CalcEngine.syncServiceDefaults) {
+      _g.CalcEngine.syncServiceDefaults(this.data);
+    }
+    this.apply(typeof document !== 'undefined' ? document : null);
     this._emit();
   },
 
@@ -685,7 +2240,7 @@ const SiteConfig = {
         return `<label class="sc-row">
           <span class="sc-name">${SITE_LABELS[k] || k}</span>
           <input class="sc-input" data-k="${k}" type="${isNum ? 'number' : 'text'}"
-                 ${isNum ? 'step="any"' : ''} value="${String(val).replace(/"/g, '&quot;')}">
+                 ${isNum ? 'step="any"' : ''} value="${String(val).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">
         </label>`;
       }).join('');
       return `<div class="sc-group"><div class="sc-title">${grp.title}</div>${rows}</div>`;
@@ -708,9 +2263,10 @@ const SiteConfig = {
         .sc-actions{grid-column:1/-1;display:flex;align-items:center;gap:14px;margin-top:8px;padding-top:18px;border-top:1px solid #e6e6e6;}
         .sc-save,.sc-reset{font-family:'Arimo',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:12px 26px;border-radius:2px;cursor:pointer;transition:.2s;}
         .sc-save{background:#1f1f1f;color:#fff;border:1px solid #1f1f1f;}
-        .sc-save:hover{background:#000;}
+        .sc-save:hover:not(:disabled){background:#000;}
+        .sc-save:disabled,.sc-reset:disabled{opacity:.55;cursor:not-allowed;}
         .sc-reset{background:#f4f4f4;color:#1f1f1f;border:1px solid #e2e2e2;}
-        .sc-reset:hover{background:#1f1f1f;color:#fff;}
+        .sc-reset:hover:not(:disabled){background:#1f1f1f;color:#fff;}
         .sc-note{font-size:11px;color:#8a8a8a;}
       </style>`;
 
@@ -718,24 +2274,50 @@ const SiteConfig = {
       inp.addEventListener('input', () => {
         const k = inp.getAttribute('data-k');
         const raw = inp.value;
-        this.data[k] = typeof SITE_DEFAULTS[k] === 'number' ? (raw === '' ? 0 : Number(raw)) : raw;
+        if (typeof SITE_DEFAULTS[k] === 'number') {
+          const n = Number(raw);
+          this.data[k] = raw === '' ? 0 : (Number.isFinite(n) ? n : SITE_DEFAULTS[k]);
+        } else {
+          this.data[k] = raw;
+        }
       });
     });
 
     const note = container.querySelector('.sc-note');
-    container.querySelector('.sc-save').addEventListener('click', async () => {
-      note.textContent = 'Saving...';
-      try { await this.save(db); note.textContent = 'Saved'; if (onSaved) onSaved(); }
-      catch (e) { note.textContent = 'Could not save: ' + (e.message || e); }
-      setTimeout(() => { note.textContent = ''; }, 2500);
+    const saveBtn = container.querySelector('.sc-save');
+    const resetBtn = container.querySelector('.sc-reset');
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      note.textContent = 'Saving…';
+      try {
+        await this.save(db);
+        note.textContent = 'Saved';
+        if (onSaved) onSaved();
+      } catch (e) {
+        note.textContent = 'Could not save: ' + ((e && e.message) || e);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save settings';
+      }
+      setTimeout(() => { if (note.textContent === 'Saved') note.textContent = ''; }, 2500);
     });
-    container.querySelector('.sc-reset').addEventListener('click', async () => {
-      if (!confirm('Reset every setting to its default?')) return;
-      await this.reset(db);
-      this.renderSettings(container, db, onSaved);
-      if (onSaved) onSaved();
+    resetBtn.addEventListener('click', async () => {
+      if (typeof confirm === 'function' && !confirm('Reset every setting to its default?')) return;
+      resetBtn.disabled = true;
+      note.textContent = 'Resetting…';
+      try {
+        await this.reset(db);
+        this.renderSettings(container, db, onSaved);
+        const n2 = container.querySelector('.sc-note');
+        if (n2) n2.textContent = 'Defaults restored';
+        if (onSaved) onSaved();
+      } catch (e) {
+        resetBtn.disabled = false;
+        note.textContent = 'Could not reset: ' + ((e && e.message) || e);
+      }
     });
   },
 };
 
-window.SiteConfig = SiteConfig;
+_g.SiteConfig = SiteConfig;

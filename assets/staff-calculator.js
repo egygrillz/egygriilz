@@ -170,6 +170,28 @@
 .sc-set-actions{display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:16px;
   border-top:1px solid #e5e7eb;flex-wrap:wrap;}
 .sc-set-note{font-size:11px;color:#696969;}
+.sc-codebar{border:1px solid #e5e7eb;border-radius:8px;background:#fafafa;padding:9px 11px;}
+.sc-codebar-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.sc-codebar-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.sc-codebar-inp{flex:1 1 170px;min-width:0;padding:7px 9px;border:1px solid #d1d5db;border-radius:6px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;background:#fff;color:#111;}
+.sc-codebar-inp:focus{outline:none;border-color:#1d1d1d;}
+.sc-code-pill{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:4px 8px;
+  background:#fff;border:1px dashed #c8b285;border-radius:5px;font-size:11px;color:#1d1d1d;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;word-break:break-all;max-width:100%;}
+.sc-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:3px;background:#f3f4f6;border-radius:7px;}
+.sc-mode-tab{border:none;background:transparent;border-radius:5px;padding:6px 8px;font-family:inherit;
+  font-size:11px;font-weight:600;color:#6b7280;cursor:pointer;transition:.15s;text-align:center;}
+.sc-mode-tab:hover{color:#1d1d1d;}
+.sc-mode-tab.on{background:#1d1d1d;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.sc-mixed-box{border:1px solid #e5dec9;border-radius:8px;background:#fdfcf8;padding:10px;}
+.sc-grp-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:7px 9px;
+  background:#fff;border:1px solid #ece8db;border-radius:6px;margin-top:6px;}
+.sc-grp-row.editing{border-color:#1d1d1d;background:#f8f9fa;}
+.sc-grp-main{min-width:0;flex:1;font-size:11.5px;color:#1d1d1d;line-height:1.4;}
+.sc-grp-price{font-size:11.5px;font-weight:700;color:#1d1d1d;white-space:nowrap;}
+.sc-grp-sum{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;
+  padding-top:7px;border-top:1px dashed #e2dac4;font-size:11px;font-weight:600;color:#1d1d1d;}
 `;
 
   function injectCss() {
@@ -228,11 +250,14 @@
       showApply: false,
       showPdf: false,
       showIntake: false,
+      showCodeBar: true,
       autoCalculate: false,
       designName: '',
       onChange: null,
       onApply: null,
       onCalculate: null,
+      onImportCode: null,
+      getExtraCodeData: null,
       initialLines: [],
       initialServices: [],
     }, options || {});
@@ -247,8 +272,14 @@
       lines: Array.isArray(o.initialLines) ? o.initialLines.map((l) => Object.assign({}, l)) : [],
       services: Array.isArray(o.initialServices) ? o.initialServices.map((s) => Object.assign({}, s)) : [],
       editingId: null,
+      mixedMode: false,
+      editorGroups: [],
+      editingGroupId: null,
       lastQuote: null,
+      lastCode: '',
       rateKind: null,
+      rateBox: null,
+      unsubEngine: null,
     };
 
     host.innerHTML = renderShell();
@@ -257,28 +288,41 @@
     wire();
     syncVisibility();
     renderLevelStrip();
+    renderMixedGroups();
     renderLines();
     renderServices();
     syncLive();
     if (o.autoCalculate) calculate();
+    if (engine() && typeof engine().onChange === 'function') {
+      S.unsubEngine = engine().onChange(() => {
+        try { refreshOptions(); renderLevelStrip(); syncVisibility(); renderMixedGroups(); syncLive(); } catch (e) {}
+      });
+    }
 
     const api = {
       host,
       el,
       getLines: () => S.lines.map((l) => Object.assign({}, l)),
-      setLines: (lines) => { S.lines = Array.isArray(lines) ? lines.map((l) => Object.assign({}, l)) : []; S.editingId = null; renderLines(); setEditorMode('add'); },
+      setLines: (lines) => {
+        S.lines = Array.isArray(lines) ? lines.map((l) => engine().calculateLine(l)) : [];
+        S.editingId = null;
+        renderLines();
+        setEditorMode('add');
+      },
       getServices: () => S.services.map((s) => Object.assign({}, s)),
       setServices: (svc) => { S.services = Array.isArray(svc) ? svc.map((s) => Object.assign({}, s)) : []; renderServices(); },
       getOrder: () => S.lastQuote,
-      getResultText: () => (el('resultText') ? el('resultText').innerText : ''),
+      getResultText: () => (el('resultText') ? el('resultText').textContent : ''),
       getLastQuote: () => S.lastQuote,
       lineLabel: (line) => lineLabel(line),
       lineSubLabel: (line) => lineSubLabel(line),
+      exportCode: (opts) => exportCode(opts),
+      importCode: (raw, opts) => importCode(raw, opts),
       setField: (name, value) => {
         const node = el(name);
         if (!node) return;
         try {
-          if (node.options && !Array.from(node.options).some((o) => o.value === String(value))) return;
+          if (node.options && !Array.from(node.options).some((opt) => opt.value === String(value))) return;
         } catch (e) { /* not a select */ }
         node.value = value;
         syncVisibility();
@@ -288,19 +332,38 @@
       getField: (name) => { const node = el(name); return node ? node.value : ''; },
       loadLine: (line, name) => {
         writeEditor(Object.assign({}, line || {}, { name: name !== undefined ? name : (line && line.name) || '' }));
-        syncVisibility(); renderLevelStrip(); syncLive();
+        syncVisibility(); renderLevelStrip(); renderMixedGroups(); syncLive();
       },
       readLine: () => readEditor(),
-      refresh: () => { syncVisibility(); renderLevelStrip(); renderLines(); renderServices(); syncLive(); },
+      refresh: () => {
+        refreshOptions();
+        S.lines = S.lines.map((l) => engine().calculateLine(l));
+        S.editorGroups = S.editorGroups.map((g) => engine().calculateLine(g));
+        syncVisibility();
+        renderLevelStrip();
+        renderMixedGroups();
+        renderLines();
+        renderServices();
+        syncLive();
+      },
       calculate,
       apply: apply,
       reset: () => {
         S.lines = []; S.services = []; S.editingId = null;
+        S.mixedMode = false; S.editorGroups = []; S.editingGroupId = null;
+        syncMixedUi(); renderMixedGroups();
         renderLines(); renderServices(); setEditorMode('add');
         const r = el('result'); if (r) r.classList.add('sc-hidden');
+        const cp = el('codeOut'); if (cp) cp.classList.add('sc-hidden');
         S.lastQuote = null; syncLive();
       },
-      destroy: () => { host.innerHTML = ''; host.classList.remove('sc-host'); },
+      destroy: () => {
+        if (typeof S.unsubEngine === 'function') { try { S.unsubEngine(); } catch (e) {} S.unsubEngine = null; }
+        if (S.rateKeyHandler) { document.removeEventListener('keydown', S.rateKeyHandler); S.rateKeyHandler = null; }
+        if (S.rateBox && S.rateBox.parentNode) { S.rateBox.parentNode.removeChild(S.rateBox); S.rateBox = null; }
+        host.innerHTML = '';
+        host.classList.remove('sc-host');
+      },
     };
 
     /* ───────────────────────── markup ───────────────────────── */
@@ -317,10 +380,23 @@
       ${head}
       <div class="sc-stack" style="margin-top:${head ? '12' : '0'}px">
 
+        ${o.showCodeBar !== false ? `
+        <div class="sc-codebar" data-sc="codeBar">
+          <div class="sc-codebar-top">
+            <span class="sc-lbl" style="margin:0">Quick Transfer Code <span class="sc-req">(works across all calculators)</span></span>
+            <button type="button" class="sc-btn sc-btn-sm" data-sc="copyCodeBtn">Copy Code</button>
+          </div>
+          <div class="sc-codebar-row">
+            <input type="text" class="sc-codebar-inp" data-sc="codeInput" placeholder="Paste EGZ-... code or link to load instantly" autocomplete="off" spellcheck="false">
+            <button type="button" class="sc-btn sc-btn-soft sc-btn-sm" data-sc="loadCodeBtn">Load</button>
+          </div>
+          <div class="sc-code-pill sc-hidden" data-sc="codeOut"></div>
+        </div>` : ''}
+
         ${parts.lines ? `
         <div data-sc="linesWrap">
           <div class="sc-between" style="margin-bottom:6px">
-            <label class="sc-lbl" style="margin:0">Design lines <span class="sc-req">(multiple designs in one quote)</span></label>
+            <label class="sc-lbl" style="margin:0">Design lines <span class="sc-req">(multiple sets in one quote)</span></label>
             <span style="display:flex;align-items:center;gap:8px;flex-shrink:0">
               <span class="sc-badge" data-sc="lineBadge"></span>
               <button type="button" class="sc-link sc-link-danger" data-sc="clearLines">Clear all</button>
@@ -328,7 +404,7 @@
           </div>
           <div data-sc="linesList"></div>
           <div class="sc-lines-empty" data-sc="linesEmpty">
-            No lines yet. Fill the line editor below and press “Add design line” for each design in the set — or just press “Calculate Exact Quote” to quote a single design.
+            No lines yet. Configure a set below (all teeth same level, or mixed teeth in one set) and press “Add design line” — or press “Calculate Exact Quote” to quote a single set.
           </div>
         </div>` : ''}
 
@@ -336,13 +412,44 @@
         <div class="sc-card" data-sc="lineEditor" style="padding:12px">
           <div class="sc-stack-sm">
             <div class="sc-between">
-              <span class="sc-lbl" style="margin:0" data-sc="editorTitle">Line editor</span>
+              <span class="sc-lbl" style="margin:0" data-sc="editorTitle">Set editor</span>
               <button type="button" class="sc-link sc-hidden" data-sc="cancelEdit">Cancel edit</button>
             </div>
 
             <div>
-              <label class="sc-lbl">Design name <span class="sc-req">(optional — appears on the quote &amp; PDF)</span></label>
-              <input type="text" class="sc-input" data-sc="name" maxlength="40" placeholder="e.g. Top grillz — Ahmed · Bottom bars · Left fang">
+              <label class="sc-lbl">Set / design name <span class="sc-req">(optional — appears on the quote &amp; PDF)</span></label>
+              <input type="text" class="sc-input" data-sc="name" maxlength="40" placeholder="e.g. Top 6 set · Bottom bars · Custom fangs">
+            </div>
+
+            <div>
+              <label class="sc-lbl">Teeth setup inside this set</label>
+              <div class="sc-mode-tabs" role="tablist">
+                <button type="button" class="sc-mode-tab on" data-sc="modeUniform">Same level on all teeth</button>
+                <button type="button" class="sc-mode-tab" data-sc="modeMixed">Mixed teeth in 1 set</button>
+              </div>
+            </div>
+
+            <div class="sc-mixed-box sc-hidden" data-sc="mixedWrap">
+              <div class="sc-between">
+                <span class="sc-lbl" style="margin:0">Tooth groups in this set</span>
+                <button type="button" class="sc-link sc-link-danger sc-hidden" data-sc="clearGroups">Clear groups</button>
+              </div>
+              <div data-sc="groupsList"></div>
+              <div class="sc-faint" style="margin-top:6px" data-sc="groupsEmpty">
+                Example: add <strong>2 teeth Level 4 + Iced</strong>, then add <strong>4 teeth Level 1 Plain</strong> — all priced together as one single set.
+              </div>
+              <div class="sc-grp-sum sc-hidden" data-sc="groupsSum">
+                <span data-sc="groupsSumLbl">0 teeth</span>
+                <span data-sc="groupsSumVal">0 EGP</span>
+              </div>
+            </div>
+
+            <div class="sc-hidden" data-sc="groupLabelWrap">
+              <div class="sc-between" style="margin-bottom:4px">
+                <label class="sc-lbl" style="margin:0" data-sc="groupFormTitle">Configure tooth group to add</label>
+                <button type="button" class="sc-link sc-hidden" data-sc="cancelGroupEdit">Cancel group edit</button>
+              </div>
+              <input type="text" class="sc-input sc-input-sm" data-sc="groupLabel" maxlength="40" placeholder="Tooth group label (optional, e.g. 2 Canines / Front 4 / Left fang)">
             </div>
 
             <div class="sc-grid2">
@@ -476,10 +583,14 @@
               <select class="sc-select" data-sc="anodize"></select>
             </div>
 
+            <div class="sc-hidden" data-sc="addGroupWrap">
+              <button type="button" class="sc-btn sc-btn-block" style="background:#2d2a24" data-sc="addGroupBtn">+ Add tooth group to this set</button>
+            </div>
+
             ${o.designMode ? `
             <div class="sc-live">
               <div>
-                <div class="sc-live-lbl">Calculated line total</div>
+                <div class="sc-live-lbl">Calculated set total</div>
                 <div class="sc-live-spec" data-sc="liveSpec">—</div>
               </div>
               <div class="sc-live-val" data-sc="liveVal">0 EGP</div>
@@ -556,6 +667,9 @@
           </div>` : ''}
           <div class="sc-result-actions">
             <button type="button" class="sc-btn sc-btn-soft" data-sc="copyResult">Copy</button>
+            <button type="button" class="sc-btn sc-btn-soft" data-sc="copyResultCode">Copy Code</button>
+            ${o.showPdf ? `<button type="button" class="sc-btn" data-sc="downloadPdf">Download PDF</button>` : ''}
+            ${typeof o.onInsert === 'function' ? `<button type="button" class="sc-btn sc-btn-soft" data-sc="insertResult">${esc(o.insertLabel || 'Send to Chat')}</button>` : ''}
             ${o.showResultApply ? `<button type="button" class="sc-btn" data-sc="resultApply">${esc(o.applyLabel)}</button>` : ''}
           </div>
         </div>` : ''}
@@ -570,7 +684,8 @@
       const setOpts = (node, map, suffix) => {
         if (!node || !map) return;
         const current = node.value;
-        node.innerHTML = Object.keys(map).map((k) => {
+        const keys = Object.keys(map);
+        node.innerHTML = keys.map((k) => {
           const v = map[k];
           const base = k === 'none' ? 'None'
             : (L.setting && L.setting[k]) || (L.coverage && L.coverage[k]) || (L.plating && L.plating[k]) ||
@@ -578,7 +693,7 @@
           const label = k === 'none' ? 'None' : base + ' (' + v + (suffix || '') + ')';
           return `<option value="${esc(k)}">${esc(label)}</option>`;
         }).join('');
-        node.value = current;
+        if (current && keys.includes(current)) node.value = current;
       };
       setOpts(el('plating'), c.plating);
       setOpts(el('enamel'), c.enamel);
@@ -586,6 +701,29 @@
       setOpts(el('anodize'), c.anodize);
       setOpts(el('accentSetting'), c.settingPrice);
       setOpts(el('coverage'), c.coveragePrice);
+
+      const lvl = el('level');
+      if (lvl && c.designPct) {
+        const curLvl = lvl.value || '1';
+        const lvlLabels = {
+          '0.5': '0.5 — Bars (half base, no design %)',
+          '1': '1 — Solid (+' + number(c.designPct['1']) + '%)',
+          '2': '2 — Open face (+' + number(c.designPct['2']) + '%)',
+          '3': '3 — Mid detail (+' + number(c.designPct['3']) + '%)',
+          '4': '4 — Complex (+' + number(c.designPct['4']) + '%)',
+          '5': '5 — Scorpion / heavy detail (+' + number(c.designPct['5']) + '%)',
+          '6': '6 — Ultimate (+' + number(c.designPct['6']) + '%)',
+        };
+        lvl.innerHTML = Object.keys(lvlLabels).map((k) =>
+          `<option value="${esc(k)}">${esc(lvlLabels[k])}</option>`).join('');
+        lvl.value = curLvl;
+      }
+
+      const barsNote = el('fullBarsNote');
+      if (barsNote) {
+        const barsRate = number(c.barsStonesPerTooth) || 400;
+        barsNote.textContent = 'Level 0.5 Bars + full iced uses a fixed ' + barsRate + ' EGP/tooth — no type/coverage needed.';
+      }
 
       const tl = el('timeline');
       if (tl) {
@@ -626,8 +764,42 @@
       if (el('name')) el('name').addEventListener('input', syncLive);
 
       if (el('toggleGuide')) el('toggleGuide').addEventListener('click', toggleGuide);
+      if (el('modeUniform')) el('modeUniform').addEventListener('click', () => setMixedMode(false));
+      if (el('modeMixed')) el('modeMixed').addEventListener('click', () => setMixedMode(true));
+      if (el('addGroupBtn')) el('addGroupBtn').addEventListener('click', addOrSaveGroup);
+      if (el('cancelGroupEdit')) el('cancelGroupEdit').addEventListener('click', cancelGroupEdit);
+      if (el('clearGroups')) el('clearGroups').addEventListener('click', clearGroups);
+      if (el('copyCodeBtn')) el('copyCodeBtn').addEventListener('click', () => copyCode());
+      if (el('copyResultCode')) el('copyResultCode').addEventListener('click', () => copyCode());
+      if (el('loadCodeBtn')) el('loadCodeBtn').addEventListener('click', () => {
+        const inp = el('codeInput');
+        const val = inp ? inp.value.trim() : '';
+        if (val) { importCode(val); return; }
+        if (global.navigator && global.navigator.clipboard && global.navigator.clipboard.readText) {
+          global.navigator.clipboard.readText().then((clip) => {
+            if (!clip || !clip.trim()) { notify('Paste an EGZ- code in the box first', true); return; }
+            if (inp) inp.value = clip.trim();
+            importCode(clip.trim());
+          }).catch(() => notify('Paste an EGZ- code in the box first', true));
+        } else {
+          notify('Paste an EGZ- code in the box first', true);
+        }
+      });
+      if (el('codeInput')) {
+        el('codeInput').addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') { ev.preventDefault(); importCode(el('codeInput').value); }
+        });
+      }
+      if (el('timeline')) el('timeline').addEventListener('change', () => { if (o.autoCalculate) calculate(); });
+      if (el('mold')) el('mold').addEventListener('change', () => { if (o.autoCalculate) calculate(); });
+      if (el('deposit')) el('deposit').addEventListener('change', () => { if (o.autoCalculate) calculate(); });
       if (el('addLine')) el('addLine').addEventListener('click', addLine);
-      if (el('cancelEdit')) el('cancelEdit').addEventListener('click', () => { S.editingId = null; setEditorMode('add'); });
+      if (el('cancelEdit')) el('cancelEdit').addEventListener('click', () => {
+        S.editingId = null;
+        S.mixedMode = false; S.editorGroups = []; S.editingGroupId = null;
+        syncMixedUi(); renderMixedGroups();
+        setEditorMode('add');
+      });
       if (el('clearLines')) el('clearLines').addEventListener('click', clearLines);
       if (el('addService')) el('addService').addEventListener('click', () => addService());
       host.querySelectorAll('[data-sc="quickSvc"]').forEach((b) => {
@@ -635,11 +807,26 @@
       });
       if (el('calculate')) el('calculate').addEventListener('click', calculate);
       if (el('copyResult')) el('copyResult').addEventListener('click', copyResult);
+      if (el('downloadPdf')) el('downloadPdf').addEventListener('click', () => {
+        if (!S.lastQuote) calculate();
+        if (!S.lastQuote) return;
+        if (typeof o.onPdf === 'function') o.onPdf(S.lastQuote, api);
+        else if (typeof global.downloadQuotationPdf === 'function') global.downloadQuotationPdf();
+        else if (engine() && typeof engine().downloadQuotePdf === 'function') {
+          engine().downloadQuotePdf(S.lastQuote, {
+            clientName: el('clientName') ? el('clientName').value : '',
+            notes: el('clientNotes') ? el('clientNotes').value : '',
+            code: exportCode(),
+          });
+          notify('PDF downloaded');
+        }
+      });
+      if (el('insertResult')) el('insertResult').addEventListener('click', () => {
+        if (!S.lastQuote) calculate();
+        if (typeof o.onInsert === 'function') o.onInsert(api.getResultText(), S.lastQuote, api);
+      });
       if (el('resultApply')) el('resultApply').addEventListener('click', apply);
       if (el('applyBtn')) el('applyBtn').addEventListener('click', apply);
-      if (el('rateSave')) el('rateSave').addEventListener('click', saveRate);
-      if (el('rateCancel')) el('rateCancel').addEventListener('click', closeRate);
-      if (el('rateMask')) el('rateMask').addEventListener('click', closeRate);
     }
 
     /* ───────────────────────── visibility ───────────────────────── */
@@ -743,47 +930,63 @@
     function askRate(kind) {
       S.rateKind = kind;
       const meta = RATE_META[kind];
-      let box = host.querySelector('[data-sc="rateWrap"]');
-      if (!box) {
+      if (!meta) return;
+      let box = S.rateBox;
+      if (!box || !box.parentNode) {
         box = document.createElement('div');
         box.className = 'sc-rate-wrap sc-hidden';
         box.setAttribute('data-sc', 'rateWrap');
         box.innerHTML = `
           <div class="sc-rate-mask" data-sc="rateMask"></div>
-          <div class="sc-rate-box">
+          <div class="sc-rate-box" role="dialog" aria-modal="true">
             <h3 data-sc="rateTitle"></h3>
             <p data-sc="rateHint"></p>
-            <input type="number" class="sc-input" style="margin-top:12px" data-sc="rateInput" inputmode="decimal" placeholder="0">
+            <input type="number" class="sc-input" style="margin-top:12px" data-sc="rateInput" inputmode="decimal" min="0" step="any" placeholder="0">
             <div class="sc-rate-actions">
               <button type="button" class="sc-btn sc-btn-ghost" data-sc="rateCancel">Cancel</button>
               <button type="button" class="sc-btn" data-sc="rateSave">Save</button>
             </div>
           </div>`;
         document.body.appendChild(box);
+        S.rateBox = box;
         box.querySelector('[data-sc="rateMask"]').addEventListener('click', closeRate);
         box.querySelector('[data-sc="rateCancel"]').addEventListener('click', closeRate);
         box.querySelector('[data-sc="rateSave"]').addEventListener('click', saveRate);
-        box.querySelector('[data-sc="rateInput"]').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveRate(); });
+        box.querySelector('[data-sc="rateInput"]').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); saveRate(); }
+          if (e.key === 'Escape') { e.preventDefault(); closeRate(); }
+        });
+        if (!S.rateKeyHandler) {
+          S.rateKeyHandler = (e) => {
+            if (e.key === 'Escape' && S.rateBox && !S.rateBox.classList.contains('sc-hidden')) closeRate();
+          };
+          document.addEventListener('keydown', S.rateKeyHandler);
+        }
       }
       box.querySelector('[data-sc="rateTitle"]').textContent = meta.t;
       box.querySelector('[data-sc="rateHint"]').textContent = o.db
         ? meta.h + ' — saved to the database for every device.'
-        : meta.h + ' — the studio rate is used on every page.';
+        : meta.h + ' — used immediately for this calculation.';
       box.querySelector('[data-sc="rateInput"]').value = getRate(kind) || '';
       box.classList.remove('sc-hidden');
-      setTimeout(() => box.querySelector('[data-sc="rateInput"]').focus(), 60);
+      setTimeout(() => {
+        const inp = box && box.querySelector('[data-sc="rateInput"]');
+        if (inp) inp.focus();
+      }, 60);
     }
 
     function closeRate() {
-      const box = host.querySelector('[data-sc="rateWrap"]');
-      if (box) box.classList.add('sc-hidden');
+      if (S.rateBox) S.rateBox.classList.add('sc-hidden');
     }
 
     function saveRate() {
-      const box = host.querySelector('[data-sc="rateWrap"]');
-      const v = parseFloat(box.querySelector('[data-sc="rateInput"]').value);
-      if (!v || v <= 0) { notify('Enter a valid rate', true); return; }
+      const box = S.rateBox;
+      if (!box) return;
+      const inp = box.querySelector('[data-sc="rateInput"]');
+      const v = parseFloat(inp ? inp.value : '');
+      if (!Number.isFinite(v) || v <= 0) { notify('Enter a valid rate greater than 0', true); return; }
       const kind = S.rateKind;
+      if (!kind || !RATE_META[kind]) { closeRate(); return; }
       const c = cfg();
       const patch = {};
       if (kind === 'gold') {
@@ -794,14 +997,28 @@
       }
       engine().set(patch);
       if (el('goldPrice') && kind === 'gold') el('goldPrice').value = v;
-      if (el('accentCustom') && kind === 'labAccent' || kind === 'natAccent') { if (el('accentCustom')) el('accentCustom').value = v; }
+      if (el('accentCustom') && (kind === 'labAccent' || kind === 'natAccent')) el('accentCustom').value = v;
       if (el('fullCustom') && (kind === 'labFull' || kind === 'natFull')) el('fullCustom').value = v;
-      S.lines.forEach((l) => Object.assign(l, engine().calculateLine(l)));
+      S.lines = S.lines.map((l) => {
+        if (kind === 'gold') {
+          if (l.material === 'gold') l.goldPrice = v;
+          if (Array.isArray(l.groups)) {
+            l.groups.forEach((g) => { if (g.material === 'gold') g.goldPrice = v; });
+          }
+        }
+        return engine().calculateLine(l);
+      });
+      S.editorGroups = S.editorGroups.map((g) => {
+        if (kind === 'gold' && g.material === 'gold') g.goldPrice = v;
+        return engine().calculateLine(g);
+      });
+      renderMixedGroups();
       renderLines();
       persist(patch);
       closeRate();
       syncLive();
-      notify('Rate saved to the database');
+      fireChange();
+      notify(o.db ? 'Rate saved to the database' : 'Rate updated');
     }
 
     async function persist(patch) {
@@ -831,16 +1048,15 @@
     }
     showNoticeSlot();
 
-    /* ───────────────────── editor ⇄ line ───────────────────── */
+    /* ───────────────────── editor ⇄ line (uniform & mixed-teeth) ───────────────────── */
 
-    function readEditor() {
+    function readGroupFields() {
       const c = cfg();
       const material = el('material').value;
       const teeth = parseInt(el('teeth').value, 10);
       const level = el('level').value;
       const stones = material === 'chrome' || material === 'titanium' ? 'none' : el('stones').value;
       const spec = {
-        name: (el('name').value || '').trim().slice(0, 40),
         material,
         teeth,
         level,
@@ -849,6 +1065,8 @@
         engraving: el('engraving').value,
         anodize: material === 'titanium' ? el('anodize').value : 'none',
       };
+      const gl = el('groupLabel') ? (el('groupLabel').value || '').trim().slice(0, 40) : '';
+      if (gl) spec.label = gl;
       if (!teeth || teeth < 1 || teeth > 16) return { error: 'Teeth must be between 1 and 16' };
       if (material === 'gold') {
         spec.karat = el('karat').value;
@@ -881,52 +1099,255 @@
           spec.full = { type, coverage, price, customPrice: price };
         }
       }
+      return { group: spec };
+    }
+
+    function readEditor() {
+      const setName = el('name') ? (el('name').value || '').trim().slice(0, 40) : '';
+      if (S.mixedMode && S.editorGroups.length > 0) {
+        const cleanGs = S.editorGroups.map((g) => engine().cleanGroupSpec ? engine().cleanGroupSpec(g) : Object.assign({}, g)).filter(Boolean);
+        if (cleanGs.length === 1) {
+          const single = Object.assign({}, cleanGs[0]);
+          delete single.label;
+          single.name = setName;
+          return { line: single };
+        }
+        const firstGold = cleanGs.find((g) => g.material === 'gold');
+        const mixed = {
+          name: setName,
+          isMixed: true,
+          material: cleanGs[0].material,
+          teeth: cleanGs.reduce((s, g) => s + (Number(g.teeth) || 0), 0),
+          level: 'mixed',
+          groups: cleanGs,
+        };
+        if (firstGold) {
+          mixed.karat = firstGold.karat || '18';
+          if (firstGold.goldPrice) mixed.goldPrice = firstGold.goldPrice;
+        }
+        return { line: mixed };
+      }
+      const r = readGroupFields();
+      if (r.error) return r;
+      const spec = Object.assign({}, r.group, { name: setName });
+      delete spec.label;
       return { line: spec };
+    }
+
+    function promptIfMissingRate(r) {
+      if (!r || !r.error) return;
+      notify(r.error, true);
+      if (r.needRates === 'GOLD') askRate('gold');
+      if (r.needRates === 'LAB_ACCENT') askRate(el('accentType').value === 'natural' ? 'natAccent' : 'labAccent');
+      if (r.needRates === 'LAB_FULL') askRate(el('fullType').value === 'natural' ? 'natFull' : 'labFull');
     }
 
     function buildLine() {
       const r = readEditor();
-      if (r.error) {
-        notify(r.error, true);
-        if (r.needRates === 'GOLD') askRate('gold');
-        if (r.needRates === 'LAB_ACCENT') askRate(el('accentType').value === 'natural' ? 'natAccent' : 'labAccent');
-        if (r.needRates === 'LAB_FULL') askRate(el('fullType').value === 'natural' ? 'natFull' : 'labFull');
-        return null;
-      }
+      if (r.error) { promptIfMissingRate(r); return null; }
       return engine().calculateLine(r.line);
     }
 
-    function writeEditor(line) {
-      el('name').value = line.name || '';
-      el('material').value = line.material || 'chrome';
+    function writeGroupFields(g) {
+      const grp = g || {};
+      if (el('groupLabel')) el('groupLabel').value = grp.label || '';
+      if (el('material')) el('material').value = grp.material || 'chrome';
       syncVisibility();
-      el('teeth').value = line.teeth || 6;
-      el('level').value = String(line.level || '1');
-      if (line.material === 'gold') {
-        el('karat').value = String(line.karat || '18');
-        el('goldPrice').value = line.goldPrice || getRate('gold') || '';
+      if (el('teeth')) el('teeth').value = grp.teeth || 2;
+      if (el('level')) el('level').value = String((grp.level && grp.level !== 'mixed') ? grp.level : '1');
+      if (grp.material === 'gold') {
+        if (el('karat')) el('karat').value = String(grp.karat || '18');
+        if (el('goldPrice')) el('goldPrice').value = grp.goldPrice || getRate('gold') || '';
       }
-      const mode = line.accent ? 'accent' : (line.full && line.full.bars ? 'fulliced' : (line.full ? 'fulliced' : 'none'));
-      el('stones').value = mode;
+      const mode = grp.accent ? 'accent' : (grp.full ? 'fulliced' : 'none');
+      if (el('stones')) el('stones').value = mode;
       onStonesChange();
-      if (line.accent) {
-        el('accentCount').value = line.accent.count || 1;
-        el('accentType').value = line.accent.type || 'cz';
+      if (grp.accent) {
+        if (el('accentCount')) el('accentCount').value = grp.accent.count || 1;
+        if (el('accentType')) el('accentType').value = grp.accent.type || 'cz';
         onAccentTypeChange();
-        el('accentSetting').value = line.accent.setting || 'flush';
-        if ((cfg().accentPrice || {})[line.accent.type] === null && line.accent.price) el('accentCustom').value = line.accent.price;
+        if (el('accentSetting')) el('accentSetting').value = grp.accent.setting || 'flush';
+        if ((cfg().accentPrice || {})[grp.accent.type] === null && grp.accent.price && el('accentCustom')) {
+          el('accentCustom').value = grp.accent.price;
+        }
       }
-      if (line.full && !line.full.bars) {
-        el('fullType').value = line.full.type || 'moissanite';
+      if (grp.full && !grp.full.bars) {
+        if (el('fullType')) el('fullType').value = grp.full.type || 'moissanite';
         onFullTypeChange();
-        el('coverage').value = line.full.coverage || 'standardpave';
-        if ((cfg().fullPrice || {})[line.full.type] === null && line.full.price) el('fullCustom').value = line.full.price;
+        if (el('coverage')) el('coverage').value = grp.full.coverage || 'standardpave';
+        if ((cfg().fullPrice || {})[grp.full.type] === null && grp.full.price && el('fullCustom')) {
+          el('fullCustom').value = grp.full.price;
+        }
       }
-      el('plating').value = line.plating || 'none';
-      el('enamel').value = line.enamel || 'none';
-      el('engraving').value = line.engraving || 'none';
-      el('anodize').value = line.anodize || 'none';
+      if (el('plating')) el('plating').value = (grp.plating && grp.plating !== 'mixed') ? grp.plating : 'none';
+      if (el('enamel')) el('enamel').value = (grp.enamel && grp.enamel !== 'mixed') ? grp.enamel : 'none';
+      if (el('engraving')) el('engraving').value = (grp.engraving && grp.engraving !== 'mixed') ? grp.engraving : 'none';
+      if (el('anodize')) el('anodize').value = (grp.anodize && grp.anodize !== 'mixed') ? grp.anodize : 'none';
       renderLevelStrip();
+    }
+
+    function writeEditor(line) {
+      const src = line || {};
+      if (el('name')) el('name').value = src.name || '';
+      if (Array.isArray(src.groups) && src.groups.length > 1) {
+        S.mixedMode = true;
+        S.editingGroupId = null;
+        S.editorGroups = src.groups.map((g) => {
+          const priced = engine().calculateLine(g);
+          if (g.label) priced.label = g.label;
+          if (Array.isArray(g.toothIds) && g.toothIds.length) priced.toothIds = g.toothIds.slice();
+          return priced;
+        });
+        writeGroupFields(Object.assign({}, S.editorGroups[0], { label: '', teeth: 2, accent: null, full: null }));
+        syncMixedUi();
+        renderMixedGroups();
+        return;
+      }
+      S.mixedMode = false;
+      S.editorGroups = [];
+      S.editingGroupId = null;
+      syncMixedUi();
+      renderMixedGroups();
+      writeGroupFields(Object.assign({ teeth: 6 }, src));
+    }
+
+    function syncMixedUi() {
+      const on = !!S.mixedMode;
+      if (el('modeUniform')) el('modeUniform').classList.toggle('on', !on);
+      if (el('modeMixed')) el('modeMixed').classList.toggle('on', on);
+      if (el('mixedWrap')) el('mixedWrap').classList.toggle('sc-hidden', !on);
+      if (el('groupLabelWrap')) el('groupLabelWrap').classList.toggle('sc-hidden', !on);
+      if (el('addGroupWrap')) el('addGroupWrap').classList.toggle('sc-hidden', !on);
+      const isEdGrp = on && S.editingGroupId !== null && S.editorGroups[S.editingGroupId];
+      if (el('groupFormTitle')) {
+        el('groupFormTitle').textContent = isEdGrp
+          ? `Editing tooth group #${S.editingGroupId + 1}`
+          : 'Configure tooth group to add';
+      }
+      if (el('addGroupBtn')) {
+        el('addGroupBtn').textContent = isEdGrp
+          ? `Save tooth group #${S.editingGroupId + 1}`
+          : '+ Add tooth group to this set';
+      }
+      if (el('cancelGroupEdit')) el('cancelGroupEdit').classList.toggle('sc-hidden', !isEdGrp);
+    }
+
+    function setMixedMode(on) {
+      const next = !!on;
+      if (S.mixedMode === next) return;
+      if (!next && S.editorGroups.length > 0) {
+        writeGroupFields(S.editorGroups[0]);
+        S.editorGroups = [];
+        S.editingGroupId = null;
+      } else if (next && S.editorGroups.length === 0) {
+        if (el('teeth') && Number(el('teeth').value) === 6) el('teeth').value = 2;
+      }
+      S.mixedMode = next;
+      syncMixedUi();
+      renderMixedGroups();
+      syncLive();
+      if (o.autoCalculate) calculate();
+    }
+
+    function addOrSaveGroup() {
+      const r = readGroupFields();
+      if (r.error) { promptIfMissingRate(r); return; }
+      const priced = engine().calculateLine(r.group);
+      if (r.group.label) priced.label = r.group.label;
+      if (S.editingGroupId !== null && S.editorGroups[S.editingGroupId]) {
+        const prevT = S.editorGroups[S.editingGroupId].toothIds;
+        if (Array.isArray(prevT) && prevT.length && Number(priced.teeth) === prevT.length) {
+          priced.toothIds = prevT.slice();
+        }
+        S.editorGroups[S.editingGroupId] = priced;
+        S.editingGroupId = null;
+        notify('Tooth group updated');
+      } else {
+        S.editorGroups.push(priced);
+        notify(`Added ${priced.teeth} ${priced.teeth === 1 ? 'tooth' : 'teeth'} to set (${S.editorGroups.length} group${S.editorGroups.length > 1 ? 's' : ''})`);
+      }
+      if (el('groupLabel')) el('groupLabel').value = '';
+      // Reset stones for next group while keeping same material/karat/plating for fast entry
+      if (el('stones')) { el('stones').value = 'none'; onStonesChange(); }
+      syncMixedUi();
+      renderMixedGroups();
+      syncLive();
+      if (o.autoCalculate) calculate();
+    }
+
+    function cancelGroupEdit() {
+      S.editingGroupId = null;
+      if (el('groupLabel')) el('groupLabel').value = '';
+      syncMixedUi();
+      renderMixedGroups();
+    }
+
+    function clearGroups() {
+      S.editorGroups = [];
+      S.editingGroupId = null;
+      syncMixedUi();
+      renderMixedGroups();
+      syncLive();
+    }
+
+    function renderMixedGroups() {
+      const list = el('groupsList');
+      const empty = el('groupsEmpty');
+      const sumBox = el('groupsSum');
+      const clr = el('clearGroups');
+      if (!list) return;
+      const gs = S.editorGroups || [];
+      if (empty) empty.classList.toggle('sc-hidden', gs.length > 0);
+      if (clr) clr.classList.toggle('sc-hidden', gs.length === 0);
+      if (sumBox) {
+        sumBox.classList.toggle('sc-hidden', gs.length === 0);
+        if (gs.length > 0) {
+          const combined = engine().calculateLine({
+            name: el('name') ? el('name').value : '',
+            groups: gs.map((g) => engine().cleanGroupSpec ? engine().cleanGroupSpec(g) : g),
+          });
+          if (el('groupsSumLbl')) {
+            el('groupsSumLbl').textContent = `${combined.teeth} ${combined.teeth === 1 ? 'tooth' : 'teeth'} across ${gs.length} group${gs.length > 1 ? 's' : ''}`;
+          }
+          if (el('groupsSumVal')) el('groupsSumVal').textContent = `Set subtotal: ${money(combined.subtotal)} EGP`;
+        }
+      }
+      list.innerHTML = gs.map((g, i) => {
+        const lbl = g.label ? `<strong>${esc(g.label)}:</strong> ` : `<strong>#${i + 1}:</strong> `;
+        const desc = engine().groupLabel
+          ? esc(engine().groupLabel(g, { includeMaterial: true }))
+          : esc(`${g.teeth} teeth · L${g.level}`);
+        return `<div class="sc-grp-row${S.editingGroupId === i ? ' editing' : ''}">
+          <div class="sc-grp-main">${lbl}${desc}</div>
+          <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+            <span class="sc-grp-price">${esc(money(g.subtotal))} EGP</span>
+            <button type="button" class="sc-link" data-gedit="${i}">Edit</button>
+            <button type="button" class="sc-link sc-link-danger" data-gdel="${i}">&times;</button>
+          </div>
+        </div>`;
+      }).join('');
+      list.querySelectorAll('[data-gedit]').forEach((b) => {
+        b.addEventListener('click', () => {
+          const i = Number(b.getAttribute('data-gedit'));
+          if (!S.editorGroups[i]) return;
+          S.editingGroupId = i;
+          writeGroupFields(S.editorGroups[i]);
+          syncMixedUi();
+          renderMixedGroups();
+        });
+      });
+      list.querySelectorAll('[data-gdel]').forEach((b) => {
+        b.addEventListener('click', () => {
+          const i = Number(b.getAttribute('data-gdel'));
+          S.editorGroups.splice(i, 1);
+          if (S.editingGroupId === i) S.editingGroupId = null;
+          else if (S.editingGroupId !== null && S.editingGroupId > i) S.editingGroupId -= 1;
+          syncMixedUi();
+          renderMixedGroups();
+          syncLive();
+          if (o.autoCalculate) calculate();
+        });
+      });
     }
 
     function syncLive() {
@@ -937,7 +1358,7 @@
       if (!spec || !val) return;
       if (r.error) { spec.textContent = r.error; val.textContent = '—'; return; }
       const line = engine().calculateLine(r.line);
-      spec.textContent = lineLabel(line);
+      spec.textContent = engine().lineLabel(line);
       val.textContent = money(line.subtotal) + ' EGP';
     }
 
@@ -945,13 +1366,26 @@
 
     function lineLabel(line) {
       const L = labels();
-      const mat = line.material === 'gold' ? 'Gold ' + (line.karat || '18') + 'K' : ((L.material || {})[line.material] || line.material);
-      const core = mat + ' · ' + line.teeth + ' teeth · ' + ((L.level || {})[line.level] || line.level);
       const name = (line.name || '').trim();
+      if (line.isMixed && Array.isArray(line.groups) && line.groups.length > 1) {
+        const mat = line.mixedMaterials
+          ? 'Mixed Materials'
+          : (line.material === 'gold' ? 'Gold ' + (line.karat || '18') + 'K' : ((L.material || {})[line.material] || line.material));
+        const core = `${mat} · ${line.teeth} teeth · Mixed (${line.groups.length} groups)`;
+        return name ? name + ' — ' + core : core;
+      }
+      const mat = line.material === 'gold' ? 'Gold ' + (line.karat || '18') + 'K' : ((L.material || {})[line.material] || line.material);
+      const core = mat + ' · ' + line.teeth + ' ' + (Number(line.teeth) === 1 ? 'tooth' : 'teeth') + ' · ' + ((L.level || {})[line.level] || line.level);
       return name ? name + ' — ' + core : core;
     }
 
     function lineSubLabel(line) {
+      if (line.isMixed && Array.isArray(line.groups) && line.groups.length > 1) {
+        return line.groups.map((g) => {
+          const pre = g.label ? g.label + ': ' : '';
+          return pre + (engine().groupLabel ? engine().groupLabel(g, { includeMaterial: !!line.mixedMaterials }) : (g.teeth + 'T L' + g.level));
+        }).join('  +  ');
+      }
       const L = labels();
       const bits = [];
       if (line.accent) bits.push(line.accent.count + '× ' + ((L.accentType || {})[line.accent.type] || '') + ' ' + ((L.setting || {})[line.accent.setting] || ''));
@@ -1001,6 +1435,7 @@
           const idx = Number(b.getAttribute('data-del'));
           S.lines.splice(idx, 1);
           if (S.editingId === idx) { S.editingId = null; setEditorMode('add'); }
+          else if (S.editingId !== null && S.editingId > idx) { S.editingId -= 1; }
           renderLines();
           fireChange();
         });
@@ -1011,15 +1446,19 @@
       const title = el('editorTitle');
       const btn = el('addLine');
       const cancel = el('cancelEdit');
-      if (title) title.textContent = mode === 'edit' ? 'Editing line' : 'Line editor';
-      if (btn) btn.textContent = mode === 'edit' ? 'Update this line' : o.addLineLabel;
+      if (title) title.textContent = mode === 'edit' ? 'Editing set' : 'Set editor';
+      if (btn) btn.textContent = mode === 'edit' ? 'Update this set' : o.addLineLabel;
       if (cancel) cancel.classList.toggle('sc-hidden', mode !== 'edit');
     }
 
     function addLine() {
+      if (S.mixedMode && S.editingGroupId !== null && S.editorGroups[S.editingGroupId]) {
+        addOrSaveGroup();
+      }
       const line = buildLine();
       if (!line) return;
-      if (S.editingId !== null && S.editingId !== undefined && S.lines[S.editingId]) {
+      const wasEdit = S.editingId !== null && S.editingId !== undefined && S.lines[S.editingId];
+      if (wasEdit) {
         S.lines[S.editingId] = line;
         S.editingId = null;
         setEditorMode('add');
@@ -1027,15 +1466,23 @@
         S.lines.push(line);
         if (el('name')) el('name').value = '';
       }
+      if (S.mixedMode) {
+        S.editorGroups = [];
+        S.editingGroupId = null;
+        syncMixedUi();
+        renderMixedGroups();
+      }
       renderLines();
       fireChange();
-      notify('Line added to quote');
+      notify(wasEdit ? 'Set updated' : 'Set added to quote');
     }
 
     function clearLines() {
       if ((S.lines.length || S.services.length) && !global.confirm('Remove all design lines and services from this quote?')) return;
       S.lines = []; S.services = []; S.editingId = null;
+      S.editorGroups = []; S.editingGroupId = null;
       setEditorMode('add');
+      syncMixedUi(); renderMixedGroups();
       renderLines(); renderServices();
       if (el('result')) el('result').classList.add('sc-hidden');
       S.lastQuote = null;
@@ -1096,6 +1543,13 @@
 
     /* ───────────────────── level strip + guide ───────────────────── */
 
+    function levelPctLabel(k) {
+      if (k === '0.5') return 'half base';
+      const dp = cfg().designPct || {};
+      const pct = dp[k] !== undefined ? number(dp[k]) : number((LEVEL_INFO[k] || {}).pct);
+      return '+' + pct + '%';
+    }
+
     function renderLevelStrip() {
       const strip = el('levelStrip');
       if (!strip) return;
@@ -1104,7 +1558,7 @@
         const info = LEVEL_INFO[k];
         return `<button type="button" class="sc-chip${k === selected ? ' on' : ''}" data-level="${esc(k)}">
           <span class="sc-chip-t">${esc(k)} ${esc(info.name)}</span>
-          <span class="sc-chip-s">${info.pct ? '+' + info.pct + '%' : 'half base'}</span>
+          <span class="sc-chip-s">${esc(levelPctLabel(k))}</span>
         </button>`;
       }).join('');
       strip.querySelectorAll('[data-level]').forEach((b) => {
@@ -1128,17 +1582,15 @@
     function renderGuide() {
       const guide = el('levelGuide');
       if (!guide) return;
-      const L = labels();
       guide.innerHTML = Object.keys(LEVEL_INFO).map((k) => {
         const info = LEVEL_INFO[k];
-        const pct = number((cfg().designPct || {})[k]);
         return `<div class="sc-guide-card">
           <div class="sc-guide-top">
             <div style="min-width:0">
               <p class="sc-guide-title">${esc(k)} — ${esc(info.name)}</p>
               <p class="sc-guide-desc">${esc(info.desc)}</p>
             </div>
-            <span class="sc-guide-pct">${info.pct ? '+' + pct + '%' : 'half base'}</span>
+            <span class="sc-guide-pct">${esc(levelPctLabel(k))}</span>
           </div>
           <img class="sc-thumb" alt="${esc(info.name)} example" loading="lazy" decoding="async" src="${LEVEL_IMAGES[k]}">
           <div class="sc-examples">${info.examples.map((x) => `<span class="sc-example">${esc(x)}</span>`).join('')}</div>
@@ -1180,26 +1632,40 @@
       if (el('resultText')) {
         const out = [];
         order.lines.forEach((l, i) => {
-          const materialLine = l.material === 'gold'
-            ? 'Gold ' + l.karat + 'K @ ' + l.goldPrice + ' EGP/g → base/tooth = ' + money(l.base) + ' EGP'
-            : ((L.material || {})[l.material] || l.material) + ' → base/tooth = ' + money(l.base) + ' EGP';
-          let stoneLine = 'None';
-          if (l.accent) {
-            stoneLine = 'Accent × ' + l.accent.count + ' (' + ((L.accentType || {})[l.accent.type] || '') + ' ' + money(l.accentUnit) + ' + ' + ((L.setting || {})[l.accent.setting] || '') + ' ' + l.settingUnit + ') = ' + money(l.stoneCost) + ' EGP';
-          } else if (l.full && l.full.bars) {
-            stoneLine = 'Full iced on Bars: ' + l.teeth + ' × ' + (c.barsStonesPerTooth || 400) + ' = ' + money(l.stoneCost) + ' EGP';
-          } else if (l.full) {
-            stoneLine = 'Full iced × ' + l.teeth + ' (' + ((L.accentType || {})[l.full.type] || '') + ' ' + money(l.fullUnit) + ' + ' + ((L.coverage || {})[l.full.coverage] || '') + ' ' + l.coverageUnit + ') = ' + money(l.stoneCost) + ' EGP';
+          out.push('SET ' + (i + 1) + ': ' + lineLabel(l));
+          if (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) {
+            l.groups.forEach((g, gi) => {
+              const gHead = g.label ? (g.label + ' — ') : ('Group ' + (gi + 1) + ': ');
+              const gDesc = engine().groupLabel ? engine().groupLabel(g, { includeMaterial: true }) : (g.teeth + ' teeth · L' + g.level);
+              out.push('  [' + (gi + 1) + '] ' + gHead + gDesc + ' = ' + money(g.subtotal) + ' EGP');
+            });
+            out.push('  Material total: ' + money(l.materialTotal) + ' EGP · Complexity: +' + money(l.designCost) + ' EGP'
+              + (l.stoneCost ? ' · Stones: +' + money(l.stoneCost) + ' EGP' : '')
+              + (l.platingCost ? ' · Plating: +' + money(l.platingCost) + ' EGP' : '')
+              + (l.enamelCost ? ' · Enamel: +' + money(l.enamelCost) + ' EGP' : '')
+              + (l.engravingCost ? ' · Engraving: +' + money(l.engravingCost) + ' EGP' : '')
+              + (l.anodizeCost ? ' · Anodize: +' + money(l.anodizeCost) + ' EGP' : ''));
+          } else {
+            const materialLine = l.material === 'gold'
+              ? 'Gold ' + l.karat + 'K @ ' + l.goldPrice + ' EGP/g → base/tooth = ' + money(l.base) + ' EGP'
+              : ((L.material || {})[l.material] || l.material) + ' → base/tooth = ' + money(l.base) + ' EGP';
+            let stoneLine = 'None';
+            if (l.accent) {
+              stoneLine = 'Accent × ' + l.accent.count + ' (' + ((L.accentType || {})[l.accent.type] || '') + ' ' + money(l.accentUnit) + ' + ' + ((L.setting || {})[l.accent.setting] || '') + ' ' + l.settingUnit + ') = ' + money(l.stoneCost) + ' EGP';
+            } else if (l.full && l.full.bars) {
+              stoneLine = 'Full iced on Bars: ' + l.teeth + ' × ' + (c.barsStonesPerTooth || 400) + ' = ' + money(l.stoneCost) + ' EGP';
+            } else if (l.full) {
+              stoneLine = 'Full iced × ' + l.teeth + ' (' + ((L.accentType || {})[l.full.type] || '') + ' ' + money(l.fullUnit) + ' + ' + ((L.coverage || {})[l.full.coverage] || '') + ' ' + l.coverageUnit + ') = ' + money(l.stoneCost) + ' EGP';
+            }
+            out.push('  Material: ' + materialLine + ' → ' + money(l.materialTotal) + ' EGP');
+            out.push('  Design: ' + (l.level === '0.5' ? '0 (Bars)' : '+' + l.designPct + '% = ' + money(l.designCost) + ' EGP'));
+            out.push('  Stones: ' + stoneLine);
+            out.push('  Plating: ' + ((L.plating || {})[l.plating] || l.plating) + ' → ' + money(l.platingCost) + ' EGP');
+            out.push('  Enamel: ' + ((L.enamel || {})[l.enamel] || l.enamel) + ' → ' + money(l.enamelCost) + ' EGP');
+            out.push('  Engraving: ' + ((L.engraving || {})[l.engraving] || l.engraving) + ' → ' + money(l.engravingCost) + ' EGP');
+            if (l.anodizeCost) out.push('  Anodizing: ' + ((L.anodize || {})[l.anodize] || l.anodize) + ' → ' + money(l.anodizeCost) + ' EGP');
           }
-          out.push('DESIGN ' + (i + 1) + ': ' + lineLabel(l));
-          out.push('  Material: ' + materialLine + ' → ' + money(l.materialTotal) + ' EGP');
-          out.push('  Design: ' + (l.level === '0.5' ? '0 (Bars)' : '+' + l.designPct + '% = ' + money(l.designCost) + ' EGP'));
-          out.push('  Stones: ' + stoneLine);
-          out.push('  Plating: ' + ((L.plating || {})[l.plating] || l.plating) + ' → ' + money(l.platingCost) + ' EGP');
-          out.push('  Enamel: ' + ((L.enamel || {})[l.enamel] || l.enamel) + ' → ' + money(l.enamelCost) + ' EGP');
-          out.push('  Engraving: ' + ((L.engraving || {})[l.engraving] || l.engraving) + ' → ' + money(l.engravingCost) + ' EGP');
-          if (l.anodizeCost) out.push('  Anodizing: ' + ((L.anodize || {})[l.anodize] || l.anodize) + ' → ' + money(l.anodizeCost) + ' EGP');
-          out.push('  Line subtotal: ' + money(l.subtotal) + ' EGP');
+          out.push('  Set subtotal: ' + money(l.subtotal) + ' EGP');
           out.push('');
         });
         if (order.services.length) {
@@ -1220,26 +1686,198 @@
           out.push('Deposit (' + opts.depositPct + '%): ' + order.deposit.toLocaleString('en-US') + ' EGP');
           out.push('Balance before delivery: ' + order.balance.toLocaleString('en-US') + ' EGP');
         }
-        el('resultText').innerText = out.join('\n');
+        try {
+          if (engine() && typeof engine().encodeCode === 'function') {
+            const qCode = engine().encodeCode(order);
+            if (qCode) { out.push(''); out.push('Transfer Code: ' + qCode); }
+          }
+        } catch (e) {}
+        el('resultText').textContent = out.join('\n');
         el('result').classList.remove('sc-hidden');
       }
 
       S.lastQuote = order;
       if (typeof o.onCalculate === 'function') {
-        try { o.onCalculate(order, el('resultText') ? el('resultText').innerText : ''); } catch (e) {}
+        try { o.onCalculate(order, el('resultText') ? el('resultText').textContent : ''); } catch (e) {}
       }
       return order;
     }
 
-    function copyResult() {
-      const text = el('resultText') ? el('resultText').innerText : '';
+    /* ───────────────────── universal short code (export / import) ───────────────────── */
+
+    function exportCode(opts) {
+      const E = engine();
+      if (!E || typeof E.encodeCode !== 'function') return '';
+      if (o.designMode) {
+        const r = readEditor();
+        if (r.error) { promptIfMissingRate(r); return ''; }
+        return E.encodeCode(r.line, opts);
+      }
+      let extra = {};
+      if (typeof o.getExtraCodeData === 'function') {
+        try { extra = o.getExtraCodeData() || {}; } catch (e) { extra = {}; }
+      }
+      let lines = Array.isArray(extra.lines) && extra.lines.length
+        ? extra.lines
+        : S.lines.slice();
+      const services = Array.isArray(extra.services) ? extra.services : S.services.slice();
+      if (!lines.length && !services.length) {
+        const r = readEditor();
+        if (r.error) { promptIfMissingRate(r); return ''; }
+        lines = [r.line];
+      }
+      const payload = {
+        lines,
+        services,
+        timeline: extra.timeline || (el('timeline') ? el('timeline').value : 'standard'),
+        mold: extra.mold || (el('mold') ? el('mold').value : 'none'),
+        depositPct: extra.depositPct !== undefined
+          ? Number(extra.depositPct) || 0
+          : (el('deposit') ? (parseInt(el('deposit').value, 10) || 0) : 0),
+        discount: extra.discount || null,
+        clientName: extra.clientName || (el('clientName') ? el('clientName').value : ''),
+        clientPhone: extra.clientPhone || '',
+        notes: extra.notes || (el('clientNotes') ? el('clientNotes').value : ''),
+      };
+      return E.encodeCode(payload, opts);
+    }
+
+    function copyText(text, okMsg) {
       if (!text) return;
-      if (global.navigator && global.navigator.clipboard) {
-        global.navigator.clipboard.writeText(text).then(() => notify('Copied')).catch(() => {});
+      const done = () => notify(okMsg || 'Copied');
+      if (global.navigator && global.navigator.clipboard && global.navigator.clipboard.writeText) {
+        global.navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, okMsg));
+      } else {
+        fallbackCopy(text, okMsg);
       }
     }
 
+    function copyCode(opts) {
+      const code = exportCode(opts);
+      if (!code) return '';
+      S.lastCode = code;
+      const out = el('codeOut');
+      if (out) {
+        out.textContent = code;
+        out.classList.remove('sc-hidden');
+      }
+      if (el('codeInput')) el('codeInput').value = code;
+      copyText(code, 'Code copied: ' + (code.length > 32 ? code.slice(0, 30) + '…' : code));
+      return code;
+    }
+
+    function importCode(raw, opts) {
+      const E = engine();
+      if (!E || typeof E.decodeCode !== 'function') { notify('Code reader unavailable', true); return null; }
+      const decoded = E.decodeCode(raw);
+      if (!decoded) {
+        notify('Invalid code — paste an EGZ-... or EGZ1:... code', true);
+        return null;
+      }
+
+      // Apply any gold / lab / natural rates embedded in the code when missing locally
+      const r = decoded.rates || {};
+      const curCfg = cfg();
+      const ratePatch = {};
+      if (r.gold && !number(curCfg.goldPrice)) ratePatch.goldPrice = r.gold;
+      if (r.labAccent && !number((curCfg.accentPrice || {}).labgrown)) {
+        ratePatch.accentPrice = Object.assign({}, curCfg.accentPrice || {}, ratePatch.accentPrice || {}, { labgrown: r.labAccent });
+      }
+      if (r.natAccent && !number((curCfg.accentPrice || {}).natural)) {
+        ratePatch.accentPrice = Object.assign({}, curCfg.accentPrice || {}, ratePatch.accentPrice || {}, { natural: r.natAccent });
+      }
+      if (r.labFull && !number((curCfg.fullPrice || {}).labgrown)) {
+        ratePatch.fullPrice = Object.assign({}, curCfg.fullPrice || {}, ratePatch.fullPrice || {}, { labgrown: r.labFull });
+      }
+      if (r.natFull && !number((curCfg.fullPrice || {}).natural)) {
+        ratePatch.fullPrice = Object.assign({}, curCfg.fullPrice || {}, ratePatch.fullPrice || {}, { natural: r.natFull });
+      }
+      if (Object.keys(ratePatch).length) E.set(ratePatch);
+
+      const pricedLines = (decoded.lines || []).map((ln) => E.calculateLine(ln));
+      const pricedSvcs = (decoded.services || []).map((sv) => E.calculateService(sv));
+
+      if (o.designMode) {
+        if (pricedLines.length) {
+          writeEditor(pricedLines[0]);
+          syncLive();
+        }
+        if (typeof o.onImportCode === 'function') {
+          try { o.onImportCode(decoded, pricedLines, pricedSvcs); } catch (e) {}
+        }
+        const opt = opts || {};
+        if (!opt.silent) {
+          notify(pricedLines.length > 1
+            ? `Code loaded (${pricedLines.length} sets)`
+            : 'Code loaded into calculator');
+        }
+        return decoded;
+      }
+
+      S.lines = pricedLines;
+      S.editingId = null;
+      setEditorMode('add');
+      if (pricedLines.length === 1) {
+        writeEditor(pricedLines[0]);
+      } else if (pricedLines.length > 1) {
+        S.mixedMode = false; S.editorGroups = []; S.editingGroupId = null;
+        syncMixedUi(); renderMixedGroups();
+      }
+      if (parts.services) {
+        S.services = pricedSvcs;
+        renderServices();
+      }
+      if (el('timeline') && decoded.timeline) el('timeline').value = decoded.timeline;
+      if (el('mold') && decoded.mold) el('mold').value = decoded.mold;
+      if (el('deposit') && decoded.depositPct !== undefined) {
+        const depStr = String(decoded.depositPct || 0);
+        if (Array.from(el('deposit').options).some((op) => op.value === depStr)) {
+          el('deposit').value = depStr;
+        }
+      }
+      if (el('clientName') && decoded.clientName) el('clientName').value = decoded.clientName;
+      if (el('clientNotes') && decoded.notes) el('clientNotes').value = decoded.notes;
+      renderLines();
+
+      if (typeof o.onImportCode === 'function') {
+        try { o.onImportCode(decoded, pricedLines, pricedSvcs); } catch (e) {}
+      }
+      fireChange();
+      if (parts.result) calculate();
+
+      const opt = opts || {};
+      if (!opt.silent) {
+        const bits = [];
+        if (pricedLines.length) bits.push(`${pricedLines.length} set${pricedLines.length > 1 ? 's' : ''}`);
+        if (pricedSvcs.length) bits.push(`${pricedSvcs.length} service${pricedSvcs.length > 1 ? 's' : ''}`);
+        notify('Code loaded: ' + (bits.join(' + ') || 'ready'));
+      }
+      return decoded;
+    }
+
+    function copyResult() {
+      const text = el('resultText') ? el('resultText').textContent : '';
+      copyText(text, 'Copied');
+    }
+
+    function fallbackCopy(text, okMsg) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        notify(okMsg || 'Copied');
+      } catch (e) { notify('Copy failed', true); }
+    }
+
     function apply() {
+      if (S.mixedMode && S.editingGroupId !== null && S.editorGroups[S.editingGroupId]) {
+        addOrSaveGroup();
+      }
       const line = buildLine();
       if (!line) return null;
       if (typeof o.onApply === 'function') {
@@ -1401,11 +2039,15 @@
     ] },
   ];
 
+  function splitSettingPath(path) {
+    if (path.indexOf('designPct.') === 0) return ['designPct', path.slice('designPct.'.length)];
+    return path.split('.');
+  }
   function readPath(obj, path) {
-    return path.split('.').reduce((acc, k) => (acc == null ? acc : acc[k]), obj);
+    return splitSettingPath(path).reduce((acc, k) => (acc == null ? acc : acc[k]), obj);
   }
   function writePath(obj, path, value) {
-    const keys = path.split('.');
+    const keys = splitSettingPath(path);
     let cur = obj;
     keys.forEach((k, i) => {
       if (i === keys.length - 1) { cur[k] = value; return; }
@@ -1447,35 +2089,56 @@
       host.querySelectorAll('[data-path]').forEach((inp) => {
         inp.addEventListener('input', () => {
           const path = inp.getAttribute('data-path');
-          const key = path.split('.').pop();
           const empty = inp.value === '';
           const isStone = /^(accentPrice|fullPrice)\./.test(path);
-          const value = empty ? (isStone ? null : 0) : Number(inp.value);
+          const num = Number(inp.value);
+          const value = empty ? (isStone ? null : 0) : (Number.isFinite(num) ? num : 0);
           const patch = {};
           writePath(patch, path, value);
           E.set(patch);
         });
       });
 
-      host.querySelector('[data-set="save"]').addEventListener('click', async () => {
+      const saveBtn = host.querySelector('[data-set="save"]');
+      const resetBtn = host.querySelector('[data-set="reset"]');
+
+      saveBtn.addEventListener('click', async () => {
         const status = host.querySelector('[data-set="status"]');
         if (!o.db) { status.textContent = 'Not connected to the database.'; return; }
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
         status.textContent = 'Saving…';
         try {
           await E.save(o.db);
           status.textContent = 'Saved to the database — every page now uses these numbers.';
-          if (typeof o.onSaved === 'function') o.onSaved();
+          if (typeof o.onSaved === 'function') o.onSaved(E.get());
         } catch (err) {
-          status.textContent = 'Could not save: ' + (err.message || err);
+          status.textContent = 'Could not save: ' + ((err && err.message) || err);
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save to database';
         }
-        setTimeout(() => { status.textContent = ''; }, 4000);
+        setTimeout(() => { if (status && status.textContent.indexOf('Saved') === 0) status.textContent = ''; }, 4000);
       });
 
-      host.querySelector('[data-set="reset"]').addEventListener('click', async () => {
-        if (!global.confirm('Reset every pricing setting to its default?')) return;
+      resetBtn.addEventListener('click', async () => {
+        if (typeof global.confirm === 'function' && !global.confirm('Reset every pricing setting to its default?')) return;
+        resetBtn.disabled = true;
+        const status = host.querySelector('[data-set="status"]');
+        if (status) status.textContent = 'Resetting…';
         E.reset();
-        if (o.db) { try { await E.save(o.db); } catch (e) {} }
+        let saveErr = null;
+        if (o.db) {
+          try { await E.save(o.db); } catch (e) { saveErr = e; }
+        }
         render();
+        const st2 = host.querySelector('[data-set="status"]');
+        if (st2) {
+          st2.textContent = saveErr
+            ? 'Reset locally, but could not save: ' + (saveErr.message || saveErr)
+            : 'Defaults restored and saved.';
+        }
+        if (typeof o.onSaved === 'function') o.onSaved(E.get());
       });
     }
 
@@ -1492,4 +2155,4 @@
     SETTING_GROUPS,
     _css: CSS,
   };
-})(window);
+})(typeof globalThis !== 'undefined' ? globalThis : window);

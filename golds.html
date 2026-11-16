@@ -165,9 +165,9 @@
     .modal-price-link:hover { opacity:.6; }
 </style>
   <link rel="canonical" href="https://egygrillz.com/golds">
-  <script src="/assets/set-visibility.js?v=2"></script>
-  <script src="/assets/catalog.js?v=1"></script>
-  <script src="/assets/crops.js?v=1"></script>
+  <script src="/assets/set-visibility.js?v=3"></script>
+  <script src="/assets/catalog.js?v=4"></script>
+  <script src="/assets/crops.js?v=3"></script>
 </head>
 <body>
 
@@ -179,6 +179,7 @@
     <nav class="main-nav">
       <a href="/">Home</a>
       <a href="latest-designs">Latest</a>
+      <a href="calculator">Calculator</a>
       <a href="booking">Schedule</a>
       <a href="grillz-gallery">Gallery</a>
       <a href="golds" class="nav-active">Golds</a>
@@ -220,6 +221,7 @@
         <div class="modal-name" id="modal-name"></div>
         <div class="modal-rule"></div>
         <div class="modal-desc" id="modal-desc"></div>
+        <div class="modal-price" id="modal-price" style="display:none"></div>
         <div class="modal-actions">
           <a href="booking" class="modal-cta-primary">Schedule an Appointment</a>
           <a href="contact" class="modal-cta-secondary">Contact Us</a>
@@ -254,157 +256,301 @@
   </footer>
 
   <script>
-    (function(){
-      const header=document.getElementById('site-header'), floatLogo=document.getElementById('floating-logo');
-      let lastY=window.scrollY;
-      window.addEventListener('scroll',()=>{ const y=window.scrollY; const hiding=y>lastY&&y>80; header.classList.toggle('hidden',hiding); floatLogo.classList.toggle('visible',hiding); lastY=y; },{passive:true});
-    })();
-    document.querySelector('.menu-toggle').addEventListener('click',()=>{ document.querySelector('.main-nav').classList.toggle('active'); document.body.classList.toggle('menu-open'); });
-    document.getElementById('search-input').addEventListener('input',function(){ const q=this.value.trim().toLowerCase(); const cards=document.querySelectorAll('.set-card'); let visible=0; cards.forEach(card=>{ const name=(card.querySelector('.name-on-img')?.textContent||'').toLowerCase(); const match=!q||name.includes(q); card.style.display=match?'':'none'; if(match)visible++; }); document.getElementById('no-results').style.display=(q&&visible===0)?'block':'none'; });
-    function parseInfo(text){ let name='',desc='',price='',images=[]; text.split('\n').forEach(line=>{ line=line.replace(/\r/g,'').trim(); const ci=line.indexOf(':'); if(ci===-1)return; const key=line.slice(0,ci).trim().toLowerCase(); const val=line.slice(ci+1).trim(); if(key==='name'||key==='title')name=val; else if(key==='description'||key==='desc')desc=val; else if(key==='price')price=val; else if(key==='images')images=val.split(',').map(i=>i.trim()).filter(Boolean); }); return{name,desc,price,images}; }
-    const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalCtr=document.getElementById('modal-counter');
-    let mCur=0,mTot=0;
-    /* Public page assignment: a design appears on the page it is assigned to.
-       Items saved before the field existed fall back to their category. */
+  (function(){
+    'use strict';
     const PAGE_KEY = 'golds';
-    function onThisPage(x){
-      const p = (x && Object.prototype.hasOwnProperty.call(x,'page')) ? x.page : (x && x.category);
-      return p === PAGE_KEY;
-    }
-    /* Media paths inside each item's category folder */
-    function mediaPath(item, file){
-      const dir = item.folder || item.id;
-      const cat = item.category || 'sets';
-      return 'assets/images/' + cat + '/' + dir + '/' + file;
-    }
+    const GRID_ID = 'golds-grid';
+    const EMPTY_MSG = 'No golds yet — check back soon.';
+
+    const header=document.getElementById('site-header'), floatLogo=document.getElementById('floating-logo');
+    let lastY=window.scrollY;
+    window.addEventListener('scroll',()=>{ const y=window.scrollY; const hiding=y>lastY&&y>80; header.classList.toggle('hidden',hiding); floatLogo.classList.toggle('visible',hiding); lastY=y; },{passive:true});
+    document.querySelector('.menu-toggle').addEventListener('click',()=>{ document.querySelector('.main-nav').classList.toggle('active'); document.body.classList.toggle('menu-open'); });
+
+    function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    function onThisPage(x){ const p=(x&&Object.prototype.hasOwnProperty.call(x,'page'))?x.page:(x&&x.category); return p===PAGE_KEY; }
+    function mediaPath(item,file){ return (window.Catalog&&window.Catalog.mediaPath)?window.Catalog.mediaPath(item,file):('assets/images/'+(item.category||'sets')+'/'+(item.folder||item.id)+'/'+file); }
     function isVideoName(n){ return /\.(mp4|mov|webm|ogg)$/i.test(String(n||'')); }
-    function thumbOf(src){ return src; }
-    function imgFallback(el){}
-    /* Preload grid images in background for instant modal transitions */
-    const _preloaded = new Map();
-    function preloadImages(urls){
-      urls.forEach(function(u){
-        if(!u || _preloaded.has(u) || isVideoName(u)) return;
-        u = thumbOf(u);
-        const im = new Image();
-        im.decoding = 'sync';
-        const mark = function(){
-          _preloaded.set(u, true);
-          document.querySelectorAll('img').forEach(function(t){
-            if(t.getAttribute('src') === u){
-              t.loading = 'eager';
-              t.setAttribute('data-ready', '1');
-            }
-          });
-        };
-        im.onload = mark;
-        im.onerror = mark;
-        im.src = u;
-        _preloaded.set(u, im);
-      });
+
+    /* Visibility-gated card slideshows — pauses offscreen & background tabs */
+    const visSet = new WeakSet();
+    const cardVisObs = ('IntersectionObserver' in window)
+      ? new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting ? visSet.add(e.target) : visSet.delete(e.target)), { rootMargin:'100px 0px' })
+      : null;
+    let activeTimers = [];
+    function clearTimers(){ activeTimers.forEach(clearInterval); activeTimers = []; }
+
+    const modalBg=document.getElementById('modal-bg'), modalSlides=document.getElementById('modal-slides'),
+          modalDots=document.getElementById('modal-dots'), modalName=document.getElementById('modal-name'),
+          modalDesc=document.getElementById('modal-desc'), modalCtr=document.getElementById('modal-counter'),
+          modalPrev=document.getElementById('modal-prev'), modalNext=document.getElementById('modal-next');
+    let mCur=0, mTot=0, mImages=[];
+    const _warmed = new Set();
+    function warmUrl(u){ if(!u||_warmed.has(u)||isVideoName(u))return; _warmed.add(u); const im=new Image(); im.decoding='async'; im.src=u; }
+
+    const modalPrice = document.getElementById('modal-price');
+    function getPriceInfo(item){
+      if (window.Catalog && typeof window.Catalog.priceInfo === 'function') {
+        return window.Catalog.priceInfo(item, { fallbackQuote: true });
+      }
+      const href = '/contact' + (item && item.name ? ('?design=' + encodeURIComponent(item.name)) : '');
+      if (!item || item.showPrice === false) return { show:false, isQuote:true, text:'Contact for Quotation', href };
+      return { show:!!item.price, isQuote:!item.price, text:item.price || 'Contact for Quotation', href };
     }
-    function warmModalImages(images){
-      images.forEach(function(u){
-        if(isVideoName(u)) return;
-        if(!_preloaded.has(thumbOf(u))){
-          const t = new Image(); t.src = thumbOf(u); _preloaded.set(thumbOf(u), t);
+
+    function openModal(item){
+      const {name,desc,images} = item || {};
+      const list = Array.isArray(images) ? images.filter(Boolean) : [];
+      if (!list.length) return;
+      mImages = list;
+      modalName.textContent = name || '';
+      modalDesc.textContent = desc || '';
+      if (modalPrice) {
+        const pi = getPriceInfo(item);
+        if (pi.show) {
+          modalPrice.textContent = pi.text;
+          modalPrice.style.display = '';
+        } else if (pi.isQuote) {
+          modalPrice.innerHTML = '<a class="modal-price-link" href="' + esc(pi.href) + '">' + esc(pi.text) + '</a>';
+          modalPrice.style.display = '';
+        } else {
+          modalPrice.style.display = 'none';
+        }
+      }
+      modalSlides.innerHTML = '';
+      modalDots.innerHTML = '';
+      mCur = 0; mTot = list.length;
+      if (list[1]) warmUrl(list[1]);
+      list.forEach((src, i) => {
+        const s = document.createElement('div');
+        s.className = 'modal-slide' + (i === 0 ? ' active' : '');
+        if (isVideoName(src)) {
+          s.innerHTML = '<video src="'+esc(src)+'" '+(i===0?'autoplay ':'')+'loop muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>';
+        } else {
+          s.innerHTML = '<img src="'+esc(src)+'" alt="'+esc(name||'Handcrafted custom grillz by EGYGRILLZ')+'" '+(i===0?'loading="eager"':'loading="lazy"')+' decoding="async">';
+        }
+        modalSlides.appendChild(s);
+        if (mTot > 1) {
+          const d = document.createElement('button');
+          d.type = 'button';
+          d.className = 'modal-dot' + (i === 0 ? ' active' : '');
+          d.setAttribute('aria-label', 'Slide ' + (i + 1));
+          d.addEventListener('click', () => goTo(i));
+          modalDots.appendChild(d);
         }
       });
+      modalPrev.style.display = mTot > 1 ? '' : 'none';
+      modalNext.style.display = mTot > 1 ? '' : 'none';
+      updateCtr();
+      modalBg.classList.add('open');
+      document.body.classList.add('modal-open');
     }
 
-    function openModal({name,desc,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
-        if(isVideoName(src)){ s.innerHTML='<video src="'+src+'" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover"></video>'; }
-        else { s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" '+(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async">'; }
-        modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
-    function goTo(idx){ modalSlides.querySelectorAll('.modal-slide')[mCur].classList.remove('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.remove('active'); mCur=(idx+mTot)%mTot; modalSlides.querySelectorAll('.modal-slide')[mCur].classList.add('active'); modalDots.querySelectorAll('.modal-dot')[mCur].classList.add('active'); updateCtr(); }
-    function updateCtr(){ modalCtr.textContent=mTot>1?`${mCur+1} / ${mTot}`:''; }
-    function closeModal(){ modalBg.classList.remove('open'); document.body.classList.remove('modal-open'); }
-    document.getElementById('modal-prev').addEventListener('click',()=>goTo(mCur-1));
-    document.getElementById('modal-next').addEventListener('click',()=>goTo(mCur+1));
+    function goTo(idx){
+      if (mTot <= 1) return;
+      const slides = modalSlides.querySelectorAll('.modal-slide');
+      const dots = modalDots.querySelectorAll('.modal-dot');
+      if (!slides[mCur]) return;
+      const oldVid = slides[mCur].querySelector('video');
+      if (oldVid) { try { oldVid.pause(); } catch(e){} }
+      slides[mCur].classList.remove('active');
+      if (dots[mCur]) dots[mCur].classList.remove('active');
+      mCur = (idx + mTot) % mTot;
+      slides[mCur].classList.add('active');
+      if (dots[mCur]) dots[mCur].classList.add('active');
+      const newVid = slides[mCur].querySelector('video');
+      if (newVid) { newVid.play().catch(()=>{}); }
+      warmUrl(mImages[(mCur + 1) % mTot]);
+      updateCtr();
+    }
+
+    function updateCtr(){ modalCtr.textContent = mTot > 1 ? `${mCur+1} / ${mTot}` : ''; }
+    function closeModal(){
+      modalSlides.querySelectorAll('video').forEach(v => { try { v.pause(); v.removeAttribute('src'); } catch(e){} });
+      modalBg.classList.remove('open');
+      document.body.classList.remove('modal-open');
+      modalSlides.innerHTML = '';
+      modalDots.innerHTML = '';
+      mTot = 0; mCur = 0;
+    }
+
+    modalPrev.addEventListener('click',()=>goTo(mCur-1));
+    modalNext.addEventListener('click',()=>goTo(mCur+1));
     document.getElementById('modal-close').addEventListener('click',closeModal);
     modalBg.addEventListener('click',e=>{ if(e.target===modalBg)closeModal(); });
-    document.addEventListener('keydown',e=>{ if(!modalBg.classList.contains('open'))return; if(e.key==='Escape')closeModal(); if(e.key==='ArrowLeft')goTo(mCur-1); if(e.key==='ArrowRight')goTo(mCur+1); });
-    const base='assets/images/sets';
-    window.Catalog.load()
-      .then(all=>{
-      const items=(all||[]).filter(onThisPage).sort((a,b)=>(a.order||999)-(b.order||999));
-      const container=document.getElementById('golds-grid');
-      if(!items.length){ container.innerHTML='<p class="empty">No golds yet — check back soon.</p>'; return; }
-      const promises=items.map(item=>Promise.resolve({
-        name:item.name, desc:item.description,
-        images:(item.images||[]).concat(item.videos||[]).map(f=>mediaPath(item,f)),
-        folder:item.folder||item.id
-      }));
-      Promise.all(promises).then(items=>{
-        const valid=items.filter(Boolean);
-        preloadImages(valid.reduce(function(a,v){ return a.concat(v.images||[]); }, []));
-        if(!valid.length){ container.innerHTML='<p class="empty">No golds yet — check back soon.</p>'; return; }
-        const PAGE=10; let shown=0;
-        function getRowType(globalIdx){ let pos=0,toggle=true; while(true){ const size=toggle?3:2; if(globalIdx<pos+size)return size; pos+=size; toggle=!toggle; } }
-        function renderNext(){ const batch=valid.slice(shown,shown+PAGE); let batchIdx=0; while(batchIdx<batch.length){ const globalI=shown+batchIdx; const rowType=getRowType(globalI); const count=rowType===3?3:2; const chunk=batch.slice(batchIdx,batchIdx+count); if(!chunk.length)break; const row=document.createElement('div'); row.className=rowType===3?'row-3':'row-2'; chunk.forEach((item,idx)=>{ const globalIdx=globalI+idx; const card=buildCard(item); if((globalIdx+1)%5===0)card.classList.add('mob-full'); row.appendChild(card); }); container.appendChild(row); batchIdx+=chunk.length; } shown+=batch.length; document.getElementById('see-more-wrap').style.display=shown<valid.length?'block':'none'; }
-        renderNext();
-        document.getElementById('see-more-btn').addEventListener('click',renderNext);
-        try{
-          var want = new URLSearchParams(location.search).get('item');
-          if(want){
-            var hit = valid.find(function(v){ return v.folder === want; });
-            if(hit){ setTimeout(function(){ openModal(hit); }, 60); }
-          }
-        }catch(e){}
+    document.addEventListener('keydown',e=>{
+      if (modalBg.classList.contains('open')) {
+        if(e.key==='Escape') closeModal();
+        else if(e.key==='ArrowLeft') goTo(mCur-1);
+        else if(e.key==='ArrowRight') goTo(mCur+1);
+      } else if (e.key==='Escape') {
+        document.querySelector('.main-nav').classList.remove('active');
+        document.body.classList.remove('menu-open');
+      }
+    });
 
-      });
-    }).catch(e=>console.error(e));
-    function buildCard({name,desc,images,folder}){
-      const card=document.createElement('div');
-      card.className='set-card';
-      const photoImgs=images.filter(s=>!isVideoName(s));
+    const container = document.getElementById(GRID_ID);
+    const seeMoreWrap = document.getElementById('see-more-wrap');
+    const seeMoreBtn = document.getElementById('see-more-btn');
+    const noResults = document.getElementById('no-results');
+    const PAGE = 10;
+    let allItems = [], currentList = [], shown = 0;
 
-      let dotsHtml='';
-      if(photoImgs.length>1){
-        dotsHtml='<div class="card-dots">';
-        photoImgs.forEach(function(_,i){ dotsHtml+='<span class="card-dot-pip'+(i===0?' active':'')+'"></span>'; });
-        dotsHtml+='</div>';
+    /* O(1) alternating 3-card / 2-card row size (period 5) */
+    function getRowType(globalIdx){ return (globalIdx % 5) < 3 ? 3 : 2; }
+
+    function renderNext(){
+      const batch = currentList.slice(shown, shown + PAGE);
+      let batchIdx = 0;
+      while (batchIdx < batch.length) {
+        const globalI = shown + batchIdx;
+        const count = getRowType(globalI);
+        const chunk = batch.slice(batchIdx, batchIdx + count);
+        if (!chunk.length) break;
+        const row = document.createElement('div');
+        row.className = count === 3 ? 'row-3' : 'row-2';
+        chunk.forEach((item, idx) => {
+          const globalIdx = globalI + idx;
+          const card = buildCard(item, globalIdx);
+          if ((globalIdx + 1) % 5 === 0) card.classList.add('mob-full');
+          row.appendChild(card);
+        });
+        container.appendChild(row);
+        batchIdx += chunk.length;
+      }
+      shown += batch.length;
+      seeMoreWrap.style.display = shown < currentList.length ? 'block' : 'none';
+    }
+
+    function applySearch(q){
+      clearTimers();
+      container.innerHTML = '';
+      shown = 0;
+      const query = String(q || '').trim().toLowerCase();
+      currentList = query
+        ? allItems.filter(it => (it.name || '').toLowerCase().includes(query) || (it.desc || '').toLowerCase().includes(query))
+        : allItems;
+      noResults.style.display = (query && currentList.length === 0) ? 'block' : 'none';
+      if (!currentList.length) { seeMoreWrap.style.display = 'none'; return; }
+      renderNext();
+    }
+
+    seeMoreBtn.addEventListener('click', renderNext);
+    let sTimer = null;
+    document.getElementById('search-input').addEventListener('input', function(){
+      const val = this.value;
+      clearTimeout(sTimer);
+      sTimer = setTimeout(() => applySearch(val), 120);
+    });
+
+    function buildCard(item, globalIdx){
+      const {name,desc,images,folder} = item;
+      const card = document.createElement('div');
+      card.className = 'set-card';
+      const photoImgs = images.filter(s => !isVideoName(s));
+      const firstVid = !photoImgs.length ? images.find(isVideoName) : '';
+      const isTopRow = globalIdx < 3;
+
+      let dotsHtml = '';
+      if (photoImgs.length > 1) {
+        dotsHtml = '<div class="card-dots">' + photoImgs.map((_,i) => '<span class="card-dot-pip'+(i===0?' active':'')+'"></span>').join('') + '</div>';
       }
 
-      let imgsHtml='';
-      photoImgs.forEach(function(s,i){
-        imgsHtml+='<img src="'+s+'" class="'+(i===0?'active':'')+'" '
-          +(i===0?'loading="eager" fetchpriority="high"':'loading="lazy"')+' decoding="async"'
-          +' alt="Handcrafted custom grillz by EGYGRILLZ">';
-      });
+      let mediaHtml = '';
+      if (photoImgs.length) {
+        photoImgs.forEach((s, i) => {
+          const loadAttr = (i === 0 && isTopRow)
+            ? ('loading="eager"' + (globalIdx === 0 ? ' fetchpriority="high"' : ''))
+            : 'loading="lazy"';
+          mediaHtml += '<img src="'+esc(s)+'" class="'+(i===0?'active':'')+'" '+loadAttr+' decoding="async" alt="'+esc(name||'Handcrafted custom grillz by EGYGRILLZ')+'">';
+        });
+      } else if (firstVid) {
+        mediaHtml = '<video src="'+esc(firstVid)+'" muted loop playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>';
+      }
 
-      const cardImg=document.createElement('div');
-      cardImg.className='card-img';
-      cardImg.innerHTML=imgsHtml
-        +'<div class="card-name-overlay"><div class="name-on-img"></div></div>'
-        +dotsHtml
-        +'<button class="card-btn" aria-label="View item">'
-        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
-        +'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'
-        +'</svg></button>';
+      const cardImg = document.createElement('div');
+      cardImg.className = 'card-img';
+      cardImg.innerHTML = mediaHtml
+        + '<div class="card-name-overlay"><div class="name-on-img"></div></div>'
+        + dotsHtml
+        + '<button type="button" class="card-btn" aria-label="View item">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+        + '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'
+        + '</svg></button>';
       cardImg.querySelector('.name-on-img').textContent = name || folder;
       card.appendChild(cardImg);
 
-      const cardBody=document.createElement('div');
-      cardBody.className='card-body';
-      if(desc){ const de=document.createElement('div'); de.className='card-desc'; de.textContent=desc; cardBody.appendChild(de); }
+      const cardBody = document.createElement('div');
+      cardBody.className = 'card-body';
+      if (desc) { const de = document.createElement('div'); de.className = 'card-desc'; de.textContent = desc; cardBody.appendChild(de); }
+      const pi = getPriceInfo(item);
+      if (pi.show) {
+        const pe = document.createElement('div');
+        pe.className = 'price';
+        pe.textContent = pi.text;
+        cardBody.appendChild(pe);
+      } else if (pi.isQuote) {
+        const qa = document.createElement('a');
+        qa.className = 'price';
+        qa.href = pi.href;
+        qa.textContent = pi.text;
+        qa.style.cssText = 'display:inline-block;cursor:pointer;';
+        qa.addEventListener('click', e => e.stopPropagation());
+        cardBody.appendChild(qa);
+      }
       card.appendChild(cardBody);
 
-      let c=0;
-      const imgs=card.querySelectorAll('.card-img img');
-      const pips=card.querySelectorAll('.card-dot-pip');
-      if(imgs.length>1){
-        setInterval(function(){
+      const imgs = card.querySelectorAll('.card-img img');
+      const pips = card.querySelectorAll('.card-dot-pip');
+      if (imgs.length > 1) {
+        if (cardVisObs) cardVisObs.observe(card);
+        let c = 0;
+        const tid = setInterval(() => {
+          if (document.hidden) return;
+          if (cardVisObs && !visSet.has(card)) return;
           imgs[c].classList.remove('active');
-          if(pips[c]) pips[c].classList.remove('active');
-          c=(c+1)%imgs.length;
+          if (pips[c]) pips[c].classList.remove('active');
+          c = (c + 1) % imgs.length;
           imgs[c].classList.add('active');
-          if(pips[c]) pips[c].classList.add('active');
-        },3500);
+          if (pips[c]) pips[c].classList.add('active');
+        }, 3800);
+        activeTimers.push(tid);
       }
-      card.addEventListener('click',function(){ openModal({name,desc,images}); });
+      card.addEventListener('click', () => openModal(item));
       return card;
     }
+
+    window.Catalog.load()
+      .then(all => {
+        allItems = (all || [])
+          .filter(onThisPage)
+          .sort((a,b) => (a.order||999) - (b.order||999))
+          .map(item => ({
+            id: item.id,
+            name: item.name || item.id,
+            desc: item.description || '',
+            price: item.price || '',
+            showPrice: item.showPrice,
+            images: (item.images || []).concat(item.videos || []).map(f => mediaPath(item, f)).filter(Boolean),
+            folder: item.folder || item.id
+          }))
+          .filter(it => it.images.length);
+        if (!allItems.length) { container.innerHTML = '<p class="empty">' + esc(EMPTY_MSG) + '</p>'; return; }
+        currentList = allItems;
+        renderNext();
+        try {
+          const want = new URLSearchParams(location.search).get('item');
+          if (want) {
+            const hit = allItems.find(v => v.folder === want || v.id === want);
+            if (hit) setTimeout(() => openModal(hit), 60);
+          }
+        } catch(e){}
+      })
+      .catch(e => {
+        console.error(e);
+        container.innerHTML = '<p class="empty">Could not load designs right now — please refresh.</p>';
+      });
+  })();
   </script>
 
 </body>

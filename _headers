@@ -13,10 +13,10 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(self), microphone=(), camera=(), payment=(self "https://accept.paymob.com"), usb=(), interest-cohort=()
-  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
 
   # ── Content Security Policy ──
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob: https://raw.githubusercontent.com https://res.cloudinary.com https://*.googleusercontent.com; media-src 'self' blob: https://raw.githubusercontent.com; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.emailjs.com https://api.gold-api.com https://data-asg.goldprice.org https://challenges.cloudflare.com https://*.workers.dev; frame-src 'self' https://accept.paymob.com https://challenges.cloudflare.com https://my.spline.design https://maps.google.com https://www.google.com; form-action 'self' https://accept.paymob.com; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://recaptcha.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob: https://raw.githubusercontent.com https://res.cloudinary.com https://*.googleusercontent.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.gstatic.com; media-src 'self' data: blob: https://raw.githubusercontent.com https://res.cloudinary.com; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://recaptcha.net https://api.emailjs.com https://api.gold-api.com https://data-asg.goldprice.org https://challenges.cloudflare.com https://*.workers.dev; frame-src 'self' https://*.firebaseapp.com https://accept.paymob.com https://challenges.cloudflare.com https://my.spline.design https://maps.google.com https://www.google.com https://www.recaptcha.net https://recaptcha.net; form-action 'self' https://accept.paymob.com; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
 
   # ── CORS ──
   Access-Control-Allow-Origin: https://egygrillz.com
@@ -70,11 +70,20 @@
 /MTC.html
   X-Robots-Tag: noindex, nofollow, noarchive
 
-# ── Caching: HTML revalidates, hashed assets are immutable ──
+# ── Caching: HTML revalidates, static media is immutable ──
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
 
 /assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/materials/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/levels/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/plating/*
   Cache-Control: public, max-age=31536000, immutable
 
 /*.png
@@ -83,7 +92,13 @@
 /*.jpg
   Cache-Control: public, max-age=31536000, immutable
 
+/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+
 /*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.mp4
   Cache-Control: public, max-age=31536000, immutable
 
 /*.svg
@@ -95,49 +110,80 @@
 # ── Clean URLs: work without .html suffix ──
 /booking
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+/moulds
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /about
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /contact
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /golds
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /diamonds
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /silvers
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /grillz-gallery
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /latest-designs
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /privacy
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /terms
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /shipping
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
 /atelier
   Content-Type: text/html; charset=utf-8
-
-# ── Shared scripts that change with the site: always revalidate ──
-# (they are referenced with ?v=N in the pages too, so an edit reaches
-#  visitors even though /assets/* is otherwise immutable)
-/assets/calc-engine.js
   Cache-Control: public, max-age=0, must-revalidate
+/calculator
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+
+# ── Shared scripts & seed catalogue: fast edge cache with background revalidation ──
+/assets/calc-engine.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/assets/staff-calculator.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /assets/home-banners.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /assets/set-visibility.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /assets/crops.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /assets/catalog.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /assets/egygz-notify.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/assets/booking-secure.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/assets/firebase-auth-gate.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/assets/media-pipeline.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/assets/images/catalog.json
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /assets/optimized/*
   Cache-Control: public, max-age=31536000, immutable

@@ -300,6 +300,12 @@
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelector('.main-nav')?.classList.remove('active');
+        document.body.classList.remove('menu-open');
+      }
+    });
   </script>
 </body>
 </html>

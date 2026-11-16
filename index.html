@@ -361,10 +361,10 @@
     .reveal { opacity:0; transform:translateY(28px); transition:opacity 0.85s ease,transform 0.85s ease; }
     .reveal.visible { opacity:1; transform:translateY(0); }
   </style>
-  <script src="/assets/set-visibility.js?v=2"></script>
-  <script src="/assets/catalog.js?v=1"></script>
-  <script src="/assets/crops.js?v=1"></script>
-  <script src="/assets/home-banners.js?v=2"></script>
+  <script src="/assets/set-visibility.js?v=3"></script>
+  <script src="/assets/catalog.js?v=4"></script>
+  <script src="/assets/crops.js?v=3"></script>
+  <script src="/assets/home-banners.js?v=3"></script>
 </head>
 <body>
 
@@ -378,6 +378,7 @@
     <nav class="main-nav">
       <a href="/" class="nav-active">Home</a>
       <a href="latest-designs">Latest</a>
+      <a href="calculator">Calculator</a>
       <a href="booking">Schedule</a>
       <a href="grillz-gallery">Gallery</a>
       <a href="golds">Golds</a>
@@ -536,10 +537,10 @@
             </div>
           </div>
           <div>
-            <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener" class="ig-post-username">egygrillz <i class="fas fa-circle-check ig-post-verified"></i></a>
+            <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer" class="ig-post-username">egygrillz <i class="fas fa-circle-check ig-post-verified"></i></a>
           </div>
         </div>
-        <button class="ig-post-more"><i class="fas fa-ellipsis"></i></button>
+        <button type="button" class="ig-post-more" id="ig-more-btn" aria-label="Open EGYGRILLZ on Instagram"><i class="fas fa-ellipsis"></i></button>
       </div>
       <div class="ig-post-img-wrap" id="ig-post-img-wrap">
         <img src="/assets/images/IMG_3749.webp" alt="EGYGRILLZ Custom Grillz" loading="lazy" decoding="async">
@@ -559,7 +560,7 @@
         <strong>egygrillz</strong> Egypt's First &amp; Only Custom Dental Jewelry Studio Gold · Silver · Diamond Grillz — All About The Bling.
       </div>
       <div class="ig-post-follow">
-        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener" class="ig-post-follow-btn">
+        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer" class="ig-post-follow-btn">
           <i class="fab fa-instagram"></i> @egygrillz — Follow
         </a>
       </div>
@@ -610,8 +611,8 @@
     </div>
     <div class="footer-bottom">
       <div class="footer-icons">
-        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8" target="_blank" rel="noopener" aria-label="Location"><i class="fas fa-location-dot"></i></a>
+        <a href="https://instagram.com/egygrillz" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://maps.app.goo.gl/moxe6qaKtbhKfzFD8" target="_blank" rel="noopener noreferrer" aria-label="Location"><i class="fas fa-location-dot"></i></a>
       </div>
       <img src="/assets/optimized/logo_white-600.png" class="footer-logo-img" alt="EGYGRILLZ" loading="lazy">
       <div class="ceo-wrap">
@@ -626,63 +627,27 @@
   (function(){
     'use strict';
 
-    /* ─── Session cache to avoid refetching on nav ─── */
-    const CACHE_VER = 'v1';
-    const memCache = new Map();
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
-    /* Media path inside each item's category folder */
     function mediaPath(item, file){
-      return 'assets/images/' + (item.category || 'sets') + '/' + (item.folder || item.id) + '/' + file;
+      if (window.Catalog && typeof window.Catalog.mediaPath === 'function') {
+        return window.Catalog.mediaPath(item, file);
+      }
+      var f = String(file || '').trim();
+      if (/^(https?:|data:|\/)/i.test(f)) return f;
+      var cat = (item && item.category) || 'sets';
+      var folder = (item && (item.folder || item.id)) || '';
+      if (cat === 'grillz-gallery' && (!folder || folder === '000001')) return 'assets/images/grillz-gallery/' + f;
+      return 'assets/images/' + cat + '/' + folder + '/' + f;
     }
     function isVidName(n){ return /\.(mp4|mov|webm|ogg)$/i.test(String(n||'')); }
-
-    /* Return original URL directly (grid uses catalog paths) */
-    function thumbOf(u){ return u; }
-
-    async function getJSON(url){
-      if (memCache.has('json:'+url)) return memCache.get('json:'+url);
-      try {
-        const ssKey = CACHE_VER + ':json:' + url;
-        const ss = sessionStorage.getItem(ssKey);
-        if (ss) { const p = JSON.parse(ss); memCache.set('json:'+url, p); return p; }
-      } catch(e){}
-      const res = await fetch(url, { cache: 'force-cache' });
-      const data = await res.json();
-      memCache.set('json:'+url, data);
-      try { sessionStorage.setItem(CACHE_VER + ':json:' + url, JSON.stringify(data)); } catch(e){}
-      return data;
-    }
-
-    async function getText(url){
-      if (memCache.has('txt:'+url)) return memCache.get('txt:'+url);
-      try {
-        const ssKey = CACHE_VER + ':txt:' + url;
-        const ss = sessionStorage.getItem(ssKey);
-        if (ss) { memCache.set('txt:'+url, ss); return ss; }
-      } catch(e){}
-      const res = await fetch(url, { cache: 'force-cache' });
-      const data = await res.text();
-      memCache.set('txt:'+url, data);
-      try { sessionStorage.setItem(CACHE_VER + ':txt:' + url, data); } catch(e){}
-      return data;
-    }
-
-    function parseInfo(text){
-      const info = { name:'', price:'', desc:'', images:[] };
-      const lines = text.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const ci = line.indexOf(':');
-        if (ci === -1) continue;
-        const k = line.slice(0, ci).trim().toLowerCase();
-        const v = line.slice(ci+1).trim();
-        if (k === 'name' || k === 'title') info.name = v;
-        else if (k === 'price') info.price = v;
-        else if (k === 'description' || k === 'desc') info.desc = v;
-        else if (k === 'images') info.images = v.split(',').map(s=>s.trim()).filter(Boolean);
-      }
-      return info;
-    }
 
     function buildSkeleton(container, count = 4) {
       let html = '';
@@ -714,6 +679,12 @@
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.querySelector('.main-nav').classList.remove('active');
+        document.body.classList.remove('menu-open');
+      }
+    });
 
     /* ─── Scroll reveal ─── */
     const revealObs = new IntersectionObserver(entries => {
@@ -721,11 +692,35 @@
     }, { threshold: 0.07, rootMargin: '50px' });
     document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
+    /* ─── Visibility-aware slideshow coordinator (pauses offscreen & background tabs) ─── */
+    const visibleSlides = new WeakSet();
+    const slideVisObs = ('IntersectionObserver' in window)
+      ? new IntersectionObserver(entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) visibleSlides.add(e.target);
+            else visibleSlides.delete(e.target);
+          });
+        }, { rootMargin: '100px 0px' })
+      : null;
+
+    function startAutoCycle(host, imgs, delayMs) {
+      if (!imgs || imgs.length <= 1) return null;
+      if (slideVisObs) slideVisObs.observe(host);
+      let cur = 0;
+      return setInterval(() => {
+        if (document.hidden) return;
+        if (slideVisObs && !visibleSlides.has(host)) return;
+        imgs[cur].classList.remove('active');
+        cur = (cur + 1) % imgs.length;
+        imgs[cur].classList.add('active');
+      }, delayMs);
+    }
+
     /* ─── Drag scroll ─── */
     function makeDraggable(el){
-      let drag=false, startX, sl;
+      let drag=false, startX=0, sl=0;
       el.addEventListener('mousedown', e => { drag=true; startX=e.pageX-el.offsetLeft; sl=el.scrollLeft; el.style.userSelect='none'; });
-      el.addEventListener('mouseleave', () => drag=false);
+      el.addEventListener('mouseleave', () => { drag=false; el.style.userSelect=''; });
       el.addEventListener('mouseup', () => { drag=false; el.style.userSelect=''; });
       el.addEventListener('mousemove', e => { if(!drag)return; e.preventDefault(); el.scrollLeft=sl-(e.pageX-el.offsetLeft-startX); });
     }
@@ -733,6 +728,8 @@
     /* ─── Category card slideshow ─── */
     const slideshowIntervals = new WeakMap();
     function makeCardSlideshow(container, paths, cropSlot){
+      const prevId = slideshowIntervals.get(container);
+      if (prevId) clearInterval(prevId);
       container.innerHTML = '';
       const frag = document.createDocumentFragment();
       paths.forEach((src, i) => {
@@ -741,38 +738,28 @@
         img.loading = 'lazy'; img.decoding = 'async';
         img.src = src;
         if (cropSlot) img.setAttribute('data-crop', cropSlot);
-        if (i === 0) { img.classList.add('active'); img.loading = 'eager'; }
+        if (i === 0) img.classList.add('active');
         frag.appendChild(img);
       });
       container.appendChild(frag);
-      if (paths.length > 1){
-        let cur = 0;
-        const id = setInterval(() => {
-          const imgs = container.querySelectorAll('img');
-          imgs[cur].classList.remove('active');
-          cur = (cur+1) % imgs.length;
-          imgs[cur].classList.add('active');
-        }, 4500);
-        slideshowIntervals.set(container, id);
-      }
+      const imgs = container.querySelectorAll('img');
+      const id = startAutoCycle(container.parentElement || container, imgs, 4500);
+      if (id) slideshowIntervals.set(container, id);
     }
 
-    /* Public page assignment — a design appears on the page it is assigned to.
-       Items saved before the field existed fall back to their category. */
     function pageOf(x){
       if(!x) return '';
       return Object.prototype.hasOwnProperty.call(x,'page') ? x.page : (x.category || '');
     }
 
-    /* The wide banner of each collection section.
-       A banner chosen in /editx → Home Banners wins; otherwise the first
-       design on that page is used, exactly as before. */
     async function loadCategoryCard(cat, slidesId, nameId, descId){
       try {
-        const banner = (window.HomeBanners && HomeBanners.TIERS.indexOf(cat) !== -1)
-          ? await HomeBanners.get(cat).catch(() => null)
-          : null;
-        const all = await window.Catalog.load();
+        const [banner, all] = await Promise.all([
+          (window.HomeBanners && HomeBanners.TIERS.indexOf(cat) !== -1)
+            ? HomeBanners.get(cat).catch(() => null)
+            : Promise.resolve(null),
+          window.Catalog.load()
+        ]);
         const mine = (all||[]).filter(x => pageOf(x) === cat).sort((a,b)=>(a.order||999)-(b.order||999));
         const d = mine[0];
 
@@ -783,14 +770,13 @@
 
         let paths = [];
         if (banner && banner.images && banner.images.length) {
-          paths = banner.images.map(HomeBanners.srcOf);
+          paths = banner.images.map(HomeBanners.srcOf).filter(Boolean);
         } else if (d) {
-          paths = (d.images||[]).filter(f=>!isVidName(f)).map(img => mediaPath(d, img));
+          paths = (d.images||[]).filter(f=>!isVidName(f)).map(img => mediaPath(d, img)).filter(Boolean);
         }
         if (!paths.length) return;
         makeCardSlideshow(document.getElementById(slidesId), paths,
           (window.HomeBanners && window.HomeBanners.TIERS.indexOf(cat) !== -1) ? 'banner:' + cat : '');
-
       } catch(e){ console.warn(cat, e); }
     }
 
@@ -819,7 +805,7 @@
             el.src = mediaPath(r.item || { category: cat, folder: folder }, img);
             el.alt = d.name || folder;
             el.draggable = false;
-            el.loading = i === 0 ? 'eager' : 'lazy';
+            el.loading = 'lazy';
             el.decoding = 'async';
             if (i === 0) el.classList.add('active');
             imgWrap.appendChild(el);
@@ -827,18 +813,29 @@
           card.appendChild(imgWrap);
           const body = document.createElement('div');
           body.className = 'lv-prod-body';
-          body.innerHTML = `<div class="lv-prod-label">${catLabel}</div><div class="lv-prod-name">${d.name||folder}</div>`;
+          const pi = (window.Catalog && typeof window.Catalog.priceInfo === 'function')
+            ? window.Catalog.priceInfo(r.item, { fallbackQuote: false })
+            : { show: false, isQuote: false, text: '', href: '/contact' };
+          body.innerHTML = `<div class="lv-prod-label">${esc(catLabel)}</div><div class="lv-prod-name">${esc(d.name||folder)}</div>`;
+          if (pi.show) {
+            const pe = document.createElement('div');
+            pe.style.cssText = 'font-size:11px;color:#555;margin-top:4px;letter-spacing:0.3px;';
+            pe.textContent = pi.text;
+            body.appendChild(pe);
+          } else if (pi.isQuote) {
+            const qa = document.createElement('a');
+            qa.href = pi.href;
+            qa.textContent = pi.text;
+            qa.style.cssText = 'display:inline-block;font-size:10px;color:#555;margin-top:4px;letter-spacing:0.6px;text-decoration:underline;text-underline-offset:3px;';
+            qa.addEventListener('click', e => e.stopPropagation());
+            body.appendChild(qa);
+          }
           card.appendChild(body);
           if (d.images.length > 1) {
-            let c = 0;
-            const imgs = imgWrap.querySelectorAll('img');
-            setInterval(() => {
-              imgs[c].classList.remove('active');
-              c = (c+1) % imgs.length;
-              imgs[c].classList.add('active');
-            }, 3500 + Math.random()*1000);
+            startAutoCycle(card, imgWrap.querySelectorAll('img'), 3500 + Math.random()*1000);
           }
-          card.addEventListener('click', () => window.location = href + '?item=' + encodeURIComponent(folder));
+          const itemKey = (r.item && r.item.category === 'grillz-gallery' && folder === '000001') ? r.item.id : folder;
+          card.addEventListener('click', () => { window.location = href + '?item=' + encodeURIComponent(itemKey); });
           frag.appendChild(card);
         }
         strip.innerHTML = '';
@@ -852,22 +849,36 @@
       buildSkeleton(strip, 5);
       try {
         const all = await window.Catalog.load();
-        /* "Latest" strip = latest designs plus anything assigned to the Home page */
         const latestList = (all||[]).filter(x => { const p = pageOf(x); return p === 'latest-designs' || p === 'index'; })
           .sort((a,b) => (a.order||999) - (b.order||999));
         const slice = (latestList.length ? latestList : (all||[])).slice(0, 8);
         const frag = document.createDocumentFragment();
         for (const r of slice) {
           if (!r) continue;
-          const folder = r.folder || r.id;
+          const folder = (r.category === 'grillz-gallery' && r.folder === '000001') ? r.id : (r.folder || r.id);
           const imgs = (r.images || []).filter(f => !isVidName(f));
-          const d = { name: r.name, images: imgs };
           const src = imgs[0] ? mediaPath(r, imgs[0]) : '';
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-new-card';
-          card.innerHTML = `<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div>`;
-          card.addEventListener('click', () => window.location = 'latest-designs?item=' + encodeURIComponent(folder));
+          const pi = (window.Catalog && typeof window.Catalog.priceInfo === 'function')
+            ? window.Catalog.priceInfo(r, { fallbackQuote: false })
+            : { show: false, isQuote: false, text: '', href: '/contact' };
+          card.innerHTML = `<div class="lv-new-card-img"><img src="${esc(src)}" alt="${esc(r.name||'')}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${esc(r.name||'')}</div>`;
+          if (pi.show) {
+            const pe = document.createElement('div');
+            pe.style.cssText = 'font-size:11px;color:#555;margin-top:4px;letter-spacing:0.3px;';
+            pe.textContent = pi.text;
+            card.appendChild(pe);
+          } else if (pi.isQuote) {
+            const qa = document.createElement('a');
+            qa.href = pi.href;
+            qa.textContent = pi.text;
+            qa.style.cssText = 'display:inline-block;font-size:10px;color:#555;margin-top:4px;letter-spacing:0.6px;text-decoration:underline;text-underline-offset:3px;';
+            qa.addEventListener('click', e => e.stopPropagation());
+            card.appendChild(qa);
+          }
+          card.addEventListener('click', () => { window.location = 'latest-designs?item=' + encodeURIComponent(folder); });
           frag.appendChild(card);
         }
         strip.innerHTML = '';
@@ -885,19 +896,16 @@
         if (!list.length) return;
         const frag = document.createDocumentFragment();
         for (const r of list.slice(0, 8)) {
-          const folder = r.folder || r.id;
           const imgs = (r.images || []).filter(f => !isVidName(f));
-          const d = { name: r.name, desc: r.description, images: imgs };
-          const src = r.category === 'grillz-gallery'
-            ? 'assets/images/grillz-gallery/' + imgs[0]
-            : (imgs[0] ? mediaPath(r, imgs[0]) : '');
+          const src = imgs[0] ? mediaPath(r, imgs[0]) : '';
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-gal-card';
-          card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div></div>`;
-          card.addEventListener('click', () => window.location = 'grillz-gallery?item=' + encodeURIComponent(r.id));
+          card.innerHTML = `<div class="lv-gal-card-img"><img src="${esc(src)}" alt="${esc(r.name||'')}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${esc(r.name||'')}</div><div class="gc-desc">${esc(r.description||'')}</div></div>`;
+          card.addEventListener('click', () => { window.location = 'grillz-gallery?item=' + encodeURIComponent(r.id); });
           frag.appendChild(card);
         }
+        scrollEl.innerHTML = '';
         scrollEl.appendChild(frag);
         makeDraggable(scrollEl);
       } catch(e){ console.warn('gallery', e); }
@@ -926,19 +934,24 @@
           lazyObs.unobserve(e.target);
         }
       });
-    }, { rootMargin: '500px 0px' });
+    }, { rootMargin: '350px 0px' });
     document.querySelectorAll('[data-lazy]').forEach(el => lazyObs.observe(el));
 
     /* ─── IG Interactions ─── */
+    function openIg() {
+      const w = window.open('https://instagram.com/egygrillz', '_blank', 'noopener,noreferrer');
+      if (w) { try { w.opener = null; } catch (e) {} }
+    }
     let liked=false, saved=false, likes=2847;
     const likeBtn = document.getElementById('ig-like-btn');
     const saveBtn = document.getElementById('ig-save-btn');
     const commentBtn = document.getElementById('ig-comment-btn');
     const shareBtn = document.getElementById('ig-share-btn');
+    const moreBtn = document.getElementById('ig-more-btn');
     const likesCount = document.getElementById('ig-likes-count');
     const heartAnim = document.getElementById('ig-heart-anim');
     const imgWrap = document.getElementById('ig-post-img-wrap');
-    function updateLikes(){ likesCount.textContent = likes.toLocaleString() + ' likes'; }
+    function updateLikes(){ likesCount.textContent = likes.toLocaleString('en-US') + ' likes'; }
     function triggerHeart(){ if(!heartAnim)return; heartAnim.classList.remove('pop'); void heartAnim.offsetWidth; heartAnim.classList.add('pop'); }
     likeBtn?.addEventListener('click', function(){
       liked = !liked; this.classList.toggle('liked', liked);
@@ -951,8 +964,9 @@
       lastTap = now;
     });
     saveBtn?.addEventListener('click', function(){ saved=!saved; this.classList.toggle('saved', saved); });
-    commentBtn?.addEventListener('click', () => window.open('https://instagram.com/egygrillz','_blank'));
-    shareBtn?.addEventListener('click', () => window.open('https://instagram.com/egygrillz','_blank'));
+    commentBtn?.addEventListener('click', openIg);
+    shareBtn?.addEventListener('click', openIg);
+    moreBtn?.addEventListener('click', openIg);
   })();
   </script>
 

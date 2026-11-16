@@ -76,12 +76,25 @@
 
     function loadSiteSettings(){
       var box = document.getElementById('site-settings-box');
-      if (!box || !window.SiteConfig) return;
-      SiteConfig.load(db).then(function(){
-        SiteConfig.renderSettings(box, db, function(){ showToast('Settings saved',''); });
-      }).catch(function(){
-        SiteConfig.renderSettings(box, db, function(){ showToast('Settings saved',''); });
-      });
+      if (box && window.SiteConfig) {
+        SiteConfig.load(db).then(function(){
+          SiteConfig.renderSettings(box, db, function(){ showToast('Studio settings saved','success'); });
+        }).catch(function(){
+          SiteConfig.renderSettings(box, db, function(){ showToast('Studio settings saved','success'); });
+        });
+      }
+      var calcBox = document.getElementById('calc-settings-box');
+      if (calcBox && window.StaffCalculator && window.CalcEngine) {
+        Promise.resolve(window.CalcEngine.load(db)).finally(function(){
+          window.StaffCalculator.mountSettings(calcBox, {
+            db: db,
+            onSaved: function(){
+              showToast('Calculator rates saved','success');
+              if (typeof renderUnifiedInventory === 'function' && Object.keys(cache || {}).length) renderUnifiedInventory();
+            }
+          });
+        });
+      }
     }
 
     function pageTitle(n){
@@ -642,10 +655,22 @@
       backdrop-filter:blur(4px);
     }
     /* Inventory: calculator price + public page assignment */
-    .card-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:8px 0 2px;border-top:1px solid var(--line-2);margin-top:8px;}
+    .card-price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 2px;border-top:1px solid var(--line-2);margin-top:8px;flex-wrap:wrap;}
     .card-price-val{font-size:13px;font-weight:700;letter-spacing:.4px;color:var(--ink);}
+    .card-price-val.is-hidden{color:#8a8a8a;text-decoration:line-through;}
     .card-price-src{font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:#858585;}
     .card-price-src.ok{color:var(--sage);}
+    .card-showprice-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0 2px;}
+    .btn-show-price{
+      display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+      font-family:'Arimo',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      cursor:pointer;transition:all .18s;border:1px solid var(--line);background:#fff;color:var(--ink);
+    }
+    .btn-show-price.on{background:#1f1f1f;color:#fff;border-color:#1f1f1f;}
+    .btn-show-price.on:hover{opacity:.85;}
+    .btn-show-price.off{background:#f9f5ec;color:#7a5c22;border-color:#decba0;}
+    .btn-show-price.off:hover{background:#f2ead6;}
+    .showprice-hint{font-size:9px;color:#8a8a8a;letter-spacing:.3px;}
     .card-page-row{display:flex;align-items:center;gap:8px;padding:6px 0;}
     .card-page-label{font-size:8px;letter-spacing:1.4px;text-transform:uppercase;color:#9a9a9a;white-space:nowrap;}
     .card-page-select{
@@ -1195,6 +1220,8 @@
                   <div class="inv-tool-btns">
                     <button type="button" class="btn-outline-sm" id="inv-open-calc-btn"><i class="fas fa-calculator"></i> Custom Grillz</button>
                     <button type="button" class="btn-outline-sm" id="inv-toggle-svc-btn"><i class="fas fa-concierge-bell"></i> Studio Service</button>
+                    <button type="button" class="btn-outline-sm" id="inv-paste-code-btn" title="Paste any EGZ-... or EGZ1:... calculator code"><i class="fas fa-bolt"></i> Paste Code</button>
+                    <button type="button" class="btn-outline-sm" id="inv-copy-code-btn" title="Copy short EGZ-... code"><i class="fas fa-copy"></i> Copy Code</button>
                     <button type="button" class="btn-outline-sm" id="inv-add-item-btn"><i class="fas fa-plus"></i> Blank Line</button>
                     <button type="button" class="btn-muted2" id="inv-open-import-quote-btn"><i class="fas fa-file-import"></i> Import Quote</button>
                     <button type="button" class="btn-muted2" id="inv-toggle-picker-btn">+ Browse Designs</button>
@@ -1458,10 +1485,15 @@
         </div>
 
         <div class="panel" id="panel-settings">
-          <div class="page-header-row"><div><p class="ph-title">Site Settings</p><p class="ph-sub">Every number and label on the website, in one place</p></div></div>
-          <div class="section-card" style="padding:26px;">
-            <p class="pages-hint" style="margin-bottom:20px;"><i class="fas fa-lightbulb"></i> These values feed the booking page, the quotations and the bot. Change a number here and the whole site follows — exactly like the price calculator.</p>
+          <div class="page-header-row"><div><p class="ph-title">Site &amp; Pricing Settings</p><p class="ph-sub">Every studio number, label, and live calculator rate in one place</p></div></div>
+          <div class="section-card" style="padding:26px;margin-bottom:22px;">
+            <p class="pages-hint" style="margin-bottom:20px;"><i class="fas fa-lightbulb"></i> These values feed the booking page, mould kits, quotations, and the Telegram bot.</p>
             <div id="site-settings-box"></div>
+          </div>
+          <div class="section-card" style="padding:26px;">
+            <p class="ph-title" style="font-size:16px;margin-bottom:6px;">Pricing Calculator Rates</p>
+            <p class="pages-hint" style="margin-bottom:20px;"><i class="fas fa-calculator"></i> Live gold rate, base prices, design levels, stone pricing, finishing, and service fees shared across Atelier, Quotes, Invoices, and the Staff Panel.</p>
+            <div id="calc-settings-box"></div>
           </div>
         </div>
         <div class="panel" id="panel-backup">
@@ -1571,13 +1603,23 @@
           <option value="grillz-gallery">Gallery</option>
         </select></div></div>
       <div class="form-group">
-        <label class="form-label">Price — set by the pricing calculator</label>
+        <label class="form-label">Price — set by the pricing calculator (supports mixed teeth &amp; short codes)</label>
         <div class="design-price-box">
-          <div>
+          <div style="min-width:0;flex:1">
             <div class="design-price-val" id="f-price-preview">No price yet</div>
-            <div class="design-price-spec" id="f-price-spec">Open the Calculator to enter the material, teeth and finish — the price follows the live rates.</div>
+            <div class="design-price-spec" id="f-price-spec">Open the Calculator to enter the material, teeth and finish — or paste an EGZ- code.</div>
           </div>
-          <button type="button" class="btn-outline-sm" onclick="openDesignCalculator()"><i class="fas fa-calculator"></i> Calculator</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0">
+            <button type="button" class="btn-outline-sm" onclick="openDesignCalculator()"><i class="fas fa-calculator"></i> Calculator</button>
+            <button type="button" class="btn-muted2" onclick="pasteDesignCalcCode()" title="Paste an EGZ-... code"><i class="fas fa-bolt"></i> Paste Code</button>
+            <button type="button" class="btn-muted2" id="f-copy-calc-btn" onclick="copyDesignCalcCode()" style="display:none" title="Copy short EGZ-... code"><i class="fas fa-copy"></i> Code</button>
+          </div>
+        </div>
+        <div class="card-showprice-row" style="margin-top:8px;">
+          <span class="showprice-hint" id="f-showprice-hint">Website shows the live price on cards &amp; modal.</span>
+          <button type="button" class="btn-show-price on" id="f-showprice-btn" onclick="toggleModalShowPrice()">
+            <i class="fas fa-eye"></i> Show Price: Yes
+          </button>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-desc" placeholder="Describe this piece…"></textarea></div>
@@ -1741,7 +1783,41 @@
       console.warn('AppCheck not activated (optional):', acErr && acErr.message);
     }
     db = firebase.firestore();
+    try { db.enablePersistence({ synchronizeTabs: true }).catch(function(){}); } catch (pe) {}
   } catch(e) { console.error('Firebase init failed:', e); }
+
+  /* Timezone-safe local YYYY-MM-DD formatter (no Date.prototype mutation) */
+  function localISODate(d) {
+    var dt = d || new Date();
+    var y = dt.getFullYear();
+    var m = String(dt.getMonth() + 1).padStart(2, '0');
+    var day = String(dt.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  function localTodayStr() { return localISODate(new Date()); }
+
+  /* Atomic single-slot helpers for public `slots` mirror (0 reads per save/delete) */
+  function _slotNormTime(t) {
+    var m = String(t || '').trim().match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
+    if (!m) return String(t || '').trim();
+    return ('0' + parseInt(m[1], 10)).slice(-2) + ':' + (m[2] || '00') + ' ' + m[3].toUpperCase();
+  }
+  function _makeSlotId(d, t) {
+    if (!d || !t) return '';
+    return String(d).trim() + '_' + _slotNormTime(t).replace(/[ :]/g, '');
+  }
+  function _bumpSummaryStat(deltas) {
+    if (!db || !deltas) return;
+    try {
+      var payload = { updatedAt: new Date().toISOString() };
+      var hasAny = false;
+      Object.keys(deltas).forEach(function(k) {
+        var n = Number(deltas[k]);
+        if (n) { payload[k] = firebase.firestore.FieldValue.increment(n); hasAny = true; }
+      });
+      if (hasAny) db.collection('stats').doc('summary').set(payload, { merge: true }).catch(function(){});
+    } catch (e) {}
+  }
 
   // ‑‑ BOOT ‑‑
   (function bootApp() {
@@ -1809,8 +1885,29 @@
     Object.keys(_readCache).forEach(function (k) {
       if (!prefix || k.indexOf(prefix) === 0) delete _readCache[k];
     });
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var lk = localStorage.key(i);
+        if (lk && lk.indexOf('egygz_cache_') === 0) {
+          var sub = lk.slice('egygz_cache_'.length);
+          if (!prefix || sub.indexOf(prefix) === 0) localStorage.removeItem(lk);
+        }
+      }
+    } catch (e) {}
   }
   window.__egygzInvalidate = invalidate;
+
+  function setUnreadBadges(count) {
+    var n = Math.max(0, Number(count) || 0);
+    _readCache['unread:count'] = { at: Date.now(), val: n };
+    var badge = document.getElementById('unread-badge');
+    if (badge) {
+      badge.style.display = n > 0 ? 'inline-block' : 'none';
+      badge.textContent = n;
+    }
+    var st = document.getElementById('st-unread');
+    if (st) st.textContent = n;
+  }
 
   /* Track active listeners so they unsubscribe cleanly on unload */
   var _liveListeners = [];
@@ -1823,18 +1920,25 @@
   }
   window.addEventListener('beforeunload', stopAllListeners);
 
+  var _appInitialized = false;
   function initApp() {
+    if (_appInitialized) return;
+    _appInitialized = true;
     loadConfig();
     /* live pricing rates: every design price is computed from these */
     if (window.CalcEngine) {
       Promise.resolve(window.CalcEngine.load(db)).then(function(){
-        if (typeof renderUnifiedInventory === 'function') renderUnifiedInventory();
+        if (typeof renderUnifiedInventory === 'function' && Object.keys(cache || {}).length) renderUnifiedInventory();
       }).catch(function(){});
+      if (typeof window.CalcEngine.onChange === 'function') {
+        window.CalcEngine.onChange(function(){
+          if (typeof renderUnifiedInventory === 'function' && Object.keys(cache || {}).length) renderUnifiedInventory();
+        });
+      }
     }
-    loadAllPanels();
+    /* Inventory loads lazily when opened — saves Firestore reads on every login */
     loadCustomPages();
     loadOverview();
-    watchUnreadCount();
     populateHourSelects();
   }
 
@@ -1867,7 +1971,7 @@
     dows.forEach(function(d){ html += '<div class="cal-dow">'+d+'</div>'; });
     var firstDay = new Date(calYear, calMonth, 1).getDay();
     var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-    var today = new Date().toISOString().slice(0,10);
+    var today = localTodayStr();
     // Prev month padding
     var prevDays = new Date(calYear, calMonth, 0).getDate();
     for(var p = firstDay-1; p >= 0; p--) {
@@ -1920,46 +2024,66 @@
   }
 
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
-  // OVERVIEW
+  // OVERVIEW (windowed date>=windowStart + 1-doc stats/summary counter)
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   async function loadOverview() {
     if(!db) return;
     try {
-      var today = new Date().toISOString().slice(0,10);
+      var today = localTodayStr();
       var thisMonth = today.slice(0,7);
-      // Get start of week (Sunday)
+      var monthStartStr = thisMonth + '-01';
+      // Get start of week (Sunday) in local time
       var now = new Date();
       var dow = now.getDay();
       var weekStart = new Date(now); weekStart.setDate(now.getDate()-dow); weekStart.setHours(0,0,0,0);
       var weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
-      var wStartStr = weekStart.toISOString().slice(0,10);
-      var wEndStr = weekEnd.toISOString().slice(0,10);
+      var wStartStr = localISODate(weekStart);
+      var wEndStr = localISODate(weekEnd);
+      var windowStart = wStartStr < monthStartStr ? wStartStr : monthStartStr;
 
-      /* Cached 60s, bounded to 1000 docs */
-      var appts = await cachedGet('appts:ov', async function () {
-        var snap = await db.collection('appointments').limit(1000).get();
-        var out = [];
-        snap.forEach(function(d){ out.push(Object.assign({id:d.id},d.data())); });
-        return out;
-      });
+      /* Ordered windowed query: current month/week + upcoming only (typically 10–40 reads instead of 1,000) */
+      var results = await Promise.all([
+        cachedGet('appts:ov', async function () {
+          var snap = await db.collection('appointments')
+            .where('date', '>=', windowStart)
+            .orderBy('date', 'asc')
+            .limit(250)
+            .get();
+          var out = [];
+          snap.forEach(function(d){ out.push(Object.assign({id:d.id},d.data())); });
+          return out;
+        }),
+        cachedGet('unread:count', async function () {
+          var snap = await db.collection('messages').where('read','==',false).limit(100).get();
+          return snap.size;
+        }),
+        cachedGet('stats:summary', async function () {
+          try {
+            var sDoc = await db.collection('stats').doc('summary').get();
+            if (sDoc.exists) return sDoc.data() || {};
+          } catch (e) {}
+          /* Fallback when stats/summary doc hasn't been initialized yet: bounded count */
+          var cSnap = await db.collection('clients').limit(200).get();
+          return { totalClients: cSnap.size, _partial: true };
+        })
+      ]);
 
-      var unread = await cachedGet('unread:ov', async function () {
-        var snap = await db.collection('messages').where('read','==',false).limit(200).get();
-        return snap.size;
-      });
+      var appts = results[0] || [];
+      var unread = Number(results[1]) || 0;
+      var summary = results[2] || {};
+      setUnreadBadges(unread);
 
-      var clientsCount = await cachedGet('clients:ov', async function () {
-        var snap = await db.collection('clients').limit(1000).get();
-        return snap.size;
-      });
-
-      var showed = appts.filter(function(a){return a.showedUp===true;}).length;
-      var noshow = appts.filter(function(a){return a.showedUp===false;}).length;
+      var winShowed = appts.filter(function(a){return a.showedUp===true;}).length;
+      var winNoshow = appts.filter(function(a){return a.showedUp===false;}).length;
+      var showed = Number.isFinite(Number(summary.totalShowed)) ? Math.max(winShowed, Number(summary.totalShowed)) : winShowed;
+      var noshow = Number.isFinite(Number(summary.totalNoShow)) ? Math.max(winNoshow, Number(summary.totalNoShow)) : winNoshow;
+      var totalAppts = Number.isFinite(Number(summary.totalAppointments)) ? Math.max(appts.length, Number(summary.totalAppointments)) : appts.length;
+      var clientsCount = Number.isFinite(Number(summary.totalClients)) ? Math.max(0, Number(summary.totalClients)) : 0;
       var todayCount = appts.filter(function(a){return a.date===today;}).length;
       var weekCount = appts.filter(function(a){return a.date>=wStartStr&&a.date<=wEndStr;}).length;
       var monthCount = appts.filter(function(a){return (a.date||'').startsWith(thisMonth);}).length;
 
-      document.getElementById('st-total').textContent = appts.length;
+      document.getElementById('st-total').textContent = totalAppts;
       document.getElementById('st-showed').textContent = showed;
       document.getElementById('st-noshow').textContent = noshow;
       document.getElementById('st-unread').textContent = unread;
@@ -1994,18 +2118,18 @@
         weekEl.innerHTML = weekAppts.map(function(a){
           var isToday2 = a.date===today;
           var dot = '<div class="appt-week-dot'+(isToday2?' today-dot':'')+'"></div>';
-          return '<div class="appt-week-item">'+dot+'<div class="appt-week-info"><div class="appt-week-name">'+escHtml(a.name||'')+'</div><div class="appt-week-meta">'+escHtml(a.service||'')+' — '+a.date+'</div></div><div class="appt-week-time">'+escHtml(a.time||'')+'</div></div>';
+          return '<div class="appt-week-item">'+dot+'<div class="appt-week-info"><div class="appt-week-name">'+escHtml(a.name||'')+'</div><div class="appt-week-meta">'+escHtml(a.service||'')+' — '+escHtml(a.date||'')+'</div></div><div class="appt-week-time">'+escHtml(a.time||'')+'</div></div>';
         }).join('');
       }
 
-      // All appointments table (upcoming first)
-      var sorted = appts.slice().sort(function(a,b){return (b.date+b.time).localeCompare(a.date+a.time);});
+      // Upcoming & recent month appointments table
+      var sorted = appts.slice().sort(function(a,b){return ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));});
       var tbody = document.getElementById('upcoming-tbody');
       tbody.innerHTML = sorted.length ? sorted.map(function(a){
         var badgeCls = a.showedUp===true?'badge-confirmed':a.showedUp===false?'badge-noshow':'badge-pending';
         var badgeTxt = a.showedUp===true?'Showed':a.showedUp===false?'No Show':'Pending';
-        return '<tr><td>'+a.date+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.name||'')+'<br><small style="color:#aaa;">'+escHtml(a.phone||'')+'</small></td><td>'+escHtml(a.phone||'')+'</td><td>'+escHtml(a.service||'')+'</td><td><span class="status-badge '+badgeCls+'">'+badgeTxt+'</span></td></tr>';
-      }).join('') : '<tr><td colspan="6" style="text-align:center;color:#ccc;padding:30px;">No appointments</td></tr>';
+        return '<tr><td>'+escHtml(a.date||'')+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.name||'')+'<br><small style="color:#aaa;">'+escHtml(a.phone||'')+'</small></td><td>'+escHtml(a.phone||'')+'</td><td>'+escHtml(a.service||'')+'</td><td><span class="status-badge '+badgeCls+'">'+badgeTxt+'</span></td></tr>';
+      }).join('') : '<tr><td colspan="6" style="text-align:center;color:#ccc;padding:30px;">No appointments this month</td></tr>';
 
       // Init calendar
       initCalendar(appts);
@@ -2015,31 +2139,57 @@
 
   function watchUnreadCount() {
     if(!db) return;
-    /* Single cached read instead of a persistent snapshot listener */
-    cachedGet('unread:badge', async function () {
-      var snap = await db.collection('messages').where('read','==',false).limit(200).get();
+    cachedGet('unread:count', async function () {
+      var snap = await db.collection('messages').where('read','==',false).limit(100).get();
       return snap.size;
-    }).then(function (count) {
-      var badge = document.getElementById('unread-badge');
-      if (!badge) return;
-      badge.style.display = count>0?'inline-block':'none';
-      badge.textContent = count;
-    }).catch(function(){});
+    }).then(setUnreadBadges).catch(function(){});
   }
 
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
-  // APPOINTMENTS
+  // APPOINTMENTS (paginated: 50 per page + Load more)
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var allAppts = [], apptFilter = 'all', apptSearch = '';
+  var _apptCursor = null, _apptHasMore = false, _apptLoading = false;
+  var APPT_PAGE_SIZE = 50;
 
-  async function loadAppointments() {
-    if(!db) return;
+  function _syncApptMoreBtn() {
+    var tbody = document.getElementById('appt-tbody');
+    if (!tbody) return;
+    var tableWrap = tbody.closest('.table-wrap') || tbody.parentElement;
+    if (!tableWrap || !tableWrap.parentElement) return;
+    var wrap = document.getElementById('appts-load-more-wrap');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'appts-load-more-wrap';
+      wrap.style.cssText = 'text-align:center;padding:14px 0;display:none;';
+      wrap.innerHTML = '<button type="button" class="btn-muted2" onclick="loadAppointments(true)">Load more appointments</button>';
+      tableWrap.insertAdjacentElement('afterend', wrap);
+    }
+    wrap.style.display = _apptHasMore ? 'block' : 'none';
+  }
+
+  async function loadAppointments(append) {
+    if(!db || _apptLoading) return;
+    _apptLoading = true;
     try {
-      var snap = await db.collection('appointments').orderBy('date','desc').limit(1000).get();
-      allAppts = [];
-      snap.forEach(function(d){ allAppts.push(Object.assign({id:d.id},d.data())); });
+      var q = db.collection('appointments').orderBy('date','desc').limit(APPT_PAGE_SIZE);
+      if (append && _apptCursor) q = q.startAfter(_apptCursor);
+      var snap = await q.get();
+      var rows = [];
+      snap.forEach(function(d){ rows.push(Object.assign({id:d.id},d.data())); });
+      _apptCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : _apptCursor;
+      _apptHasMore = snap.docs.length === APPT_PAGE_SIZE;
+      if (append) {
+        var seen = {};
+        allAppts.forEach(function(a){ seen[a.id] = 1; });
+        rows.forEach(function(r){ if (!seen[r.id]) allAppts.push(r); });
+      } else {
+        allAppts = rows;
+      }
       renderAppts();
+      _syncApptMoreBtn();
     } catch(e){ console.error('Appointments error:', e); }
+    finally { _apptLoading = false; }
   }
 
   function setApptFilter(f, btn) {
@@ -2052,7 +2202,7 @@
   function filterAppts(q){ apptSearch=q.toLowerCase(); renderAppts(); }
 
   function renderAppts() {
-    var today = new Date().toISOString().slice(0,10);
+    var today = localTodayStr();
     var list = allAppts.filter(function(a){
       if(apptFilter==='upcoming') return a.date>=today;
       if(apptFilter==='past') return a.date<today;
@@ -2068,15 +2218,16 @@
       var yesActive = a.showedUp===true?'active':'';
       var noActive = a.showedUp===false?'active':'';
       var statusBadge = a.showedUp===true?'<span class="status-badge badge-confirmed">Showed</span>':a.showedUp===false?'<span class="status-badge badge-noshow">No Show</span>':'<span class="status-badge badge-pending">Pending</span>';
+      var sid = escAttr(a.id);
       return '<tr>'+
-        '<td>'+a.date+'</td>'+
+        '<td>'+escHtml(a.date||'')+'</td>'+
         '<td>'+escHtml(a.time||'')+'</td>'+
         '<td>'+escHtml(a.name||'')+'<br><small style="color:#aaa;">'+escHtml(a.phone||'')+'</small></td>'+
         '<td>'+escHtml(a.service||'')+'</td>'+
-        '<td><div class="show-toggle"><button class="show-btn yes '+yesActive+'" onclick="setShowedUp(\''+a.id+'\',true,this)"><i class="fas fa-check"></i></button><button class="show-btn no '+noActive+'" onclick="setShowedUp(\''+a.id+'\',false,this)"><i class="fas fa-xmark"></i></button></div></td>'+
+        '<td><div class="show-toggle"><button class="show-btn yes '+yesActive+'" onclick="setShowedUp(\''+sid+'\',true,this)"><i class="fas fa-check"></i></button><button class="show-btn no '+noActive+'" onclick="setShowedUp(\''+sid+'\',false,this)"><i class="fas fa-xmark"></i></button></div></td>'+
         '<td>'+statusBadge+'</td>'+
         '<td>'+reminderCell(a)+'</td>'+
-        '<td><button class="btn-sm btn-edit" onclick="editAppt(\''+a.id+'\')">Edit</button> <button class="btn-sm btn-del" onclick="confirmDeleteAppt(\''+a.id+'\')">Delete</button></td>'+
+        '<td><button class="btn-sm btn-edit" onclick="editAppt(\''+sid+'\')">Edit</button> <button class="btn-sm btn-del" onclick="confirmDeleteAppt(\''+sid+'\')">Delete</button></td>'+
       '</tr>';
     }).join('');
   }
@@ -2261,7 +2412,7 @@
   
   function sendAllTomorrow(){
     var t = new Date(); t.setDate(t.getDate()+1);
-    var tomorrow = t.toISOString().slice(0,10);
+    var tomorrow = localISODate(t);
     var list = allAppts.filter(function(a){
       return a.date===tomorrow && a.email && !a.reminderSentAt;
     });
@@ -2269,7 +2420,8 @@
     if(!confirm('Open Gmail for '+list.length+' client(s)?\n\nEvery message will be ready — you just press Send.')) return;
     list.forEach(function(a, i){
       setTimeout(function(){
-        window.open(gmailCompose(a), '_blank');
+        var w = window.open(gmailCompose(a), '_blank');
+        if (w) { try { w.opener = null; } catch (e) {} }
         markReminderSent(a);
       }, i * 700);
     });
@@ -2279,9 +2431,18 @@
   async function setShowedUp(id, val, btn) {
     if(!db) return;
     try {
-      await db.collection('appointments').doc(id).update({showedUp:val});
       var appt = allAppts.find(function(a){return a.id===id;});
+      var prev = appt ? appt.showedUp : null;
+      await db.collection('appointments').doc(id).update({showedUp:val});
       if(appt) appt.showedUp = val;
+      var deltas = {};
+      if (prev === true && val !== true) deltas.totalShowed = -1;
+      if (prev !== true && val === true) deltas.totalShowed = 1;
+      if (prev === false && val !== false) deltas.totalNoShow = -1;
+      if (prev !== false && val === false) deltas.totalNoShow = 1;
+      _bumpSummaryStat(deltas);
+      invalidate('appts:');
+      invalidate('stats:');
       renderAppts();
       showToast(' Updated','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
@@ -2311,8 +2472,9 @@
 
   function closeApptModal(){ document.getElementById('appt-modal-overlay').classList.remove('open'); }
 
+  var _isSavingAppt = false;
   async function saveAppt() {
-    if(!db) return;
+    if(!db || _isSavingAppt) return;
     var id = document.getElementById('appt-edit-id').value;
     var data = {
       name: document.getElementById('appt-name').value.trim(),
@@ -2325,21 +2487,36 @@
       status: 'confirmed'
     };
     if(!data.name||!data.phone||!data.date||!data.service){showToast('Please fill required fields','error');return;}
+    _isSavingAppt = true;
     try {
+      var newSid = _makeSlotId(data.date, data.time);
+      var batch = db.batch();
       if(id){
-        await db.collection('appointments').doc(id).update(data);
         var idx = allAppts.findIndex(function(a){return a.id===id;});
+        var oldAppt = idx > -1 ? allAppts[idx] : null;
+        var oldSid = oldAppt ? _makeSlotId(oldAppt.date, oldAppt.time) : '';
+        batch.update(db.collection('appointments').doc(id), data);
+        if (oldSid && oldSid !== newSid) batch.delete(db.collection('slots').doc(oldSid));
+        if (newSid) batch.set(db.collection('slots').doc(newSid), { date: data.date, time: _slotNormTime(data.time) });
+        await batch.commit();
         if(idx>-1) Object.assign(allAppts[idx], data);
       } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         data.showedUp = null;
-        var ref = await db.collection('appointments').add(data);
+        var ref = db.collection('appointments').doc();
+        batch.set(ref, data);
+        if (newSid) batch.set(db.collection('slots').doc(newSid), { date: data.date, time: _slotNormTime(data.time) });
+        await batch.commit();
+        _bumpSummaryStat({ totalAppointments: 1 });
         allAppts.unshift(Object.assign({id:ref.id},data));
       }
+      invalidate('appts:');
+      invalidate('stats:');
       renderAppts();
       closeApptModal();
       showToast(' Saved','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
+    finally { _isSavingAppt = false; }
   }
 
   var _deleteApptId = null;
@@ -2351,10 +2528,23 @@
   }
   async function doDeleteAppt() {
     if(!db||!_deleteApptId) return;
+    var delId = _deleteApptId;
+    _deleteApptId = null;
     closeConfirm();
     try {
-      await db.collection('appointments').doc(_deleteApptId).delete();
-      allAppts = allAppts.filter(function(a){return a.id!==_deleteApptId;});
+      var target = allAppts.find(function(a){return a.id===delId;});
+      var sid = target ? _makeSlotId(target.date, target.time) : '';
+      var batch = db.batch();
+      batch.delete(db.collection('appointments').doc(delId));
+      if (sid) batch.delete(db.collection('slots').doc(sid));
+      await batch.commit();
+      var deltas = { totalAppointments: -1 };
+      if (target && target.showedUp === true) deltas.totalShowed = -1;
+      if (target && target.showedUp === false) deltas.totalNoShow = -1;
+      _bumpSummaryStat(deltas);
+      allAppts = allAppts.filter(function(a){return a.id!==delId;});
+      invalidate('appts:');
+      invalidate('stats:');
       renderAppts();
       showToast(' Deleted','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
@@ -2367,8 +2557,10 @@
     r.onload = async function(e){
       var text = e.target.result;
       var lines = text.split(/\r?\n/);
+      if (!lines.length) return;
       var headers = lines[0].split(',').map(function(h){return h.replace(/^"|"$/g,'').trim().toLowerCase();});
-      var count=0,errs=0;
+      var today = localTodayStr();
+      var ops = [];
       for(var i=1;i<lines.length;i++){
         if(!lines[i].trim()) continue;
         var vals = parseCSVLine(lines[i]);
@@ -2380,22 +2572,40 @@
         var su=null;
         if(['true','1','yes'].indexOf((row.showedup||'').toLowerCase())>-1) su=true;
         else if(['false','0','no'].indexOf((row.showedup||'').toLowerCase())>-1) su=false;
-        try {
-          await db.collection('appointments').add({
-            name:rname.trim(),phone:rphone.trim(),email:(row.email||'').trim(),
-            service:row.service||row.services||'Appointment',
-            date:row.date||'',time:row.time||'',
-            notes:(row.notes||'').trim(),price:row.price||'0',
-            status:'confirmed',showedUp:su,
-            createdAt:firebase.firestore.FieldValue.serverTimestamp()
-          });
-          count++;
-        } catch(err){ errs++; }
+        var rec = {
+          name:rname.trim(),phone:rphone.trim(),email:(row.email||'').trim(),
+          service:row.service||row.services||'Appointment',
+          date:(row.date||'').trim(),time:(row.time||'').trim(),
+          notes:(row.notes||'').trim(),price:row.price||'0',
+          status:'confirmed',showedUp:su,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        };
+        ops.push({ ref: db.collection('appointments').doc(), data: rec });
+        if (rec.date && rec.time && rec.date >= today) {
+          var sid = _makeSlotId(rec.date, rec.time);
+          if (sid) ops.push({ ref: db.collection('slots').doc(sid), data: { date: rec.date, time: _slotNormTime(rec.time) } });
+        }
       }
+      var count = 0, errs = 0;
+      for (var c = 0; c < ops.length; c += 400) {
+        var chunk = ops.slice(c, c + 400);
+        try {
+          var b = db.batch();
+          chunk.forEach(function(op){ b.set(op.ref, op.data); });
+          await b.commit();
+          count += chunk.filter(function(op){ return op.ref.parent.id === 'appointments'; }).length;
+        } catch (err) {
+          errs += chunk.filter(function(op){ return op.ref.parent.id === 'appointments'; }).length;
+        }
+      }
+      if (count > 0) _bumpSummaryStat({ totalAppointments: count });
+      invalidate('appts:');
+      invalidate('stats:');
       showToast(' Imported '+count+' appointments'+(errs?' ('+errs+' errors)':''),'success');
-      loadAppointments();
+      loadAppointments(false);
     };
     r.readAsText(file);
+    document.getElementById('csv-input').value='';
   }
   function exportApptCSV() {
     var headers = ['date','time','name','phone','email','service','notes','showedUp','status'];
@@ -2410,18 +2620,55 @@
   }
 
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
-  // CLIENTS
+  // CLIENTS (paginated: 60 per page + Load more)
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var allClients = [], _viewingClientId = null;
+  var _clientCursor = null, _clientHasMore = false, _clientLoading = false;
+  var CLIENT_PAGE_SIZE = 60;
 
-  async function loadClients() {
-    if(!db) return;
+  function _syncClientMoreBtn() {
+    var grid = document.getElementById('clients-grid');
+    if (!grid || !grid.parentElement) return;
+    var wrap = document.getElementById('clients-load-more-wrap');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'clients-load-more-wrap';
+      wrap.style.cssText = 'text-align:center;padding:14px 0;display:none;';
+      wrap.innerHTML = '<button type="button" class="btn-muted2" onclick="loadClients(true)">Load more clients</button>';
+      grid.insertAdjacentElement('afterend', wrap);
+    }
+    wrap.style.display = _clientHasMore ? 'block' : 'none';
+  }
+
+  async function loadClients(append) {
+    if(!db || _clientLoading) return;
+    _clientLoading = true;
     try {
-      var snap = await db.collection('clients').limit(1000).get();
-      allClients = [];
-      snap.forEach(function(d){ allClients.push(Object.assign({id:d.id},d.data())); });
+      var snap;
+      try {
+        var q = db.collection('clients').orderBy('lastVisit', 'desc').limit(CLIENT_PAGE_SIZE);
+        if (append && _clientCursor) q = q.startAfter(_clientCursor);
+        snap = await q.get();
+      } catch (orderErr) {
+        var q2 = db.collection('clients').limit(CLIENT_PAGE_SIZE);
+        if (append && _clientCursor) q2 = q2.startAfter(_clientCursor);
+        snap = await q2.get();
+      }
+      var rows = [];
+      snap.forEach(function(d){ rows.push(Object.assign({id:d.id},d.data())); });
+      _clientCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : _clientCursor;
+      _clientHasMore = snap.docs.length === CLIENT_PAGE_SIZE;
+      if (append) {
+        var seen = {};
+        allClients.forEach(function(c){ seen[c.id] = 1; });
+        rows.forEach(function(r){ if (!seen[r.id]) allClients.push(r); });
+      } else {
+        allClients = rows;
+      }
       renderClients(allClients);
+      _syncClientMoreBtn();
     } catch(e){ console.error('Clients error:', e); }
+    finally { _clientLoading = false; }
   }
 
   function filterClients(q) {
@@ -2435,7 +2682,7 @@
     var grid = document.getElementById('clients-grid');
     if(!list.length){grid.innerHTML='<div class="empty-state"><i class="fas fa-users"></i><p>No clients found</p></div>';return;}
     grid.innerHTML = list.map(function(c){
-      return '<div class="client-card" onclick="openClientModal(\''+c.id+'\')">'+'<div class="client-name">'+escHtml(c.name||'Unknown')+'</div>'+'<div class="client-phone">'+escHtml(c.phone||'')+'</div>'+'<div class="client-stats"><div class="client-stat"><span class="client-stat-val">'+(c.totalAppointments||0)+'</span><span class="client-stat-lbl">Appts</span></div><div class="client-stat"><span class="client-stat-val">'+(c.totalNoShows||0)+'</span><span class="client-stat-lbl">No Shows</span></div></div></div>';
+      return '<div class="client-card" data-cid="'+escAttr(c.id)+'" onclick="openClientModal(this.dataset.cid)">'+'<div class="client-name">'+escHtml(c.name||'Unknown')+'</div>'+'<div class="client-phone">'+escHtml(c.phone||'')+'</div>'+'<div class="client-stats"><div class="client-stat"><span class="client-stat-val">'+(Number(c.totalAppointments)||0)+'</span><span class="client-stat-lbl">Appts</span></div><div class="client-stat"><span class="client-stat-val">'+(Number(c.totalNoShows)||0)+'</span><span class="client-stat-lbl">No Shows</span></div></div></div>';
     }).join('');
   }
 
@@ -2449,12 +2696,26 @@
     document.getElementById('client-modal-overlay').classList.add('open');
     var apptHistory = '';
     try {
-      var snap = await db.collection('appointments').where('phone','==',c.phone||'').orderBy('date','desc').get();
-      var rows='';
-      snap.forEach(function(d){ var a=d.data(); rows+='<tr><td>'+a.date+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.service||'')+'</td><td>'+(a.showedUp===true?'Showed':a.showedUp===false?'No Show':'Pending')+'</td></tr>'; });
+      var histList = [];
+      if (c.phone) {
+        try {
+          var snap = await db.collection('appointments').where('phone','==',c.phone).orderBy('date','desc').limit(30).get();
+          snap.forEach(function(d){ histList.push(d.data()); });
+        } catch (idxErr) {
+          /* Index-safe fallback: query by phone alone and sort client-side */
+          var snap2 = await db.collection('appointments').where('phone','==',c.phone).limit(50).get();
+          snap2.forEach(function(d){ histList.push(d.data()); });
+          histList.sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+        }
+      }
+      var rows = histList.map(function(a){
+        return '<tr><td>'+escHtml(a.date||'')+'</td><td>'+escHtml(a.time||'')+'</td><td>'+escHtml(a.service||'')+'</td><td>'+(a.showedUp===true?'Showed':a.showedUp===false?'No Show':'Pending')+'</td></tr>';
+      }).join('');
       apptHistory = rows?'<div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Showed</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p style="color:#ccc;font-size:13px;padding:16px 0;">No appointment history found.</p>';
-    } catch(e){}
-    body.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;"><div><label class="form-label">Phone</label><p style="font-size:14px;">'+escHtml(c.phone||'—')+'</p></div><div><label class="form-label">Email</label><p style="font-size:14px;">'+escHtml(c.email||'—')+'</p></div><div><label class="form-label">First Visit</label><p style="font-size:14px;">'+escHtml(c.firstVisit||'—')+'</p></div><div><label class="form-label">Last Visit</label><p style="font-size:14px;">'+escHtml(c.lastVisit||'—')+'</p></div><div><label class="form-label">Services</label><p style="font-size:14px;">'+escHtml((c.services||[]).join(', ')||'—')+'</p></div><div><label class="form-label">Notes</label><p style="font-size:14px;">'+escHtml(c.notes||'—')+'</p></div></div><label class="form-label" style="margin-bottom:10px;">Appointment History</label>'+apptHistory;
+    } catch(e){
+      apptHistory = '<p style="color:#ccc;font-size:13px;padding:16px 0;">Could not load appointment history.</p>';
+    }
+    body.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;"><div><label class="form-label">Phone</label><p style="font-size:14px;">'+escHtml(c.phone||'—')+'</p></div><div><label class="form-label">Email</label><p style="font-size:14px;">'+escHtml(c.email||'—')+'</p></div><div><label class="form-label">First Visit</label><p style="font-size:14px;">'+escHtml(c.firstVisit||'—')+'</p></div><div><label class="form-label">Last Visit</label><p style="font-size:14px;">'+escHtml(c.lastVisit||'—')+'</p></div><div><label class="form-label">Services</label><p style="font-size:14px;">'+escHtml((Array.isArray(c.services)?c.services:[]).join(', ')||'—')+'</p></div><div><label class="form-label">Notes</label><p style="font-size:14px;">'+escHtml(c.notes||'—')+'</p></div></div><label class="form-label" style="margin-bottom:10px;">Appointment History</label>'+apptHistory;
   }
   function closeClientModal(){ document.getElementById('client-modal-overlay').classList.remove('open'); }
 
@@ -2490,24 +2751,31 @@
   async function deleteClientFromModal() {
     if(!db||!_viewingClientId) return;
     if(!confirm('Delete this client permanently?')) return;
+    var delId = _viewingClientId;
+    _viewingClientId = null;
     closeClientModal();
     try {
-      await db.collection('clients').doc(_viewingClientId).delete();
-      allClients = allClients.filter(function(c){return c.id!==_viewingClientId;});
+      await db.collection('clients').doc(delId).delete();
+      _bumpSummaryStat({ totalClients: -1 });
+      allClients = allClients.filter(function(c){return c.id!==delId;});
+      invalidate('clients:');
+      invalidate('stats:');
       renderClients(allClients);
       showToast(' Client deleted','success');
     } catch(e){ showToast('Error: '+e.message,'error'); }
   }
 
+  var _isSavingClient = false;
   async function saveClient() {
-    if(!db) return;
+    if(!db || _isSavingClient) return;
     var id = document.getElementById('client-edit-id').value;
     var name = document.getElementById('client-name').value.trim();
     var phone = document.getElementById('client-phone').value.trim();
     if(!name||!phone){showToast('Name and phone are required','error');return;}
     var svcsRaw = document.getElementById('client-services').value;
     var services = svcsRaw?svcsRaw.split(',').map(function(s){return s.trim();}).filter(Boolean):[];
-    var data = {name:name,phone:phone,email:document.getElementById('client-email').value.trim(),firstVisit:document.getElementById('client-first-visit').value,lastVisit:document.getElementById('client-last-visit').value,services:services,notes:document.getElementById('client-notes').value.trim()};
+    var data = {name:name,phone:phone,email:document.getElementById('client-email').value.trim(),firstVisit:document.getElementById('client-first-visit').value,lastVisit:document.getElementById('client-last-visit').value||localTodayStr(),services:services,notes:document.getElementById('client-notes').value.trim()};
+    _isSavingClient = true;
     try {
       if(id){
         await db.collection('clients').doc(id).update(data);
@@ -2515,14 +2783,24 @@
         if(idx>-1) Object.assign(allClients[idx],data);
         showToast(' Client updated','success');
       } else {
-        data.createdAt=firebase.firestore.FieldValue.serverTimestamp();data.totalAppointments=0;
-        var ref = await db.collection('clients').add(data);
-        allClients.unshift(Object.assign({id:ref.id},data));
+        var phoneId = phone.replace(/\D/g, '');
+        var docId = phoneId.length >= 8 ? phoneId : db.collection('clients').doc().id;
+        data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+        data.totalAppointments=0;
+        data.totalNoShows=0;
+        if (!data.firstVisit) data.firstVisit = localTodayStr();
+        await db.collection('clients').doc(docId).set(data, { merge: true });
+        _bumpSummaryStat({ totalClients: 1 });
+        allClients = allClients.filter(function(c){ return c.id !== docId; });
+        allClients.unshift(Object.assign({id:docId},data));
         showToast(' Client added','success');
       }
+      invalidate('clients:');
+      invalidate('stats:');
       renderClients(allClients);
       closeAddClientModal();
     } catch(e){ showToast('Error: '+e.message,'error'); }
+    finally { _isSavingClient = false; }
   }
 
   function importClientsCSV(){ document.getElementById('client-csv-input').click(); }
@@ -2532,8 +2810,9 @@
     r.onload = async function(e){
       var text=e.target.result;
       var lines=text.split(/\r?\n/);
+      if (!lines.length) return;
       var headers=lines[0].split(',').map(function(h){return h.replace(/^"|"$/g,'').trim().toLowerCase();});
-      var count=0,errors=0;
+      var ops = [];
       for(var i=1;i<lines.length;i++){
         if(!lines[i].trim()) continue;
         var vals=parseCSVLine(lines[i]);
@@ -2543,13 +2822,28 @@
         var phone=row.phone||row['phone number']||'';
         if(!name&&!phone) continue;
         var services=row.services?row.services.split(',').map(function(s){return s.trim();}).filter(Boolean):[];
-        try {
-          await db.collection('clients').add({name:name.trim(),phone:phone.trim(),email:(row.email||'').trim(),firstVisit:row.firstvisit||row['first visit']||'',lastVisit:row.lastvisit||row['last visit']||'',services:services,notes:(row.notes||'').trim(),totalAppointments:parseInt(row.totalappointments||'0')||0,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-          count++;
-        } catch(err){ errors++; }
+        var phoneId = String(phone||'').replace(/\D/g, '');
+        var ref = phoneId.length >= 8 ? db.collection('clients').doc(phoneId) : db.collection('clients').doc();
+        ops.push({
+          ref: ref,
+          data: {name:name.trim(),phone:phone.trim(),email:(row.email||'').trim(),firstVisit:row.firstvisit||row['first visit']||'',lastVisit:row.lastvisit||row['last visit']||'',services:services,notes:(row.notes||'').trim(),totalAppointments:parseInt(row.totalappointments||'0',10)||0,createdAt:firebase.firestore.FieldValue.serverTimestamp()}
+        });
       }
+      var count=0,errors=0;
+      for (var c = 0; c < ops.length; c += 400) {
+        var chunk = ops.slice(c, c + 400);
+        try {
+          var b = db.batch();
+          chunk.forEach(function(op){ b.set(op.ref, op.data, { merge: true }); });
+          await b.commit();
+          count += chunk.length;
+        } catch(err){ errors += chunk.length; }
+      }
+      if (count > 0) _bumpSummaryStat({ totalClients: count });
+      invalidate('clients:');
+      invalidate('stats:');
       showToast(' Imported '+count+' clients'+(errors?' ('+errors+' errors)':''),'success');
-      loadClients();
+      loadClients(false);
     };
     r.readAsText(file);
     document.getElementById('client-csv-input').value='';
@@ -2578,18 +2872,40 @@
   }
 
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
-  // MESSAGES
+  // MESSAGES (paginated: 50 per page + Load more + local unread badge sync)
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   var allMessages=[], msgFilter='all', selectedMsgId=null;
+  var _msgCursor=null, _msgHasMore=false, _msgLoading=false;
+  var MSG_PAGE_SIZE=50;
 
-  async function loadMessages() {
-    if(!db) return;
+  function _recountLocalUnread() {
+    var count = allMessages.filter(function(m){ return !m.read; }).length;
+    invalidate('unread:');
+    setUnreadBadges(count);
+  }
+
+  async function loadMessages(append) {
+    if(!db || _msgLoading) return;
+    _msgLoading = true;
     try {
-      var snap = await db.collection('messages').orderBy('createdAt','desc').limit(500).get();
-      allMessages=[];
-      snap.forEach(function(d){ allMessages.push(Object.assign({id:d.id},d.data())); });
+      var q = db.collection('messages').orderBy('createdAt','desc').limit(MSG_PAGE_SIZE);
+      if (append && _msgCursor) q = q.startAfter(_msgCursor);
+      var snap = await q.get();
+      var rows = [];
+      snap.forEach(function(d){ rows.push(Object.assign({id:d.id},d.data())); });
+      _msgCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : _msgCursor;
+      _msgHasMore = snap.docs.length === MSG_PAGE_SIZE;
+      if (append) {
+        var seen = {};
+        allMessages.forEach(function(m){ seen[m.id] = 1; });
+        rows.forEach(function(r){ if (!seen[r.id]) allMessages.push(r); });
+      } else {
+        allMessages = rows;
+      }
       renderMsgList();
+      if (!_msgHasMore) _recountLocalUnread();
     } catch(e){ console.error('Messages error:', e); }
+    finally { _msgLoading = false; }
   }
 
   function setMsgFilter(f, btn){
@@ -2608,25 +2924,33 @@
     var el=document.getElementById('msg-list');
     if(!list.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#ccc;font-size:13px;">No messages</div>';return;}
     el.innerHTML=list.map(function(m){
-      var ts=m.createdAt?new Date(m.createdAt.toDate()).toLocaleDateString():'';
-      return '<div class="msg-item '+(selectedMsgId===m.id?'active':'')+' '+(m.read?'':'unread')+'" onclick="openMsg(\''+m.id+'\')"><div class="msg-sender">'+escHtml(m.name||'Unknown')+(m.read?'':'<span class="msg-unread-dot"></span>')+'</div><div class="msg-preview">'+escHtml((m.message||'').slice(0,60))+'</div><div class="msg-time">'+ts+'</div></div>';
-    }).join('');
+      var ts=(m.createdAt && typeof m.createdAt.toDate === 'function')?new Date(m.createdAt.toDate()).toLocaleDateString():'';
+      var mid=escAttr(m.id);
+      return '<div class="msg-item '+(selectedMsgId===m.id?'active':'')+' '+(m.read?'':'unread')+'" onclick="openMsg(\''+mid+'\')"><div class="msg-sender">'+escHtml(m.name||'Unknown')+(m.read?'':'<span class="msg-unread-dot"></span>')+'</div><div class="msg-preview">'+escHtml((m.message||'').slice(0,60))+'</div><div class="msg-time">'+escHtml(ts)+'</div></div>';
+    }).join('') + (_msgHasMore ? '<div style="text-align:center;padding:12px;"><button type="button" class="btn-muted2" onclick="loadMessages(true)">Load more</button></div>' : '');
   }
 
   async function openMsg(id){
     var m=allMessages.find(function(x){return x.id===id;});
     if(!m) return;
     selectedMsgId=id;
-    if(!m.read){ try{await db.collection('messages').doc(id).update({read:true});m.read=true;}catch(e){} }
+    if(!m.read){
+      try{
+        await db.collection('messages').doc(id).update({read:true});
+        m.read=true;
+        _recountLocalUnread();
+      }catch(e){}
+    }
     renderMsgList();
-    var ts=m.createdAt?new Date(m.createdAt.toDate()).toLocaleString():'';
-    document.getElementById('msg-detail').innerHTML='<div class="msg-detail-header"><div class="msg-detail-from">'+escHtml(m.name||'Unknown')+'</div><div class="msg-detail-email">'+escHtml(m.email||'')+'</div><div style="font-size:11px;color:#ccc;margin-top:4px;">'+ts+'</div></div><div class="msg-detail-body">'+escHtml(m.message||'')+'</div><div class="msg-actions"><button class="btn-sm btn-edit" onclick="openGmailReply(\''+id+'\')"><i class="fas fa-reply"></i> Reply in Gmail</button><button class="btn-sm btn-edit" onclick="markMsgUnread(\''+id+'\')">Mark Unread</button><button class="btn-sm btn-del" onclick="confirmDeleteMsg(\''+id+'\')">Delete</button></div>';
+    var ts=(m.createdAt && typeof m.createdAt.toDate === 'function')?new Date(m.createdAt.toDate()).toLocaleString():'';
+    var mid=escAttr(id);
+    document.getElementById('msg-detail').innerHTML='<div class="msg-detail-header"><div class="msg-detail-from">'+escHtml(m.name||'Unknown')+'</div><div class="msg-detail-email">'+escHtml(m.email||'')+'</div><div style="font-size:11px;color:#ccc;margin-top:4px;">'+escHtml(ts)+'</div></div><div class="msg-detail-body">'+escHtml(m.message||'')+'</div><div class="msg-actions"><button class="btn-sm btn-edit" onclick="openGmailReply(\''+mid+'\')"><i class="fas fa-reply"></i> Reply in Gmail</button><button class="btn-sm btn-edit" onclick="markMsgUnread(\''+mid+'\')">Mark Unread</button><button class="btn-sm btn-del" onclick="confirmDeleteMsg(\''+mid+'\')">Delete</button></div>';
   }
 
   async function markMsgUnread(id){
     var m=allMessages.find(function(x){return x.id===id;});
     if(!m||!db) return;
-    try{await db.collection('messages').doc(id).update({read:false});m.read=false;renderMsgList();showToast('Marked unread','success');}
+    try{await db.collection('messages').doc(id).update({read:false});m.read=false;_recountLocalUnread();renderMsgList();showToast('Marked unread','success');}
     catch(e){showToast('Error','error');}
   }
 
@@ -2640,6 +2964,7 @@
     try{
       await db.collection('messages').doc(id).delete();
       allMessages=allMessages.filter(function(m){return m.id!==id;});
+      _recountLocalUnread();
       selectedMsgId=null;
       document.getElementById('msg-detail').innerHTML='<div class="msg-empty">Select a message to read</div>';
       renderMsgList();showToast(' Deleted','success');
@@ -2767,7 +3092,7 @@
   // HELPERS
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
   function closeConfirm(){ document.getElementById('confirm-overlay').classList.remove('open'); }
 
@@ -2886,9 +3211,13 @@
 
     try{
       await db.collection(CATALOG_COLLECTION).doc(CATALOG_DOC).set(payload);
-      /* the pages keep the overlay for 10 minutes to spare the read quota —
-         drop this browser's copy so the change shows up at once */
-      try { localStorage.removeItem('egygz_catalog_overlay_v1'); } catch (e) {}
+      /* Invalidate public catalogue & visibility caches so changes show up immediately */
+      try {
+        localStorage.removeItem('egygz_catalog_overlay_v1');
+        localStorage.removeItem('egygz_visibility_v1');
+        if (window.Catalog && typeof window.Catalog.invalidate === 'function') window.Catalog.invalidate();
+      } catch (e) {}
+      bannerCatalogue = [];
     }catch(e){
       if(/permission|insufficient/i.test(e.message||'')){
         throw new Error('The database refused the write — settings/catalog needs the same write rule as settings/banners.');
@@ -3160,6 +3489,27 @@
     try { return window.CalcEngine.lineLabel(window.CalcEngine.calculateLine(calc)); } catch(e){ return ''; }
   }
 
+  // ‑‑ TOGGLE PUBLIC PRICE VISIBILITY ("Show Price: Yes" vs "Contact for Quotation") ‑‑
+  async function toggleItemShowPrice(cat, id){
+    try{
+      var list = await readCatalog();
+      var entry = catalogEntry(list, id);
+      if(!entry){ showToast('Item not found in catalogue', 'error'); return; }
+      var next = (entry.showPrice === false) ? true : false;
+      entry.showPrice = next;
+      await writeCatalog(list, (next ? 'Show price on ' : 'Hide price (quote only) on ') + id);
+      Object.keys(cache).forEach(function(k){
+        var hit = cache[k] && cache[k].items && cache[k].items.find(function(i){ return i.id === id; });
+        if(hit) hit.showPrice = next;
+      });
+      if(window.Catalog && typeof window.Catalog.invalidate === 'function') window.Catalog.invalidate();
+      renderUnifiedInventory();
+      showToast(next ? 'Price shown on website' : 'Set to "Contact for Quotation" on website', 'success');
+    } catch(e){
+      showToast('Error: ' + e.message, 'error');
+    }
+  }
+
   // ‑‑ ASSIGN A DESIGN TO A PUBLIC PAGE (writes catalog.json) ‑‑
   async function assignItemPage(cat, id, page){
     try{
@@ -3251,8 +3601,14 @@
           '</div>'+
           tagHtml+
           '<div class="card-price-row">'+
-            '<span class="card-price-val">'+escHtml(priceLabelOf(item))+'</span>'+
-            '<span class="card-price-src'+(calcPriceOf(item)>0?' ok':'')+'">'+priceSourceOf(item)+'</span>'+
+            '<span class="card-price-val'+(item.showPrice===false?' is-hidden':'')+'">'+escHtml(priceLabelOf(item))+'</span>'+
+            '<span class="card-price-src'+(calcPriceOf(item)>0?' ok':'')+'">'+(item.showPrice===false?'contact for quote':priceSourceOf(item))+'</span>'+
+          '</div>'+
+          '<div class="card-showprice-row">'+
+            '<span class="card-page-label">Show Price</span>'+
+            '<button type="button" class="btn-show-price '+(item.showPrice===false?'off':'on')+'" onclick="toggleItemShowPrice(\''+escAttr(cat)+'\',\''+escAttr(item.id)+'\')" title="Toggle between showing price or Contact for Quotation on the website">'+
+              '<i class="fas '+(item.showPrice===false?'fa-eye-slash':'fa-eye')+'"></i> '+(item.showPrice===false?'No · Quote':'Yes')+
+            '</button>'+
           '</div>'+
           '<div class="card-page-row">'+
             '<label class="card-page-label" for="page-'+cat+'-'+item.id+'">Page</label>'+
@@ -3263,33 +3619,40 @@
             '<button class="btn-icancel" onclick="cancelInlineEdit(\''+cat+'\',\''+item.id+'\')">Cancel</button>'+
           '</div>'+
           '<div class="card-actions">'+
-            '<button class="btn-sm-card btn-reorder" onclick="openItemCrop(\''+cat+'\',\''+item.folder+'\')"><i class="fas fa-crop-simple"></i> Crop</button>'+
-            '<button class="btn-sm-card btn-reorder" onclick="openDrawer(\''+cat+'\',\''+item.id+'\')"><i class="fas fa-grip-lines"></i> Photos</button>'+
-            '<button class="btn-sm-card btn-edit" onclick="editItem(\''+cat+'\',\''+item.id+'\')">Edit</button>'+
-            '<button class="btn-sm-card btn-delete" onclick="confirmDelete(\''+cat+'\',\''+item.id+'\')">Delete</button>'+
+            '<button class="btn-sm-card btn-reorder" onclick="openItemCrop(\''+escAttr(cat)+'\',\''+escAttr(item.id)+'\')"><i class="fas fa-crop-simple"></i> Crop</button>'+
+            '<button class="btn-sm-card btn-reorder" onclick="openDrawer(\''+escAttr(cat)+'\',\''+escAttr(item.id)+'\')"><i class="fas fa-grip-lines"></i> Photos</button>'+
+            '<button class="btn-sm-card btn-edit" onclick="editItem(\''+escAttr(cat)+'\',\''+escAttr(item.id)+'\')">Edit</button>'+
+            '<button class="btn-sm-card btn-delete" onclick="confirmDelete(\''+escAttr(cat)+'\',\''+escAttr(item.id)+'\')">Delete</button>'+
           '</div>'+
         '</div>'+
       '</div>';
     }).join('');
-    // Auto-slide mini sliders
+    // Clear previous slideshow timers so re-renders never leak intervals
+    if (window._invSlideTimers && window._invSlideTimers.length) {
+      window._invSlideTimers.forEach(function(t){ clearInterval(t); });
+    }
+    window._invSlideTimers = [];
     grid.querySelectorAll('.mini-slider').forEach(function(ms){
       var media=ms.querySelectorAll('img,video');
       if(media.length>1){
         var cur=0;
-        setInterval(function(){
+        var tid = setInterval(function(){
+          if (document.hidden) return;
+          var p = document.getElementById('panel-inventory');
+          if (p && !p.classList.contains('active')) return;
+          if (!ms.isConnected) { clearInterval(tid); return; }
           media[cur].classList.remove('active');
           if(media[cur].tagName==='VIDEO') media[cur].pause();
           cur=(cur+1)%media.length;
           media[cur].classList.add('active');
           if(media[cur].tagName==='VIDEO') media[cur].play().catch(function(){});
         },3500);
+        window._invSlideTimers.push(tid);
       } else if(media.length===1&&media[0].tagName==='VIDEO'){ media[0].play().catch(function(){}); }
     });
   }
 
-  // ‑‑ INLINE EDIT ‑‑
-
-  
+  // ‑‑ INLINE EDIT (single batch read + single write) ‑‑
   async function saveAllInventoryEdits(){
     var cards = Array.prototype.slice.call(document.querySelectorAll('#grid-inventory .set-card'));
     if(!cards.length){ showToast('No cards to save','error'); return; }
@@ -3311,27 +3674,36 @@
     if(!pending.length){ showToast('No changes to save',''); return; }
     if(!confirm('Save ' + pending.length + ' edit(s)?')) return;
 
-    var ok = 0, fail = 0;
-    for(var i=0;i<pending.length;i++){
-      var u = pending[i];
-      try{
-        var list = await readCatalog();
+    try {
+      var list = await readCatalog();
+      var applied = [];
+      var missing = 0;
+      pending.forEach(function(u){
         var entry = catalogEntry(list, u.id);
-        if(!entry) throw new Error('not in catalogue');
-        entry.name = u.name; entry.description = u.desc;
-        await writeCatalog(list, 'Update ' + u.id + ' name/description');
-        u.item.name = u.name; u.item.desc = u.desc;
-        var card = document.querySelector('#grid-inventory .set-card[data-id="' + u.id + '"]');
+        if (!entry) { missing++; return; }
+        entry.name = u.name;
+        entry.description = u.desc;
+        applied.push(u);
+      });
+      if (!applied.length) { showToast('No matching catalogue entries found', 'error'); return; }
+      await writeCatalog(list, 'Batch update ' + applied.length + ' item(s)');
+      applied.forEach(function(u){
+        u.item.name = u.name;
+        u.item.desc = u.desc;
+        u.item.description = u.desc;
+        var card = document.querySelector('#grid-inventory .set-card[data-id="' + CSS.escape(u.id) + '"]');
         if(card){
           var pad = function(sel, val){ var e = card.querySelector(sel); if(e) e.textContent = val; };
           pad('.editable-field.name .field-val', u.name);
           pad('.editable-field.desc .field-val', u.desc);
           cancelInlineEdit(u.cat, u.id);
         }
-        ok++;
-      }catch(e){ fail++; console.warn(e); }
+      });
+      showToast('Saved ' + applied.length + (missing ? ' — skipped ' + missing : ''), missing ? 'error' : 'success');
+    } catch (e) {
+      console.warn(e);
+      showToast('Batch save failed: ' + (e.message || e), 'error');
     }
-    showToast('Saved ' + ok + (fail ? ' - failed ' + fail : ''), fail ? 'error' : 'success');
   }
 
   function startInlineEdit(fieldEl){
@@ -3481,15 +3853,61 @@
   // ‑‑ ITEM MODAL (Add / Edit) ‑‑
   var pendingImages=[],existingImages=[],currentMode='add',currentEditId='',currentEditCat='';
   var modalCalc = null;   /* CalcEngine line spec for the design being edited */
+  var modalShowPrice = true; /* true = show live price; false = "Contact for Quotation" -> /contact */
+  function syncModalShowPriceUi(){
+    var btn=document.getElementById('f-showprice-btn');
+    var hint=document.getElementById('f-showprice-hint');
+    if(btn){
+      btn.className='btn-show-price '+(modalShowPrice?'on':'off');
+      btn.innerHTML='<i class="fas '+(modalShowPrice?'fa-eye':'fa-eye-slash')+'"></i> Show Price: '+(modalShowPrice?'Yes':'No · Quote');
+    }
+    if(hint){
+      hint.textContent = modalShowPrice
+        ? 'Website shows the price on cards & details modal.'
+        : 'Price hidden — website shows "Contact for Quotation" linking to /contact.';
+    }
+  }
+  function toggleModalShowPrice(){
+    modalShowPrice = !modalShowPrice;
+    syncModalShowPriceUi();
+  }
   function updateDesignPricePanel(){
     var valEl=document.getElementById('f-price-preview');
     var specEl=document.getElementById('f-price-spec');
+    var copyBtn=document.getElementById('f-copy-calc-btn');
     if(!valEl) return;
     var n = calcPriceOf({calc:modalCalc});
     valEl.textContent = n > 0 ? fmtEGP(n) : 'No price yet';
     if(specEl) specEl.textContent = modalCalc
       ? designSpecLabel(modalCalc)
-      : 'Open the Calculator to enter the material, teeth and finish — the price follows the live rates.';
+      : 'Open the Calculator to enter the material, teeth and finish — or paste an EGZ- code.';
+    if(copyBtn) copyBtn.style.display = modalCalc ? '' : 'none';
+    syncModalShowPriceUi();
+  }
+  function pasteDesignCalcCode(){
+    if(!window.CalcEngine || typeof window.CalcEngine.decodeCode !== 'function'){ showToast('Pricing engine not loaded','error'); return; }
+    var raw = prompt('Paste any EGYGRILLZ calculator code (EGZ-... or EGZ1:...) or link:');
+    if(!raw || !raw.trim()) return;
+    var dec = window.CalcEngine.decodeCode(raw.trim());
+    if(!dec || !dec.lines || !dec.lines.length){ showToast('Could not read that code','error'); return; }
+    if(dec.rates && dec.rates.gold && !Number(window.CalcEngine.get().goldPrice)){
+      window.CalcEngine.set({ goldPrice: dec.rates.gold });
+    }
+    modalCalc = window.CalcEngine.cleanLineSpec ? window.CalcEngine.cleanLineSpec(dec.lines[0]) : dec.lines[0];
+    var nmEl = document.getElementById('f-name');
+    if(nmEl && !nmEl.value.trim() && modalCalc && modalCalc.name) nmEl.value = modalCalc.name;
+    updateDesignPricePanel();
+    showToast('Code applied: ' + fmtEGP(calcPriceOf({calc:modalCalc})), 'success');
+  }
+  function copyDesignCalcCode(){
+    if(!modalCalc || !window.CalcEngine || typeof window.CalcEngine.encodeCode !== 'function') return;
+    var nm = ((document.getElementById('f-name')||{}).value || '').trim();
+    var code = window.CalcEngine.encodeCode(Object.assign({}, modalCalc, nm ? { name: nm } : {}));
+    if(!code) return;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code).then(function(){ showToast('Code copied: ' + code.slice(0,30) + (code.length>30?'…':''), 'success'); })
+        .catch(function(){ prompt('Copy design code:', code); });
+    } else { prompt('Copy design code:', code); }
   }
   function openDesignCalculator(){
     if(!window.CalcEngine){ showToast('Pricing engine not loaded — refresh the page','error'); return; }
@@ -3499,14 +3917,14 @@
       name: (document.getElementById('f-name')||{}).value || '',
       calc: modalCalc,
       onApply: function(line){
-        modalCalc = line;
+        modalCalc = (window.CalcEngine.cleanLineSpec ? window.CalcEngine.cleanLineSpec(line) : line);
         updateDesignPricePanel();
-        showToast('Price set: ' + fmtEGP(calcPriceOf({calc:line})), 'success');
+        showToast('Price set: ' + fmtEGP(calcPriceOf({calc:modalCalc})), 'success');
       }
     });
   }
   function resetModal(){
-    pendingImages=[];existingImages=[];currentEditId='';currentEditCat='';modalCalc=null;
+    pendingImages=[];existingImages=[];currentEditId='';currentEditCat='';modalCalc=null;modalShowPrice=true;
     ['edit-id','edit-category','f-name','f-desc'].forEach(function(id){document.getElementById(id).value='';});
     var fp=document.getElementById('f-page'); if(fp) fp.value='';
     updateDesignPricePanel();
@@ -3583,6 +4001,7 @@
     document.getElementById('f-name').value=item.name||'';
     var fp=document.getElementById('f-page'); if(fp) fp.value=pageOfItem(item);
     modalCalc = item.calc || null;
+    modalShowPrice = (item.showPrice !== false);
     updateDesignPricePanel();
     document.getElementById('f-desc').value=item.desc||item.description||'';
     document.getElementById('file-input').value='';
@@ -3699,9 +4118,10 @@
     var name=document.getElementById('f-name').value.trim();
     var desc=document.getElementById('f-desc').value.trim();
     var pageVal=(document.getElementById('f-page')||{}).value || '';
-    var calcSpec=modalCalc || null;
-    /* price is never typed by hand — it is computed from the calculator spec */
-    var price=calcSpec ? fmtEGP(calcPriceOf({calc:calcSpec})) : '';
+    var calcSpec = modalCalc ? (window.CalcEngine && window.CalcEngine.cleanLineSpec ? window.CalcEngine.cleanLineSpec(modalCalc) : modalCalc) : null;
+    var showPriceVal = !!modalShowPrice;
+    /* price is computed from the calculator spec; preserve legacy price if editing without a calc spec */
+    var price = calcSpec ? fmtEGP(calcPriceOf({calc:calcSpec})) : '';
     var editId=document.getElementById('edit-id').value.trim();
     if(!name){showToast('Please enter a name.','error');return;}
 
@@ -3778,7 +4198,8 @@
 
       if(entry){
         entry.name = name;
-        entry.price = price;
+        if(calcSpec || !entry.price) entry.price = price;
+        entry.showPrice = showPriceVal;
         entry.description = desc;
         entry.images = imgs;
         entry.videos = vids;
@@ -3792,6 +4213,7 @@
           folder: itemId,
           name: name,
           price: price,
+          showPrice: showPriceVal,
           description: desc,
           category: realCat,
           page: pageVal || null,
@@ -3889,11 +4311,12 @@
           if(!item||!item.id) return;
           var e=map[item.id];
           if(!e){
-            e={id:item.id,name:item.name||item.id,price:item.price||'',description:item.desc||item.description||'',category:cat==='sets'||cat==='latest'?(item.category||'golds'):cat,page:item.page||null,calc:item.calc||null,images:item.images||[],order:list.length+1};
+            e={id:item.id,name:item.name||item.id,price:item.price||'',showPrice:item.showPrice!==false,description:item.desc||item.description||'',category:cat==='sets'||cat==='latest'?(item.category||'golds'):cat,page:item.page||null,calc:item.calc||null,images:item.images||[],order:list.length+1};
             list.push(e); map[item.id]=e;
           } else {
             if(item.name) e.name=item.name;
             if(item.price!==undefined) e.price=item.price;
+            if(item.showPrice!==undefined) e.showPrice=item.showPrice;
             if(item.desc||item.description) e.description=item.desc||item.description;
             if(item.images) e.images=item.images;
             if(item.calc!==undefined) e.calc=item.calc;
@@ -4015,9 +4438,9 @@
 
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script data-cfasync="false" src="assets/calc-engine.js?v=2"></script>
-<script data-cfasync="false" src="assets/crops.js?v=1"></script>
-<script data-cfasync="false" src="assets/staff-calculator.js"></script>
+<script data-cfasync="false" src="assets/calc-engine.js?v=4"></script>
+<script data-cfasync="false" src="assets/crops.js?v=3"></script>
+<script data-cfasync="false" src="assets/staff-calculator.js?v=4"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
 <script data-cfasync="false">
@@ -4083,7 +4506,12 @@
   async function fetchRemoteInvoices() {
     if (!db()) return [];
     try {
-      var snap = await db().collection('invoices').limit(250).get();
+      var snap;
+      try {
+        snap = await db().collection('invoices').orderBy('createdAt', 'desc').limit(50).get();
+      } catch (oe) {
+        snap = await db().collection('invoices').limit(50).get();
+      }
       var out = [];
       snap.forEach(function (d) { out.push(Object.assign({ id: d.id }, d.data())); });
       return out;
@@ -4096,12 +4524,31 @@
     return invAll;
   }
   function genInvNum() {
-    var max = 0;
+    var max = Number(localStorage.getItem('egygz_inv_seq') || 0) || 0;
     getLocal().concat(invAll).forEach(function (i) {
       var m = String(i.number || '').match(/(\d+)/);
       if (m) max = Math.max(max, parseInt(m[1], 10) || 0);
     });
     return 'EGY-' + String(max + 1).padStart(3, '0');
+  }
+  async function reserveNextInvNum(currentNum) {
+    if (!db()) return currentNum || genInvNum();
+    try {
+      var cRef = db().collection('settings').doc('counters');
+      var reserved = await db().runTransaction(async function (tx) {
+        var snap = await tx.get(cRef);
+        var remoteLast = (snap.exists && snap.data()) ? (Number(snap.data().lastInvoiceNum) || 0) : 0;
+        var m = String(currentNum || '').match(/^EGY-(\d+)$/i);
+        var localTarget = m ? (parseInt(m[1], 10) || 0) : 0;
+        var next = Math.max(remoteLast + 1, localTarget);
+        tx.set(cRef, { lastInvoiceNum: next, updatedAt: new Date().toISOString() }, { merge: true });
+        return next;
+      });
+      try { localStorage.setItem('egygz_inv_seq', String(reserved)); } catch (e) {}
+      return 'EGY-' + String(reserved).padStart(3, '0');
+    } catch (e) {
+      return currentNum || genInvNum();
+    }
   }
 
   /* ───────────── clients ───────────── */
@@ -4109,7 +4556,12 @@
     invClients = (window.allClients || []).slice();
     if (!invClients.length && db()) {
       try {
-        var snap = await db().collection('clients').limit(1000).get();
+        var snap;
+        try {
+          snap = await db().collection('clients').orderBy('lastVisit', 'desc').limit(120).get();
+        } catch (oe) {
+          snap = await db().collection('clients').limit(120).get();
+        }
         invClients = [];
         snap.forEach(function (d) { invClients.push(Object.assign({ id: d.id }, d.data())); });
       } catch (e) { console.warn('[invoices] clients read failed', e); }
@@ -4184,12 +4636,16 @@
     return { num: legacy, priced: false };
   }
 
-  async function loadCatalog() {
-    if (catalogAll.length) return catalogAll;
+  async function loadCatalog(force) {
+    if (catalogAll.length && !force) return catalogAll;
     try {
-      var base = (typeof window.catalogBaseUrl === 'function') ? window.catalogBaseUrl() : '';
-      var r = await fetch(base + 'assets/images/catalog.json?t=' + Date.now());
-      catalogAll = r.ok ? await r.json() : [];
+      if (typeof window.readCatalog === 'function') {
+        catalogAll = await window.readCatalog();
+      } else {
+        var base = (typeof window.catalogBaseUrl === 'function') ? window.catalogBaseUrl() : '';
+        var r = await fetch(base + 'assets/images/catalog.json');
+        catalogAll = r.ok ? await r.json() : [];
+      }
     } catch (e) { catalogAll = []; }
     if (!Array.isArray(catalogAll)) catalogAll = [];
     designCache = {};
@@ -4329,7 +4785,7 @@
     var wrap = el('inv-items-list');
     if (!wrap) return;
     if (!lineItems.length) {
-      wrap.innerHTML = '<div class="empty-state" style="padding:24px;" id="inv-items-empty"><p>No items added yet</p></div>';
+      wrap.innerHTML = '<div class="empty-state" style="padding:24px;"><p>No items added yet</p></div>';
       return;
     }
     var html = '<div class="inv-items-cols"><div>Description &amp; Spec</div><div>Qty</div><div>Price EGP</div><div></div></div>';
@@ -4525,7 +4981,7 @@
       else selectClient({ id: transfer.clientPhone || transfer.clientName, name: transfer.clientName, phone: transfer.clientPhone || '', email: transfer.clientEmail || '' });
     }
     lineItems = transfer.items.map(function (it) {
-      return { id: Date.now() + Math.random(), name: it.name || '', spec: it.spec || '', qty: Number(it.qty) || 1, price: Number(it.price) || 0 };
+      return { id: Date.now() + Math.random(), name: it.name || '', spec: it.spec || '', qty: Number(it.qty) || 1, price: Number(it.price) || 0, line: it.line || null, serviceType: it.serviceType || '' };
     });
     if (transfer.notes && el('inv-notes')) el('inv-notes').value = transfer.notes;
     if (transfer.discountAmount > 0) {
@@ -4599,7 +5055,10 @@
       items: lineItems.map(function (i) {
         return { name: i.name || '', spec: i.spec || '', qty: Number(i.qty) || 1, price: Number(i.price) || 0 };
       }),
-      subtotal: t.subtotal, discount: t.discount, total: t.total,
+      subtotal: t.subtotal, discount: t.discount,
+      discountInput: Number(el('inv-discount-val') && el('inv-discount-val').value) || 0,
+      discountType: (el('inv-discount-type') && el('inv-discount-type').value) || 'egp',
+      total: t.total,
       deposit: t.deposit, remaining: t.remaining,
       paymentMethod: paymentMethod,
       updatedAt: new Date().toISOString(),
@@ -4607,29 +5066,44 @@
     };
   }
 
+  var _savingInv = false;
   async function saveInvoice() {
+    if (_savingInv) return;
     if (!selectedClient) { toast('Select a client first', 'error'); return; }
     if (!lineItems.length) { toast('Add at least one item', 'error'); return; }
-    var data = buildInvoicePayload();
-    var local = getLocal();
-    var idx = local.findIndex(function (i) { return String(i.id) === String(data.id); });
-    if (idx > -1) { data.createdAt = local[idx].createdAt || data.createdAt; local[idx] = data; }
-    else local.unshift(data);
-    saveLocal(local);
-    editingInvoiceId = data.id;
-    invAll = mergeInvoices(getLocal(), invAll);
-    if (db()) {
-      try {
-        await db().collection('invoices').doc(String(data.id)).set(data, { merge: true });
-        toast('Invoice saved · ' + data.number, 'success');
-      } catch (e) {
-        console.warn('[invoices] Firestore save failed', e);
-        toast('Saved locally only — check Firestore rules', 'error');
+    _savingInv = true;
+    try {
+      if (!editingInvoiceId) {
+        var typed = strVal('inv-number');
+        if (!typed || /^EGY-\d+$/i.test(typed)) {
+          var nextNum = await reserveNextInvNum(typed || genInvNum());
+          if (el('inv-number')) el('inv-number').value = nextNum;
+        }
       }
-    } else {
-      toast('Saved locally · ' + data.number, 'success');
+      var data = buildInvoicePayload();
+      var local = getLocal();
+      var idx = local.findIndex(function (i) { return String(i.id) === String(data.id); });
+      if (idx > -1) { data.createdAt = local[idx].createdAt || data.createdAt; local[idx] = data; }
+      else local.unshift(data);
+      saveLocal(local);
+      editingInvoiceId = data.id;
+      invAll = mergeInvoices(getLocal(), invAll);
+      updatePreview();
+      if (db()) {
+        try {
+          await db().collection('invoices').doc(String(data.id)).set(data, { merge: true });
+          toast('Invoice saved · ' + data.number, 'success');
+        } catch (e) {
+          console.warn('[invoices] Firestore save failed', e);
+          toast('Saved locally only — check connection or Firestore rules', 'error');
+        }
+      } else {
+        toast('Saved locally · ' + data.number, 'success');
+      }
+      renderAccounting();
+    } finally {
+      _savingInv = false;
     }
-    renderAccounting();
   }
 
   /* jsPDF cannot render many unicode glyphs — normalise before drawing */
@@ -4959,12 +5433,19 @@
 
   function loadIntoBuilder(inv) {
     editingInvoiceId = inv.id;
+    pendingQuoteId = inv.quoteId || '';
     if (el('inv-number')) el('inv-number').value = inv.number || '';
     if (el('inv-date')) el('inv-date').value = inv.date || todayStr();
     if (el('inv-due')) el('inv-due').value = inv.due || '';
     if (el('inv-status')) el('inv-status').value = inv.status || 'pending';
     if (el('inv-notes')) el('inv-notes').value = inv.notes || '';
     if (el('inv-deposit-val')) el('inv-deposit-val').value = inv.deposit || 0;
+    if (el('inv-discount-val')) {
+      el('inv-discount-val').value = inv.discountInput !== undefined ? (Number(inv.discountInput) || 0) : (Number(inv.discount) || 0);
+    }
+    if (el('inv-discount-type')) {
+      el('inv-discount-type').value = inv.discountInput !== undefined ? (inv.discountType || 'egp') : 'egp';
+    }
     if (inv.clientId) {
       var c = invClients.find(function (x) { return String(x.id) === String(inv.clientId); });
       if (c) selectClient(c);
@@ -5132,10 +5613,78 @@
         if (typeof cb === 'function') cb(read.line, calc);
         return;
       }
-      var label = read.line.name || (E.LABELS.material[read.line.material] + ' Custom Grillz');
-      addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal });
+      var bm = calc.mixedMaterials ? 'Mixed Materials' : (calc.material === 'gold' ? ('Gold ' + (calc.karat || '18') + 'K') : (E.LABELS.material[calc.material] || calc.material));
+      var label = read.line.name || (bm + ' Custom Grillz');
+      addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal, line: calc });
       closeCalc();
-      toast('Custom line added · ' + money(calc.subtotal), 'success');
+      toast('Custom set added · ' + money(calc.subtotal), 'success');
+    });
+
+    /* quick short-code paste / copy on embedded invoices */
+    on('inv-paste-code-btn', 'click', function () {
+      var E = CE();
+      if (!E || typeof E.decodeCode !== 'function') { toast('Pricing engine not loaded', 'error'); return; }
+      var raw = prompt('Paste any EGYGRILLZ calculator code (EGZ-... or EGZ1:...) or link:');
+      if (!raw || !raw.trim()) return;
+      var dec = E.decodeCode(raw.trim());
+      if (!dec) { toast('Invalid code — paste an EGZ-... or EGZ1:... code', 'error'); return; }
+      if (dec.rates && dec.rates.gold && !Number(E.get().goldPrice)) E.set({ goldPrice: dec.rates.gold });
+      var order = E.calculateOrder(dec.lines || [], {
+        timeline: dec.timeline || 'standard',
+        mold: dec.mold || 'none',
+        depositPct: Number(dec.depositPct) || 0,
+        services: dec.services || [],
+        discount: dec.discount || null
+      });
+      var items = [];
+      (order.lines || []).forEach(function (ln) {
+        var bm = ln.mixedMaterials ? 'Mixed Materials' : (ln.material === 'gold' ? ('Gold ' + (ln.karat || '18') + 'K') : (E.LABELS.material[ln.material] || 'Custom'));
+        items.push({ name: ln.name || (bm + ' Custom Grillz'), spec: E.lineLabel(ln), qty: 1, price: ln.subtotal, line: ln });
+      });
+      (order.services || []).forEach(function (sv) {
+        items.push({ name: sv.name || 'Studio Service', spec: 'Studio Service', qty: sv.qty || 1, price: sv.unitPrice || 0, serviceType: sv.type || 'custom' });
+      });
+      if (order.timelineAmount) items.push({ name: (E.LABELS.timeline[order.timeline] || 'Rush') + ' Timeline', spec: '+' + order.timelinePct + '% Timeline Surcharge', qty: 1, price: order.timelineAmount });
+      if (order.moldCost) items.push({ name: 'Dental Mold', spec: E.LABELS.mold[order.mold] || 'Mold Fee', qty: 1, price: order.moldCost });
+      applyImportedQuote({
+        clientName: dec.clientName || '',
+        clientPhone: dec.clientPhone || '',
+        notes: dec.notes || '',
+        discountAmount: order.discountAmount || 0,
+        depositAmount: order.deposit || 0,
+        items: items
+      });
+      toast('Code imported · ' + money(order.total), 'success');
+    });
+
+    on('inv-copy-code-btn', 'click', function () {
+      var E = CE();
+      if (!E || typeof E.encodeCode !== 'function') return;
+      var calcLines = [], svcLines = [];
+      lineItems.forEach(function (it) {
+        if (it.line && (it.line.material || Array.isArray(it.line.groups))) {
+          var q = Math.max(1, Number(it.qty) || 1);
+          for (var i = 0; i < q; i++) calcLines.push(Object.assign({}, it.line, { name: it.name || it.line.name || '' }));
+        } else if (Number(it.price) > 0 || it.name) {
+          svcLines.push({ type: it.serviceType || 'custom', name: it.name || 'Item', qty: Number(it.qty) || 1, unitPrice: Number(it.price) || 0 });
+        }
+      });
+      if (!calcLines.length && !svcLines.length) { toast('Add at least one item first', 'error'); return; }
+      var dVal = Number(strVal('inv-discount-val')) || 0;
+      var dType = strVal('inv-discount-type') === 'pct' ? 'pct' : 'flat';
+      var code = E.encodeCode({
+        lines: calcLines,
+        services: svcLines,
+        discount: dVal > 0 ? { value: dVal, type: dType } : null,
+        clientName: selectedClient ? (selectedClient.name || '') : '',
+        clientPhone: selectedClient ? (selectedClient.phone || '') : '',
+        notes: strVal('inv-notes')
+      });
+      if (!code) { toast('Could not generate code', 'error'); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(function () { toast('Code copied: ' + code.slice(0, 30) + (code.length > 30 ? '…' : ''), 'success'); })
+          .catch(function () { prompt('Copy EGYGRILLZ code:', code); });
+      } else { prompt('Copy EGYGRILLZ code:', code); }
     });
 
     /* quote import */
@@ -5317,7 +5866,13 @@
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       initApp();
-      syncSlots();
+      try {
+        var lastS = Number(localStorage.getItem('eq_slots_sync') || 0);
+        if (Date.now() - lastS > 20 * 60 * 60 * 1000) {
+          localStorage.setItem('eq_slots_sync', String(Date.now()));
+          setTimeout(function(){ try { syncSlots(); } catch (e) {} }, 3500);
+        }
+      } catch (se) {}
     } catch (e) {
       var d = getLockout();
       d.attempts = (d.attempts || 0) + 1;
@@ -5335,6 +5890,8 @@
   };
 
   window.logout = function () {
+    _appInitialized = false;
+    stopAllListeners();
     try { firebase.auth().signOut(); } catch (e) {}
     localStorage.removeItem('eq_staff_in');
     document.getElementById('login-screen').style.display = 'flex';
@@ -5343,7 +5900,9 @@
     document.getElementById('pw-err').textContent = '';
   };
 
-  // ‑‑ Keep public "slots" in sync with appointments ‑‑
+  // ‑‑ Reconcile public "slots" with future appointments only (throttled + queued) ‑‑
+  // saveAppt & doDeleteAppt already update individual slot docs atomically (0 reads);
+  // syncSlots only runs as a background reconciliation at most once per 20h or manually.
   function normTime(t) {
     var m = String(t || '').trim().match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
     if (!m) return String(t || '').trim();
@@ -5351,16 +5910,24 @@
   }
   function slotId(d, t) { return d + '_' + normTime(t).replace(/[ :]/g, ''); }
   var syncing = false;
+  var syncQueued = false;
   window.syncSlots = async function () {
-    if (syncing || !firebase.auth().currentUser) return;
+    if (!firebase.auth().currentUser || !db) return;
+    if (syncing) { syncQueued = true; return; }
     syncing = true;
     try {
-      var a = await db.collection('appointments').get();
-      var s = await db.collection('slots').get();
+      var today = localTodayStr();
+      var res = await Promise.all([
+        db.collection('appointments').where('date', '>=', today).limit(500).get(),
+        db.collection('slots').where('date', '>=', today).limit(500).get()
+      ]);
+      var a = res[0], s = res[1];
       var want = {}, have = {}, ops = [];
       a.forEach(function (doc) {
         var d = doc.data();
-        if (d.date && d.time && d.status !== 'cancelled') want[slotId(d.date, d.time)] = { date: d.date, time: normTime(d.time) };
+        if (d.date && d.time && d.status !== 'cancelled') {
+          want[slotId(d.date, d.time)] = { date: d.date, time: normTime(d.time) };
+        }
       });
       s.forEach(function (doc) { have[doc.id] = 1; });
       Object.keys(want).forEach(function (id) { if (!have[id]) ops.push({ id: id, set: want[id] }); });
@@ -5374,42 +5941,14 @@
         await b.commit();
       }
     } catch (e) { console.warn('syncSlots failed:', e); }
-    syncing = false;
+    finally {
+      syncing = false;
+      if (syncQueued) {
+        syncQueued = false;
+        window.syncSlots();
+      }
+    }
   };
-
-  ['loadAppointments', 'loadOverview'].forEach(function (n) {
-    var f = window[n];
-    if (typeof f !== 'function') return;
-    window[n] = function () {
-      var r = f.apply(this, arguments);
-      Promise.resolve(r).then(window.syncSlots);
-      return r;
-    };
-  });
-  // ‑‑ Fix: "today" / "this week" were computed in UTC (off by a day in Egypt) ‑‑
-  function withLocalISO(fn) {
-    return function () {
-      var orig = Date.prototype.toISOString;
-      Date.prototype.toISOString = function () {
-        return orig.call(new Date(this.getTime() - this.getTimezoneOffset() * 60000));
-      };
-      try { return fn.apply(this, arguments); } finally { Date.prototype.toISOString = orig; }
-    };
-  }
-  ['renderCalendar', 'renderAppts', 'loadOverview'].forEach(function (n) {
-    if (typeof window[n] === 'function') window[n] = withLocalISO(window[n]);
-  });
-
-  // ‑‑ Fix: re-sync slots right after add / edit / delete ‑‑
-  ['saveAppt', 'doDeleteAppt'].forEach(function (n) {
-    var f = window[n];
-    if (typeof f !== 'function') return;
-    window[n] = function () {
-      var r = f.apply(this, arguments);
-      Promise.resolve(r).then(window.syncSlots);
-      return r;
-    };
-  });
 })();
 </script>
 
@@ -5512,13 +6051,32 @@
      `mould_orders` holds client phone numbers and addresses, so Firestore
      refuses to let a browser read it. The Worker reads it with the studio's
      own credentials and hands the dashboard the list. ─────────────────── */
-  async function mouldWorkerJSON(path, body) {
-    var opts = { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
-    if (body) opts.body = JSON.stringify(body);
-    var r = await fetch(WORKER_BASE + path, opts);
-    var data = null;
-    try { data = await r.json(); } catch (e) { data = null; }
-    return { status: r.status, ok: r.ok, data: data };
+  async function mouldWorkerJSON(path, body, allowPrompt) {
+    var headers = { 'Content-Type': 'application/json' };
+    try {
+      var mk = localStorage.getItem('egygz_moulds_key');
+      if (mk) headers['X-Moulds-Key'] = mk;
+    } catch (e) {}
+    var ctrl = new AbortController();
+    var tmr = setTimeout(function () { ctrl.abort(); }, 15000);
+    try {
+      var opts = { method: body ? 'POST' : 'GET', headers: headers, signal: ctrl.signal };
+      if (body) opts.body = JSON.stringify(body);
+      var r = await fetch(WORKER_BASE + path, opts);
+      var data = null;
+      try { data = await r.json(); } catch (e) { data = null; }
+      if (r.status === 401 && allowPrompt !== false) {
+        try { localStorage.removeItem('egygz_moulds_key'); } catch (e) {}
+        var entered = window.prompt('Enter your MOULDS_KEY (configured in Cloudflare Worker secrets).\nSaved on this device only:');
+        if (entered && entered.trim()) {
+          try { localStorage.setItem('egygz_moulds_key', entered.trim()); } catch (e) {}
+          return mouldWorkerJSON(path, body, false);
+        }
+      }
+      return { status: r.status, ok: r.ok, data: data };
+    } finally {
+      clearTimeout(tmr);
+    }
   }
 
   /* one order's fields, via the Worker — status, payment link */
@@ -5566,6 +6124,19 @@
   async function loadMouldOrders(force) {
     var box = document.getElementById('mould-list');
     if (!box) return;
+
+    /* Reuse recent device cache within 90s when switching tabs (press Refresh for force=true) */
+    if (!force) {
+      var recent = readMouldCache();
+      if (recent && recent.at && (Date.now() - recent.at) < 90 * 1000 && Array.isArray(recent.orders)) {
+        mouldOrders = recent.orders;
+        setMouldNote('');
+        renderMouldOrders();
+        updateMouldBadge();
+        return;
+      }
+    }
+
     box.innerHTML = '<p class="ph-sub" style="padding:20px 0;">Loading orders…</p>';
     setMouldNote('');
 
@@ -5575,7 +6146,7 @@
 
     /* 1) ask the Worker (works with no browser credentials) */
     try {
-      var w = await mouldWorkerJSON('/api/moulds/orders?limit=120');
+      var w = await mouldWorkerJSON('/api/moulds/orders?limit=60' + (force ? '&force=1' : ''));
       if (w.ok && w.data && w.data.ok && Array.isArray(w.data.orders)) {
         list = w.data.orders;
       } else if (w.status === 404) {
@@ -5853,21 +6424,40 @@
     return 'https://mail.google.com/mail/?' + parts.join('&');
   }
 
-  function openGmailDraft(o, tpl, link) {
+  /* Open a blank tab synchronously inside the click gesture so Safari/Chrome never block it,
+     and clear opener directly (passing 'noopener' in windowFeatures returns null even when opened). */
+  function _preopenTab() {
+    var win = window.open('about:blank', '_blank');
+    if (win) { try { win.opener = null; } catch (e) {} }
+    return win;
+  }
+
+  function openGmailDraft(o, tpl, link, preWin) {
     var out = mouldTemplateFill(tpl, Object.assign({}, o, { paymentLink: link || o.paymentLink || '' }));
     var url = gmailComposeUrl(o.email, out.subject, out.body);
-    var win = window.open(url, '_blank', 'noopener');
-    if (!win) showToast('Allow pop-ups for this page, then press the button again', 'error');
+    var win = preWin || _preopenTab();
+    if (win) {
+      try { win.location.replace(url); } catch (e) { win.location.href = url; }
+    } else {
+      showToast('Allow pop-ups for this page to open Gmail automatically', 'error');
+    }
     return url;
   }
 
   function composeMouldMail(id) {
     var o = mouldOrders.filter(function (x) { return x.id === id; })[0];
     if (!o) return;
+    var input = document.getElementById('pay-' + id);
+    var link = (input && input.value.trim()) || o.paymentLink || '';
+    if (mouldTemplate) {
+      openGmailDraft(o, mouldTemplate, link);
+      return;
+    }
+    var preWin = _preopenTab();
     getMouldTemplate().then(function (tpl) {
-      var input = document.getElementById('pay-' + id);
-      var link = (input && input.value.trim()) || o.paymentLink || '';
-      openGmailDraft(o, tpl, link);
+      openGmailDraft(o, tpl, link, preWin);
+    }).catch(function () {
+      openGmailDraft(o, MOULD_TEMPLATE_DEFAULT, link, preWin);
     });
   }
 
@@ -5891,6 +6481,9 @@
       return;
     }
 
+    /* Open tab synchronously inside user click so browsers never block Gmail */
+    var preWin = _preopenTab();
+
     var btn = document.getElementById('approve-' + id);
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
@@ -5899,13 +6492,8 @@
 
     /* the Worker writes with the studio's own credentials — try it first */
     try {
-      var r = await fetch(WORKER_BASE + '/api/moulds/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, paymentLink: link })
-      });
-      var res = await r.json().catch(function () { return null; });
-      saved = !!(res && res.ok);
+      var wr = await mouldWorkerJSON('/api/moulds/approve', { id: id, paymentLink: link });
+      saved = !!(wr.ok && wr.data && wr.data.ok);
     } catch (e) { saved = false; }
 
     if (!saved) {
@@ -5923,20 +6511,28 @@
       }
     }
 
+    var tpl = await getMouldTemplate().catch(function () { return MOULD_TEMPLATE_DEFAULT; });
+    openGmailDraft(o, tpl, link, preWin);
+
     if (!saved) {
       if (btn) { btn.disabled = false; btn.textContent = 'Approve & open Gmail'; }
-      showToast('Could not save the approval — the Gmail draft still opens so nothing is lost', 'error');
-    } else {
-      showToast('Approved — Gmail is open, press Send', 'success');
+      showToast('Could not save the approval — the Gmail draft is open so nothing is lost', 'error');
+      return;
     }
 
-    /* the compose window opens either way: the message is never lost */
-    var tpl = await getMouldTemplate();
-    openGmailDraft(o, tpl, link);
-    if (saved) await loadMouldOrders(true);
+    /* Update locally in memory & cache (0 extra Firestore list reads!) */
+    o.paymentLink = link;
+    o.status = 'approved';
+    o.approvedAt = now;
+    o.statusUpdatedAt = now;
+    writeMouldCache(mouldOrders);
+    renderMouldOrders();
+    updateMouldBadge();
+    showToast('Approved — Gmail is open, press Send', 'success');
   }
 
   async function setMouldStatus(id, status, okMessage) {
+    var now = new Date().toISOString();
     var ok = false;
     try {
       var r = await mouldWorkerJSON('/api/moulds/status', { id: id, status: status });
@@ -5945,17 +6541,24 @@
 
     if (!ok) {
       try {
-        await db.collection('mould_orders').doc(id).update({
-          status: status,
-          statusUpdatedAt: new Date().toISOString()
-        });
+        var patch = { status: status, statusUpdatedAt: now };
+        if (status === 'delivered') patch.deliveredAt = now;
+        await db.collection('mould_orders').doc(id).update(patch);
         ok = true;
       } catch (e) { ok = false; }
     }
 
     if (!ok) { showToast('Could not update the order status — ' + quotaHint(), 'error'); return; }
+    var target = mouldOrders.filter(function (x) { return x.id === id; })[0];
+    if (target) {
+      target.status = status;
+      target.statusUpdatedAt = now;
+      if (status === 'delivered') target.deliveredAt = now;
+      writeMouldCache(mouldOrders);
+    }
+    renderMouldOrders();
+    updateMouldBadge();
     showToast(okMessage, 'success');
-    await loadMouldOrders(true);
   }
 
   function markMouldDelivered(id) { return setMouldStatus(id, 'delivered', 'Marked delivered'); }
@@ -6017,9 +6620,7 @@
 
     if (!bannerCatalogue.length) {
       try {
-        var r = await fetch('assets/images/catalog.json?t=' + Date.now());
-        var j = await r.json();
-        bannerCatalogue = Array.isArray(j) ? j : [];
+        bannerCatalogue = (typeof readCatalog === 'function') ? await readCatalog() : [];
       } catch (e) { bannerCatalogue = []; }
     }
 
@@ -6060,7 +6661,7 @@
       }
 
       var options = pool.map(function (item) {
-        var key = String(item.folder || item.id || '');
+        var key = String(item.id || item.folder || '');
         return '<option value="' + escAttr(key) + '">' + escHtml((item.category ? item.category + ' · ' : '') + (item.name || key)) + '</option>';
       }).join('');
 
@@ -6128,14 +6729,13 @@
     var sel = document.getElementById('banner-pick-' + tier);
     var key = sel ? sel.value : '';
     if (!key) { showToast('Pick a design first', 'error'); return; }
-    var item = bannerCatalogue.filter(function (i) { return String(i.folder || i.id) === key; })[0];
+    var item = bannerCatalogue.filter(function (i) { return String(i.id || i.folder) === key || String(i.folder || i.id) === key; })[0];
     if (!item) { showToast('That design is not in the catalogue', 'error'); return; }
-    var cat = item.category || 'sets';
-    var folder = item.folder || item.id;
+    var root = '/' + itemRoot(item).replace(/^\//, '');
     var images = (item.images || []).filter(function (f) { return !/\.(mp4|webm|mov|m4v)$/i.test(String(f)); });
     if (!images.length) { showToast('That design has no photos yet', 'error'); return; }
     images.forEach(function (f) {
-      bannerAddPath(tier, '/assets/images/' + cat + '/' + folder + '/' + f);
+      bannerAddPath(tier, root + f);
     });
   }
 
@@ -6201,7 +6801,11 @@
     payload.updatedAt = new Date().toISOString();
     try {
       await db.collection('settings').doc('banners').set(payload, { merge: true });
-      try { localStorage.removeItem('egygz_banners_v1'); } catch (e) {}
+      try {
+        localStorage.removeItem('egygz_banners_v1');
+        localStorage.removeItem('egygz_home_banners_v1');
+        if (window.HomeBanners && typeof window.HomeBanners.invalidate === 'function') window.HomeBanners.invalidate();
+      } catch (e) {}
       showToast('Banners saved — the home page updates on the next visit', 'success');
     } catch (e) {
       showToast('Could not save: ' + e.message, 'error');
@@ -6288,6 +6892,10 @@
       updatedAt: new Date().toISOString()
     }, { merge: true });
     cropItems = items;
+    try {
+      localStorage.removeItem('egygz_crops_v1');
+      if (window.Crops && typeof window.Crops.invalidate === 'function') window.Crops.invalidate();
+    } catch (e) {}
     try { localStorage.removeItem('egygz_crops_v1'); } catch (e) {}
     if (window.Crops && window.Crops.index) window.Crops.index(items);
   }
@@ -6358,7 +6966,7 @@
     cropState.aspect = kind === 'banner' ? '16/7' : (kind === 'card' ? '4/5' : '16/9');
     cropState.x = 50; cropState.y = 50; cropState.zoom = 1;
 
-    var items = await readCropItems(true);
+    var items = await readCropItems(false);
     var wholeSlot = kind === 'card' ? 'card:' + cropState.folder : kind + ':' + cropState.key;
     var photoSlot = kind === 'card' ? wholeSlot + '::' + file : wholeSlot;
     var found = items.filter(function (it) { return String(it.slot) === photoSlot; })[0] ||
@@ -6406,7 +7014,7 @@
 
   async function saveCrop() {
     var slot = cropCurrentSlot();
-    var items = (await readCropItems(true)).filter(function (it) { return String(it.slot) !== slot; });
+    var items = (await readCropItems(false)).filter(function (it) { return String(it.slot) !== slot; });
     items.push({
       slot: slot,
       path: cropState.path,
@@ -6436,7 +7044,7 @@
     var slot = cropCurrentSlot();
     var allBox = document.getElementById('crop-all');
     var everyPhoto = cropState.kind !== 'card' || !allBox || allBox.checked;
-    var items = (await readCropItems(true)).filter(function (it) { return String(it.slot) !== slot; });
+    var items = (await readCropItems(false)).filter(function (it) { return String(it.slot) !== slot; });
     if (cropState.kind === 'card' && everyPhoto) {
       items = items.filter(function (it) {
         return String(it.slot).indexOf('card:' + cropState.folder + '::') !== 0;
@@ -6451,44 +7059,60 @@
     }
   }
 
-  /* inventory card → crop its design card */
-  function openItemCrop(cat, folder) {
-    var item = ((cache[cat] || {}).items || []).filter(function (i) {
-      return (i.folder || i.id) === folder;
-    })[0];
+  /* inventory card → crop its design card (look up by id so shared folders like 000001 stay distinct) */
+  function openItemCrop(cat, idOrFolder) {
+    var list = (cache[cat] || {}).items || [];
+    var item = list.filter(function (i) { return i.id === idOrFolder; })[0]
+            || list.filter(function (i) { return (i.folder || i.id) === idOrFolder; })[0];
     if (!item) { showToast('Design not found', 'error'); return; }
     var img = (item.images || []).filter(function (f) { return !isVideoFile(f); })[0];
     if (!img) { showToast('This design has no photo yet', 'error'); return; }
-    /* same key the pages resolve to: <category>/<folder> */
-    var designKey = ((item.catFolder || item.category || 'sets') + '/' + (item.folder || item.id));
+    var designKey = (window.Crops && typeof window.Crops.designKey === 'function')
+      ? window.Crops.designKey({ category: item.catFolder || item.category || 'sets', folder: item.folder || item.id, id: item.id })
+      : ((item.catFolder || item.category || 'sets') + '/' + (item.folder || item.id));
     openCropEditor('card', designKey, itemRoot(item) + img);
   }
 
-  /* drag the photo inside the frame (only does something once zoomed in) */
+  /* drag the photo inside the frame (works both at 1x to adjust focal point and when zoomed) */
   (function bindCropDrag() {
     var frame = document.getElementById('crop-frame');
-    if (!frame) return;
-    frame.addEventListener('pointerdown', function (e) {
-      if (cropState.zoom <= 1.01) return;
-      cropDrag = { sx: e.clientX, sy: e.clientY, x: cropState.x, y: cropState.y,
-                   w: frame.clientWidth || 1, h: frame.clientHeight || 1 };
-      try { frame.setPointerCapture(e.pointerId); } catch (err) {}
-      frame.style.cursor = 'grabbing';
-    });
-    frame.addEventListener('pointermove', function (e) {
-      if (!cropDrag) return;
-      var z = Math.max(1.02, cropState.zoom);
-      var spanX = (z - 1) * cropDrag.w;
-      var spanY = (z - 1) * cropDrag.h;
-      cropState.x = cropClamp(cropDrag.x - ((e.clientX - cropDrag.sx) / spanX) * 100, 0, 100);
-      cropState.y = cropClamp(cropDrag.y - ((e.clientY - cropDrag.sy) / spanY) * 100, 0, 100);
-      cropApply();
-    });
-    function end() { cropDrag = null; frame.style.cursor = 'grab'; }
-    frame.addEventListener('pointerup', end);
-    frame.addEventListener('pointercancel', end);
+    var bg = document.getElementById('crop-bg');
+    if (bg) {
+      bg.addEventListener('click', function (e) {
+        if (e.target === bg) closeCropEditor();
+      });
+    }
+    if (frame) {
+      frame.addEventListener('pointerdown', function (e) {
+        cropDrag = { sx: e.clientX, sy: e.clientY, x: cropState.x, y: cropState.y,
+                     w: frame.clientWidth || 1, h: frame.clientHeight || 1 };
+        try { frame.setPointerCapture(e.pointerId); } catch (err) {}
+        frame.style.cursor = 'grabbing';
+      });
+      frame.addEventListener('pointermove', function (e) {
+        if (!cropDrag) return;
+        var scale = Math.max(0.65, cropState.zoom - 1);
+        var spanX = scale * cropDrag.w;
+        var spanY = scale * cropDrag.h;
+        cropState.x = cropClamp(cropDrag.x - ((e.clientX - cropDrag.sx) / spanX) * 100, 0, 100);
+        cropState.y = cropClamp(cropDrag.y - ((e.clientY - cropDrag.sy) / spanY) * 100, 0, 100);
+        cropApply();
+      });
+      function end() { cropDrag = null; frame.style.cursor = 'grab'; }
+      frame.addEventListener('pointerup', end);
+      frame.addEventListener('pointercancel', end);
+    }
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeCropEditor();
+      if (e.key !== 'Escape') return;
+      if (bg && bg.style.display !== 'none') { closeCropEditor(); return; }
+      if (document.getElementById('reorder-drawer') && document.getElementById('reorder-drawer').classList.contains('open')) {
+        if (typeof closeDrawer === 'function') closeDrawer();
+        return;
+      }
+      document.querySelectorAll('.modal-overlay.open, .inv-modal-overlay.open').forEach(function (m) {
+        m.classList.remove('open');
+      });
+      closeSidebar();
     });
   })();
 </script>

@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grillz Calculator — Design & Price Your Custom Grillz | EGYGRILLZ</title>
+<meta name="description" content="Design your custom grillz step by step — metal, teeth, complexity, stones, plating and finishes — and get an instant EGYGRILLZ estimate in EGP with a shareable design code and PDF.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#141414">
+<link rel="canonical" href="https://egygrillz.com/calculator">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="EGYGRILLZ">
+<meta property="og:title" content="Grillz Calculator — EGYGRILLZ">
+<meta property="og:description" content="Design your custom grillz and get an instant estimate. Metal, teeth, stones, plating — priced live by the Cairo studio.">
+<meta property="og:url" content="https://egygrillz.com/calculator">
+<meta property="og:image" content="https://egygrillz.com/assets/optimized/og-image.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#1a1a1a;--mut:#6e6e73;--faint:#aeaeb2;--line:rgba(0,0,0,.09);
+  --gold:#b8935a;--gold-d:#9a7a44;--ivory:#faf8f4;--card:#ffffff;--dark:#141414;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Arimo',sans-serif;background:var(--ivory);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+a{text-decoration:none;color:inherit;}
+img{display:block;max-width:100%;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+
+/* ── HEADER ── */
+header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 5%;}
+.logo-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:2px;color:var(--ink);}
+.main-nav{display:flex;gap:20px;align-items:center;}
+.main-nav a{color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:1px;transition:color .3s;}
+.main-nav a:hover{color:#666;}
+.main-nav a.nav-active{color:var(--gold-d);font-weight:700;}
+.lang-toggle{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;}
+.lang-toggle button{border:none;background:transparent;font-size:11px;font-weight:700;letter-spacing:.5px;padding:7px 13px;color:var(--mut);transition:.2s;}
+.lang-toggle button.on{background:var(--ink);color:#fff;}
+.menu-toggle{display:none;flex-direction:column;gap:6px;background:none;border:none;}
+.menu-toggle span{width:25px;height:1.5px;background:var(--ink);display:block;}
+@media(max-width:980px){
+  .menu-toggle{display:flex;}
+  .main-nav{position:fixed;top:60px;right:-100%;width:100%;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);flex-direction:column;align-items:flex-start;padding:10px 5%;transition:.4s cubic-bezier(.4,0,.2,1);box-shadow:0 5px 10px rgba(0,0,0,.05);z-index:1100;}
+  .main-nav.active{right:0;}
+  .main-nav a{font-size:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06);width:100%;}
+  .lang-toggle{margin:10px 0;}
+}
+.bar-spacer{height:60px;}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:64px 5% 30px;max-width:900px;margin:0 auto;}
+.hero-script{font-family:'Alex Brush',cursive;font-size:34px;color:var(--gold-d);line-height:1;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,56px);font-weight:700;letter-spacing:1px;margin:8px 0 12px;}
+.hero p{font-size:15px;color:var(--mut);line-height:1.7;max-width:640px;margin:0 auto;}
+.code-bar{max-width:640px;margin:28px auto 0;display:flex;gap:8px;background:#fff;border:1px solid var(--line);border-radius:4px;padding:6px;box-shadow:0 4px 24px rgba(0,0,0,.04);}
+.code-bar input{flex:1;border:none;outline:none;font-size:13px;padding:10px 12px;color:var(--ink);background:transparent;min-width:0;}
+.code-bar input::placeholder{color:var(--faint);}
+.code-bar button{background:var(--ink);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:0 22px;border-radius:2px;transition:.2s;white-space:nowrap;}
+.code-bar button:hover{background:#000;}
+.code-hint{font-size:11px;color:var(--faint);margin-top:10px;}
+
+/* ── LAYOUT ── */
+.calc-wrap{max-width:1240px;margin:0 auto;padding:20px 5% 90px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:36px;align-items:start;}
+@media(max-width:980px){.calc-wrap{grid-template-columns:1fr;}}
+
+/* ── STEPS ── */
+.step{background:var(--card);border:1px solid var(--line);padding:28px;margin-bottom:22px;border-radius:4px;}
+.step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;}
+.step-num{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--gold-d);border:1px solid var(--gold);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-head h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:.5px;}
+.step-head p{font-size:12px;color:var(--mut);margin-top:3px;line-height:1.6;}
+.set-block{margin-bottom:8px;}
+.set-head{display:flex;align-items:center;justify-content:space-between;margin:26px 0 14px;}
+.set-head:first-child{margin-top:0;}
+.set-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.set-title span{font-family:'Arimo',sans-serif;font-size:11px;color:var(--mut);font-weight:400;margin-inline-start:8px;}
+.set-remove{background:none;border:1px solid var(--line);color:var(--mut);font-size:11px;padding:7px 14px;border-radius:999px;transition:.2s;}
+.set-remove:hover{border-color:#c00;color:#c00;}
+.add-set-btn{width:100%;background:none;border:1px dashed var(--gold);color:var(--gold-d);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:16px;border-radius:4px;transition:.2s;margin-bottom:22px;}
+.add-set-btn:hover{background:rgba(184,147,90,.08);}
+
+/* ── OPTION CARDS ── */
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;}
+.opt-card{border:1px solid var(--line);background:#fff;padding:18px 12px 14px;text-align:center;cursor:pointer;position:relative;transition:.22s;border-radius:4px;}
+.opt-card:hover{border-color:var(--ink);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.06);}
+.opt-card.selected{border-color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.08);}
+.opt-card img{height:104px;width:auto;margin:0 auto 10px;object-fit:contain;}
+.opt-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.opt-desc{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;}
+.opt-price{font-size:11px;color:var(--gold-d);font-weight:700;margin-top:6px;}
+.opt-check{position:absolute;top:8px;inset-inline-end:8px;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;}
+.opt-card.selected .opt-check{display:flex;}
+.karat-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center;}
+.karat-row .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut);margin-inline-end:4px;}
+
+/* ── PILLS ── */
+.pills{display:flex;flex-wrap:wrap;gap:8px;}
+.pill{border:1px solid var(--line);background:#fff;font-size:12px;padding:9px 16px;border-radius:999px;transition:.2s;color:var(--ink);}
+.pill:hover{border-color:var(--ink);}
+.pill.selected{background:var(--ink);color:#fff;border-color:var(--ink);}
+.pill small{opacity:.65;font-size:10px;margin-inline-start:4px;}
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.mode-card{border:1px solid var(--line);background:#fff;padding:16px;text-align:center;cursor:pointer;border-radius:4px;transition:.2s;}
+.mode-card:hover{border-color:var(--ink);}
+.mode-card.selected{border-color:var(--ink);background:var(--ivory);}
+.mode-card .mc-t{font-size:13px;font-weight:700;}
+.mode-card .mc-d{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;}
+
+/* ── TEETH ── */
+.teeth-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.counter-row{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
+.counter-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1;transition:.2s;}
+.counter-btn:hover{border-color:var(--ink);}
+.counter-num{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;min-width:56px;text-align:center;}
+.counter-lbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;}
+.smile-map{background:var(--ivory);border:1px solid var(--line);border-radius:4px;padding:18px 12px;}
+.arch{display:flex;gap:4px;justify-content:center;direction:ltr;}
+.arch + .arch{margin-top:14px;}
+.tooth{width:32px;height:42px;border:1px solid var(--line);background:#fff;border-radius:5px;font-size:9px;color:var(--mut);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;padding:0;}
+.tooth:hover{border-color:var(--ink);}
+.tooth.sel{background:var(--ink);color:#fff;border-color:var(--ink);}
+.arch-upper .tooth{border-radius:5px 5px 12px 12px;}
+.arch-lower .tooth{border-radius:12px 12px 5px 5px;}
+.mid-gap{width:14px;flex-shrink:0;}
+.arch-lbl{text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--faint);margin:10px 0 4px;}
+@media(max-width:560px){.tooth{width:24px;height:34px;font-size:8px;}.mid-gap{width:8px;}.arch{gap:2px;}}
+
+/* ── GROUP BUILDER ── */
+.group-card{border:1px solid var(--line);background:#fff;border-radius:4px;padding:18px;margin-top:14px;}
+.group-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.group-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;}
+.group-label-inp{flex:1;min-width:140px;border:1px solid var(--line);border-radius:2px;padding:8px 10px;font-size:12px;}
+.group-remove{background:none;border:none;color:var(--faint);font-size:16px;padding:4px;}
+.group-remove:hover{color:#c00;}
+.g-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.g-grid .full{grid-column:1/-1;}
+.fld label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin-bottom:5px;}
+.fld select,.fld input{width:100%;border:1px solid var(--line);border-radius:2px;padding:9px 10px;font-size:13px;background:#fff;color:var(--ink);outline:none;}
+.fld select:focus,.fld input:focus{border-color:var(--ink);}
+.g-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.g-pill{border:1px solid var(--line);background:#fff;font-size:11px;padding:6px 12px;border-radius:999px;transition:.15s;}
+.g-pill.selected{background:var(--ink);color:#fff;border-color:var(--ink);}
+.g-add{margin-top:14px;background:none;border:1px dashed var(--gold);color:var(--gold-d);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:12px 18px;border-radius:4px;transition:.2s;}
+.g-add:hover{background:rgba(184,147,90,.08);}
+
+/* ── STONES / FINISHES ── */
+.stones-detail{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
+.hint-box{display:flex;align-items:center;gap:12px;background:#fdf6ec;border:1px solid #ecd9b8;border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.6;color:#6b5320;margin-top:14px;flex-wrap:wrap;}
+.hint-box button{background:var(--gold);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border-radius:2px;white-space:nowrap;}
+.hint-box button:hover{background:var(--gold-d);}
+.finish-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:6px;}
+.finish-block{margin-top:18px;}
+.finish-block > .fb-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut);margin-bottom:8px;}
+
+/* ── ORDER STEP ── */
+.order-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:640px){.order-grid{grid-template-columns:1fr;}}
+.order-grid .full{grid-column:1/-1;}
+.order-grid textarea{width:100%;border:1px solid var(--line);border-radius:2px;padding:10px;font-size:13px;min-height:64px;resize:vertical;outline:none;}
+.order-grid textarea:focus{border-color:var(--ink);}
+
+/* ── SUMMARY ── */
+.summary{position:sticky;top:84px;background:var(--dark);color:#f5f0e6;border-radius:4px;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.18);}
+@media(max-width:980px){.summary{position:static;}}
+.sum-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:.5px;}
+.sum-sub{font-size:11px;color:#9a958a;margin-top:2px;}
+.sum-lines{margin-top:18px;border-top:1px solid rgba(255,255,255,.12);padding-top:14px;display:flex;flex-direction:column;gap:10px;}
+.sum-line{display:flex;justify-content:space-between;gap:12px;font-size:12px;}
+.sum-line .sl-name{color:#cfc9bd;line-height:1.5;}
+.sum-line .sl-price{color:#fff;font-weight:700;white-space:nowrap;}
+.sum-group{font-size:11px;color:#9a958a;padding-inline-start:12px;display:flex;justify-content:space-between;gap:10px;}
+.sum-group .sl-price{color:#cfc9bd;}
+.sum-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;border-top:1px solid rgba(255,255,255,.12);padding-top:16px;}
+.sum-total-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#9a958a;}
+.sum-total{font-family:'Playfair Display',serif;font-size:38px;font-weight:700;color:#fff;line-height:1;}
+.sum-total .curr{font-size:14px;color:var(--gold);font-family:'Arimo',sans-serif;font-weight:400;margin-inline-start:4px;}
+.sum-dep{display:flex;justify-content:space-between;font-size:12px;margin-top:10px;color:#cfc9bd;}
+.sum-dep b{color:#fff;}
+.sum-code{margin-top:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:4px;padding:12px;}
+.sum-code .sc-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#9a958a;}
+.sum-code .sc-val{font-size:12px;color:#fff;word-break:break-all;margin-top:5px;line-height:1.6;font-family:ui-monospace,Menlo,monospace;}
+.sum-btns{display:flex;flex-direction:column;gap:9px;margin-top:18px;}
+.btn-gold{background:var(--gold);color:#141414;border:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:15px;border-radius:2px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-gold:hover{background:#c9a86a;}
+.btn-line{background:transparent;color:#f5f0e6;border:1px solid rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:12px;border-radius:2px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-line:hover{border-color:#fff;}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.sum-note{font-size:10px;color:#9a958a;line-height:1.7;margin-top:14px;text-align:center;}
+
+/* ── MOBILE BAR ── */
+.mobile-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(20,20,20,.96);backdrop-filter:blur(10px);color:#fff;padding:12px 5%;z-index:800;align-items:center;justify-content:space-between;gap:12px;}
+.mobile-bar .mb-total{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;}
+.mobile-bar .mb-total small{font-family:'Arimo',sans-serif;font-size:10px;color:#9a958a;display:block;letter-spacing:1px;text-transform:uppercase;}
+.mobile-bar button{background:var(--gold);color:#141414;border:none;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:12px 20px;border-radius:2px;}
+@media(max-width:980px){.mobile-bar{display:flex;}body{padding-bottom:70px;}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:#fff;font-size:13px;padding:13px 24px;border-radius:4px;opacity:0;pointer-events:none;transition:.3s;z-index:1200;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--line);padding:40px 5%;text-align:center;background:#fff;}
+footer .f-logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:2px;}
+footer .f-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:14px 0;}
+footer .f-links a{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);}
+footer .f-links a:hover{color:var(--ink);}
+footer p{font-size:11px;color:var(--faint);}
+[dir="rtl"] .step-head,[dir="rtl"] .counter-row,[dir="rtl"] .group-head,[dir="rtl"] .hint-box,[dir="rtl"] .sum-line,[dir="rtl"] .sum-total-row,[dir="rtl"] .sum-dep,[dir="rtl"] .sum-group{text-align:start;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo-text">EGYGRILLZ</a>
+  <button class="menu-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+  <nav class="main-nav" id="main-nav">
+    <a href="/" data-i18n="nav_home">Home</a>
+    <a href="/grillz-gallery" data-i18n="nav_gallery">Gallery</a>
+    <a href="/golds" data-i18n="nav_golds">Golds</a>
+    <a href="/silvers" data-i18n="nav_silvers">Silvers</a>
+    <a href="/diamonds" data-i18n="nav_diamonds">Diamonds</a>
+    <a href="/atelier" data-i18n="nav_atelier">Atelier</a>
+    <a href="/calculator" class="nav-active" data-i18n="nav_calculator">Calculator</a>
+    <a href="/booking" data-i18n="nav_booking">Booking</a>
+    <a href="/contact" data-i18n="nav_contact">Contact</a>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button type="button" id="lang-en" class="on">EN</button>
+      <button type="button" id="lang-ar">عربي</button>
+    </div>
+  </nav>
+</header>
+<div class="bar-spacer"></div>
+
+<section class="hero">
+  <div class="hero-script" data-i18n="hero_script">Design your smile</div>
+  <h1 data-i18n="hero_title">Grillz Calculator</h1>
+  <p data-i18n="hero_sub">Six simple steps to your perfect grillz — pick your metal, teeth, complexity, stones and finishes, and watch your instant EGYGRILLZ estimate update live in EGP.</p>
+  <div class="code-bar">
+    <input type="text" id="code-input" data-i18n-ph="code_ph" placeholder="Paste a design code here — EGZ-... or EGZ1:...">
+    <button type="button" id="code-load" data-i18n="code_load">Load</button>
+  </div>
+  <div class="code-hint" data-i18n="code_hint">Have a code from any EGYGRILLZ calculator, quote or invoice? Paste it above and your design loads instantly.</div>
+</section>
+
+<main class="calc-wrap">
+  <div class="left-column">
+    <div id="sets-container"></div>
+    <div id="order-step"></div>
+  </div>
+  <aside class="summary" id="summary"></aside>
+</main>
+
+<div class="mobile-bar" id="mobile-bar">
+  <div class="mb-total"><small data-i18n="sum_total">Total</small><span id="mb-total-val">0 EGP</span></div>
+  <button type="button" id="mb-pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div class="f-logo">EGYGRILLZ</div>
+  <div class="f-links">
+    <a href="/" data-i18n="nav_home">Home</a>
+    <a href="/grillz-gallery" data-i18n="nav_gallery">Gallery</a>
+    <a href="/atelier" data-i18n="nav_atelier">Atelier</a>
+    <a href="/booking" data-i18n="nav_booking">Booking</a>
+    <a href="/contact" data-i18n="nav_contact">Contact</a>
+  </div>
+  <p data-i18n="footer_note">Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.</p>
+</footer>
+
+<script src="/assets/calc-engine.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+
+  const E = () => window.CalcEngine;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const fmt = (n) => (E() ? E().fmt(n) : String(Math.round(Number(n) || 0)));
+
+  /* ───────────────────────── i18n ───────────────────────── */
+
+  const I18N = {
+    en: {
+      nav_home: 'Home', nav_gallery: 'Gallery', nav_golds: 'Golds', nav_silvers: 'Silvers',
+      nav_diamonds: 'Diamonds', nav_atelier: 'Atelier', nav_calculator: 'Calculator',
+      nav_booking: 'Booking', nav_contact: 'Contact',
+      hero_script: 'Design your smile', hero_title: 'Grillz Calculator',
+      hero_sub: 'Six simple steps to your perfect grillz — pick your metal, teeth, complexity, stones and finishes, and watch your instant EGYGRILLZ estimate update live in EGP.',
+      code_ph: 'Paste a design code here — EGZ-... or EGZ1:...', code_load: 'Load',
+      code_hint: 'Have a code from any EGYGRILLZ calculator, quote or invoice? Paste it above and your design loads instantly.',
+      footer_note: 'Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.',
+      step1_t: 'Choose Your Metal', step1_s: 'The base of your grillz — every tooth starts here.',
+      step2_t: 'Choose Your Teeth', step2_s: 'Tap the teeth on the smile map, use a preset, or mix different styles in one set.',
+      step3_t: 'Complexity Level', step3_s: 'How detailed is the design? More detail means more craftsmanship.',
+      step4_t: 'Stones & Diamonds', step4_s: 'Add sparkle — accent stones or a full iced-out cover.',
+      step5_t: 'Plating & Finishes', step5_s: 'The final look — plating colour, enamel, engraving and anodizing.',
+      step6_t: 'Timeline & Details', step6_s: 'When do you need it, and how shall we reach you?',
+      set_n: 'Set', set_of: 'Set',
+      mat_chrome: 'Chrome', mat_chrome_d: 'Cobalt chrome — sleek, light, everyday shine.',
+      mat_titanium: 'Titanium', mat_titanium_d: 'Feather-light, hypoallergenic, anodize-ready.',
+      mat_silver: 'Silver', mat_silver_d: 'Sterling silver 925 — classic, stones-ready.',
+      mat_gold: 'Gold', mat_gold_d: 'Solid gold — priced at today’s live 24K rate.',
+      karat: 'Gold karat',
+      per_tooth: '/ tooth',
+      teeth_n: 'teeth', tooth_n: 'tooth',
+      preset: 'Quick pick',
+      upper: 'Upper', lower: 'Lower',
+      mode_uniform: 'All teeth same style', mode_uniform_d: 'One design across every tooth.',
+      mode_mixed: 'Mix different teeth', mode_mixed_d: 'Different levels, stones & finishes per group.',
+      group_n: 'Group', group_label_ph: 'Group name (optional)',
+      add_group: '+ Add tooth group', remove: 'Remove',
+      lvl_05: 'Bars', lvl_1: 'Solid', lvl_2: 'Open face', lvl_3: 'Mid detail', lvl_4: 'Complex', lvl_5: 'Scorpion', lvl_6: 'Ultimate',
+      lvl_05_d: 'Half base — open bars with teeth showing behind.',
+      lvl_1_d: 'Fully solid metal, no cuts. One clean surface.',
+      lvl_2_d: 'Solid base with openings over the face of the teeth.',
+      lvl_3_d: 'Lettering, simple outlines, a few cuts.',
+      lvl_4_d: 'Dense, intricate detail across most of the piece.',
+      lvl_5_d: 'Heavy 3D detail — sculpted shapes and deep relief.',
+      lvl_6_d: 'Ultimate custom work — fully sculpted, maximum detail.',
+      stones_none: 'No stones', stones_accent: 'Accent stones', stones_full: 'Full iced',
+      accent_count: 'Stone count', accent_type: 'Stone type', setting: 'Setting',
+      full_type: 'Stone type', coverage: 'Coverage',
+      custom_price: 'Price per stone (EGP)', custom_price_tooth: 'Price per tooth (EGP)',
+      bars_note: 'Bars design — full iced bars are fixed for this level and included in the price.',
+      stones_hint: 'Stones & diamonds are only available on Silver and Gold. Tap below to switch your metal in one tap.',
+      switch_silver: 'Switch to Silver',
+      plating_none: 'No plating',
+      pl_yellowgold: 'Yellow Gold', pl_whitegold: 'White Gold', pl_rosegold: 'Rose Gold',
+      pl_blackgold: 'Black Gold', pl_silverplating: 'Silver',
+      enamel: 'Enamel', engraving: 'Engraving', anodize: 'Anodizing (Titanium)',
+      opt_none: 'None', opt_single: 'Single', opt_multi: 'Multi', opt_master: 'Master',
+      opt_small: 'Small', opt_medium: 'Medium', opt_large: 'Large', opt_dual: 'Dual',
+      timeline: 'Timeline', tl_standard: 'Standard', tl_rush: 'Rush', tl_emergency: 'Emergency',
+      tl_standard_d: '21 business days', tl_rush_d: 'Faster production', tl_emergency_d: 'Fastest possible',
+      mold: 'Dental mold', mold_none: 'I already have my mold', mold_normal: 'Normal per arch', mold_digital: 'Digital full mouth',
+      client_name: 'Your name', client_phone: 'Phone / WhatsApp', client_notes: 'Notes (optional)',
+      client_name_ph: 'e.g. Omar', client_phone_ph: '01xxxxxxxxx', client_notes_ph: 'Anything we should know?',
+      gold_rate_lbl: 'Today’s 24K gold rate (EGP / gram)', gold_rate_note: 'Gold is priced at the live daily rate. Enter today’s 24K rate to see your exact gold estimate.',
+      add_set: '+ Add Another Set',
+      sum_title: 'Your Estimate', sum_sub: 'Live studio pricing — EGP',
+      sum_total: 'Total', sum_deposit: 'Deposit to begin (50%)', sum_balance: 'Balance on delivery',
+      sum_code: 'Your design code', sum_code_hint: 'Send this code to EGYGRILLZ or paste it in any calculator to load this exact design.',
+      btn_pdf: 'Download PDF Estimate', btn_copy_code: 'Copy Code', btn_share: 'Copy Share Link',
+      btn_book: 'Book Appointment', btn_contact: 'Send to Studio',
+      sum_note: 'Estimate only — your final price is confirmed at your fitting. Gold & natural diamonds follow live market rates.',
+      copied: 'Copied to clipboard', code_loaded: 'Design code loaded', code_invalid: 'That code could not be read — please check it and try again.',
+      pdf_done: 'PDF estimate downloaded', set_removed: 'Set removed',
+      mixed_note: 'Mixed set — each group below has its own level, stones and finishes. The metal above is the default for new groups.',
+      group_teeth: 'Teeth', group_level: 'Level', group_material: 'Metal',
+      from: 'from',
+    },
+    ar: {
+      nav_home: 'الرئيسية', nav_gallery: 'المعرض', nav_golds: 'الذهب', nav_silvers: 'الفضة',
+      nav_diamonds: 'الألماس', nav_atelier: 'الأتيليه', nav_calculator: 'الحاسبة',
+      nav_booking: 'الحجز', nav_contact: 'تواصل',
+      hero_script: 'صمّم ابتسامتك', hero_title: 'حاسبة الجريلز',
+      hero_sub: 'ست خطوات بسيطة لتصميم الجريلز المثالي — اختر المعدن والأسنان ومستوى التعقيد والأحجار والتشطيبات، وشاهد تقدير EGYGRILLZ الفوري يتحدث مباشرة بالجنيه المصري.',
+      code_ph: 'الصق كود التصميم هنا — EGZ-... أو EGZ1:...', code_load: 'تحميل',
+      code_hint: 'لديك كود من أي حاسبة أو عرض سعر أو فاتورة من EGYGRILLZ؟ الصقه هنا وسيتم تحميل تصميمك فورًا.',
+      footer_note: 'صُنع يدويًا في القاهرة، مصر — كل قطعة تُصمم خصيصًا على مقاس أسنانك.',
+      step1_t: 'اختر المعدن', step1_s: 'أساس الجريلز — كل سن يبدأ من هنا.',
+      step2_t: 'اختر الأسنان', step2_s: 'اضغط على الأسنان في خريطة الابتسامة، أو استخدم اختيارًا سريعًا، أو امزج تصاميم مختلفة في طقم واحد.',
+      step3_t: 'مستوى التعقيد', step3_s: 'ما مدى تفصيل التصميم؟ كلما زاد التفصيل زادت الحرفية.',
+      step4_t: 'الأحجار والألماس', step4_s: 'أضف اللمعان — أحجار لمسات أو تغطية مرصّعة بالكامل.',
+      step5_t: 'الطلاء والتشطيبات', step5_s: 'الشكل النهائي — لون الطلاء والمينا والنقش والأكسدة.',
+      step6_t: 'الموعد والتفاصيل', step6_s: 'متى تحتاجه؟ وكيف نتواصل معك؟',
+      set_n: 'طقم', set_of: 'طقم',
+      mat_chrome: 'كروم', mat_chrome_d: 'كروم كوبالت — لمعان أنيق وخفيف ومناسب يوميًا.',
+      mat_titanium: 'تيتانيوم', mat_titanium_d: 'خفيف جدًا ومضاد للحساسية وقابل للأكسدة.',
+      mat_silver: 'فضة', mat_silver_d: 'فضة إسترلينج 925 — كلاسيكي ومناسب للأحجار.',
+      mat_gold: 'ذهب', mat_gold_d: 'ذهب خالص — يُسعّر بسعر عيار 24 اليوم.',
+      karat: 'عيار الذهب',
+      per_tooth: '/ سن',
+      teeth_n: 'أسنان', tooth_n: 'سن',
+      preset: 'اختيار سريع',
+      upper: 'العلوي', lower: 'السفلي',
+      mode_uniform: 'كل الأسنان بنفس التصميم', mode_uniform_d: 'تصميم واحد على كل الأسنان.',
+      mode_mixed: 'مزج تصاميم مختلفة', mode_mixed_d: 'مستويات وأحجار وتشطيبات مختلفة لكل مجموعة.',
+      group_n: 'مجموعة', group_label_ph: 'اسم المجموعة (اختياري)',
+      add_group: '+ إضافة مجموعة أسنان', remove: 'إزالة',
+      lvl_05: 'بارات', lvl_1: 'سوليد', lvl_2: 'وجه مفتوح', lvl_3: 'تفاصيل متوسطة', lvl_4: 'معقّد', lvl_5: 'عقرب', lvl_6: 'أقصى تفصيل',
+      lvl_05_d: 'نصف السعر الأساسي — بارات مفتوحة والأسنان ظاهرة خلفها.',
+      lvl_1_d: 'معدن سوليد بالكامل بدون فتحات. سطح نظيف واحد.',
+      lvl_2_d: 'قاعدة سوليد مع فتحات على وجه الأسنان.',
+      lvl_3_d: 'حروف وخطوط بسيطة وبعض الفتحات.',
+      lvl_4_d: 'تفاصيل كثيفة ومعقّدة على معظم القطعة.',
+      lvl_5_d: 'تفاصيل ثلاثية الأبعاد ثقيلة — أشكال منحوتة وبارزة.',
+      lvl_6_d: 'عمل مخصص أقصى — نحت كامل بأعلى تفصيل.',
+      stones_none: 'بدون أحجار', stones_accent: 'أحجار لمسات', stones_full: 'مرصّع بالكامل',
+      accent_count: 'عدد الأحجار', accent_type: 'نوع الحجر', setting: 'طريقة التركيب',
+      full_type: 'نوع الحجر', coverage: 'التغطية',
+      custom_price: 'السعر للحجر (جنيه)', custom_price_tooth: 'السعر للسن (جنيه)',
+      bars_note: 'تصميم بارات — البارات المرصّعة بالكامل ثابتة لهذا المستوى ومشمولة في السعر.',
+      stones_hint: 'الأحجار والألماس متاحة فقط على الفضة والذهب. اضغط أدناه لتبديل المعدن بضغطة واحدة.',
+      switch_silver: 'التبديل إلى الفضة',
+      plating_none: 'بدون طلاء',
+      pl_yellowgold: 'ذهب أصفر', pl_whitegold: 'ذهب أبيض', pl_rosegold: 'ذهب وردي',
+      pl_blackgold: 'ذهب أسود', pl_silverplating: 'فضة',
+      enamel: 'مينا', engraving: 'نقش', anodize: 'أكسدة (تيتانيوم)',
+      opt_none: 'بدون', opt_single: 'لون واحد', opt_multi: 'متعدد', opt_master: 'ماستر',
+      opt_small: 'صغير', opt_medium: 'متوسط', opt_large: 'كبير', opt_dual: 'مزدوج',
+      timeline: 'الموعد', tl_standard: 'عادي', tl_rush: 'مستعجل', tl_emergency: 'طارئ',
+      tl_standard_d: '21 يوم عمل', tl_rush_d: 'إنتاج أسرع', tl_emergency_d: 'أسرع وقت ممكن',
+      mold: 'قالب الأسنان', mold_none: 'لديّ القالب بالفعل', mold_normal: 'عادي لكل فك', mold_digital: 'رقمي للفم الكامل',
+      client_name: 'اسمك', client_phone: 'الهاتف / واتساب', client_notes: 'ملاحظات (اختياري)',
+      client_name_ph: 'مثال: عمر', client_phone_ph: '01xxxxxxxxx', client_notes_ph: 'هل هناك أي شيء يجب أن نعرفه؟',
+      gold_rate_lbl: 'سعر عيار 24 اليوم (جنيه / جرام)', gold_rate_note: 'يُسعّر الذهب بسعر السوق اليومي. أدخل سعر عيار 24 اليوم لعرض تقدير دقيق.',
+      add_set: '+ إضافة طقم آخر',
+      sum_title: 'تقديرك', sum_sub: 'أسعار الاستوديو المباشرة — جنيه',
+      sum_total: 'الإجمالي', sum_deposit: 'المقدم للبدء (50%)', sum_balance: 'المتبقي عند الاستلام',
+      sum_code: 'كود التصميم الخاص بك', sum_code_hint: 'أرسل هذا الكود إلى EGYGRILLZ أو الصقه في أي حاسبة لتحميل هذا التصميم بالضبط.',
+      btn_pdf: 'تحميل تقدير PDF', btn_copy_code: 'نسخ الكود', btn_share: 'نسخ رابط المشاركة',
+      btn_book: 'احجز موعدك', btn_contact: 'أرسل للاستوديو',
+      sum_note: 'تقدير مبدئي فقط — يتم تأكيد السعر النهائي في جلسة القياس. الذهب والألماس الطبيعي حسب أسعار السوق المباشرة.',
+      copied: 'تم النسخ', code_loaded: 'تم تحميل كود التصميم', code_invalid: 'تعذّرت قراءة هذا الكود — تحقق منه وحاول مرة أخرى.',
+      pdf_done: 'تم تحميل تقدير PDF', set_removed: 'تمت إزالة الطقم',
+      mixed_note: 'طقم مختلط — كل مجموعة أدناه لها مستواها وأحجارها وتشطيباتها. المعدن أعلاه هو الافتراضي للمجموعات الجديدة.',
+      group_teeth: 'الأسنان', group_level: 'المستوى', group_material: 'المعدن',
+      from: 'ابتداءً من',
+    },
+  };
+
+  let lang = 'en';
+  try { lang = localStorage.getItem('egygz_calc_lang') || 'en'; } catch (e) {}
+  if (lang !== 'ar') lang = 'en';
+  const t = (k) => (I18N[lang] && I18N[lang][k]) || I18N.en[k] || k;
+
+  function applyI18n() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    $$('[data-i18n]').forEach((el) => { el.textContent = t(el.getAttribute('data-i18n')); });
+    $$('[data-i18n-ph]').forEach((el) => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
+    $('#lang-en').classList.toggle('on', lang === 'en');
+    $('#lang-ar').classList.toggle('on', lang === 'ar');
+    try { localStorage.setItem('egygz_calc_lang', lang); } catch (e) {}
+  }
+
+  /* ───────────────────────── constants ───────────────────────── */
+
+  const MATERIALS = [
+    { id: 'chrome', img: '/materials/CHROME.png' },
+    { id: 'titanium', img: '/materials/TITANUM.png' },
+    { id: 'silver', img: '/materials/SILVER.png' },
+    { id: 'gold', img: '/materials/GOLD.png' },
+  ];
+  const KARATS = ['10', '14', '18', '21', '22'];
+  const LEVELS = ['0.5', '1', '2', '3', '4', '5', '6'];
+  const LEVEL_IMG = (lv) => '/levels/LEVEL%20' + lv + '.png';
+  const PLATINGS = [
+    { id: 'yellowgold', img: '/plating/YELLOW%20GOLD%20PLATING.png' },
+    { id: 'whitegold', img: '/plating/WHITE%20GOLD%20PLATING.png' },
+    { id: 'rosegold', img: '/plating/ROSE%20GOLD%20PLATING.png' },
+    { id: 'blackgold', img: '/plating/BLACK%20GOLD%20PLATING.png' },
+    { id: 'silverplating', img: '/plating/SILVER%20PLATING.png' },
+  ];
+  const TOOTH_ORDER = ['UR1', 'UL1', 'UR2', 'UL2', 'UR3', 'UL3', 'UR4', 'UL4', 'UR5', 'UL5', 'UR6', 'UL6', 'UR7', 'UL7', 'UR8', 'UL8', 'LR1', 'LL1', 'LR2', 'LL2', 'LR3', 'LL3', 'LR4', 'LL4', 'LR5', 'LL5', 'LR6', 'LL6', 'LR7', 'LL7', 'LR8', 'LL8'];
+  const ARCH_UPPER = ['UR8', 'UR7', 'UR6', 'UR5', 'UR4', 'UR3', 'UR2', 'UR1', 'UL1', 'UL2', 'UL3', 'UL4', 'UL5', 'UL6', 'UL7', 'UL8'];
+  const ARCH_LOWER = ['LR8', 'LR7', 'LR6', 'LR5', 'LR4', 'LR3', 'LR2', 'LR1', 'LL1', 'LL2', 'LL3', 'LL4', 'LL5', 'LL6', 'LL7', 'LL8'];
+  const TEETH_PRESETS = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32];
+  const STONE_TYPES = ['cz', 'moissanite', 'labgrown', 'natural'];
+  const SETTINGS = ['flush', 'twoprong', 'threeprong', 'fourprong', 'sixprong', 'bezelfull', 'bezelhalf', 'bar'];
+  const COVERAGES = ['standardpave', 'frenchpave', 'micropave', 'channel', 'invisible'];
+  const ENAMELS = ['none', 'single', 'multi', 'master'];
+  const ENGRAVINGS = ['none', 'small', 'medium', 'large'];
+  const ANODIZES = ['none', 'single', 'dual', 'multi'];
+
+  const stoneTypeName = (k) => ({ cz: 'CZ', moissanite: 'Moissanite', labgrown: 'Lab-Grown', natural: 'Natural' }[k] || k);
+  const settingName = (k) => ({ flush: 'Flush', twoprong: '2-Prong', threeprong: '3-Prong', fourprong: '4-Prong', sixprong: '6-Prong', bezelfull: 'Bezel full', bezelhalf: 'Bezel half', bar: 'Bar setting' }[k] || k);
+  const coverageName = (k) => ({ standardpave: 'Standard Pave', frenchpave: 'French Pave', micropave: 'Micro-Pave', channel: 'Channel', invisible: 'Invisible' }[k] || k);
+  const optName = (k) => t('opt_' + k) || k;
+  const levelName = (lv) => t('lvl_' + String(lv).replace('.', '_'));
+  const levelDesc = (lv) => t('lvl_' + String(lv).replace('.', '_') + '_d');
+  const matName = (m) => t('mat_' + m);
+  const platingName = (p) => (p === 'none' ? t('plating_none') : t('pl_' + p));
+
+  /* ───────────────────────── state ───────────────────────── */
+
+  function newStones() {
+    return { mode: 'none', accentCount: 4, accentType: 'cz', setting: 'flush', accentPrice: '', fullType: 'moissanite', coverage: 'standardpave', fullPrice: '' };
+  }
+  function newGroup(material) {
+    return { label: '', material: material || 'silver', karat: '18', teeth: 4, level: '1', stones: newStones(), plating: 'none', enamel: 'none', engraving: 'none', anodize: 'none' };
+  }
+  function newSet() {
+    return {
+      mode: 'uniform', material: 'silver', karat: '18',
+      toothIds: TOOTH_ORDER.slice(0, 6), level: '1',
+      stones: newStones(), plating: 'none', enamel: 'none', engraving: 'none', anodize: 'none',
+      groups: [newGroup()],
+    };
+  }
+
+  const state = {
+    sets: [newSet()],
+    timeline: 'standard',
+    mold: 'none',
+    clientName: '',
+    clientPhone: '',
+    notes: '',
+    goldRate: '',
+  };
+
+  /* ───────────────────────── pricing ───────────────────────── */
+
+  function studioGoldRate() {
+    const cfg = E() ? E().get() : {};
+    return Number(cfg.goldPrice) || 0;
+  }
+  function goldRateForLine() {
+    if (studioGoldRate() > 0) return 0; // engine uses the live studio rate
+    const fb = parseFloat(state.goldRate);
+    return Number.isFinite(fb) && fb > 0 ? fb : 0;
+  }
+  function usesGold() {
+    return state.sets.some((s) => {
+      if (s.mode === 'mixed') return (s.groups || []).some((g) => g.material === 'gold');
+      return s.material === 'gold';
+    });
+  }
+
+  function stonesSpec(st, material, level) {
+    if (!E() || !E().allowsStones(material)) return {};
+    if (String(level) === '0.5') return { full: { bars: true } };
+    if (st.mode === 'accent') {
+      const a = { count: clamp(parseInt(st.accentCount, 10) || 1, 1, 999), type: st.accentType || 'cz', setting: st.setting || 'flush' };
+      if (st.accentType === 'labgrown' || st.accentType === 'natural') {
+        const p = parseFloat(st.accentPrice);
+        if (Number.isFinite(p) && p > 0) { a.price = p; a.customPrice = p; }
+      }
+      return { accent: a };
+    }
+    if (st.mode === 'full') {
+      const f = { type: st.fullType || 'moissanite', coverage: st.coverage || 'standardpave' };
+      if (st.fullType === 'labgrown' || st.fullType === 'natural') {
+        const p = parseFloat(st.fullPrice);
+        if (Number.isFinite(p) && p > 0) { f.price = p; f.customPrice = p; }
+      }
+      return { full: f };
+    }
+    return {};
+  }
+
+  function groupSpec(g, setMaterial) {
+    const out = {
+      material: g.material || setMaterial || 'silver',
+      teeth: clamp(parseInt(g.teeth, 10) || 1, 1, 16),
+      level: String(g.level || '1'),
+      plating: g.plating || 'none',
+      enamel: g.enamel || 'none',
+      engraving: g.engraving || 'none',
+      anodize: (g.material === 'titanium') ? (g.anodize || 'none') : 'none',
+    };
+    if (out.material === 'gold') {
+      out.karat = g.karat || '18';
+      const gp = goldRateForLine();
+      if (gp > 0) out.goldPrice = gp;
+    }
+    Object.assign(out, stonesSpec(g.stones || newStones(), out.material, out.level));
+    if (g.label && String(g.label).trim()) out.label = String(g.label).trim().slice(0, 40);
+    return out;
+  }
+
+  function setLine(s) {
+    if (s.mode === 'mixed') {
+      const groups = (s.groups && s.groups.length ? s.groups : [newGroup()]).map((g) => groupSpec(g, s.material));
+      const line = {
+        material: groups[0] ? groups[0].material : s.material,
+        teeth: groups.reduce((a, g) => a + g.teeth, 0),
+        level: 'mixed', isMixed: true, groups,
+      };
+      const selectedTeeth = E() ? E().cleanToothIds(s.toothIds || []) : [];
+      if (selectedTeeth.length) line.toothIds = selectedTeeth;
+      const fg = groups.find((g) => g.material === 'gold');
+      if (fg) { line.karat = fg.karat; if (fg.goldPrice) line.goldPrice = fg.goldPrice; }
+      return line;
+    }
+    const tids = E() ? E().cleanToothIds(s.toothIds || []) : (s.toothIds || []);
+    const line = {
+      material: s.material,
+      teeth: clamp(tids.length || 6, 1, 32),
+      level: String(s.level || '1'),
+      plating: s.plating || 'none',
+      enamel: s.enamel || 'none',
+      engraving: s.engraving || 'none',
+      anodize: s.material === 'titanium' ? (s.anodize || 'none') : 'none',
+    };
+    if (s.material === 'gold') {
+      line.karat = s.karat || '18';
+      const gp = goldRateForLine();
+      if (gp > 0) line.goldPrice = gp;
+    }
+    if (tids.length) line.toothIds = tids;
+    Object.assign(line, stonesSpec(s.stones || newStones(), s.material, s.level));
+    return line;
+  }
+
+  function buildLines() { return state.sets.map(setLine); }
+
+  function calcOrder() {
+    if (!E()) return null;
+    return E().calculateOrder(buildLines(), { timeline: state.timeline, mold: state.mold, depositPct: 50 });
+  }
+
+  function currentCode() {
+    if (!E()) return '';
+    return E().encodeCode({
+      lines: buildLines(), timeline: state.timeline, mold: state.mold, depositPct: 50,
+      clientName: state.clientName, clientPhone: state.clientPhone, notes: state.notes,
+    }) || '';
+  }
+
+  function perToothBase(material, karat) {
+    if (!E()) return 0;
+    const line = { material, teeth: 1, level: '1' };
+    if (material === 'gold') {
+      line.karat = karat || '18';
+      const gp = goldRateForLine();
+      if (gp > 0) line.goldPrice = gp;
+    }
+    try { return E().basePerTooth(line); } catch (e) { return 0; }
+  }
+
+  function headerStep(n, title, sub) {
+    return '<div class="step-head"><div class="step-num">' + n + '</div><div><h2>' + esc(title) + '</h2><p>' + esc(sub) + '</p></div></div>';
+  }
+  function pill(key, active, label, dataAttrs) {
+    return '<button type="button" class="pill' + (active ? ' selected' : '') + '" ' + (dataAttrs || '') + '>' + esc(label) + '</button>';
+  }
+  function optionHtml(key, val, current, prefix, label) {
+    return '<option value="' + esc(val) + '"' + (String(val) === String(current) ? ' selected' : '') + '>' + esc(label || key) + '</option>';
+  }
+  function selectHtml(label, key, value, options, attrs) {
+    return '<div class="fld"><label>' + esc(label) + '</label><select ' + (attrs || '') + '>' + options.map((o) => optionHtml(o[0], o[0], value, '', o[1])).join('') + '</select></div>';
+  }
+  function fieldHtml(label, type, value, attrs, placeholder, min, max) {
+    return '<div class="fld"><label>' + esc(label) + '</label><input type="' + type + '" value="' + esc(value == null ? '' : value) + '" ' + (attrs || '') + (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + (min != null ? ' min="' + min + '"' : '') + (max != null ? ' max="' + max + '"' : '') + '></div>';
+  }
+  function keyOptions(keys, current, nameFn) {
+    return keys.map((k) => [k, nameFn ? nameFn(k) : k]);
+  }
+  function finishSelect(label, type, value, options, setIdx, groupIdx) {
+    const scope = groupIdx == null ? 'set' : 'group';
+    return selectHtml(label, '', value, options,
+      'data-scope="' + scope + '" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + ' data-field="' + type + '"');
+  }
+  function renderFinishFields(obj, setIdx, groupIdx) {
+    const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
+    const platingCards = PLATINGS.map((p) => {
+      const selected = obj.plating === p.id;
+      return '<div class="opt-card' + (selected ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="' + p.id + '"><span class="opt-check">✓</span><img src="' + p.img + '" alt="' + esc(platingName(p.id)) + '" loading="lazy"><div class="opt-name">' + esc(platingName(p.id)) + '</div></div>';
+    }).join('');
+    let html = '<div class="finish-block"><div class="fb-t">' + esc(t('plating_none')) + ' / Plating</div><div class="finish-grid"><div class="opt-card' + (obj.plating === 'none' ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="none"><span class="opt-check">✓</span><div style="height:104px;display:grid;place-items:center;font-size:26px;color:#ccc"><i class="fa-solid fa-ban"></i></div><div class="opt-name">' + esc(t('plating_none')) + '</div></div>' + platingCards + '</div></div>';
+    html += '<div class="finish-block"><div class="fb-t">' + esc(t('enamel')) + '</div><div class="pills">' + ENAMELS.map((k) => pill(k, obj.enamel === k, optName(k), 'data-act="finish" ' + at + ' data-field="enamel" data-value="' + k + '"')).join('') + '</div></div>';
+    html += '<div class="finish-block"><div class="fb-t">' + esc(t('engraving')) + '</div><div class="pills">' + ENGRAVINGS.map((k) => pill(k, obj.engraving === k, optName(k), 'data-act="finish" ' + at + ' data-field="engraving" data-value="' + k + '"')).join('') + '</div></div>';
+    if ((groupIdx == null ? state.sets[setIdx].material : obj.material) === 'titanium') {
+      html += '<div class="finish-block"><div class="fb-t">' + esc(t('anodize')) + '</div><div class="pills">' + ANODIZES.map((k) => pill(k, obj.anodize === k, optName(k), 'data-act="finish" ' + at + ' data-field="anodize" data-value="' + k + '"')).join('') + '</div></div>';
+    }
+    return html;
+  }
+  function renderStones(st, material, level, setIdx, groupIdx) {
+    const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
+    if (!E() || !E().allowsStones(material)) {
+      return '<div class="hint-box"><i class="fa-regular fa-gem"></i><span>' + esc(t('stones_hint')) + '</span><button type="button" data-act="switch-silver" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + '>' + esc(t('switch_silver')) + '</button></div>';
+    }
+    if (String(level) === '0.5') return '<div class="hint-box"><i class="fa-solid fa-bars"></i><span>' + esc(t('bars_note')) + '</span></div>';
+    let html = '<div class="pills">' + [['none','stones_none'],['accent','stones_accent'],['full','stones_full']].map(([v,k]) => pill(k, st.mode === v, t(k), 'data-act="stone-mode" ' + at + ' data-value="' + v + '"')).join('') + '</div>';
+    if (st.mode === 'accent') {
+      html += '<div class="stones-detail"><div class="g-grid">' + fieldHtml(t('accent_count'), 'number', st.accentCount,
+        'data-scope="' + (groupIdx == null ? 'set' : 'group') + '" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + ' data-field="accentCount"', '', 1, 999) +
+        selectHtml(t('accent_type'), '', st.accentType, keyOptions(STONE_TYPES, st.accentType, stoneTypeName), at + ' data-field="accentType"') +
+        selectHtml(t('setting'), '', st.setting, keyOptions(SETTINGS, st.setting, settingName), at + ' data-field="setting"') +
+        ((st.accentType === 'natural' || st.accentType === 'labgrown') ? fieldHtml(t('custom_price'), 'number', st.accentPrice, at + ' data-field="accentPrice"', '', 0, null) : '') + '</div></div>';
+    } else if (st.mode === 'full') {
+      html += '<div class="stones-detail"><div class="g-grid">' +
+        selectHtml(t('full_type'), '', st.fullType, keyOptions(STONE_TYPES, st.fullType, stoneTypeName), at + ' data-field="fullType"') +
+        selectHtml(t('coverage'), '', st.coverage, keyOptions(COVERAGES, st.coverage, coverageName), at + ' data-field="coverage"') +
+        ((st.fullType === 'natural' || st.fullType === 'labgrown') ? fieldHtml(t('custom_price_tooth'), 'number', st.fullPrice, at + ' data-field="fullPrice"', '', 0, null) : '') + '</div></div>';
+    }
+    return html;
+  }
+
+  function renderMaterial(obj, setIdx, groupIdx) {
+    const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
+    let html = '<div class="opt-grid">';
+    MATERIALS.forEach((m) => {
+      const name = matName(m.id);
+      const desc = t('mat_' + m.id + '_d');
+      const per = perToothBase(m.id, obj.karat || '18');
+      html += '<div class="opt-card' + (obj.material === m.id ? ' selected' : '') + '" data-act="material" ' + at + ' data-value="' + m.id + '"><span class="opt-check">✓</span><img src="' + m.img + '" alt="' + esc(name) + '" loading="lazy"><div class="opt-name">' + esc(name) + '</div><div class="opt-desc">' + esc(desc) + '</div><div class="opt-price">' + esc(fmt(per)) + ' EGP ' + esc(t('per_tooth')) + '</div></div>';
+    });
+    html += '</div>';
+    if (obj.material === 'gold') html += '<div class="karat-row"><span class="lbl">' + esc(t('karat')) + '</span>' + KARATS.map((k) => pill(k, obj.karat === k, k + 'K', 'data-act="karat" ' + at + ' data-value="' + k + '"')).join('') + '</div>';
+    return html;
+  }
+
+  function renderTeeth(s, i) {
+    const at = 'data-index="' + i + '"';
+    let html = '<div class="teeth-presets"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mut);align-self:center;margin-inline-end:4px">' + esc(t('preset')) + '</span>';
+    TEETH_PRESETS.forEach((n) => {
+      const selected = s.toothIds.length === n;
+      html += pill('preset' + n, selected, String(n), 'data-act="preset" ' + at + ' data-value="' + n + '"');
+    });
+    html += '</div><div class="counter-row"><button type="button" class="counter-btn" data-act="teeth-step" ' + at + ' data-value="-1" aria-label="Remove tooth">−</button><div class="counter-num">' + (s.toothIds.length || 0) + '</div><button type="button" class="counter-btn" data-act="teeth-step" ' + at + ' data-value="1" aria-label="Add tooth">+</button><span class="counter-lbl">' + esc(s.toothIds.length === 1 ? t('tooth_n') : t('teeth_n')) + '</span></div>';
+    const toothButton = (id) => '<button type="button" class="tooth' + (s.toothIds.includes(id) ? ' sel' : '') + '" data-act="tooth" ' + at + ' data-value="' + id + '" aria-label="' + id + '">' + id.slice(2) + '</button>';
+    html += '<div class="smile-map"><div class="arch-lbl">' + esc(t('upper')) + '</div><div class="arch arch-upper">' + ARCH_UPPER.map((id, x) => (x === 8 ? '<span class="mid-gap"></span>' : '') + toothButton(id)).join('') + '</div><div class="arch-lbl" style="margin-top:16px">' + esc(t('lower')) + '</div><div class="arch arch-lower">' + ARCH_LOWER.map((id, x) => (x === 8 ? '<span class="mid-gap"></span>' : '') + toothButton(id)).join('') + '</div></div>';
+    return html;
+  }
+
+  function renderGroupEditor(g, i, gi) {
+    const at = 'data-index="' + i + '" data-group="' + gi + '"';
+    const attrs = 'data-scope="group" ' + at;
+    let html = '<div class="group-card"><div class="group-head"><div class="group-title">' + esc(t('group_n')) + ' ' + (gi + 1) + '</div><input class="group-label-inp" type="text" maxlength="40" value="' + esc(g.label || '') + '" placeholder="' + esc(t('group_label_ph')) + '" data-scope="group" ' + at + ' data-field="label">' + (gi > 0 ? '<button type="button" class="group-remove" data-act="remove-group" ' + at + ' aria-label="Remove group"><i class="fa-solid fa-xmark"></i></button>' : '') + '</div>';
+    html += '<div class="g-grid">' + fieldHtml(t('group_teeth'), 'number', g.teeth, attrs + ' data-field="teeth"', '', 1, 16) + '</div>';
+    html += '<div style="margin-top:16px">' + renderMaterial(g, i, gi) + '</div>';
+    html += '<div class="finish-block"><div class="fb-t">' + esc(t('group_level')) + '</div><div class="opt-grid">' + LEVELS.map((lv) => '<div class="opt-card' + (g.level === lv ? ' selected' : '') + '" data-act="group-level" ' + at + ' data-value="' + lv + '"><span class="opt-check">✓</span><img src="' + LEVEL_IMG(lv) + '" alt="' + esc(levelName(lv)) + '" loading="lazy"><div class="opt-name">' + esc(levelName(lv)) + '</div><div class="opt-desc">' + esc(levelDesc(lv)) + '</div></div>').join('') + '</div></div>';
+    html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(g.stones, g.material, g.level, i, gi) + '</div>';
+    html += renderFinishFields(g, i, gi) + '</div>';
+    return html;
+  }
+
+  function renderSet(s, i) {
+    const isLast = state.sets.length === 1;
+    let html = '<section class="set-block"><div class="set-head"><div class="set-title">' + esc(t('set_n')) + ' ' + (i + 1) + '<span>' + (s.mode === 'mixed' ? esc(t('mode_mixed')) : esc(matName(s.material))) + '</span></div>' + (!isLast ? '<button type="button" class="set-remove" data-act="remove-set" data-index="' + i + '"><i class="fa-solid fa-trash-can"></i> ' + esc(t('remove')) + '</button>' : '') + '</div>';
+    html += '<section class="step">' + headerStep(1, t('step1_t'), t('step1_s')) + renderMaterial(s, i, null) + '</section>';
+    html += '<section class="step">' + headerStep(2, t('step2_t'), t('step2_s'));
+    html += '<div class="mode-toggle">' +
+      '<div class="mode-card' + (s.mode === 'uniform' ? ' selected' : '') + '" data-act="mode" data-index="' + i + '" data-value="uniform"><div class="mc-t">' + esc(t('mode_uniform')) + '</div><div class="mc-d">' + esc(t('mode_uniform_d')) + '</div></div>' +
+      '<div class="mode-card' + (s.mode === 'mixed' ? ' selected' : '') + '" data-act="mode" data-index="' + i + '" data-value="mixed"><div class="mc-t">' + esc(t('mode_mixed')) + '</div><div class="mc-d">' + esc(t('mode_mixed_d')) + '</div></div></div>';
+    html += renderTeeth(s, i);
+    if (s.mode === 'uniform') {
+      html += '<div class="finish-block"><div class="fb-t">' + esc(t('step3_t')) + '</div><div class="opt-grid">' + LEVELS.map((lv) => '<div class="opt-card' + (s.level === lv ? ' selected' : '') + '" data-act="level" data-index="' + i + '" data-value="' + lv + '"><span class="opt-check">✓</span><img src="' + LEVEL_IMG(lv) + '" alt="' + esc(levelName(lv)) + '" loading="lazy"><div class="opt-name">' + esc(levelName(lv)) + '</div><div class="opt-desc">' + esc(levelDesc(lv)) + '</div></div>').join('') + '</div></div>';
+      html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(s.stones, s.material, s.level, i, null) + '</div>';
+      html += renderFinishFields(s, i, null);
+    } else {
+      html += '<p style="font-size:12px;color:var(--mut);margin:0 0 6px;line-height:1.6">' + esc(t('mixed_note')) + '</p>';
+      html += (s.groups || []).map((g, gi) => renderGroupEditor(g, i, gi)).join('');
+      html += '<button type="button" class="g-add" data-act="add-group" data-index="' + i + '"><i class="fa-solid fa-plus"></i> ' + esc(t('add_group')) + '</button>';
+    }
+    html += '</section></section>';
+    return html;
+  }
+
+  function renderOrderStep() {
+    let html = '<section class="step">' + headerStep(6, t('step6_t'), t('step6_s')) + '<div class="order-grid">';
+    html += '<div class="fld"><label>' + esc(t('timeline')) + '</label><select data-order="timeline">' +
+      optionHtml('', 'standard', state.timeline, '', t('tl_standard') + ' — ' + t('tl_standard_d')) +
+      optionHtml('', 'rush', state.timeline, '', t('tl_rush') + ' — ' + t('tl_rush_d')) +
+      optionHtml('', 'emergency', state.timeline, '', t('tl_emergency') + ' — ' + t('tl_emergency_d')) + '</select></div>';
+    html += '<div class="fld"><label>' + esc(t('mold')) + '</label><select data-order="mold">' +
+      optionHtml('', 'none', state.mold, '', t('mold_none')) +
+      optionHtml('', 'normalperarch', state.mold, '', t('mold_normal')) +
+      optionHtml('', 'digitalfullmouth', state.mold, '', t('mold_digital')) + '</select></div>';
+    html += fieldHtml(t('client_name'), 'text', state.clientName, 'data-order="clientName"', t('client_name_ph'));
+    html += fieldHtml(t('client_phone'), 'tel', state.clientPhone, 'data-order="clientPhone"', t('client_phone_ph'));
+    if (usesGold() && studioGoldRate() <= 0) {
+      html += fieldHtml(t('gold_rate_lbl'), 'number', state.goldRate, 'class="full" data-order="goldRate"', '', 0, null);
+      html += '<p class="full" style="font-size:11px;color:var(--mut);line-height:1.6;margin-top:-8px">' + esc(t('gold_rate_note')) + '</p>';
+    }
+    html += '<div class="fld full"><label>' + esc(t('client_notes')) + '</label><textarea data-order="notes" placeholder="' + esc(t('client_notes_ph')) + '">' + esc(state.notes) + '</textarea></div></div></section>';
+    return html;
+  }
+
+  function groupPriceRows(line, setIndex) {
+    if (!line.isMixed || !Array.isArray(line.groups)) return '';
+    return line.groups.map((g, gi) => '<div class="sum-group"><span>' + esc(g.label || (t('group_n') + ' ' + (gi + 1)) + ' · ' + g.teeth + ' ' + t('teeth_n')) + '</span><span class="sl-price">' + esc(fmt(g.subtotal || 0)) + ' EGP</span></div>').join('');
+  }
+
+  function renderSummary() {
+    const order = calcOrder();
+    const code = currentCode();
+    if (!order) return;
+    let html = '<div class="sum-title">' + esc(t('sum_title')) + '</div><div class="sum-sub">' + esc(t('sum_sub')) + '</div><div class="sum-lines">';
+    order.lines.forEach((line, i) => {
+      const label = E().lineLabel(line) || (t('set_n') + ' ' + (i + 1));
+      html += '<div class="sum-line"><span class="sl-name">' + esc((t('set_n') + ' ' + (i + 1) + ' · ' + label)) + '</span><span class="sl-price">' + esc(fmt(line.subtotal || 0)) + ' EGP</span></div>' + groupPriceRows(line, i);
+    });
+    if (order.timelineAmount) html += '<div class="sum-line"><span class="sl-name">' + esc(t('timeline')) + ' (' + order.timelinePct + '%)</span><span class="sl-price">' + esc(fmt(order.timelineAmount)) + ' EGP</span></div>';
+    if (order.moldCost) html += '<div class="sum-line"><span class="sl-name">' + esc(t('mold')) + '</span><span class="sl-price">' + esc(fmt(order.moldCost)) + ' EGP</span></div>';
+    html += '</div><div class="sum-total-row"><span class="sum-total-lbl">' + esc(t('sum_total')) + '</span><span class="sum-total">' + esc(fmt(order.total)) + '<span class="curr">EGP</span></span></div>';
+    html += '<div class="sum-dep"><span>' + esc(t('sum_deposit')) + '</span><b>' + esc(fmt(order.deposit)) + ' EGP</b></div><div class="sum-dep"><span>' + esc(t('sum_balance')) + '</span><b>' + esc(fmt(order.balance)) + ' EGP</b></div>';
+    html += '<div class="sum-code"><div class="sc-lbl">' + esc(t('sum_code')) + '</div><div class="sc-val" id="summary-code">' + esc(code || '—') + '</div></div><div class="sum-note">' + esc(t('sum_code_hint')) + '</div>';
+    html += '<div class="sum-btns"><button class="btn-gold" type="button" data-act="pdf"><i class="fa-solid fa-file-pdf"></i> ' + esc(t('btn_pdf')) + '</button><div class="btn-row"><button class="btn-line" type="button" data-act="copy-code"><i class="fa-solid fa-copy"></i> ' + esc(t('btn_copy_code')) + '</button><button class="btn-line" type="button" data-act="share"><i class="fa-solid fa-link"></i> ' + esc(t('btn_share')) + '</button></div><div class="btn-row"><a class="btn-line" href="/booking"><i class="fa-regular fa-calendar-check"></i> ' + esc(t('btn_book')) + '</a><a class="btn-line" id="contact-link" href="/contact?code=' + encodeURIComponent(code) + '"><i class="fa-regular fa-paper-plane"></i> ' + esc(t('btn_contact')) + '</a></div></div><div class="sum-note">' + esc(t('sum_note')) + '</div>';
+    $('#summary').innerHTML = html;
+    $('#mb-total-val').textContent = fmt(order.total) + ' EGP';
+  }
+
+  function render() {
+    $('#sets-container').innerHTML = state.sets.map(renderSet).join('') + '<button type="button" class="add-set-btn" data-act="add-set"><i class="fa-solid fa-plus"></i> ' + esc(t('add_set')) + '</button>';
+    $$('.opt-card[data-act], .mode-card[data-act]', $('#sets-container')).forEach((el) => {
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-pressed', el.classList.contains('selected') ? 'true' : 'false');
+    });
+    $('#order-step').innerHTML = renderOrderStep();
+    renderSummary();
+    applyI18n();
+  }
+
+  function updateSummaryOnly() {
+    renderSummary();
+  }
+
+  function showToast(msg) {
+    const toast = $('#toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  function stateObject(obj, scope, idx, gi) {
+    if (scope === 'group') return state.sets[idx].groups[gi];
+    return state.sets[idx];
+  }
+
+  function setValueFromElement(el) {
+    const scope = el.dataset.scope || 'set';
+    const idx = Number(el.dataset.index);
+    const gi = el.dataset.group == null ? null : Number(el.dataset.group);
+    const field = el.dataset.field;
+    const obj = stateObject(null, scope, idx, gi);
+    if (!obj || !field) return;
+    if (field === 'teeth' || field === 'accentCount') obj[field] = clamp(parseInt(el.value, 10) || 1, 1, field === 'teeth' ? 16 : 999);
+    else if (field === 'accentPrice' || field === 'fullPrice') obj[field] = el.value;
+    else obj[field] = el.value;
+    if (scope === 'group' && field === 'material') obj.material = el.value;
+    render();
+  }
+
+  function toothPreset(n) {
+    const slice = TOOTH_ORDER.slice(0, Number(n));
+    return slice;
+  }
+
+  function useDecoded(decoded) {
+    if (!decoded || !Array.isArray(decoded.lines) || !decoded.lines.length) return false;
+    const nextSets = decoded.lines.map((line) => {
+      const groups = Array.isArray(line.groups) ? line.groups : null;
+      if (groups && groups.length) {
+        const ng = groups.map((g) => {
+          const mat = g.material || line.material || 'silver';
+          return Object.assign(newGroup(), g, {
+            material: mat, karat: String(g.karat || line.karat || '18'),
+            teeth: clamp(parseInt(g.teeth, 10) || 1, 1, 16), level: String(g.level || '1'),
+            stones: Object.assign(newStones(), g.accent ? { mode:'accent', accentCount:g.accent.count, accentType:g.accent.type, setting:g.accent.setting, accentPrice:g.accent.customPrice || g.accent.price || '' } : {}, g.full ? { mode:'full', fullType:g.full.type || 'moissanite', coverage:g.full.coverage || 'standardpave', fullPrice:g.full.customPrice || g.full.price || '' } : {}),
+            plating: g.plating || line.plating || 'none', enamel:g.enamel || line.enamel || 'none', engraving:g.engraving || line.engraving || 'none', anodize:g.anodize || 'none',
+          });
+        });
+        const mixedTeeth = E().cleanToothIds(line.toothIds || []);
+        if (!mixedTeeth.length) mixedTeeth.push(...toothPreset(clamp(Number(line.teeth) || 6, 1, 32)));
+        return Object.assign(newSet(), { mode:'mixed', material:line.material || groups[0].material, groups:ng, toothIds:mixedTeeth });
+      }
+      const mat = line.material || 'silver';
+      const st = newStones();
+      if (line.accent) Object.assign(st, { mode:'accent', accentCount:line.accent.count || 4, accentType:line.accent.type || 'cz', setting:line.accent.setting || 'flush', accentPrice:line.accent.customPrice || line.accent.price || '' });
+      else if (line.full) Object.assign(st, { mode:'full', fullType:line.full.type || 'moissanite', coverage:line.full.coverage || 'standardpave', fullPrice:line.full.customPrice || line.full.price || '' });
+      let toothIds = E().cleanToothIds(line.toothIds || []);
+      if (!toothIds.length) toothIds = toothPreset(clamp(Number(line.teeth) || 6, 1, 32));
+      return Object.assign(newSet(), {
+        mode:'uniform', material:mat, karat:String(line.karat || '18'), toothIds, level:String(line.level || '1'), stones:st,
+        plating:line.plating || 'none', enamel:line.enamel || 'none', engraving:line.engraving || 'none', anodize:line.anodize || 'none',
+      });
+    });
+    state.sets = nextSets;
+    state.timeline = decoded.timeline || 'standard';
+    state.mold = decoded.mold || 'none';
+    state.clientName = decoded.clientName || '';
+    state.clientPhone = decoded.clientPhone || '';
+    state.notes = decoded.notes || '';
+    render();
+    return true;
+  }
+
+  function loadCode(raw) {
+    if (!E()) return false;
+    const code = E().extractCode(raw || '');
+    const decoded = code ? E().decodeCode(code) : null;
+    if (!useDecoded(decoded)) { showToast(t('code_invalid')); return false; }
+    $('#code-input').value = code;
+    showToast(t('code_loaded'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return true;
+  }
+
+  function downloadPdf() {
+    const order = calcOrder();
+    if (!order || !E()) return;
+    E().downloadQuotePdf(order, {
+      code: currentCode(), clientName: state.clientName, clientPhone: state.clientPhone,
+      notes: state.notes, title: 'EGYGRILLZ Bespoke Estimate',
+    });
+    showToast(t('pdf_done'));
+  }
+
+  function setAction(target) {
+    const act = target.dataset.act;
+    const idx = Number(target.dataset.index || 0);
+    const gi = target.dataset.group == null ? null : Number(target.dataset.group);
+    const s = state.sets[idx];
+    if (act === 'material') {
+      const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
+      obj.material = target.dataset.value;
+      if (obj.material !== 'gold') obj.karat = '18';
+      if (obj.material === 'chrome' || obj.material === 'titanium') obj.stones = newStones();
+    } else if (act === 'karat') {
+      stateObject(null, target.dataset.scope || 'set', idx, gi).karat = target.dataset.value;
+    } else if (act === 'mode') {
+      const previousMode = s.mode;
+      s.mode = target.dataset.value;
+      if (s.mode === 'mixed' && previousMode === 'uniform') {
+        const g = Object.assign(newGroup(s.material), {
+          karat: s.karat, teeth: clamp((s.toothIds || []).length || 6, 1, 16), level: s.level,
+          stones: JSON.parse(JSON.stringify(s.stones)), plating: s.plating, enamel: s.enamel,
+          engraving: s.engraving, anodize: s.anodize,
+        });
+        if (!s.groups || s.groups.length < 2) s.groups = [g];
+      }
+      if (s.mode === 'mixed' && (!s.groups || !s.groups.length)) s.groups = [newGroup(s.material)];
+    } else if (act === 'preset') {
+      s.toothIds = toothPreset(Number(target.dataset.value));
+    } else if (act === 'teeth-step') {
+      const set = new Set(s.toothIds);
+      const value = Number(target.dataset.value);
+      if (value > 0) {
+        const next = TOOTH_ORDER.find((id) => !set.has(id));
+        if (next) set.add(next);
+      } else if (s.toothIds.length) set.delete(s.toothIds[s.toothIds.length - 1]);
+      s.toothIds = TOOTH_ORDER.filter((id) => set.has(id));
+    } else if (act === 'tooth') {
+      s.toothIds = s.toothIds.includes(target.dataset.value) ? s.toothIds.filter((id) => id !== target.dataset.value) : s.toothIds.concat(target.dataset.value);
+      s.toothIds = TOOTH_ORDER.filter((id) => s.toothIds.includes(id));
+    } else if (act === 'level') {
+      s.level = target.dataset.value;
+      if (s.level === '0.5') s.stones.mode = 'none';
+    } else if (act === 'group-level') {
+      const g = s.groups[gi]; g.level = target.dataset.value;
+      if (g.level === '0.5') g.stones.mode = 'none';
+    } else if (act === 'stone-mode') {
+      const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
+      obj.stones.mode = target.dataset.value;
+    } else if (act === 'finish') {
+      stateObject(null, target.dataset.scope || 'set', idx, gi)[target.dataset.field] = target.dataset.value;
+    } else if (act === 'switch-silver') {
+      if (gi == null) s.material = 'silver';
+      else s.groups[gi].material = 'silver';
+    } else if (act === 'add-group') {
+      s.groups.push(newGroup(s.material));
+    } else if (act === 'remove-group') {
+      if (s.groups.length > 1) s.groups.splice(gi, 1);
+    } else if (act === 'add-set') {
+      state.sets.push(newSet());
+    } else if (act === 'remove-set') {
+      if (state.sets.length > 1) { state.sets.splice(idx, 1); showToast(t('set_removed')); }
+    } else if (act === 'pdf') {
+      downloadPdf(); return;
+    } else if (act === 'copy-code') {
+      copyText(currentCode()).then(() => showToast(t('copied'))); return;
+    } else if (act === 'share') {
+      const url = new URL(location.href); url.searchParams.set('c', currentCode());
+      copyText(url.toString()).then(() => showToast(t('copied'))); return;
+    }
+    render();
+  }
+
+  async function copyText(value) {
+    try { await navigator.clipboard.writeText(value); }
+    catch (e) {
+      const input = document.createElement('textarea'); input.value = value; input.style.position='fixed'; input.style.opacity='0'; document.body.appendChild(input); input.select(); document.execCommand('copy'); input.remove();
+    }
+  }
+
+  /* ───────────────────────── boot & events ───────────────────────── */
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const card = event.target.closest('#sets-container .opt-card[data-act], #sets-container .mode-card[data-act]');
+    if (card) { event.preventDefault(); card.click(); }
+  });
+  document.addEventListener('click', (event) => {
+    const langBtn = event.target.closest('#lang-en,#lang-ar');
+    if (langBtn) { lang = langBtn.id === 'lang-ar' ? 'ar' : 'en'; render(); return; }
+    if (event.target.closest('.menu-toggle')) { $('#main-nav').classList.toggle('active'); return; }
+    const closeNav = event.target.closest('.main-nav a');
+    if (closeNav) $('#main-nav').classList.remove('active');
+    const action = event.target.closest('[data-act]');
+    if (action) { event.preventDefault(); setAction(action); }
+  });
+  document.addEventListener('change', (event) => {
+    const el = event.target;
+    if (el.matches('[data-order]')) {
+      const key = el.dataset.order;
+      if (key === 'goldRate') state.goldRate = el.value;
+      else state[key] = el.value;
+      render(); return;
+    }
+    if (el.matches('[data-field]')) setValueFromElement(el);
+  });
+  document.addEventListener('input', (event) => {
+    const el = event.target;
+    if (el.matches('[data-order]')) {
+      const key = el.dataset.order;
+      if (key === 'goldRate') state.goldRate = el.value;
+      else state[key] = el.value;
+      updateSummaryOnly(); return;
+    }
+    if (el.matches('[data-field]')) {
+      const scope = el.dataset.scope || 'set';
+      const obj = stateObject(null, scope, Number(el.dataset.index), el.dataset.group == null ? null : Number(el.dataset.group));
+      if (obj) obj[el.dataset.field] = el.value;
+      updateSummaryOnly();
+    }
+  });
+  $('#code-load').addEventListener('click', () => loadCode($('#code-input').value));
+  $('#code-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); loadCode($('#code-input').value); } });
+  $('#mb-pdf').addEventListener('click', downloadPdf);
+
+  if (E() && typeof E().onChange === 'function') E().onChange(() => render());
+  render();
+  if (E() && typeof E().load === 'function') E().load(null).then(() => render()).catch(() => {});
+  const params = new URLSearchParams(location.search);
+  const incoming = params.get('c') || params.get('code');
+  if (incoming) loadCode(incoming);
+})();
+
+</script>
+</body>
+</html>

@@ -9,8 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="/assets/calc-engine.js?v=2"></script>
-    <script src="/assets/staff-calculator.js"></script>
+    <script src="/assets/calc-engine.js?v=4"></script>
+    <script src="/assets/staff-calculator.js?v=4"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         // Applied before first paint so the theme never flashes.
@@ -655,16 +655,24 @@ List every rule explicitly with real numbers — the AI can only calculate corre
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        try { db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
 
-         
-        (async function loadCalcSettings(){
+        let _calcSettingsLoaded = false;
+        async function loadCalcSettings(){
+            if (_calcSettingsLoaded) return;
+            _calcSettingsLoaded = true;
             try{
-                const r = await window.CalcEngine.load(db);
-                if (window.SiteConfig) await window.SiteConfig.load(db);
-                console.log('[calc] settings:', r.source);
+                const [r] = await Promise.all([
+                    window.CalcEngine.load(db),
+                    window.SiteConfig ? window.SiteConfig.load(db) : Promise.resolve()
+                ]);
+                if (r && r.source) console.log('[calc] settings:', r.source);
                 if (staffCalc) staffCalc.refresh();
-            }catch(e){ console.warn('[calc] settings load failed', e); }
-        })();
+            }catch(e){
+                _calcSettingsLoaded = false;
+                console.warn('[calc] settings load failed', e);
+            }
+        }
         const auth = firebase.auth();
 
         // The Cloudflare Worker URL that proxies Gemini/Groq. The Gemini and
@@ -695,29 +703,40 @@ List every rule explicitly with real numbers — the AI can only calculate corre
         })();
 
 
-/* ---------- repo images: materials/ levels/ plating/ (auto-matched by file name) ---------- */
+/* ---------- repo images: local /materials, /levels, /plating manifest (0 GitHub API calls) ---------- */
 const IMG = (() => {
-    const BASES = ["/", "https://egygrillz.com/", "https://raw.githubusercontent.com/egygrillz/egygriilz/main/"];
+    const BASES = ["/"];
+    const LOCAL_FILES = {
+        materials: {
+            chrome: "CHROME.png",
+            titanium: "TITANUM.png",
+            silver: "SILVER.png",
+            gold: "GOLD.png"
+        },
+        levels: {
+            "0.5": "LEVEL 0.5.png",
+            "1": "LEVEL 1.png",
+            "2": "LEVEL 2.png",
+            "3": "LEVEL 3.png",
+            "4": "LEVEL 4.png",
+            "5": "LEVEL 5.png",
+            "6": "LEVEL 6.png"
+        },
+        plating: {
+            yellowgold: "YELLOW GOLD PLATING.png",
+            blackgold: "BLACK GOLD PLATING.png",
+            whitegold: "WHITE GOLD PLATING.png",
+            rosegold: "ROSE GOLD PLATING.png",
+            silverplating: "SILVER PLATING.png"
+        }
+    };
     const A = {
         materials: { chrome: ["chrome", "cobalt"], titanium: ["titanium", "titanum"], silver: ["silver", "sterling", "925"], gold: ["gold"] },
         levels: { "0.5": ["0.5", "05", "bars", "bar"], "1": ["1", "solid"], "2": ["2", "open", "openface"], "3": ["3", "mid", "middetail"], "4": ["4", "complex"], "5": ["5", "scorpion", "heavy"], "6": ["6", "ultimate"] },
         plating: { none: ["none", "no", "without"], yellowgold: ["yellow", "yellowgold"], blackgold: ["black", "blackgold"], whitegold: ["white", "whitegold"], rosegold: ["rose", "rosegold", "pink"], silverplating: ["silver", "silverplating"] }
     };
-    const KEY = "egygz_img_index_v2";
-    let files = {};
-    const ready = (async () => {
-        try { const c = JSON.parse(localStorage.getItem(KEY) || "null"); if (c && Date.now() - c.t < 6 * 3600e3) { files = c.f; return; } } catch (e) {}
-        try {
-            const out = {};
-            await Promise.all(Object.keys(A).map(async f => {
-                const r = await fetch("https://api.github.com/repos/egygrillz/egygriilz/contents/" + f + "?ref=main");
-                if (r.ok) out[f] = (await r.json()).filter(x => x.type === "file" && /\.(jpe?g|png|webp|avif|gif)$/i.test(x.name)).map(x => x.name);
-            }));
-            if (Object.keys(out).length) { files = out; try { localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), f: out })); } catch (e) {} }
-        } catch (e) {}
-    })();
-    const test = (b, a) => /^[0-9.]+$/.test(a) ? new RegExp("(^|[^0-9.])" + a.replace(/\./g, "\\.") + "($|[^0-9.])").test(b) : b.replace(/[^a-z]/g, "").includes(a);
-    const find = (f, k) => (files[f] || []).find(n => { const b = n.toLowerCase().replace(/\.[a-z0-9]+$/, ""); return (A[f][k] || [k]).some(a => test(b, a)); });
+    const ready = Promise.resolve();
+    const find = (f, k) => (LOCAL_FILES[f] && LOCAL_FILES[f][k]) || null;
     function hydrate(root) {
         (root || document).querySelectorAll("img[data-rf]").forEach(im => {
             if (im.dataset.on) return; im.dataset.on = 1;
@@ -886,14 +905,19 @@ If the client uses insults, threats, harassment, extreme profanity, or a clearly
         // Real email/password login — only accounts you create manually in
         // Firebase Console (Authentication -> Users -> Add user) can sign in.
         // There is no public sign-up, so a random visitor with the URL cannot get in.
+        let _staffBooted = false;
         auth.onAuthStateChanged(user => {
             authReady = !!user;
             const gate = document.getElementById("loginGate");
             if (authReady) {
                 gate.classList.add("hidden");
-                loadAllClients();
-                loadSettings();
+                if (!_staffBooted) {
+                    _staffBooted = true;
+                    Promise.allSettled([loadCalcSettings(), loadAllClients(), loadSettings()]);
+                }
             } else {
+                _staffBooted = false;
+                _calcSettingsLoaded = false;
                 gate.classList.remove("hidden");
             }
         });
@@ -1092,18 +1116,31 @@ ${currentSettings.materials || ""}
             return lines.reverse().join("\n");
         }
 
-        // ==================== AI CALL (via Worker) ====================
+        // ==================== AI CALL (via Worker, 35s timeout) ====================
         async function getAIResponse(userMessage, systemPrompt, forceProvider) {
             setStatus("generating", "Generating...");
-            const res = await fetch(WORKER_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    systemPrompt: systemPrompt || "",
-                    userMessage,
-                    provider: forceProvider || undefined
-                })
-            });
+            const ctrl = new AbortController();
+            const tmr = setTimeout(() => ctrl.abort(), 35000);
+            let res;
+            try {
+                res = await fetch(WORKER_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        systemPrompt: systemPrompt || "",
+                        userMessage,
+                        provider: forceProvider || undefined
+                    }),
+                    signal: ctrl.signal
+                });
+            } catch (fetchErr) {
+                if (fetchErr && fetchErr.name === "AbortError") {
+                    throw new Error("AI request timed out — please try again");
+                }
+                throw fetchErr;
+            } finally {
+                clearTimeout(tmr);
+            }
 
             if (!res.ok) {
                 const errBody = await res.json().catch(() => ({}));
@@ -1113,6 +1150,33 @@ ${currentSettings.materials || ""}
             const data = await res.json();
             if (!data.text) throw new Error("Empty response from AI");
             return { text: data.text, provider: data.provider, tokens: data.tokens || 0, warnings: data.warnings };
+        }
+
+        // Chunked Firestore batch delete (Firestore enforces max 500 ops per batch)
+        async function deleteDocsInChunks(docRefs, extraRefs = []) {
+            const all = [...docRefs, ...extraRefs];
+            const CHUNK = 400;
+            for (let i = 0; i < all.length; i += CHUNK) {
+                const batch = db.batch();
+                all.slice(i, i + CHUNK).forEach(ref => batch.delete(ref));
+                await batch.commit();
+            }
+        }
+
+        function sanitizeClientDocId(raw) {
+            return String(raw || "").trim().replace(/[\/]+/g, "-").replace(/^\.+$/, "");
+        }
+
+        function safeImgUrl(url) {
+            const s = String(url || "").trim();
+            if (/^(https?:\/\/|\/|data:image\/(png|jpeg|jpg|webp|gif);base64,)/i.test(s)) {
+                return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+            return "";
+        }
+
+        function isQuotaErr(e) {
+            return /resource-exhausted|429|quota/i.test(String((e && (e.code || e.message)) || ""));
         }
 
         function todayKey() {
@@ -1131,14 +1195,25 @@ ${currentSettings.materials || ""}
             }
         }
 
-        // ==================== CHAT LOGIC ====================
+        // ==================== CHAT LOGIC (capped paginated reads, 0 unbounded onSnapshot) ====================
+        const CHAT_PAGE_SIZE = 30;
+        let clientMessages = [];
+        let clientMsgOldestDoc = null;
+        let clientMsgHasOlder = false;
+        let sidebarClients = [];
+        let sidebarCursor = null;
+        let sidebarHasMore = false;
+        let isSendingClient = false;
+
         async function handleSend() {
+            if (isSendingClient) return;
             if (!authReady) {
                 showToast("Still connecting, try again in a second");
                 return;
             }
 
-            const clientName = document.getElementById("clientName").value.trim();
+            const rawName = document.getElementById("clientName").value.trim();
+            const clientName = sanitizeClientDocId(rawName);
             const clientMsg = document.getElementById("clientMsg").value.trim();
             const btn = document.getElementById("sendBtn");
 
@@ -1146,34 +1221,46 @@ ${currentSettings.materials || ""}
                 showToast("Enter client name and a message");
                 return;
             }
+            if (clientName !== rawName) document.getElementById("clientName").value = clientName;
 
+            const isKnownClient = sidebarClients.some(c => c.name === clientName);
             if (clientName !== currentClient) {
                 currentClient = clientName;
-                subscribeToMessages(clientName);
                 updateHeader(clientName);
+                await subscribeToMessages(clientName);
             }
 
+            isSendingClient = true;
             btn.disabled = true;
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg><span class="text-[10px]">...</span>`;
 
             try {
-                // Save user message
-                await db.collection("clients").doc(clientName).collection("messages").add({
+                const now = new Date();
+                const clientRef = db.collection("clients").doc(clientName);
+                const userMsgRef = clientRef.collection("messages").doc();
+                const metaPayload = {
+                    client_name: clientName,
+                    last_updated: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                if (!isKnownClient) {
+                    metaPayload.created_at = firebase.firestore.FieldValue.serverTimestamp();
+                }
+                const wb = db.batch();
+                wb.set(userMsgRef, {
                     role: "user",
                     content: clientMsg,
                     handledBy: auth.currentUser?.email || "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
-                // Update client metadata
-                await db.collection("clients").doc(clientName).set({
-                    client_name: clientName,
-                    last_updated: firebase.firestore.FieldValue.serverTimestamp(),
-                    created_at: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
+                wb.set(clientRef, metaPayload, { merge: true });
+                await wb.commit();
 
                 document.getElementById("clientMsg").value = "";
+                const localUserMsg = { role: "user", content: clientMsg, timestamp: { toDate: () => now } };
+                clientMessages.push(localUserMsg);
+                renderClientMessageList(true);
+                upsertSidebarClient(clientName, now);
 
                 // Get AI response (through the Worker, keys stay server-side)
                 const chosenProvider = document.getElementById("providerSelect").value;
@@ -1182,7 +1269,7 @@ ${currentSettings.materials || ""}
                 logUsage(result.provider, result.tokens);
 
                 // Save AI response
-                await db.collection("clients").doc(clientName).collection("messages").add({
+                await clientRef.collection("messages").add({
                     role: "assistant",
                     content: result.text,
                     provider: result.provider,
@@ -1191,56 +1278,113 @@ ${currentSettings.materials || ""}
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
+                const aiTime = new Date();
+                clientMessages.push({
+                    role: "assistant",
+                    content: result.text,
+                    provider: result.provider,
+                    tokens: result.tokens,
+                    timestamp: { toDate: () => aiTime }
+                });
+                if (currentClient === clientName) renderClientMessageList(true);
+                upsertSidebarClient(clientName, aiTime);
+
                 document.getElementById("providerBadge").innerText = `Generated via ${result.provider} · ${built.meta.isFull ? "full KB" : `lean KB ${built.meta.included}/${built.meta.total}`}`;
                 if (result.warnings && result.warnings.length) {
                     console.warn("AI provider fallback warnings:", result.warnings);
                     showToast(`Used ${result.provider} — others failed: ${result.warnings.join(" | ")}`, true);
                 }
                 setStatus("ready", "Ready");
-                loadAllClients();
 
             } catch (err) {
-                showToast(err.message, true);
+                showToast(isQuotaErr(err) ? "Daily Firestore quota reached — wait a moment or try again later" : err.message, true);
                 setStatus("error", "Error");
             } finally {
+                isSendingClient = false;
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
             }
         }
 
         function onClientChange() {
-            const name = document.getElementById("clientName").value.trim();
+            const name = sanitizeClientDocId(document.getElementById("clientName").value);
             if (name && name !== currentClient) {
                 currentClient = name;
                 subscribeToMessages(name);
                 updateHeader(name);
+                renderSidebarList();
             }
         }
 
-        function subscribeToMessages(clientName) {
-            if (unsubMessages) unsubMessages();
-
+        function renderClientMessageList(doScroll) {
             const listEl = document.getElementById("messagesList");
             const emptyEl = document.getElementById("emptyState");
-
             emptyEl.classList.add("hidden");
             listEl.classList.remove("hidden");
             listEl.innerHTML = "";
 
-            unsubMessages = db.collection("clients").doc(clientName).collection("messages")
-                .orderBy("timestamp", "asc")
-                .onSnapshot(snapshot => {
-                    listEl.innerHTML = "";
-                    if (snapshot.empty) {
-                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">No messages yet. Send the first one.</div>`;
-                        return;
-                    }
-                    snapshot.forEach(doc => renderMessage(doc.data()));
-                    scrollToBottom();
-                }, err => {
-                    console.error(err);
-                    showToast("Failed to load messages", true);
-                });
+            const bar = document.createElement("div");
+            bar.className = "flex items-center justify-center gap-2 pb-2";
+            if (clientMsgHasOlder) {
+                const olderBtn = document.createElement("button");
+                olderBtn.type = "button";
+                olderBtn.className = "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50";
+                olderBtn.textContent = "Load older messages";
+                olderBtn.onclick = () => { if (currentClient) subscribeToMessages(currentClient, true); };
+                bar.appendChild(olderBtn);
+            }
+            if (currentClient) {
+                const refBtn = document.createElement("button");
+                refBtn.type = "button";
+                refBtn.className = "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50";
+                refBtn.textContent = "Refresh";
+                refBtn.onclick = () => { if (currentClient) subscribeToMessages(currentClient, false); };
+                bar.appendChild(refBtn);
+            }
+            if (bar.childNodes.length) listEl.appendChild(bar);
+
+            if (!clientMessages.length) {
+                const emp = document.createElement("div");
+                emp.className = "text-center py-10 text-gray-300 text-xs tracking-wide uppercase";
+                emp.textContent = "No messages yet. Send the first one.";
+                listEl.appendChild(emp);
+                return;
+            }
+            clientMessages.forEach(m => renderMessage(m));
+            if (doScroll) scrollToBottom();
+        }
+
+        async function subscribeToMessages(clientName, loadOlder = false) {
+            if (unsubMessages) { try { unsubMessages(); } catch (e) {} unsubMessages = null; }
+            const cleanName = sanitizeClientDocId(clientName);
+            if (!cleanName) return;
+
+            const listEl = document.getElementById("messagesList");
+            const emptyEl = document.getElementById("emptyState");
+            emptyEl.classList.add("hidden");
+            listEl.classList.remove("hidden");
+            if (!loadOlder) {
+                clientMessages = [];
+                clientMsgOldestDoc = null;
+                clientMsgHasOlder = false;
+                listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Loading…</div>`;
+            }
+
+            try {
+                let q = db.collection("clients").doc(cleanName).collection("messages")
+                    .orderBy("timestamp", "desc").limit(CHAT_PAGE_SIZE);
+                if (loadOlder && clientMsgOldestDoc) q = q.startAfter(clientMsgOldestDoc);
+                const snap = await q.get();
+                if (currentClient !== cleanName) return;
+                const chunk = snap.docs.map(d => d.data()).reverse();
+                clientMsgOldestDoc = snap.docs.length ? snap.docs[snap.docs.length - 1] : clientMsgOldestDoc;
+                clientMsgHasOlder = snap.docs.length === CHAT_PAGE_SIZE;
+                clientMessages = loadOlder ? chunk.concat(clientMessages) : chunk;
+                renderClientMessageList(!loadOlder);
+            } catch (err) {
+                console.error(err);
+                showToast(isQuotaErr(err) ? "Daily Firestore quota reached" : "Failed to load messages", true);
+            }
         }
 
         function clientFacingText(raw) {
@@ -1271,9 +1415,10 @@ ${currentSettings.materials || ""}
             div.className = `msg-in flex ${isUser ? "justify-end" : "justify-start"}`;
 
             if (isUser) {
+                const safeImg = safeImgUrl(data.imageUrl);
                 div.innerHTML = `
                     <div class="max-w-[90%] sm:max-w-[85%] md:max-w-[70%]">
-                        ${data.imageUrl ? `<img src="${data.imageUrl}" alt="Handcrafted custom grillz by EGYGRILLZ" loading="lazy" decoding="async">` : ''}
+                        ${safeImg ? `<img src="${safeImg}" alt="Handcrafted custom grillz by EGYGRILLZ" loading="lazy" decoding="async">` : ''}
                         <div class="msg-bubble bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl rounded-tr-sm">
                             ${formatMessageHtml(raw)}
                         </div>
@@ -1323,42 +1468,89 @@ ${currentSettings.materials || ""}
             }
         }
 
-        async function loadAllClients() {
-            try {
-                const snap = await db.collection("clients").orderBy("last_updated", "desc").limit(50).get();
-                const listEl = document.getElementById("clientList");
+        const SIDEBAR_PAGE_SIZE = 30;
 
-                if (snap.empty) {
-                    listEl.innerHTML = `<div class="text-center py-10 text-gray-400 text-xs"><p>No clients yet</p></div>`;
-                    return;
-                }
+        function upsertSidebarClient(name, updatedDate) {
+            const idx = sidebarClients.findIndex(c => c.name === name);
+            const entry = { name, updated: updatedDate || new Date() };
+            if (idx >= 0) sidebarClients.splice(idx, 1);
+            sidebarClients.unshift(entry);
+            renderSidebarList();
+        }
 
-                listEl.innerHTML = "";
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const name = doc.id;
-                    const updated = data.last_updated?.toDate ? data.last_updated.toDate() : new Date();
+        function renderSidebarList() {
+            const listEl = document.getElementById("clientList");
+            if (!listEl) return;
+            if (!sidebarClients.length) {
+                listEl.innerHTML = `<div class="text-center py-10 text-gray-400 text-xs"><p>No clients yet</p></div>`;
+                return;
+            }
+            const q = (document.getElementById("clientSearch")?.value || "").toLowerCase();
+            listEl.innerHTML = "";
+            sidebarClients.forEach(({ name, updated }) => {
+                const item = document.createElement("div");
+                item.className = `group flex items-center space-x-3 px-4 py-3 cursor-pointer transition border-l-2 ${name === currentClient ? "bg-gray-100 border-black" : "border-transparent hover:bg-gray-100 hover:border-gray-300"}`;
+                if (q && !name.toLowerCase().includes(q)) item.style.display = "none";
+                item.addEventListener("click", () => selectClient(name));
 
-                    const item = document.createElement("div");
-                    item.className = `group flex items-center space-x-3 px-4 py-3 cursor-pointer transition border-l-2 ${name === currentClient ? "bg-gray-100 border-black" : "border-transparent hover:bg-gray-100 hover:border-gray-300"}`;
-                    item.onclick = () => selectClient(name);
-
-                    item.innerHTML = `
-                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs shrink-0">
-                            ${name.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-xs text-gray-900 truncate">${escapeHtml(name)}</p>
-                            <p class="text-[10px] text-gray-400">${timeAgo(updated)}</p>
-                        </div>
-                        <button onclick="event.stopPropagation(); deleteClient('${name.replace(/'/g, "\\'")}')" class="opacity-0 group-hover:opacity-100 transition text-gray-300 hover:text-red-500 p-1 shrink-0" title="Delete conversation">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                    `;
-                    listEl.appendChild(item);
+                const initial = escapeHtml((name.charAt(0) || "?").toUpperCase());
+                item.innerHTML = `
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs shrink-0">
+                        ${initial}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-xs text-gray-900 truncate">${escapeHtml(name)}</p>
+                        <p class="text-[10px] text-gray-400">${escapeHtml(timeAgo(updated))}</p>
+                    </div>
+                    <button type="button" data-del-client class="opacity-0 group-hover:opacity-100 transition text-gray-300 hover:text-red-500 p-1 shrink-0" title="Delete conversation">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                `;
+                const delBtn = item.querySelector("[data-del-client]");
+                delBtn.addEventListener("click", (ev) => {
+                    ev.stopPropagation();
+                    deleteClient(name);
                 });
+                listEl.appendChild(item);
+            });
+
+            if (sidebarHasMore) {
+                const moreWrap = document.createElement("div");
+                moreWrap.className = "px-4 py-3 text-center";
+                const moreBtn = document.createElement("button");
+                moreBtn.type = "button";
+                moreBtn.className = "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100";
+                moreBtn.textContent = "Load more clients";
+                moreBtn.addEventListener("click", () => loadAllClients(true));
+                moreWrap.appendChild(moreBtn);
+                listEl.appendChild(moreWrap);
+            }
+        }
+
+        async function loadAllClients(append = false) {
+            try {
+                let q = db.collection("clients").orderBy("last_updated", "desc").limit(SIDEBAR_PAGE_SIZE);
+                if (append && sidebarCursor) q = q.startAfter(sidebarCursor);
+                const snap = await q.get();
+                const rows = snap.docs.map(d => {
+                    const data = d.data() || {};
+                    return {
+                        name: d.id,
+                        updated: data.last_updated?.toDate ? data.last_updated.toDate() : new Date()
+                    };
+                });
+                sidebarCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : sidebarCursor;
+                sidebarHasMore = snap.docs.length === SIDEBAR_PAGE_SIZE;
+                if (append) {
+                    const seen = new Set(sidebarClients.map(c => c.name));
+                    rows.forEach(r => { if (!seen.has(r.name)) sidebarClients.push(r); });
+                } else {
+                    sidebarClients = rows;
+                }
+                renderSidebarList();
             } catch (e) {
                 console.error(e);
+                if (isQuotaErr(e)) showToast("Daily Firestore quota reached", true);
             }
         }
 
@@ -1366,45 +1558,46 @@ ${currentSettings.materials || ""}
             if (!confirm(`Delete all conversation history with "${name}"? This can't be undone.`)) return;
 
             try {
-                const msgsSnap = await db.collection("clients").doc(name).collection("messages").get();
-                const batch = db.batch();
-                msgsSnap.forEach(doc => batch.delete(doc.ref));
-                batch.delete(db.collection("clients").doc(name));
-                await batch.commit();
+                const clientRef = db.collection("clients").doc(name);
+                // Delete messages in bounded pages of 400 so >500-message threads never exceed Firestore batch limit
+                while (true) {
+                    const msgsSnap = await clientRef.collection("messages").limit(400).get();
+                    if (msgsSnap.empty) break;
+                    await deleteDocsInChunks(msgsSnap.docs.map(d => d.ref));
+                    if (msgsSnap.size < 400) break;
+                }
+                await clientRef.delete();
 
                 if (currentClient === name) {
                     currentClient = "";
+                    clientMessages = [];
                     document.getElementById("clientName").value = "";
                     document.getElementById("messagesList").classList.add("hidden");
                     document.getElementById("emptyState").classList.remove("hidden");
                     updateHeader("");
                     document.getElementById("currentClientName").innerText = "New Conversation";
                     document.getElementById("currentClientStatus").innerText = "Enter a client name to begin";
-                    if (unsubMessages) unsubMessages();
+                    if (unsubMessages) { try { unsubMessages(); } catch (e) {} unsubMessages = null; }
                 }
 
+                sidebarClients = sidebarClients.filter(c => c.name !== name);
+                renderSidebarList();
                 showToast("Conversation deleted");
-                loadAllClients();
             } catch (e) {
                 showToast("Delete failed: " + e.message, true);
             }
         }
 
         function filterClients() {
-            const q = document.getElementById("clientSearch").value.toLowerCase();
-            const items = document.getElementById("clientList").children;
-            Array.from(items).forEach(item => {
-                const name = item.querySelector("p")?.innerText.toLowerCase() || "";
-                item.style.display = name.includes(q) ? "flex" : "none";
-            });
+            renderSidebarList();
         }
 
         function selectClient(name) {
             document.getElementById("clientName").value = name;
             currentClient = name;
             updateHeader(name);
+            renderSidebarList(); // 0 Firestore reads!
             subscribeToMessages(name);
-            loadAllClients();
             if (window.innerWidth < 768) toggleSidebar();
         }
 
@@ -1413,11 +1606,32 @@ ${currentSettings.materials || ""}
             document.getElementById("currentClientStatus").innerText = "Active conversation";
         }
 
-        // ==================== SETTINGS ====================
-        async function loadSettings() {
+        // ==================== SETTINGS (cached 15m in localStorage) ====================
+        const KB_CACHE_KEY = "egygz_staff_kb_cache_v1";
+        const KB_CACHE_TTL = 15 * 60 * 1000;
+
+        async function loadSettings(force = false) {
+            if (!force) {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(KB_CACHE_KEY) || "null");
+                    if (cached && cached.data && cached.at && (Date.now() - cached.at) < KB_CACHE_TTL) {
+                        currentSettings = { ...currentSettings, ...cached.data };
+                        populateSettings();
+                        return;
+                    }
+                } catch (e) {}
+            }
             try {
                 const doc = await db.collection("settings").doc("knowledge_base").get();
-                if (doc.exists) currentSettings = { ...currentSettings, ...doc.data() };
+                if (doc.exists) {
+                    const data = doc.data() || {};
+                    currentSettings = { ...currentSettings, ...data };
+                    try {
+                        const serializable = { ...data };
+                        delete serializable.updated_at;
+                        localStorage.setItem(KB_CACHE_KEY, JSON.stringify({ at: Date.now(), data: serializable }));
+                    } catch (e) {}
+                }
             } catch (e) { console.error(e); }
             populateSettings();
         }
@@ -1487,6 +1701,7 @@ ${currentSettings.materials || ""}
                     ...currentSettings,
                     updated_at: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                try { localStorage.setItem(KB_CACHE_KEY, JSON.stringify({ at: Date.now(), data: currentSettings })); } catch (e) {}
                 showToast("Settings saved");
                 closeSettings();
             } catch (e) {
@@ -1497,8 +1712,12 @@ ${currentSettings.materials || ""}
             }
         }
 
-        // ==================== STAFF ASSISTANT (internal, not client-facing) ====================
+        // ==================== STAFF ASSISTANT (capped paginated reads, 0 unbounded onSnapshot) ====================
         let unsubStaffChat = null;
+        let staffMessages = [];
+        let staffOldestDoc = null;
+        let staffHasOlder = false;
+        let staffLoadedAt = 0;
 
         function buildStaffSystemPrompt(message) {
             const { kb, included, total, isFull } = buildKnowledgeBase(message);
@@ -1516,29 +1735,73 @@ ${kb || "(not configured)"}
 
         function openStaffChat() {
             document.getElementById("staffChatModal").classList.remove("hidden");
-            subscribeStaffChat();
+            if (!staffLoadedAt || (Date.now() - staffLoadedAt) > 2 * 60 * 1000) {
+                subscribeStaffChat(false);
+            } else {
+                renderStaffChatList(true);
+            }
         }
 
         function closeStaffChat() {
             document.getElementById("staffChatModal").classList.add("hidden");
-            if (unsubStaffChat) unsubStaffChat();
+            if (unsubStaffChat) { try { unsubStaffChat(); } catch (e) {} unsubStaffChat = null; }
         }
 
-        function subscribeStaffChat() {
+        function renderStaffChatList(doScroll) {
             const listEl = document.getElementById("staffChatMessages");
-            if (unsubStaffChat) unsubStaffChat();
+            if (!listEl) return;
+            listEl.innerHTML = "";
 
-            unsubStaffChat = db.collection("staff_chat").doc("thread").collection("messages")
-                .orderBy("timestamp", "asc")
-                .onSnapshot(snapshot => {
-                    if (snapshot.empty) {
-                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Ask anything — pricing math, drafting help, quick questions</div>`;
-                        return;
-                    }
-                    listEl.innerHTML = "";
-                    snapshot.forEach(doc => renderStaffMessage(doc.data()));
-                    listEl.scrollTop = listEl.scrollHeight;
-                });
+            const bar = document.createElement("div");
+            bar.className = "flex items-center justify-center gap-2 pb-2";
+            if (staffHasOlder) {
+                const olderBtn = document.createElement("button");
+                olderBtn.type = "button";
+                olderBtn.className = "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50";
+                olderBtn.textContent = "Load older";
+                olderBtn.onclick = () => subscribeStaffChat(true);
+                bar.appendChild(olderBtn);
+            }
+            const refBtn = document.createElement("button");
+            refBtn.type = "button";
+            refBtn.className = "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50";
+            refBtn.textContent = "Refresh";
+            refBtn.onclick = () => subscribeStaffChat(false);
+            bar.appendChild(refBtn);
+            listEl.appendChild(bar);
+
+            if (!staffMessages.length) {
+                const emp = document.createElement("div");
+                emp.className = "text-center py-10 text-gray-300 text-xs tracking-wide uppercase";
+                emp.textContent = "Ask anything — pricing math, drafting help, quick questions";
+                listEl.appendChild(emp);
+                return;
+            }
+            staffMessages.forEach(m => renderStaffMessage(m));
+            if (doScroll) listEl.scrollTop = listEl.scrollHeight;
+        }
+
+        async function subscribeStaffChat(loadOlder = false) {
+            const listEl = document.getElementById("staffChatMessages");
+            if (unsubStaffChat) { try { unsubStaffChat(); } catch (e) {} unsubStaffChat = null; }
+            if (!loadOlder && listEl) {
+                listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Loading…</div>`;
+            }
+            try {
+                let q = db.collection("staff_chat").doc("thread").collection("messages")
+                    .orderBy("timestamp", "desc").limit(CHAT_PAGE_SIZE);
+                if (loadOlder && staffOldestDoc) q = q.startAfter(staffOldestDoc);
+                const snap = await q.get();
+                const chunk = snap.docs.map(d => d.data()).reverse();
+                staffOldestDoc = snap.docs.length ? snap.docs[snap.docs.length - 1] : staffOldestDoc;
+                staffHasOlder = snap.docs.length === CHAT_PAGE_SIZE;
+                staffMessages = loadOlder ? chunk.concat(staffMessages) : chunk;
+                staffLoadedAt = Date.now();
+                renderStaffChatList(!loadOlder);
+            } catch (e) {
+                console.error(e);
+                showToast(isQuotaErr(e) ? "Daily Firestore quota reached" : "Failed to load staff chat", true);
+            }
         }
 
         function renderStaffMessage(data) {
@@ -1561,12 +1824,15 @@ ${kb || "(not configured)"}
             listEl.appendChild(div);
         }
 
+        let isSendingStaff = false;
         async function handleStaffSend() {
+            if (isSendingStaff) return;
             const input = document.getElementById("staffChatInput");
             const msg = input.value.trim();
             if (!msg) return;
 
             const btn = document.getElementById("staffSendBtn");
+            isSendingStaff = true;
             btn.disabled = true;
             input.value = "";
 
@@ -1577,6 +1843,9 @@ ${kb || "(not configured)"}
                     handledBy: auth.currentUser?.email || "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                staffMessages.push({ role: "user", content: msg });
+                staffLoadedAt = Date.now();
+                renderStaffChatList(true);
 
                 const result = await getAIResponse(msg, buildStaffSystemPrompt(msg), document.getElementById("staffProviderSelect").value);
                 logUsage(result.provider, result.tokens);
@@ -1588,44 +1857,96 @@ ${kb || "(not configured)"}
                     tokens: result.tokens,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                staffMessages.push({ role: "assistant", content: result.text, provider: result.provider });
+                staffLoadedAt = Date.now();
+                renderStaffChatList(true);
 
                 setStatus("ready", "Ready");
             } catch (err) {
-                showToast(err.message, true);
+                showToast(isQuotaErr(err) ? "Daily Firestore quota reached" : err.message, true);
                 setStatus("error", "Error");
             } finally {
+                isSendingStaff = false;
                 btn.disabled = false;
             }
         }
 
-        // ==================== PRICING ASSISTANT (internal, own thread, never touches client chat) ====================
+        // ==================== PRICING ASSISTANT (capped reads + in-memory history) ====================
         let unsubPricingChat = null;
+        let pricingMessages = [];
+        let pricingOldestDoc = null;
+        let pricingHasOlder = false;
+        let pricingLoadedAt = 0;
 
         function openPricingChat() {
             document.getElementById("pricingChatModal").classList.remove("hidden");
-            subscribePricingChat();
+            if (!pricingLoadedAt || (Date.now() - pricingLoadedAt) > 2 * 60 * 1000) {
+                subscribePricingChat(false);
+            } else {
+                renderPricingChatList(true);
+            }
         }
 
         function closePricingChat() {
             document.getElementById("pricingChatModal").classList.add("hidden");
-            if (unsubPricingChat) unsubPricingChat();
+            if (unsubPricingChat) { try { unsubPricingChat(); } catch (e) {} unsubPricingChat = null; }
         }
 
-        function subscribePricingChat() {
+        function renderPricingChatList(doScroll) {
             const listEl = document.getElementById("pricingChatMessages");
-            if (unsubPricingChat) unsubPricingChat();
+            if (!listEl) return;
+            listEl.innerHTML = "";
 
-            unsubPricingChat = db.collection("pricing_chat").doc("thread").collection("messages")
-                .orderBy("timestamp", "asc")
-                .onSnapshot(snapshot => {
-                    if (snapshot.empty) {
-                        listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Describe what the client wants — the assistant will ask for missing details and calculate the quote</div>`;
-                        return;
-                    }
-                    listEl.innerHTML = "";
-                    snapshot.forEach(doc => renderPricingMessage(doc.data()));
-                    listEl.scrollTop = listEl.scrollHeight;
-                });
+            const bar = document.createElement("div");
+            bar.className = "flex items-center justify-center gap-2 pb-2";
+            if (pricingHasOlder) {
+                const olderBtn = document.createElement("button");
+                olderBtn.type = "button";
+                olderBtn.className = "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50";
+                olderBtn.textContent = "Load older";
+                olderBtn.onclick = () => subscribePricingChat(true);
+                bar.appendChild(olderBtn);
+            }
+            const refBtn = document.createElement("button");
+            refBtn.type = "button";
+            refBtn.className = "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50";
+            refBtn.textContent = "Refresh";
+            refBtn.onclick = () => subscribePricingChat(false);
+            bar.appendChild(refBtn);
+            listEl.appendChild(bar);
+
+            if (!pricingMessages.length) {
+                const emp = document.createElement("div");
+                emp.className = "text-center py-10 text-gray-300 text-xs tracking-wide uppercase";
+                emp.textContent = "Describe what the client wants — the assistant will ask for missing details and calculate the quote";
+                listEl.appendChild(emp);
+                return;
+            }
+            pricingMessages.forEach(m => renderPricingMessage(m));
+            if (doScroll) listEl.scrollTop = listEl.scrollHeight;
+        }
+
+        async function subscribePricingChat(loadOlder = false) {
+            const listEl = document.getElementById("pricingChatMessages");
+            if (unsubPricingChat) { try { unsubPricingChat(); } catch (e) {} unsubPricingChat = null; }
+            if (!loadOlder && listEl) {
+                listEl.innerHTML = `<div class="text-center py-10 text-gray-300 text-xs tracking-wide uppercase">Loading…</div>`;
+            }
+            try {
+                let q = db.collection("pricing_chat").doc("thread").collection("messages")
+                    .orderBy("timestamp", "desc").limit(CHAT_PAGE_SIZE);
+                if (loadOlder && pricingOldestDoc) q = q.startAfter(pricingOldestDoc);
+                const snap = await q.get();
+                const chunk = snap.docs.map(d => d.data()).reverse();
+                pricingOldestDoc = snap.docs.length ? snap.docs[snap.docs.length - 1] : pricingOldestDoc;
+                pricingHasOlder = snap.docs.length === CHAT_PAGE_SIZE;
+                pricingMessages = loadOlder ? chunk.concat(pricingMessages) : chunk;
+                pricingLoadedAt = Date.now();
+                renderPricingChatList(!loadOlder);
+            } catch (e) {
+                console.error(e);
+                showToast(isQuotaErr(e) ? "Daily Firestore quota reached" : "Failed to load pricing chat", true);
+            }
         }
 
         function renderPricingMessage(data) {
@@ -1648,12 +1969,15 @@ ${kb || "(not configured)"}
             listEl.appendChild(div);
         }
 
+        let isSendingPricing = false;
         async function handlePricingSend() {
+            if (isSendingPricing) return;
             const input = document.getElementById("pricingChatInput");
             const msg = input.value.trim();
             if (!msg) return;
 
             const btn = document.getElementById("pricingSendBtn");
+            isSendingPricing = true;
             btn.disabled = true;
             input.value = "";
 
@@ -1666,8 +1990,14 @@ ${kb || "(not configured)"}
                     handledBy: auth.currentUser?.email || "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                pricingMessages.push({ role: "user", content: msg });
+                pricingLoadedAt = Date.now();
+                renderPricingChatList(true);
 
-                const history = await getRecentThreadHistoryText(threadRef);
+                // Build history from in-memory buffer (0 extra Firestore reads per turn!)
+                const history = pricingMessages.slice(-10)
+                    .map(d => `${d.role === "user" ? "Staff" : "Assistant"}: ${String(d.content || "").slice(0, 400)}`)
+                    .join("\n");
                 const promptWithHistory = `Conversation so far:\n${history}\n\nContinue the intake — ask the next missing detail, or give the final quote if you now have everything you need.`;
                 const result = await getAIResponse(promptWithHistory, buildPricingSystemPrompt(), document.getElementById("pricingProviderSelect").value);
                 logUsage(result.provider, result.tokens);
@@ -1679,22 +2009,35 @@ ${kb || "(not configured)"}
                     tokens: result.tokens,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                pricingMessages.push({ role: "assistant", content: result.text, provider: result.provider });
+                pricingLoadedAt = Date.now();
+                renderPricingChatList(true);
 
                 setStatus("ready", "Ready");
             } catch (err) {
-                showToast(err.message, true);
+                showToast(isQuotaErr(err) ? "Daily Firestore quota reached" : err.message, true);
                 setStatus("error", "Error");
             } finally {
+                isSendingPricing = false;
                 btn.disabled = false;
             }
         }
 
         async function clearPricingChat() {
+            if (!confirm("Clear the current pricing assistant conversation and start a new quote?")) return;
             try {
-                const snap = await db.collection("pricing_chat").doc("thread").collection("messages").get();
-                const batch = db.batch();
-                snap.forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
+                const colRef = db.collection("pricing_chat").doc("thread").collection("messages");
+                while (true) {
+                    const snap = await colRef.limit(400).get();
+                    if (snap.empty) break;
+                    await deleteDocsInChunks(snap.docs.map(d => d.ref));
+                    if (snap.size < 400) break;
+                }
+                pricingMessages = [];
+                pricingOldestDoc = null;
+                pricingHasOlder = false;
+                pricingLoadedAt = Date.now();
+                renderPricingChatList(false);
                 showToast("Started a new quote");
             } catch (e) {
                 showToast("Couldn't clear: " + e.message, true);
@@ -1783,6 +2126,9 @@ ${kb || "(not configured)"}
             staffCalc = window.StaffCalculator.mount(host, {
                 db: db,
                 showPdf: true,
+                showInsert: true,
+                onPdf: (order) => { window._lastCalcQuote = toPdfQuote(order); downloadQuotationPdf(); },
+                onInsert: () => insertCalcResultIntoPricingChat(),
                 onChange: () => { window._lastCalcQuote = null; },
                 onCalculate: (order) => { window._lastCalcQuote = toPdfQuote(order); }
             });
@@ -2006,18 +2352,35 @@ ${kb || "(not configured)"}
                 const safeName = pdfSafe((l.name || "").trim()).trim();
                 const title = safeName || `Design ${i + 1}`;
                 row(`${i + 1}. ${title}`, "", { section: true });
-                row("Material", l.material === "gold" ? `Gold ${l.karat}K` : CALC_LABELS.material[l.material]);
-                row("Teeth", String(l.teeth));
-                row("Design level", `${CALC_LABELS.level[l.level]}${l.level === "0.5" ? " (half base)" : ` (+${(calcCfg().designPct || {})[l.level] || 0}%)`}`);
-                if (l.material === "gold" && l.goldPrice) row("Gold rate used", `${formatMoney(l.goldPrice)} EGP/g`);
-                row("Base cost", `${formatMoney(l.materialTotal)} EGP`);
-                row("Design cost", l.designCost ? `${formatMoney(l.designCost)} EGP` : "\u2014");
-                row("Stones", stoneDetail(l));
-                if (l.platingCost) row("Plating", `${CALC_LABELS.plating[l.plating]} \u00b7 ${formatMoney(l.platingCost)} EGP`);
-                if (l.enamelCost) row("Enamel", `${CALC_LABELS.enamel[l.enamel]} \u00b7 ${formatMoney(l.enamelCost)} EGP`);
-                if (l.engravingCost) row("Engraving", `${CALC_LABELS.engraving[l.engraving]} \u00b7 ${formatMoney(l.engravingCost)} EGP`);
-                if (l.anodizeCost) row("Anodizing", `${CALC_LABELS.anodize[l.anodize]} \u00b7 ${formatMoney(l.anodizeCost)} EGP`);
-                row("Design subtotal", `${formatMoney(l.subtotal)} EGP`, { bold: true, gap: 20 });
+                if (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) {
+                    row("Material", l.mixedMaterials ? "Mixed Materials" : (l.material === "gold" ? `Gold ${l.karat || "18"}K` : CALC_LABELS.material[l.material]));
+                    row("Total teeth", `${l.teeth} teeth (Mixed - ${l.groups.length} tooth groups)`);
+                    l.groups.forEach((g, gi) => {
+                        const gLbl = g.label ? `${g.label}: ` : `Group ${gi + 1}: `;
+                        const gSpec = (CE && CE.groupLabel) ? CE.groupLabel(g, { includeMaterial: true }) : `${g.teeth} teeth L${g.level}`;
+                        row(`  ${gLbl}${gSpec}`, `${formatMoney(g.subtotal)} EGP`);
+                    });
+                    row("Base metal total", `${formatMoney(l.materialTotal)} EGP`);
+                    if (l.designCost) row("Complexity total", `${formatMoney(l.designCost)} EGP`);
+                    if (l.stoneCost) row("Stones total", `${formatMoney(l.stoneCost)} EGP`);
+                    if (l.platingCost) row("Plating total", `${formatMoney(l.platingCost)} EGP`);
+                    if (l.enamelCost) row("Enamel total", `${formatMoney(l.enamelCost)} EGP`);
+                    if (l.engravingCost) row("Engraving total", `${formatMoney(l.engravingCost)} EGP`);
+                    if (l.anodizeCost) row("Anodizing total", `${formatMoney(l.anodizeCost)} EGP`);
+                } else {
+                    row("Material", l.material === "gold" ? `Gold ${l.karat}K` : CALC_LABELS.material[l.material]);
+                    row("Teeth", String(l.teeth));
+                    row("Design level", `${CALC_LABELS.level[l.level]}${l.level === "0.5" ? " (half base)" : ` (+${(calcCfg().designPct || {})[l.level] || 0}%)`}`);
+                    if (l.material === "gold" && l.goldPrice) row("Gold rate used", `${formatMoney(l.goldPrice)} EGP/g`);
+                    row("Base cost", `${formatMoney(l.materialTotal)} EGP`);
+                    row("Design cost", l.designCost ? `${formatMoney(l.designCost)} EGP` : "\u2014");
+                    row("Stones", stoneDetail(l));
+                    if (l.platingCost) row("Plating", `${CALC_LABELS.plating[l.plating]} \u00b7 ${formatMoney(l.platingCost)} EGP`);
+                    if (l.enamelCost) row("Enamel", `${CALC_LABELS.enamel[l.enamel]} \u00b7 ${formatMoney(l.enamelCost)} EGP`);
+                    if (l.engravingCost) row("Engraving", `${CALC_LABELS.engraving[l.engraving]} \u00b7 ${formatMoney(l.engravingCost)} EGP`);
+                    if (l.anodizeCost) row("Anodizing", `${CALC_LABELS.anodize[l.anodize]} \u00b7 ${formatMoney(l.anodizeCost)} EGP`);
+                }
+                row("Set subtotal", `${formatMoney(l.subtotal)} EGP`, { bold: true, gap: 20 });
             });
 
             if ((q.services || []).length) {
@@ -2089,13 +2452,17 @@ ${kb || "(not configured)"}
             const text = staffCalc ? staffCalc.getResultText() : "";
             if (!text) { showToast("Calculate a quote first", true); return; }
             const clientName = staffCalc && staffCalc.el("clientName") ? staffCalc.el("clientName").value.trim() : "";
+            const content = `[Exact Calculator result — use this number]${clientName ? ` Client: ${clientName}.` : ""}\n${text}`;
             try {
                 db.collection("pricing_chat").doc("thread").collection("messages").add({
                     role: "user",
-                    content: `[Exact Calculator result — use this number]${clientName ? ` Client: ${clientName}.` : ""}\n${text}`,
+                    content,
                     handledBy: auth.currentUser?.email || "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 }).catch(e => showToast("Couldn't add: " + e.message, true));
+                pricingMessages.push({ role: "user", content });
+                pricingLoadedAt = Date.now();
+                renderPricingChatList(true);
                 switchPricingTab("chat");
                 showToast("Added to AI Chat");
             } catch (e) {
@@ -2298,15 +2665,26 @@ Custom Dental Jewelry, Cairo`;
 
         function applyIntakeCode() {
             const box = document.getElementById("intakePaste");
-            const params = decodeIntakeCode(box.value);
+            const rawVal = (box ? box.value : "").trim();
+            if (!rawVal) { showToast("Paste an EGZ-... or EGZ1:... code first", true); return; }
+            const calc = mountStaffCalculator();
+            if (!calc) { showToast("Calculator not ready yet", true); return; }
+
+            // Universal EGZ-... short code (or any URL containing ?c= / ?code=)
+            if (CE && typeof CE.extractCode === "function" && /^EGZ-/i.test(CE.extractCode(rawVal))) {
+                const ok = calc.importCode(rawVal);
+                if (ok) { box.value = ""; return; }
+            }
+
+            const params = decodeIntakeCode(rawVal);
             if (!params) {
+                // Fallback to universal decoder (handles mixed intake codes & share links)
+                if (calc.importCode && calc.importCode(rawVal)) { box.value = ""; return; }
                 showToast("Couldn't read that code — copy it exactly as the client sent it", true);
                 return;
             }
-            const em = box.value.match(/EGZ1[:\uff1a]\s*([A-Za-z0-9\-_=+\/]+)/i);
-            const code = em ? em[1] : box.value.trim().replace(/\s+/g, "");
-            const calc = mountStaffCalculator();
-            if (!calc) { showToast("Calculator not ready yet", true); return; }
+            const em = rawVal.match(/EGZ1[:\uff1a]\s*([A-Za-z0-9\-_=+\/]+)/i);
+            const code = em ? em[1] : rawVal.replace(/\s+/g, "");
             if (calc.getLines().some(l => l.importedCode === code)) {
                 showToast("This intake code is already in the quote");
                 return;
@@ -2376,12 +2754,18 @@ Custom Dental Jewelry, Cairo`;
                     `;
                     el.appendChild(row);
                 });
+
+                const refWrap = document.createElement("div");
+                refWrap.className = "text-right pt-2";
+                refWrap.innerHTML = `<button type="button" onclick="loadUsage()" class="text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50">Refresh usage</button>`;
+                el.appendChild(refWrap);
             } catch (e) {
-                el.innerHTML = `<div class="text-center py-10 text-red-400 text-xs">Failed to load usage: ${e.message}</div>`;
+                el.innerHTML = `<div class="text-center py-10 text-red-400 text-xs">Failed to load usage: ${escapeHtml(e.message)}</div>`;
             }
         }
 
         // ==================== UTILITIES ====================
+        let _toastTimer = null;
         function showToast(msg, isError) {
             const toast = document.getElementById("toast");
             document.getElementById("toastMessage").innerText = msg;
@@ -2389,7 +2773,8 @@ Custom Dental Jewelry, Cairo`;
                 ? "bg-gray-800 text-white px-5 py-3 rounded-lg shadow-2xl flex items-center space-x-3"
                 : "bg-black text-white px-5 py-3 rounded-lg shadow-2xl flex items-center space-x-3";
             toast.classList.remove("translate-y-20", "opacity-0");
-            setTimeout(() => toast.classList.add("translate-y-20", "opacity-0"), 2500);
+            if (_toastTimer) clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => toast.classList.add("translate-y-20", "opacity-0"), 2800);
         }
 
         function setStatus(type, text) {
@@ -2451,6 +2836,21 @@ Custom Dental Jewelry, Cairo`;
             pruneIntakeTokens();
             renderIntakeLinkStatus();
             try { mountStaffCalculator(); } catch (e) { console.warn("Calculator mount failed:", e); }
+            const incomingCode = new URLSearchParams(window.location.search).get("c") || new URLSearchParams(window.location.search).get("code");
+            if (incomingCode) {
+                try {
+                    const mountedCalc = mountStaffCalculator();
+                    if (mountedCalc) setTimeout(() => { if (!mountedCalc.importCode(incomingCode)) showToast("Could not load the design code", true); }, 0);
+                } catch (e) { console.warn("Could not load shared design code:", e); }
+            }
+            document.addEventListener("keydown", (ev) => {
+                if (ev.key !== "Escape") return;
+                if (!document.getElementById("pricingSettingsModal")?.classList.contains("hidden")) { closePricingSettings(); return; }
+                if (!document.getElementById("usageModal")?.classList.contains("hidden")) { closeUsage(); return; }
+                if (!document.getElementById("settingsModal")?.classList.contains("hidden")) { closeSettings(); return; }
+                if (!document.getElementById("pricingChatModal")?.classList.contains("hidden")) { closePricingChat(); return; }
+                if (!document.getElementById("staffChatModal")?.classList.contains("hidden")) { closeStaffChat(); return; }
+            });
         });
 
         // follow the system when the mode is "auto"

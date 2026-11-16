@@ -514,9 +514,8 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 }
 .pb-price.pop{animation:numPop .22s ease, priceGlow .6s ease;}
 </style>
-  <link rel="canonical" href="https://egygrillz.com/atelier">
-  <script src="/assets/calc-engine.js?v=2"></script>
-  <script src="/assets/staff-calculator.js"></script>
+  <script src="/assets/calc-engine.js?v=4" defer></script>
+  <script src="/assets/staff-calculator.js?v=4" defer></script>
 </head>
 <body>
 
@@ -538,12 +537,13 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 <!-- HEADER -->
 <header id="site-header">
   <a href="/" class="logo-text">EGYGRILLZ</a>
-  <button class="menu-toggle" aria-label="Menu" onclick="document.querySelector('.main-nav').classList.toggle('active')">
+  <button class="menu-toggle" type="button" aria-label="Menu" onclick="document.querySelector('.main-nav').classList.toggle('active');document.body.classList.toggle('menu-open')">
     <span></span><span></span><span></span>
   </button>
   <nav class="main-nav">
     <a href="/">Home</a>
     <a href="latest-designs">Latest</a>
+      <a href="calculator">Calculator</a>
     <a href="booking">Schedule</a>
     <a href="grillz-gallery">Gallery</a>
     <a href="golds">Golds</a>
@@ -565,7 +565,8 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
       <span>Live Gold 18K: <strong id="hero-gold-price">Loading…</strong></span>
       <span style="color:var(--gold);margin-left:4px;font-size:10px;" id="hero-gold-time"></span>
     </div>
-    <a href="#sec-teeth" class="cta-book" style="padding:10px 28px;font-size:10px;">Start Building ↓</a>
+    <a href="#sec-calc" class="cta-book" style="padding:10px 28px;font-size:10px;">Start Building ↓</a>
+    <a href="/calculator" class="cta-book" style="padding:10px 24px;font-size:10px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.55);">Visual Builder + PDF →</a>
   </div>
   <div class="hero-scroll-hint">
     <div class="scroll-line"></div>
@@ -716,17 +717,79 @@ function buildFAQ() {
 /* ════════════════════════════════════════
    THE CALCULATOR — one component, every page
 ════════════════════════════════════════ */
+let ATELIER_CALC = null;
+
+function paintHeroGold() {
+  const el = document.getElementById('hero-gold-price');
+  const timeEl = document.getElementById('hero-gold-time');
+  if (!el || !window.CalcEngine) return;
+  const cfg = window.CalcEngine.get();
+  const g24 = Number(cfg && cfg.goldPrice) || 0;
+  if (g24 > 0) {
+    const k18 = (cfg.goldKarat && cfg.goldKarat['18']) || { purity: 0.75 };
+    const rate18 = Math.round(g24 * (Number(k18.purity) || 0.75));
+    el.textContent = rate18.toLocaleString('en-US') + ' EGP/g';
+    if (timeEl) timeEl.textContent = '· Studio rate';
+  } else {
+    el.textContent = 'Confirmed at Studio';
+    if (timeEl) timeEl.textContent = '';
+  }
+}
+
+function wireProgressSteps() {
+  const stepMap = [
+    ['ps1', 'teeth'],
+    ['ps2', 'material'],
+    ['ps3', 'level'],
+    ['ps4', 'stones'],
+  ];
+  const setActive = (id) => {
+    stepMap.forEach(([sid]) => {
+      const node = document.getElementById(sid);
+      if (node) node.classList.toggle('active', sid === id);
+    });
+  };
+  setActive('ps1');
+  stepMap.forEach(([sid, field]) => {
+    const node = document.getElementById(sid);
+    if (!node) return;
+    node.style.cursor = 'pointer';
+    node.setAttribute('role', 'button');
+    node.setAttribute('tabindex', '0');
+    const activate = () => {
+      setActive(sid);
+      const sec = document.getElementById('sec-calc');
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const target = ATELIER_CALC && ATELIER_CALC.el(field);
+      if (target && !target.disabled) {
+        setTimeout(() => { try { target.focus({ preventScroll: true }); } catch (e) {} }, 350);
+      }
+    };
+    node.addEventListener('click', activate);
+    node.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+    });
+  });
+}
+
 async function mountCalculator() {
   const host = document.getElementById('atelierCalcHost');
-  if (!host || !window.StaffCalculator) return;
   const E = window.CalcEngine;
+  if (E && typeof E.onChange === 'function') E.onChange(paintHeroGold);
+  paintHeroGold();
   if (E) await E.load(null).catch(() => {});
-  if (window.SiteConfig) await window.SiteConfig.load(null).catch(() => {});
-  window.StaffCalculator.mount(host, {
-    parts: { lines: true, editor: true, services: false, order: false, result: true },
-    showPdf: false,
-    note: 'Same calculator, same rates as the studio. Press Calculate Exact Quote for the full breakdown.'
+  paintHeroGold();
+  if (!host || !window.StaffCalculator) return;
+  ATELIER_CALC = window.StaffCalculator.mount(host, {
+    parts: { lines: true, editor: true, services: false, order: true, result: true },
+    showPdf: true,
+    note: 'Same calculator, same live rates as our Cairo studio. Mix different tooth levels inside one set, copy your short code, or download an instant PDF estimate.'
   });
+  try {
+    const qCode = new URLSearchParams(window.location.search).get('c') || new URLSearchParams(window.location.search).get('code');
+    if (qCode) ATELIER_CALC.importCode(qCode);
+  } catch (e) {}
+  wireProgressSteps();
 }
 
 /* ════════════════════════════════════════
@@ -734,11 +797,11 @@ async function mountCalculator() {
 ════════════════════════════════════════ */
 function initSplineOpacity() {
   const splineBg = document.getElementById('spline-bg');
-  const heroH = window.innerHeight;
+  if (!splineBg) return;
   window.addEventListener('scroll', () => {
-    const y = window.scrollY;
-    const fade = Math.max(0, 1 - (y / (heroH * 0.7)));
-    if (splineBg) splineBg.style.opacity = fade;
+    const heroH = window.innerHeight || 800;
+    const fade = Math.max(0, 1 - (window.scrollY / (heroH * 0.7)));
+    splineBg.style.opacity = fade;
   }, { passive: true });
 }
 
@@ -759,28 +822,43 @@ function initReveal() {
 }
 
 /* ════════════════════════════════════════
-   CUSTOM CURSOR
+   CUSTOM CURSOR (on-demand RAF — sleeps when idle)
 ════════════════════════════════════════ */
 function initCursor() {
   if (!window.matchMedia || window.matchMedia('(hover:none)').matches) return;
   const cursor = document.getElementById('cursor');
   if (!cursor) return;
-  let cx = 0, cy = 0, rx = 0, ry = 0;
-  document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+  let cx = 0, cy = 0, rx = 0, ry = 0, rafId = 0;
   function tick() {
-    rx += (cx - rx) * 0.14;
-    ry += (cy - ry) * 0.14;
-    cursor.style.transform = `translate(${rx}px,${ry}px)`;
-    requestAnimationFrame(tick);
+    rx += (cx - rx) * 0.18;
+    ry += (cy - ry) * 0.18;
+    cursor.style.transform = `translate(${rx.toFixed(1)}px,${ry.toFixed(1)}px)`;
+    if (Math.abs(cx - rx) > 0.15 || Math.abs(cy - ry) > 0.15) {
+      rafId = requestAnimationFrame(tick);
+    } else {
+      rafId = 0;
+    }
   }
-  requestAnimationFrame(tick);
-  document.querySelectorAll('button,a,.addon-tile').forEach(el => {
-    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
-    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
-  });
+  document.addEventListener('mousemove', e => {
+    cx = e.clientX;
+    cy = e.clientY;
+    if (!rafId) rafId = requestAnimationFrame(tick);
+  }, { passive: true });
+  document.addEventListener('mouseover', e => {
+    const interactive = e.target && e.target.closest && e.target.closest('button,a,select,input,textarea,.faq-q,.prog-step');
+    document.body.classList.toggle('cursor-hover', !!interactive);
+  }, { passive: true });
 }
 
-window.addEventListener('load', () => {
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const nav = document.querySelector('.main-nav');
+    if (nav) nav.classList.remove('active');
+    document.body.classList.remove('menu-open');
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
   buildFAQ();
   mountCalculator();
   initReveal();

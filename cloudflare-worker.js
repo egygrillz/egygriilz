@@ -124,7 +124,7 @@ class Page {
   /** text at x,y (y measured from the top of the page) */
   text(str, x, y, opt = {}) {
     const size = opt.size || 9;
-    const font = opt.bold ? 'F2' : (opt.serif ? (opt.bold ? 'F4' : 'F3') : 'F1');
+    const font = opt.serif ? (opt.bold ? 'F4' : 'F3') : (opt.bold ? 'F2' : 'F1');
     let tx = x;
     if (opt.align === 'right') tx = x - textWidth(str, size);
     else if (opt.align === 'center') tx = x - textWidth(str, size) / 2;
@@ -299,29 +299,40 @@ function buildQuotePdf(q, opt = {}) {
 
   /* ── designs ── */
   lines.forEach((l, i) => {
-    if (y > A4.h - 190) {
+    const groups = (l && Array.isArray(l.groups) && l.groups.length > 1) ? l.groups : null;
+    const estH = 38 + (groups ? groups.length * 12 : 0);
+    if (y > A4.h - Math.max(150, estH + 90)) {
       doc.createPage();
       y = 70;
     }
-    const label = lineLabel(l);
+    const label = (l && l.name ? `${l.name}  -  ` : '') + lineLabel(l);
     const detail = designDetail(l);
 
-    p.text(`${i + 1}.`, M + 8, y, { size: 9, bold: true });
-    p.text(label, M + 26, y, { size: 9 });
-    p.text(money(l.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 9, bold: true, align: 'right' });
+    doc.current.text(`${i + 1}.`, M + 8, y, { size: 9, bold: true });
+    doc.current.text(label, M + 26, y, { size: 9 });
+    doc.current.text(money(l.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 9, bold: true, align: 'right' });
     y += 12;
+    if (groups) {
+      groups.forEach((g, gi) => {
+        if (y > A4.h - 110) { doc.createPage(); y = 70; }
+        const gPrefix = g.label ? `${g.label}: ` : `Group ${gi + 1}: `;
+        doc.current.text(`- ${gPrefix}${lineLabel(g)}`, M + 32, y, { size: 7.6, color: '#4a4a4a' });
+        doc.current.text(money(g.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 7.6, color: '#6b6b6b', align: 'right' });
+        y += 11;
+      });
+    }
     if (detail) {
-      p.text(detail, M + 26, y, { size: 7.2, color: '#8a8a8a' });
+      doc.current.text(detail, M + 26, y, { size: 7.2, color: '#8a8a8a' });
       y += 11;
     }
     y += 4;
-    p.line(M + 8, y, A4.w - M - 8, y, '#eeeeee', 0.4);
+    doc.current.line(M + 8, y, A4.w - M - 8, y, '#eeeeee', 0.4);
     y += 12;
   });
 
   const services = order.services || q.services || [];
   if (!lines.length && !services.length) {
-    p.text('No designs or services on this quotation.', M + 8, y, { size: 9, color: '#8a8a8a' });
+    doc.current.text('No designs or services on this quotation.', M + 8, y, { size: 9, color: '#8a8a8a' });
     y += 24;
   }
 
@@ -331,16 +342,16 @@ function buildQuotePdf(q, opt = {}) {
       y = 70;
     }
     const label = (s.name || s.type || 'Studio Service') + (Number(s.qty) > 1 ? ` (x${s.qty})` : '');
-    p.text(`${lines.length + idx + 1}.`, M + 8, y, { size: 9, bold: true });
-    p.text(label, M + 26, y, { size: 9 });
-    p.text(money(s.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 9, bold: true, align: 'right' });
+    doc.current.text(`${lines.length + idx + 1}.`, M + 8, y, { size: 9, bold: true });
+    doc.current.text(label, M + 26, y, { size: 9 });
+    doc.current.text(money(s.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 9, bold: true, align: 'right' });
     y += 12;
     if (s.notes) {
-      p.text(String(s.notes), M + 26, y, { size: 7.2, color: '#8a8a8a' });
+      doc.current.text(String(s.notes), M + 26, y, { size: 7.2, color: '#8a8a8a' });
       y += 11;
     }
     y += 4;
-    p.line(M + 8, y, A4.w - M - 8, y, '#eeeeee', 0.4);
+    doc.current.line(M + 8, y, A4.w - M - 8, y, '#eeeeee', 0.4);
     y += 12;
   });
 
@@ -351,8 +362,8 @@ function buildQuotePdf(q, opt = {}) {
   const right = A4.w - M - 8;
 
   const kv = (k, v, bold) => {
-    p.text(k, left, y, { size: bold ? 10 : 8.5, bold, color: bold ? '#1f1f1f' : '#6b6b6b' });
-    p.text(v, right, y, { size: bold ? 10 : 8.5, bold, align: 'right' });
+    doc.current.text(k, left, y, { size: bold ? 10 : 8.5, bold, color: bold ? '#1f1f1f' : '#6b6b6b' });
+    doc.current.text(v, right, y, { size: bold ? 10 : 8.5, bold, align: 'right' });
     y += bold ? 18 : 13;
   };
 
@@ -363,9 +374,9 @@ function buildQuotePdf(q, opt = {}) {
   if (order.discountAmount) kv('Discount', '-' + money(order.discountAmount) + ' ' + cur);
 
   y += 2;
-  p.rect(left - 10, y - 13, right - left + 18, 28, '#1f1f1f');
-  p.text('TOTAL', left, y + 4, { size: 11, serif: true, bold: true, color: '#ffffff' });
-  p.text(money(order.total) + ' ' + cur, right, y + 4, { size: 12, bold: true, color: '#ffffff', align: 'right' });
+  doc.current.rect(left - 10, y - 13, right - left + 18, 28, '#1f1f1f');
+  doc.current.text('TOTAL', left, y + 4, { size: 11, serif: true, bold: true, color: '#ffffff' });
+  doc.current.text(money(order.total) + ' ' + cur, right, y + 4, { size: 12, bold: true, color: '#ffffff', align: 'right' });
   y += 34;
 
   const depPct = Number(order.depositPct) || 0;
@@ -378,9 +389,9 @@ function buildQuotePdf(q, opt = {}) {
   if (q.notes) {
     if (y > A4.h - 110) { doc.createPage(); y = 70; }
     y += 8;
-    p.text('NOTES', M, y, { size: 7, color: '#9a9a9a' });
+    doc.current.text('NOTES', M, y, { size: 7, color: '#9a9a9a' });
     y += 13;
-    y = p.para(q.notes, M, y, Wd, { size: 8.5, color: '#4a4a4a', lineHeight: 12 });
+    y = doc.current.para(q.notes, M, y, Wd, { size: 8.5, color: '#4a4a4a', lineHeight: 12 });
   }
 
   /* ── footer on every page ── */
@@ -397,21 +408,30 @@ function buildQuotePdf(q, opt = {}) {
   return doc.build();
 }
 
-/** Short human label for a design or service line */
+/** Short human label for a design or service line (uniform or mixed-teeth set) */
 function lineLabel(l) {
   if (l && l.kind === 'service') {
     const qty = Number(l.teeth) > 1 ? ` (${l.teeth}x)` : '';
     return `${l.serviceLabel || l.service || 'Studio Service'}${qty}`;
   }
+  if (l && Array.isArray(l.groups) && l.groups.length > 1) {
+    const gs = l.groups;
+    const totalT = Number(l.teeth) || gs.reduce((s, g) => s + (Number(g.teeth) || 0), 0);
+    const mKey = (g) => g.material === 'gold' ? `Gold ${g.karat || '18'}K` : String(g.material || '');
+    const m0 = mKey(gs[0]);
+    const mixedMat = gs.some((g) => mKey(g) !== m0);
+    const head = mixedMat ? `Mixed Materials` : m0;
+    return `${head} / ${totalT} teeth / mixed (${gs.length} tooth groups)`;
+  }
   const mat = l.material === 'gold' ? `Gold ${l.karat || '18'}K` : String(l.material || '');
-  const bits = [`${mat} / ${l.teeth || 0} teeth / level ${l.level || '1'}`];
+  const bits = [`${mat} / ${l.teeth || 0} ${(Number(l.teeth) === 1) ? 'tooth' : 'teeth'} / level ${l.level || '1'}`];
   if (l.accent && l.accent.count) bits.push(`${l.accent.count}x ${l.accent.type || ''}`.trim());
   if (l.full && l.full.bars) bits.push('full iced on bars');
   else if (l.full) bits.push(`full iced ${l.full.type || ''}`.trim());
-  if (l.plating && l.plating !== 'none') bits.push(String(l.plating));
-  if (l.anodize && l.anodize !== 'none') bits.push('anodize ' + l.anodize);
-  if (l.enamel && l.enamel !== 'none') bits.push('enamel ' + l.enamel);
-  if (l.engraving && l.engraving !== 'none') bits.push('engraving ' + l.engraving);
+  if (l.plating && l.plating !== 'none' && l.plating !== 'mixed') bits.push(String(l.plating));
+  if (l.anodize && l.anodize !== 'none' && l.anodize !== 'mixed') bits.push('anodize ' + l.anodize);
+  if (l.enamel && l.enamel !== 'none' && l.enamel !== 'mixed') bits.push('enamel ' + l.enamel);
+  if (l.engraving && l.engraving !== 'none' && l.engraving !== 'mixed') bits.push('engraving ' + l.engraving);
   return bits.join('  -  ');
 }
 
@@ -744,13 +764,45 @@ async function fetchDay(env, iso, fetchImpl = fetch) {
   return { ok: true, appts: res.rows.map(mapAppointment) };
 }
 
-/** Read a whole collection — used for invoices and quotes */
-async function fetchCollection(env, name, fetchImpl = fetch) {
+/* Lightweight isolate-level TTL cache (active only on live global `fetch` so unit-test mocks stay isolated) */
+const _ISO_CACHE = new Map();
+function isoCacheGet(key, fetchImpl) {
+  if (fetchImpl !== fetch) return undefined;
+  const hit = _ISO_CACHE.get(key);
+  if (!hit) return undefined;
+  if (Date.now() > hit.exp) { _ISO_CACHE.delete(key); return undefined; }
+  return hit.val;
+}
+function isoCacheSet(key, val, ttlMs, fetchImpl) {
+  if (fetchImpl !== fetch) return;
+  _ISO_CACHE.set(key, { val, exp: Date.now() + ttlMs });
+}
+function isoCacheClear(prefix) {
+  for (const k of Array.from(_ISO_CACHE.keys())) {
+    if (!prefix || k.startsWith(prefix)) _ISO_CACHE.delete(k);
+  }
+}
+
+/** Read a bounded collection — used for invoices and quotes */
+async function fetchCollection(env, name, fetchImpl = fetch, maxRows = 120) {
   if (!env.FIREBASE_API_KEY) return { ok: false, error: 'no-firebase-key', rows: [] };
-  const q = { from: [{ collectionId: String(name) }], limit: 500 };
-  const res = await fsQuery(env, q, fetchImpl);
+  const ck = `col:${name}:${maxRows}`;
+  const cached = isoCacheGet(ck, fetchImpl);
+  if (cached) return cached;
+  const q = {
+    from: [{ collectionId: String(name) }],
+    orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }],
+    limit: Math.max(1, Math.min(250, maxRows)),
+  };
+  let res = await fsQuery(env, q, fetchImpl);
+  if (!res.ok && res.error !== 'quota' && res.error !== 'permission-denied' && res.error !== 'no-firebase-key') {
+    delete q.orderBy;
+    res = await fsQuery(env, q, fetchImpl);
+  }
   if (!res.ok) return { ok: false, error: res.error, rows: [] };
-  return { ok: true, rows: res.rows };
+  const out = { ok: true, rows: res.rows };
+  isoCacheSet(ck, out, 60 * 1000, fetchImpl);
+  return out;
 }
 
 /** invoice / quote doc → flat object */
@@ -793,16 +845,15 @@ function mapInvoice(doc) {
   };
 }
 
-/** Prices from the catalogue, so revenue can be estimated */
+/** Prices from the live catalogue (settings/catalog + catalog.json) — 0 reads on dead `items` collection */
 async function fetchCatalogue(env, fetchImpl = fetch) {
-  const q = { from: [{ collectionId: 'items' }], limit: 1000 };
-  const res = await fsQuery(env, q, fetchImpl);
-  if (!res.ok) return {};
+  const cat = await fetchPublicCatalogue(fetchImpl, env).catch(() => ({ ok: false, items: [] }));
+  if (!cat.ok || !Array.isArray(cat.items)) return {};
   const map = {};
-  for (const doc of res.rows) {
-    const f = doc.fields || {};
-    const name = String(fsVal(f.name) || '').trim();
-    const price = parsePrice(fsVal(f.price));
+  for (const item of cat.items) {
+    if (item && item.showPrice === false) continue;
+    const name = String((item && item.name) || '').trim();
+    const price = parsePrice(item && item.price);
     if (name && price) map[name.toLowerCase()] = price;
   }
   return map;
@@ -1275,7 +1326,10 @@ async function findQuote(arg, env, fetchImpl = fetch) {
     return { ok: true, quote: all[0] || null, all };
   }
   const q = String(arg).toLowerCase();
-  const hits = all.filter(x => (x.clientName || '').toLowerCase().includes(q) || (x.phone || '').includes(q));
+  const hits = all.filter(x =>
+    (x.id || '').toLowerCase().includes(q)
+    || (x.clientName || '').toLowerCase().includes(q)
+    || (x.phone || '').includes(q));
   hits.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   return { ok: true, quote: hits[0] || null, all };
 }
@@ -1327,8 +1381,11 @@ async function sendQuoteFile(arg, env, fetchImpl = fetch) {
   const raw = await rawQuote(found.quote.id, env, fetchImpl);
   if (!raw) return 'Could not open that quote document.';
 
-  const pricing = await loadPricing(env, fetchImpl);
-  const order = recalcOrder(raw.order || { lines: [], total: 0 }, pricing);
+  const [pricing, siteMeta] = await Promise.all([
+    loadPricing(env, fetchImpl),
+    loadMouldPrices(env, fetchImpl),
+  ]);
+  const order = recalcOrder(raw.order || { lines: [], total: 0 }, pricing, raw.discount);
   order.currency = (pricing && pricing.currency) || raw.currency || 'EGP';
 
   const bytes = buildQuotePdf({
@@ -1340,8 +1397,8 @@ async function sendQuoteFile(arg, env, fetchImpl = fetch) {
     createdAt: raw.createdAt,
     order,
   }, {
-    studioName: (pricing && pricing.studioName) || 'EGYGRILLZ',
-    validDays: 14,
+    studioName: (siteMeta && siteMeta.studioName) || (pricing && pricing.studioName) || 'EGYGRILLZ',
+    validDays: (siteMeta && siteMeta.quoteValidDays) || 14,
   });
 
   const safeName = asciiName(raw.clientName || 'client');
@@ -1736,7 +1793,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
 
     case '/mould':
     case '/order': {
-      if (!arg) return 'Usage: /mould ABCD1234\\nShows one mould kit order with its buttons.';
+      if (!arg) return 'Usage: /mould ABCD1234\nShows one mould kit order with its buttons.';
       const found = await findMouldOrder(env, arg, fetchImpl);
       if (!found.ok) return `No mould order found for "${arg}".`;
       const o = found.order;
@@ -1808,19 +1865,21 @@ async function runCommand(text, env, fetchImpl = fetch) {
 
     /* ═══════════ SETS / INVENTORY VISIBILITY ═══════════ */
     case '/sets': {
-      const vis = await loadVisibility(env, fetchImpl);
-      const cat = await fetchPublicCatalogue(fetchImpl);
+      const [vis, cat] = await Promise.all([
+        loadVisibility(env, fetchImpl),
+        fetchPublicCatalogue(fetchImpl, env),
+      ]);
       if (!cat.ok) return 'Could not load the catalogue. Reason: ' + (cat.error || 'unknown');
       const pages = ['golds', 'silvers', 'diamonds', 'latest-designs', 'grillz-gallery'];
       const lines = ['SETS & VISIBILITY', LINE, `${cat.items.length} designs in the catalogue`, ''];
       pages.forEach((page) => {
         const onPage = cat.items.filter(i => pageOfDesign(i) === page);
-        const shown = onPage.filter(i => !vis.hidden.includes(designKey(i)));
+        const shown = onPage.filter(i => !isDesignHidden(i, vis.hidden));
         lines.push(`${pad(cap(page.replace('-', ' ')), 16)} ${padL(shown.length, 3)}/${padL(onPage.length, 3)} visible`);
       });
       const unassigned = cat.items.filter(i => !pageOfDesign(i));
       if (unassigned.length) lines.push('', `Not on any page: ${unassigned.length}`);
-      const hidden = cat.items.filter(i => vis.hidden.includes(designKey(i)));
+      const hidden = cat.items.filter(i => isDesignHidden(i, vis.hidden));
       lines.push('', `Hidden by hand: ${hidden.length}`);
       hidden.slice(0, 8).forEach(i => lines.push(`  ✕ ${designKey(i)}  ${i.name || ''}`));
       lines.push('', 'Hide:  /setvis <id> off', 'Show:  /setvis <id> on');
@@ -1897,14 +1956,23 @@ async function runCommand(text, env, fetchImpl = fetch) {
     case '/rates': {
       const p = await loadPricingSettings(env, fetchImpl);
       const lines = ['CALCULATOR — LIVE RATES', LINE];
-      lines.push('Material base (per tooth):');
+      lines.push(`Gold rate:   ${p.goldPrice ? num(p.goldPrice) + ' EGP/g' : 'not set (entered per quote)'}`);
+      if (p.karatWeights && Object.keys(p.karatWeights).length) {
+        const kw = Object.entries(p.karatWeights).map(([k, v]) => `${k}k=${v}g`).join(' · ');
+        lines.push(`Gold wt/t:   ${kw}`);
+      }
+      lines.push('', 'Material base (per tooth):');
       Object.entries(p.materialBase).forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
       lines.push('', 'Design level add-on (% of material):');
       Object.entries(p.designPct).forEach(([k, v]) => lines.push(`  level ${pad(k, 4)} ${padL(v + '%', 6)}`));
+      if (p.anodizeFlat && Object.keys(p.anodizeFlat).length) {
+        lines.push('', 'Titanium anodize (per tooth):');
+        Object.entries(p.anodizeFlat).filter(([k]) => k !== 'none').forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
+      }
       lines.push('', `Rounding:   ${p.roundTo} EGP`);
       lines.push(`Deposit:    ${p.depositPct}%`);
       if (p.updatedAt) lines.push(`Updated:    ${String(p.updatedAt).slice(0, 16).replace('T', ' ')}`);
-      lines.push('', 'Change them in /staff-panel-x7k2 → Settings.');
+      lines.push('', 'Change them in /editx → Settings or /staff-panel-x7k2 → Settings.');
       return lines.join('\n');
     }
 
@@ -1982,15 +2050,28 @@ async function sendPdf(bytes, filename, caption, env, chatId, fetchImpl = fetch)
  * switch works from Telegram and from /editx.
  * ───────────────────────────────────────────────────────── */
 
-const CATALOG_URL_DEFAULT = 'https://raw.githubusercontent.com/egygrillz/egygrillz/main/assets/images/catalog.json';
-const CATALOG_URL_FALLBACK = 'https://egygrillz.com/assets/images/catalog.json?t=';
+const CATALOG_URL_DEFAULT = 'https://raw.githubusercontent.com/egygrillz/egygriilz/main/assets/images/catalog.json';
+const CATALOG_URL_FALLBACK = 'https://egygrillz.com/assets/images/catalog.json';
 
 const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
 
-/** the folder (or id) that identifies a design everywhere */
+/** Unique lowercase identifier for a design (handles shared grillz-gallery/000001 folder) */
 function designKey(item) {
   if (!item) return '';
-  return String(item.folder || item.id || '').trim();
+  const id = String(item.id || '').trim();
+  const folder = String(item.folder || '').trim();
+  if (String(item.category || '') === 'grillz-gallery' && id) return id.toLowerCase();
+  return (id || folder).toLowerCase();
+}
+
+function isDesignHidden(item, hiddenArr) {
+  if (!item || !Array.isArray(hiddenArr) || !hiddenArr.length) return false;
+  const id = String(item.id || '').trim().toLowerCase();
+  const folder = String(item.folder || '').trim().toLowerCase();
+  const isSharedGallery = String(item.category || '') === 'grillz-gallery' && folder === '000001';
+  if (id && hiddenArr.includes(id)) return true;
+  if (!isSharedGallery && folder && hiddenArr.includes(folder)) return true;
+  return false;
 }
 
 /** which public page a design is assigned to (matches the site logic) */
@@ -2001,27 +2082,79 @@ function pageOfDesign(item) {
     : String(item.category || item.cat || '');
 }
 
-/** catalog.json from GitHub, falling back to the live site */
+/** Merge seed catalog.json with live Firestore settings/catalog overlay */
 async function fetchPublicCatalogue(fetchImpl = fetch, env = {}) {
+  const cached = isoCacheGet('pubcat', fetchImpl);
+  if (cached) return cached;
   const urls = [
-    env.CATALOG_URL || CATALOG_URL_DEFAULT,
-    CATALOG_URL_FALLBACK + Date.now(),
+    env.CATALOG_URL || CATALOG_URL_FALLBACK,
+    CATALOG_URL_DEFAULT,
   ];
+  let seed = null;
+  let usedUrl = '';
   for (const url of urls) {
     try {
       const r = await fetchImpl(url, { method: 'GET', headers: { Accept: 'application/json' } });
       if (!r.ok) continue;
       const j = await r.json().catch(() => null);
-      if (Array.isArray(j)) return { ok: true, items: j, url };
+      if (Array.isArray(j)) { seed = j; usedUrl = url; break; }
     } catch (e) { /* try the next one */ }
   }
-  return { ok: false, error: 'catalogue-unreachable', items: [] };
+  if (!seed) return { ok: false, error: 'catalogue-unreachable', items: [] };
+
+  let items = seed.slice();
+  if (env && env.FIREBASE_API_KEY) {
+    try {
+      const or = await fetchImpl(`${FS_BASE}/settings/catalog?key=${env.FIREBASE_API_KEY}`,
+        { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
+      if (or.ok) {
+        const doc = await or.json().catch(() => null);
+        const f = (doc && doc.fields) || {};
+        const decodeDeep = (v) => {
+          if (!v || typeof v !== 'object') return undefined;
+          if (v.stringValue !== undefined) return v.stringValue;
+          if (v.integerValue !== undefined) return Number(v.integerValue);
+          if (v.doubleValue !== undefined) return Number(v.doubleValue);
+          if (v.booleanValue !== undefined) return v.booleanValue;
+          if (v.timestampValue !== undefined) return v.timestampValue;
+          if (v.nullValue !== undefined) return null;
+          if (v.arrayValue) return (v.arrayValue.values || []).map(decodeDeep);
+          if (v.mapValue) {
+            const o = {};
+            for (const [mk, mv] of Object.entries(v.mapValue.fields || {})) o[mk] = decodeDeep(mv);
+            return o;
+          }
+          return undefined;
+        };
+        const patchItems = ((f.items && f.items.arrayValue && f.items.arrayValue.values) || [])
+          .map(decodeDeep).filter(x => x && x.id);
+        const deleted = new Set(((f.deleted && f.deleted.arrayValue && f.deleted.arrayValue.values) || [])
+          .map(v => String(decodeDeep(v) || '')).filter(Boolean));
+        if (patchItems.length || deleted.size) {
+          const byId = new Map();
+          const order = [];
+          items.forEach(it => { if (it && it.id) { byId.set(it.id, it); order.push(it.id); } });
+          patchItems.forEach(it => {
+            if (!byId.has(it.id)) order.push(it.id);
+            byId.set(it.id, Object.assign({}, byId.get(it.id) || {}, it));
+          });
+          deleted.forEach(id => byId.delete(id));
+          items = order.filter(id => byId.has(id)).map(id => byId.get(id));
+        }
+      }
+    } catch (e) { /* keep seed on overlay failure */ }
+  }
+  const res = { ok: true, items, url: usedUrl };
+  isoCacheSet('pubcat', res, 5 * 60 * 1000, fetchImpl);
+  return res;
 }
 
 /** settings/visibility → { hidden: [...], updatedAt } */
 async function loadVisibility(env, fetchImpl = fetch) {
   const empty = { hidden: [], updatedAt: '' };
   if (!env.FIREBASE_API_KEY) return empty;
+  const cached = isoCacheGet('settings:visibility', fetchImpl);
+  if (cached) return cached;
   try {
     const r = await fetchImpl(`${FS_BASE}/settings/visibility?key=${env.FIREBASE_API_KEY}`,
       { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
@@ -2029,7 +2162,9 @@ async function loadVisibility(env, fetchImpl = fetch) {
     const doc = await r.json().catch(() => null);
     const arr = ((doc && doc.fields && doc.fields.hidden && doc.fields.hidden.arrayValue
       && doc.fields.hidden.arrayValue.values) || []).map((v) => String(fsVal(v) || '').toLowerCase()).filter(Boolean);
-    return { hidden: arr, updatedAt: String(fsVal(doc && doc.fields && doc.fields.updatedAt) || '') };
+    const out = { hidden: arr, updatedAt: String(fsVal(doc && doc.fields && doc.fields.updatedAt) || '') };
+    isoCacheSet('settings:visibility', out, 2 * 60 * 1000, fetchImpl);
+    return out;
   } catch (e) {
     return empty;
   }
@@ -2057,14 +2192,17 @@ async function saveVisibility(env, hidden, fetchImpl = fetch) {
       const t = await r.text().catch(() => '');
       return { ok: false, error: fsCause(r.status), detail: t.slice(0, 140) };
     }
+    isoCacheClear('settings:visibility');
     return { ok: true, hidden: list };
   } catch (e) {
     return { ok: false, error: 'network' };
   }
 }
 
-/** Read the pricing settings so the PDF matches the calculator */
+/** Read the pricing settings so the PDF matches the calculator (cached 5m per isolate) */
 async function loadPricing(env, fetchImpl = fetch) {
+  const cached = isoCacheGet('settings:pricing', fetchImpl);
+  if (cached !== undefined) return cached;
   try {
     const r = await fetchImpl(`${FS_BASE}/settings/pricing?key=${env.FIREBASE_API_KEY}`,
       { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
@@ -2085,45 +2223,105 @@ async function loadPricing(env, fetchImpl = fetch) {
       else if (v.doubleValue !== undefined) out[k] = Number(v.doubleValue);
       else if (v.stringValue !== undefined) out[k] = v.stringValue;
     }
+    isoCacheSet('settings:pricing', out, 5 * 60 * 1000, fetchImpl);
     return out;
   } catch (e) {
     return null;
   }
 }
 
-/** Recalculate an order from its raw lines, using the live pricing settings */
-function recalcOrder(rawOrder, pricing) {
-  if (!rawOrder || !Array.isArray(rawOrder.lines)) return rawOrder;
-  const pt = (pricing && pricing.designPct) || { '0.5':0,'1':0,'2':10,'3':15,'4':25,'5':40,'6':60 };
-  const tlPct = (pricing && pricing.timelinePct) || { standard:0, rush:25, emergency:50 };
-  const mold = (pricing && pricing.moldFlat) || { none:0, normalperarch:200, digitalfullmouth:1500 };
-  const roundTo = Number(pricing && pricing.roundTo) || 50;
+/** Recalculate an order from its raw lines + services + anodize + discount (mirrors CalcEngine) */
+function recalcOrder(rawOrder, pricing, fallbackDiscount) {
+  if (!rawOrder || (!Array.isArray(rawOrder.lines) && !Array.isArray(rawOrder.services))) return rawOrder;
+  const pt = Object.assign({ '0.5':0,'1':0,'2':10,'3':15,'4':25,'5':40,'6':60 }, (pricing && pricing.designPct) || {});
+  const tlPct = Object.assign({ standard:0, rush:25, emergency:50 }, (pricing && pricing.timelinePct) || {});
+  const mold = Object.assign({ none:0, normalperarch:200, digitalfullmouth:1500 }, (pricing && pricing.moldFlat) || {});
+  const roundTo = Math.max(1, Number(pricing && pricing.roundTo) || 50);
 
-  const lines = rawOrder.lines.map(l => {
-    const line = Object.assign({}, l);
-    const pct = Number(pt[line.level] || 0);
-    line.designPct = pct;
-    line.designCost = line.level === '0.5' ? 0 : Math.round((line.materialTotal || 0) * pct / 100);
-    line.subtotal = Math.round((line.materialTotal || 0) + line.designCost
-      + (line.stoneCost || 0) + (line.platingCost || 0) + (line.enamelCost || 0) + (line.engravingCost || 0));
-    return line;
+  const recalcSingle = (src) => {
+    const g = Object.assign({}, src);
+    const mat = Number(g.materialTotal) || 0;
+    const pct = Number(pt[g.level] || 0);
+    g.designPct = pct;
+    const designCost = mat * (pct / 100);
+    g.designCost = Math.round(designCost);
+    const raw = mat
+      + designCost
+      + (Number(g.stoneCost) || 0)
+      + (Number(g.platingCost) || 0)
+      + (Number(g.enamelCost) || 0)
+      + (Number(g.engravingCost) || 0)
+      + (Number(g.anodizeCost) || 0);
+    g.subtotal = Math.round(raw);
+    return { g, raw, designCost };
+  };
+
+  const lines = (Array.isArray(rawOrder.lines) ? rawOrder.lines : []).map(l => {
+    if (l && Array.isArray(l.groups) && l.groups.length > 1) {
+      const line = Object.assign({}, l);
+      let rawSum = 0;
+      let designSum = 0;
+      const groups = l.groups.map((grp) => {
+        const res = recalcSingle(grp);
+        rawSum += res.raw;
+        designSum += res.designCost;
+        return res.g;
+      });
+      const sum = (k) => groups.reduce((acc, g) => acc + (Number(g[k]) || 0), 0);
+      line.isMixed = true;
+      line.groups = groups;
+      line.teeth = sum('teeth');
+      line.materialTotal = sum('materialTotal');
+      line.designCost = Math.round(designSum);
+      line.designPct = line.materialTotal > 0 ? Math.round((designSum / line.materialTotal) * 1000) / 10 : 0;
+      line.stoneCost = sum('stoneCost');
+      line.platingCost = sum('platingCost');
+      line.enamelCost = sum('enamelCost');
+      line.engravingCost = sum('engravingCost');
+      line.anodizeCost = sum('anodizeCost');
+      line.subtotal = Math.round(rawSum);
+      return line;
+    }
+    return recalcSingle(l).g;
   });
 
-  const subtotal = lines.reduce((n, l) => n + l.subtotal, 0);
+  const services = Array.isArray(rawOrder.services) ? rawOrder.services : [];
+  const servicesSubtotal = services.length
+    ? services.reduce((sum, sv) => sum + Math.round((Number(sv.subtotal) || ((Number(sv.qty) || 1) * (Number(sv.unitPrice) || 0)))), 0)
+    : (Number(rawOrder.servicesSubtotal) || 0);
+
+  const linesSubtotal = lines.reduce((n, l) => n + l.subtotal, 0);
   const pct = Number(tlPct[rawOrder.timeline] || 0);
-  const tlAmount = Math.round(subtotal * pct / 100);
-  const moldCost = Number(mold[rawOrder.mold] || 0);
-  const pre = subtotal + tlAmount + moldCost;
-  const total = Math.ceil(pre / roundTo) * roundTo;
+  const tlAmount = Math.round(linesSubtotal * pct / 100);
+  const moldCost = rawOrder.mold !== undefined && mold[rawOrder.mold] !== undefined
+    ? Number(mold[rawOrder.mold] || 0)
+    : (Number(rawOrder.moldCost) || 0);
+  const preDiscount = linesSubtotal + tlAmount + moldCost + servicesSubtotal;
+
+  let discountAmount = 0;
+  const disc = rawOrder.discount || fallbackDiscount;
+  if (disc && Number(disc.value) > 0) {
+    discountAmount = disc.type === 'pct'
+      ? Math.round(preDiscount * Math.min(100, Number(disc.value)) / 100)
+      : Math.min(preDiscount, Math.round(Number(disc.value)));
+  } else if (Number(rawOrder.discountAmount) > 0) {
+    discountAmount = Math.min(preDiscount, Math.round(Number(rawOrder.discountAmount)));
+  }
+
+  const net = Math.max(0, preDiscount - discountAmount);
+  const total = net > 0 ? Math.ceil(net / roundTo) * roundTo : 0;
   const depPct = Number(rawOrder.depositPct) || 0;
   const deposit = Math.round(total * depPct / 100);
 
   return Object.assign({}, rawOrder, {
     lines,
-    linesSubtotal: subtotal,
+    services,
+    linesSubtotal,
+    servicesSubtotal,
     timelinePct: pct,
     timelineAmount: tlAmount,
     moldCost,
+    discountAmount,
     total,
     depositPct: depPct,
     deposit,
@@ -2238,16 +2436,23 @@ function mapMouldOrder(doc) {
 
 const archLabelOf = (o) => (o.arches === 'both' ? 'Both arches' : o.arches === 'lower' ? 'Lower arch' : 'Upper arch');
 
-/** newest first, optionally filtered by status */
+/** newest first, optionally filtered by status (cached 60s per isolate unless opts.force) */
 async function fetchMouldOrders(env, opts = {}, fetchImpl = fetch) {
   if (!env.FIREBASE_API_KEY) return { ok: false, error: 'no-firebase-key', orders: [] };
+  const st = opts.status || 'all';
+  const lim = Math.max(1, Math.min(200, opts.limit || 40));
+  const ck = `moulds:${st}:${lim}`;
+  if (!opts.force) {
+    const cached = isoCacheGet(ck, fetchImpl);
+    if (cached) return cached;
+  }
   const q = {
     from: [{ collectionId: 'mould_orders' }],
     orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }],
-    limit: Math.max(1, Math.min(200, opts.limit || 40)),
+    limit: lim,
   };
-  if (opts.status && opts.status !== 'all') {
-    q.where = { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: opts.status } } };
+  if (st !== 'all') {
+    q.where = { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: st } } };
     // a status filter needs the matching composite index; fall back to a client-side filter
   }
   let res = await fsQuery(env, q, fetchImpl);
@@ -2259,9 +2464,11 @@ async function fetchMouldOrders(env, opts = {}, fetchImpl = fetch) {
   }
   if (!res.ok) return { ok: false, error: res.error, orders: [] };
   let orders = res.rows.map(mapMouldOrder);
-  if (opts.status && opts.status !== 'all') orders = orders.filter(o => o.status === opts.status);
+  if (st !== 'all') orders = orders.filter(o => o.status === st);
   orders.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  return { ok: true, orders };
+  const out = { ok: true, orders };
+  isoCacheSet(ck, out, 60 * 1000, fetchImpl);
+  return out;
 }
 
 /** one order by id (accepts the full document name too) */
@@ -2295,16 +2502,19 @@ async function saveMouldOrder(env, id, fields, fetchImpl = fetch) {
       const t = await r.text().catch(() => '');
       return { ok: false, error: fsCause(r.status), detail: t.slice(0, 160) };
     }
+    isoCacheClear('moulds:');
     return { ok: true };
   } catch (e) {
     return { ok: false, error: 'network' };
   }
 }
 
-/** the studio's own payment-email template (settings/moulds_email) */
+/** the studio's own payment-email template (settings/moulds_email, cached 5m) */
 async function loadMouldTemplate(env, fetchImpl = fetch) {
   try {
     if (!env.FIREBASE_API_KEY) return MOULD_TEMPLATE_DEFAULT;
+    const cached = isoCacheGet('settings:moulds_email', fetchImpl);
+    if (cached) return cached;
     const r = await fetchImpl(`${FS_BASE}/settings/moulds_email?key=${env.FIREBASE_API_KEY}`,
       { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
     if (!r.ok) return MOULD_TEMPLATE_DEFAULT;
@@ -2312,10 +2522,12 @@ async function loadMouldTemplate(env, fetchImpl = fetch) {
     const f = (doc && doc.fields) || {};
     const subject = String(fsVal(f.subject) || '').trim();
     const body = String(fsVal(f.body) || '').trim();
-    return {
+    const out = {
       subject: subject || MOULD_TEMPLATE_DEFAULT.subject,
       body: body || MOULD_TEMPLATE_DEFAULT.body,
     };
+    isoCacheSet('settings:moulds_email', out, 5 * 60 * 1000, fetchImpl);
+    return out;
   } catch (e) {
     return MOULD_TEMPLATE_DEFAULT;
   }
@@ -2330,7 +2542,7 @@ function renderMouldTemplate(tpl, order, extra = {}) {
     payment_link: order.paymentLink || '',
     address: order.address || 'your pinned location',
     map_link: order.mapLink || '',
-    order_id: order.id || '',
+    order_id: shortRef(order) || order.id || '',
     ...extra,
   };
   const fill = (s) => String(s || '').replace(/\{(\w+)\}/g, (m, k) =>
@@ -2344,11 +2556,13 @@ function renderMouldTemplate(tpl, order, extra = {}) {
  * mail comes from their real address and nothing needs a mail secret here.
  * ────────────────────────────────────────────────────────────────────── */
 
-/** settings/site → { perArch, delivery } (the mould kit prices) */
+/** settings/site → { perArch, delivery, quoteValidDays, studioName } (cached 5m) */
 async function loadMouldPrices(env, fetchImpl = fetch) {
-  const fallback = { perArch: 450, delivery: 100 };
+  const fallback = { perArch: 450, delivery: 100, quoteValidDays: 14, studioName: 'EGYGRILLZ' };
   try {
     if (!env.FIREBASE_API_KEY) return fallback;
+    const cached = isoCacheGet('settings:site', fetchImpl);
+    if (cached) return cached;
     const r = await fetchImpl(`${FS_BASE}/settings/site?key=${env.FIREBASE_API_KEY}`,
       { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
     if (!r.ok) return fallback;
@@ -2356,13 +2570,16 @@ async function loadMouldPrices(env, fetchImpl = fetch) {
     const f = (doc && doc.fields) || {};
     const perArch = fsNum(f.mouldPerArch);
     const delivery = fsNum(f.mouldDeliveryFee);
-    /* settings/site may predate the mould fields. A MISSING field means "use
-       the published rate"; only an explicit 0 is a real zero — otherwise the
-       delivery fee silently disappeared from every order. */
-    return {
+    const qDays = fsNum(f.quoteValidDays);
+    const sName = String(fsVal(f.studioName) || '').trim();
+    const out = {
       perArch: f.mouldPerArch !== undefined && perArch > 0 ? perArch : fallback.perArch,
       delivery: f.mouldDeliveryFee !== undefined ? Math.max(0, delivery) : fallback.delivery,
+      quoteValidDays: f.quoteValidDays !== undefined && qDays > 0 ? Math.round(qDays) : fallback.quoteValidDays,
+      studioName: sName || fallback.studioName,
     };
+    isoCacheSet('settings:site', out, 5 * 60 * 1000, fetchImpl);
+    return out;
   } catch (e) {
     return fallback;
   }
@@ -2489,11 +2706,16 @@ function mouldListKeyboard(orders, filter) {
   return { inline_keyboard: rows };
 }
 
-/** find one order by full id, short ref, or a name fragment */
+/** find one order: 1-read direct GET when needle looks like a document ID, else bounded list search */
 async function findMouldOrder(env, needle, fetchImpl = fetch) {
   const q = String(needle || '').trim();
   if (!q) return { ok: false, error: 'missing-id' };
-  const res = await fetchMouldOrders(env, { status: 'all', limit: 200 }, fetchImpl);
+  if (/^[A-Za-z0-9_-]{10,}$/.test(q) && !/\s/.test(q)) {
+    const direct = await fetchMouldOrder(env, q, fetchImpl);
+    if (direct.ok && direct.order) return direct;
+    if (direct.error === 'quota' || direct.error === 'permission-denied') return direct;
+  }
+  const res = await fetchMouldOrders(env, { status: 'all', limit: 80 }, fetchImpl);
   if (!res.ok) return { ok: false, error: res.error };
   const up = q.toUpperCase();
   const low = q.toLowerCase();
@@ -2508,8 +2730,11 @@ async function findMouldOrder(env, needle, fetchImpl = fetch) {
 async function loadPricingSettings(env, fetchImpl = fetch) {
   const p = await loadPricing(env, fetchImpl);
   return {
-    designPct: (p && p.designPct) || { '0.5': 0, '1': 0, '2': 10, '3': 15, '4': 25, '5': 40, '6': 60 },
-    materialBase: (p && p.materialBase) || { chrome: 1000, titanium: 2800, silver: 1600 },
+    goldPrice: Number(p && p.goldPrice) || 0,
+    karatWeights: (p && (p.goldGramsPerTooth || p.karatWeights)) || { '10': 0.35, '14': 0.35, '18': 0.34, '21': 0.34, '22': 0.33 },
+    designPct: Object.assign({ '0.5': 0, '1': 0, '2': 10, '3': 15, '4': 25, '5': 40, '6': 60 }, (p && p.designPct) || {}),
+    materialBase: Object.assign({ chrome: 1000, titanium: 2800, silver: 1600 }, (p && p.materialBase) || {}),
+    anodizeFlat: Object.assign({ none: 0, single: 300, dual: 350, multi: 450 }, (p && (p.anodize || p.anodizeFlat)) || {}),
     roundTo: Number(p && p.roundTo) || 50,
     depositPct: Number(p && p.depositPct) || 50,
     updatedAt: String((p && p.updatedAt) || ''),
@@ -2518,12 +2743,15 @@ async function loadPricingSettings(env, fetchImpl = fetch) {
 
 /** recalculate one invoice line with the live calculator rates */
 function recalcInvoiceLine(line, pricing) {
+  if (!line) return null;
+  const level = String(line.level || '');
+  if (level === 'mixed') return null;
   const materialTotal = Number(line.materialTotal) || 0;
   if (!materialTotal) return null;
-  const level = String(line.level || '');
   const pct = Number((pricing.designPct || {})[level] || 0);
-  const designCost = level === '0.5' ? 0 : Math.round(materialTotal * pct / 100);
-  return { materialTotal, level, designPct: pct, designCost, price: materialTotal + designCost };
+  const designCost = Math.round(materialTotal * pct / 100);
+  const extras = (Number(line.stoneCost) || 0) + (Number(line.platingCost) || 0) + (Number(line.enamelCost) || 0) + (Number(line.engravingCost) || 0) + (Number(line.anodizeCost) || 0);
+  return { materialTotal, level, designPct: pct, designCost, price: Math.round(materialTotal + designCost + extras) };
 }
 
 /* ─────────────────────────── telegram plumbing ─────────────────────────── */
@@ -2593,7 +2821,7 @@ async function sendReportWithButtons(text, keyboard, env, chatId, fetchImpl = fe
  *                  mo:v:<id>  show one order
  *                  mo:list:<status>  refresh the list
  */
-async function handleMouldCallback(data, env, chatId, callbackId, fetchImpl = fetch) {
+async function handleMouldCallback(data, env, chatId, callbackId, fetchImpl = fetch, messageId = undefined) {
   const answer = (text) => tgCall('answerCallbackQuery', { callback_query_id: callbackId, text }, env, fetchImpl)
     .catch(() => ({}));
   const parts = String(data || '').split(':');
@@ -2666,22 +2894,26 @@ async function handleMouldCallback(data, env, chatId, callbackId, fetchImpl = fe
   }
 
   if (action === 'd') {
+    const nowIso = new Date().toISOString();
     const patch = await saveMouldOrder(env, o.id, {
       status: 'delivered',
-      statusUpdatedAt: new Date().toISOString(),
+      deliveredAt: nowIso,
+      statusUpdatedAt: nowIso,
     }, fetchImpl);
     await answer(patch.ok ? 'Marked delivered' : 'Could not update');
     if (patch.ok) {
-      await tgCall('editMessageReplyMarkup', {
-        chat_id: chatId,
-        message_id: (parts[3] || undefined),
-        reply_markup: { inline_keyboard: [] },
-      }, env, fetchImpl).catch(() => ({}));
+      if (messageId) {
+        await tgCall('editMessageReplyMarkup', {
+          chat_id: chatId,
+          message_id: messageId,
+          reply_markup: { inline_keyboard: [] },
+        }, env, fetchImpl).catch(() => ({}));
+      }
       await tgCall('sendMessage', {
         chat_id: chatId,
         text: `MARKED DELIVERED\n\n${shortRef(o)} · ${o.name}\n${archLabelOf(o)} · ${num(o.total)} EGP`,
         disable_web_page_preview: true,
-        reply_markup: mouldKeyboard(Object.assign({}, o, { status: 'delivered' })),
+        reply_markup: mouldKeyboard(Object.assign({}, o, { status: 'delivered', deliveredAt: nowIso })),
       }, env, fetchImpl);
     }
     return { ok: patch.ok, action: 'delivered' };
@@ -2714,7 +2946,8 @@ async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
         .catch(() => ({}));
       return { ok: true, denied: true };
     }
-    const res = await handleMouldCallback(cb.data, env, chatId, cb.id, fetchImpl)
+    const msgId = cb.message && cb.message.message_id;
+    const res = await handleMouldCallback(cb.data, env, chatId, cb.id, fetchImpl, msgId)
       .catch(e => ({ ok: false, error: String(e) }));
     return { ok: true, callback: cb.data, ...res };
   }
@@ -2761,10 +2994,15 @@ async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
 async function pollTelegram(env, fetchImpl = fetch) {
   if (!env.TELEGRAM_BOT_TOKEN) return { ok: false, error: 'no-token' };
   try {
-    // Skip polling if webhook is already configured
-    const wh = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getWebhookInfo`, { method: 'GET' })
-      .then(r => r.json()).catch(() => ({}));
-    if (wh && wh.ok && wh.result && wh.result.url) return { ok: true, skipped: 'webhook-active' };
+    // Skip polling if webhook is already configured (cache check for 10m per isolate)
+    let hasWebhook = isoCacheGet('tg:hasWebhook', fetchImpl);
+    if (hasWebhook === undefined) {
+      const wh = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getWebhookInfo`, { method: 'GET' })
+        .then(r => r.json()).catch(() => ({}));
+      hasWebhook = !!(wh && wh.ok && wh.result && wh.result.url);
+      isoCacheSet('tg:hasWebhook', hasWebhook, 10 * 60 * 1000, fetchImpl);
+    }
+    if (hasWebhook) return { ok: true, skipped: 'webhook-active' };
   } catch (e) { /* continue with polling */ }
   try {
     const r = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUpdates?timeout=0&limit=50&allowed_updates=message,callback_query`, { method: 'GET' });
@@ -2849,7 +3087,7 @@ function cors(origin) {
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Pdf-Key, X-Moulds-Key, X-Cron-Key',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
@@ -3284,6 +3522,39 @@ async function sendViaEmailJS(templateId, params, env, fetchImpl = fetch) {
   return { channel: 'emailjs', ok: r.ok, status: r.status, error: r.ok ? undefined : txt.slice(0, 200) };
 }
 
+function formatReminderText(appt = {}) {
+  return [
+    `Dear ${appt.name || 'there'},`,
+    '',
+    'This is a friendly reminder of your EGYGRILLZ appointment tomorrow.',
+    '',
+    `Service: ${appt.service || '—'}`,
+    `Date:    ${appt.date || '—'}`,
+    `Time:    ${appt.time || '—'}`,
+    '',
+    'Location: Smart Smile Dental Clinic, 38 Abou Bakr El-Sdeek, Heliopolis, Floor 5, Apt 504, Cairo',
+    '',
+    'If you need to reschedule, kindly reply to this email or message us on Instagram @egygrillz.',
+    '',
+    'EGYGRILLZ Studio',
+  ].join('\n');
+}
+
+function reminderEmailHTML(appt = {}) {
+  return `<div style="font-family:Georgia,serif;color:#1a1a1a;max-width:560px;margin:0 auto;padding:28px;line-height:1.7;">`
+    + `<div style="font-size:20px;letter-spacing:4px;text-transform:uppercase;margin-bottom:18px;border-bottom:1px solid #e6e6e6;padding-bottom:12px;">EGYGRILLZ</div>`
+    + `<p>Dear ${esc(appt.name || 'there')},</p>`
+    + `<p>This is a friendly reminder of your appointment tomorrow at our Heliopolis studio.</p>`
+    + `<table style="width:100%;border-collapse:collapse;margin:18px 0;font-family:Arial,sans-serif;font-size:13px;">`
+    + `<tr><td style="padding:8px 0;color:#888;width:90px;">Service</td><td style="padding:8px 0;font-weight:bold;">${esc(appt.service || '—')}</td></tr>`
+    + `<tr><td style="padding:8px 0;color:#888;">Date</td><td style="padding:8px 0;">${esc(appt.date || '—')}</td></tr>`
+    + `<tr><td style="padding:8px 0;color:#888;">Time</td><td style="padding:8px 0;">${esc(appt.time || '—')}</td></tr>`
+    + `<tr><td style="padding:8px 0;color:#888;">Studio</td><td style="padding:8px 0;">Smart Smile Clinics · 38 Abou Bakr El-Sdeek, Heliopolis (Fl 5, Apt 504)</td></tr>`
+    + `</table>`
+    + `<p style="font-size:12px;color:#777;">Need to reschedule? Simply reply to this email or message @egygrillz.</p>`
+    + `</div>`;
+}
+
 /** Send reminder via EmailJS */
 async function sendReminderTo(appt, env, f) {
   const params = {
@@ -3337,7 +3608,7 @@ async function fetchTodaysAppointments(env, fetchImpl = fetch) {
   };
   const r = await fetchImpl(`${base}:runQuery?key=${env.FIREBASE_API_KEY}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await fsHeaders(env, fetchImpl),
     body: JSON.stringify(body),
   });
   if (!r.ok) {
@@ -3552,7 +3823,7 @@ export default {
 
       const caption = clean(form.get('caption'), 900);
       const r = await sendPdf(new Uint8Array(await file.arrayBuffer()),
-        file.name || 'document.pdf', caption, env);
+        file.name || 'document.pdf', caption, env, null, env.fetchImpl || fetch);
       return json(r, r.ok ? 200 : 502, { origin });
     }
 
@@ -3628,6 +3899,7 @@ export default {
           const doc = await r.json().catch(() => null);
           id = String((doc && doc.name) || '').split('/').pop();
           stored = !!id;
+          if (stored) isoCacheClear('moulds:');
         } else {
           const t = await r.text().catch(() => '');
           console.log('[moulds] create refused', r.status, t.slice(0, 200));
@@ -3693,9 +3965,10 @@ export default {
       const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
       if (key && given !== key) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
 
-      const limit = Math.max(1, Math.min(200, parseInt(url.searchParams.get('limit') || '120', 10) || 120));
+      const limit = Math.max(1, Math.min(200, parseInt(url.searchParams.get('limit') || '60', 10) || 60));
       const status = clean(url.searchParams.get('status') || '', 20).toLowerCase();
-      const r = await fetchMouldOrders(env, { limit, status: status || 'all' }, env.fetchImpl || fetch)
+      const force = url.searchParams.get('force') === '1' || url.searchParams.get('force') === 'true';
+      const r = await fetchMouldOrders(env, { limit, status: status || 'all', force }, env.fetchImpl || fetch)
         .catch(e => ({ ok: false, error: String(e), orders: [] }));
       if (!r.ok) {
         const err = r.error || 'firestore';
@@ -3749,7 +4022,10 @@ export default {
       if (!id || !['pending', 'approved', 'delivered'].includes(status)) {
         return json({ ok: false, error: 'bad-request' }, 422, { origin });
       }
-      const patch = await saveMouldOrder(env, id, { status, statusUpdatedAt: new Date().toISOString() }, env.fetchImpl || fetch);
+      const nowIso = new Date().toISOString();
+      const fields = { status, statusUpdatedAt: nowIso };
+      if (status === 'delivered') fields.deliveredAt = nowIso;
+      const patch = await saveMouldOrder(env, id, fields, env.fetchImpl || fetch);
       return json({ ok: patch.ok, status, error: patch.ok ? undefined : patch.error }, patch.ok ? 200 : 502, { origin });
     }
 

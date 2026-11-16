@@ -1,41 +1,49 @@
 /**
- * EGYGRILLZ — drop-in replacement for the CallMeBot call.
- * Add to booking.html / contact.html (before </body>):
- *
- *   <script src="/assets/egygz-notify.js" defer></script>
- *
- * Then replace the old fetch(...callmebot...) line with:
- *
- *   await EGYGZ.notify.booking({ name, phone, email, service, date, time, notes, ref });
- *   await EGYGZ.notify.message({ name, phone, email, message, ref });
- *   await EGYGZ.notify.mould({ name, phone, email, arches, archCount, total, address, mapLink, ref });
- *
- * Nothing secret is exposed here — the Worker holds all keys.
+ * EGYGRILLZ — Worker notifier (booking, contact message, mould order).
+ * Non-blocking with a hard 10s AbortController timeout so slow networks never
+ * stall client confirmation screens. Nothing secret is exposed here.
  */
-(function () {
+(function (global) {
+  'use strict';
+
   var ENDPOINT = 'https://egygillz-api.egygrillz.workers.dev/api/notify';
+  var TIMEOUT_MS = 10000;
 
   function turnstileToken() {
     try {
-      return (window.turnstile && window.turnstile.getResponse && window.turnstile.getResponse()) || '';
+      return (global.turnstile && global.turnstile.getResponse && global.turnstile.getResponse()) || '';
     } catch (e) { return ''; }
   }
 
   function send(type, data) {
-    return fetch(ENDPOINT, {
+    if (!global.fetch) return Promise.resolve({ ok: false, error: 'no-fetch' });
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+      if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+    }, TIMEOUT_MS);
+
+    var opts = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: type, data: data || {}, turnstile: turnstileToken() })
-    })
-      .then(function (r) { return r.json().catch(function () { return {}; }); })
-      .catch(function (e) { console.warn('[EGYGZ] notify failed (non-blocking):', e); return { ok: false }; });
+    };
+    if (ctrl) opts.signal = ctrl.signal;
+
+    return global.fetch(ENDPOINT, opts)
+      .then(function (r) {
+        return r.json().catch(function () { return { ok: r.ok, status: r.status }; });
+      })
+      .catch(function (e) {
+        console.warn('[EGYGZ] notify failed (non-blocking):', e && e.message ? e.message : e);
+        return { ok: false, error: String((e && e.message) || e) };
+      })
+      .finally(function () { clearTimeout(timer); });
   }
 
-  window.EGYGZ = window.EGYGZ || {};
-  window.EGYGZ.notify = {
+  global.EGYGZ = global.EGYGZ || {};
+  global.EGYGZ.notify = {
     booking: function (d) { return send('booking', d); },
     message: function (d) { return send('message', d); },
-    /* At-home mould kit order → Telegram alert with the map pin */
     mould: function (d) { return send('mould', d); }
   };
-})();
+})(typeof globalThis !== 'undefined' ? globalThis : window);

@@ -14,8 +14,8 @@
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
-  <script data-cfasync="false" src="/assets/calc-engine.js?v=2"></script>
-  <script data-cfasync="false" src="/assets/egygz-notify.js"></script>
+  <script data-cfasync="false" src="/assets/calc-engine.js?v=4"></script>
+  <script data-cfasync="false" src="/assets/egygz-notify.js?v=3"></script>
 
   <style>
     /* ── MONOCHROME ONLY: black, white, grey ── */
@@ -79,13 +79,15 @@
     .teeth-chart { display:block; width:100%; height:auto; color:#111; overflow:visible; }
     .tooth { fill:transparent; stroke:#a9a9a9; stroke-width:1.45; stroke-linejoin:round; stroke-linecap:round; opacity:.9; transition:fill .18s ease, stroke .18s ease, fill-opacity .18s ease; }
     .arch-row { cursor:pointer; outline:none; }
+    .arch-hitbox { fill:transparent; stroke:none; pointer-events:all; }
     .arch-row:hover .tooth { fill:#111; fill-opacity:.09; stroke:#111; }
     .arch-row:focus-visible .tooth { stroke:#111; stroke-width:2; }
+    .arch-row:focus-visible .arch-hitbox { stroke:#111; stroke-width:1.2; stroke-dasharray:4 4; stroke-opacity:.45; }
     .arch-row.on .tooth { fill:#111; fill-opacity:1; stroke:#111; }
     .arch-row.on:hover .tooth { fill-opacity:.84; }
-    .tooth-label { font-family:'Arimo',sans-serif; font-size:7.5px; fill:#111; opacity:.3; text-anchor:middle; pointer-events:none; transition:fill .18s, opacity .18s; }
-    .arch-row.on .tooth-label { fill:#fff; opacity:.85; }
-    .arch-label { font-family:'Arimo',sans-serif; font-size:11px; letter-spacing:.3em; text-transform:uppercase; fill:#111; opacity:.32; transition:opacity .18s; }
+    .tooth-label { font-family:'Arimo',sans-serif; font-size:7.5px; fill:#111; opacity:.3; text-anchor:middle; pointer-events:none; user-select:none; transition:fill .18s, opacity .18s; }
+    .tooth-label.on { fill:#111; opacity:.82; font-weight:700; }
+    .arch-label { font-family:'Arimo',sans-serif; font-size:11px; letter-spacing:.3em; text-transform:uppercase; fill:#111; opacity:.32; user-select:none; transition:opacity .18s; }
     .arch-hit { cursor:pointer; }
     .arch-hit.on { opacity:1; }
     .arch-hit:hover { opacity:.7; }
@@ -226,6 +228,7 @@
   <line class="midline" x1="450" y1="58" x2="450" y2="462"/>
   <text class="arch-label arch-hit" data-arch="upper" x="450" y="40" text-anchor="middle">Upper</text>
   <g class="arch-row" id="upper-arch" data-arch="upper" role="button" tabindex="0" aria-pressed="false" aria-label="Select the upper arch, 450 EGP">
+    <rect class="arch-hitbox" x="12" y="18" width="876" height="232" rx="14"/>
     <path class="tooth" id="tooth-18" data-tooth="18" d="M 82.904 202.43 C 85.223 197.361 85.223 191.443 84.063 184.995 C 82.904 178.835 79.426 172.675 74.788 168.057 C 70.141 164.973 65.503 163.438 62.025 163.438 C 58.547 163.438 53.899 164.973 49.262 168.057 C 44.624 172.675 41.136 178.835 39.977 184.995 C 38.818 191.443 38.818 197.361 41.136 202.43 C 42.932 203.808 46.113 204.832 49.967 205.5 C 53.787 206.163 57.94 203.132 62.385 203.096 C 66.598 203.062 71.107 206.057 74.662 205.396 C 78.251 204.727 81.202 203.738 82.904 202.43"/>
     <path class="tooth" id="tooth-17" data-tooth="17" d="M 144.186 205.079 C 146.57 198.873 146.57 191.56 145.378 183.726 C 144.186 176.148 140.611 167.735 135.843 162.679 C 131.066 159.315 125.106 157.63 120.339 157.63 C 117.955 157.63 113.178 157.63 111.986 157.63 C 107.218 157.63 102.441 159.315 97.673 162.679 C 92.906 167.735 89.33 176.148 88.128 183.726 C 86.937 191.56 86.937 198.873 89.33 205.079 C 91.973 207 96.634 208.388 102.194 209.244 C 106.897 209.968 112.001 206.339 117.313 206.301 C 122.011 206.267 126.924 209.907 131.101 209.277 C 136.758 208.425 141.509 207.026 144.186 205.079"/>
     <path class="tooth" id="tooth-16" data-tooth="16" d="M 209.691 205.388 C 212.082 199.171 212.082 191.732 210.886 182.902 C 209.691 174.319 206.095 165.737 200.117 160.59 C 195.335 157.161 189.348 155.443 184.566 155.443 C 182.175 155.443 177.383 155.443 174.992 155.443 C 170.21 155.443 164.232 157.161 159.44 160.59 C 153.463 165.737 149.876 174.319 148.681 182.902 C 147.475 191.732 147.475 199.171 149.876 205.388 C 152.333 207.544 156.844 209.146 162.353 210.194 C 167.443 211.163 174.623 206.694 180.587 206.716 C 187.143 206.742 192.485 211.16 197.984 210.042 C 203.142 208.993 207.348 207.442 209.691 205.388"/>
@@ -244,6 +247,7 @@
     <path class="tooth" id="tooth-28" data-tooth="28" d="M 818.596 202.43 C 816.277 197.361 816.277 191.443 817.437 184.995 C 818.596 178.835 822.074 172.675 826.712 168.057 C 831.359 164.973 835.997 163.438 839.475 163.438 C 842.953 163.438 847.601 164.973 852.238 168.057 C 856.876 172.675 860.364 178.835 861.523 184.995 C 862.682 191.443 862.682 197.361 860.364 202.43 C 858.568 203.808 855.387 204.832 851.533 205.5 C 847.713 206.163 843.56 203.132 839.115 203.096 C 834.902 203.062 830.393 206.057 826.838 205.396 C 823.249 204.727 820.298 203.738 818.596 202.43"/>
   </g>
   <g class="arch-row" id="lower-arch" data-arch="lower" role="button" tabindex="0" aria-pressed="false" aria-label="Select the lower arch, 450 EGP">
+    <rect class="arch-hitbox" x="12" y="270" width="876" height="238" rx="14"/>
     <path class="tooth" id="tooth-48" data-tooth="48" d="M 82.255 322.948 C 84.587 327.637 84.587 332.391 83.416 337.717 C 82.255 343.464 78.77 349.212 74.115 353.518 C 69.468 356.392 64.813 357.832 60.167 357.832 C 55.512 357.832 50.866 356.392 46.21 353.518 C 41.555 349.212 38.07 343.464 36.908 337.717 C 35.747 332.391 35.747 327.637 38.07 322.948 C 39.052 322.21 39.361 319.497 41.374 318.872 C 46.629 317.241 51.53 320.86 59.478 321.14 C 64.076 321.301 72.172 317.699 75.529 318.166 C 79.95 318.782 81.605 321.743 82.255 322.948"/>
     <path class="tooth" id="tooth-47" data-tooth="47" d="M 157.11 319.641 C 159.6 324.935 159.6 330.49 158.35 336.583 C 157.11 343.015 153.39 350.161 148.42 354.453 C 143.46 358.026 137.25 359.453 131.04 359.453 C 127.32 359.453 117.39 359.453 114.91 359.453 C 108.7 359.453 102.49 358.026 97.53 354.453 C 92.56 350.161 88.84 343.015 87.6 336.583 C 86.36 330.563 86.36 325.105 88.84 319.903 C 90.488 318.933 91.815 317.345 95.836 316.657 C 102.887 315.449 111.965 319.406 122.14 319.374 C 129.52 319.351 138.128 315.114 143.818 315.502 C 152.756 316.112 158.347 318.87 157.11 319.641"/>
     <path class="tooth" id="tooth-46" data-tooth="46" d="M 231.394 319.725 C 233.809 324.98 233.809 330.507 232.602 336.599 C 231.394 343.863 227.763 351.126 221.727 355.489 C 216.888 359.12 210.843 360.577 204.807 360.577 C 201.175 360.577 192.715 360.577 190.301 360.577 C 184.255 360.577 178.219 359.12 173.381 355.489 C 167.335 351.126 163.713 343.863 162.506 336.599 C 161.299 330.507 161.299 324.98 163.713 319.725 C 165.717 318.328 166.807 315.555 171.946 314.644 C 177.839 313.6 184.122 318.577 192.321 318.709 C 199.835 318.831 209.258 314.045 215.146 314.528 C 224.262 315.274 231.394 318.344 231.394 319.725"/>
@@ -391,20 +395,27 @@
        ask for. The direct browser write stays as the fallback. */
     var WORKER_BASE = localStorage.getItem('egygz_worker') || 'https://egygillz-api.egygrillz.workers.dev';
 
-    // ── Firebase (same project as booking) ──
+    // ── Firebase (lazy fallback — only initialized if the Worker endpoint is unreachable) ──
     var db = null;
-    try {
-      firebase.initializeApp({
-        apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
-        authDomain: "egygrillz-studio.firebaseapp.com",
-        projectId: "egygrillz-studio",
-        storageBucket: "egygrillz-studio.firebasestorage.app",
-        messagingSenderId: "1022362401463",
-        appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
-      });
-      try { firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true); } catch (e) {}
-      db = firebase.firestore();
-    } catch (e) { console.error('Firebase init failed:', e); }
+    function getFallbackDb() {
+      if (db) return db;
+      try {
+        if (typeof firebase === 'undefined') return null;
+        if (!firebase.apps || !firebase.apps.length) {
+          firebase.initializeApp({
+            apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
+            authDomain: "egygrillz-studio.firebaseapp.com",
+            projectId: "egygrillz-studio",
+            storageBucket: "egygrillz-studio.firebasestorage.app",
+            messagingSenderId: "1022362401463",
+            appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
+          });
+          try { firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true); } catch (e) {}
+        }
+        db = firebase.firestore();
+      } catch (e) { console.error('Firebase init failed:', e); }
+      return db;
+    }
 
     // ── UI helpers ──
     function $(id) { return document.getElementById(id); }
@@ -413,6 +424,13 @@
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        var nav = document.querySelector('.main-nav');
+        if (nav) nav.classList.remove('active');
+        document.body.classList.remove('menu-open');
+      }
+    });
 
     // ── header hide on scroll ──
     (function () {
@@ -447,17 +465,23 @@
         var arches = Number(el.getAttribute('data-price')) || 1;
         el.textContent = egp(arches * PRICES.perArch);
       });
+      var upRow = $('upper-arch');
+      var loRow = $('lower-arch');
+      if (upRow) upRow.setAttribute('aria-label', 'Select the upper arch, ' + egp(PRICES.perArch));
+      if (loRow) loRow.setAttribute('aria-label', 'Select the lower arch, ' + egp(PRICES.perArch));
       var note = document.getElementById('sumNote');
       if (note) {
         note.textContent = egp(PRICES.perArch) + ' per arch · '
           + (PRICES.delivery > 0 ? egp(PRICES.delivery) + ' flat delivery' : 'free delivery')
           + '. We email the payment link once your order is confirmed.';
       }
+      if (archCount() > 0) paintArch();
     }
 
     /* ══ TEETH CHART — row selection ══ */
     var rowEls = Array.prototype.slice.call(document.querySelectorAll('.arch-row'));
     var hitEls = Array.prototype.slice.call(document.querySelectorAll('.arch-hit'));
+    var toothLabelEls = Array.prototype.slice.call(document.querySelectorAll('#teeth-chart-root .tooth-label'));
     var pillEls = Array.prototype.slice.call(document.querySelectorAll('.pill[data-arch]'));
 
     function archCount() { return (ARCH.upper ? 1 : 0) + (ARCH.lower ? 1 : 0); }
@@ -478,7 +502,6 @@
     }
 
     function paintArch() {
-      var k = archKey();
       rowEls.forEach(function (row) {
         var on = !!ARCH[row.getAttribute('data-arch')];
         row.classList.toggle('on', on);
@@ -486,6 +509,10 @@
       });
       hitEls.forEach(function (t) {
         t.classList.toggle('on', !!ARCH[t.getAttribute('data-arch')]);
+      });
+      toothLabelEls.forEach(function (lbl) {
+        var isUpper = Number(lbl.getAttribute('y') || 0) < 260;
+        lbl.classList.toggle('on', isUpper ? !!ARCH.upper : !!ARCH.lower);
       });
       pillEls.forEach(function (p) {
         var key = p.getAttribute('data-arch');
@@ -500,6 +527,7 @@
           ? 'Nothing selected yet — tap the teeth, the pills, or Select Both.'
           : '<strong>' + archLabel() + '</strong> selected · ' + n + ' kit' + (n > 1 ? 's' : '') + ' · ' + egp(n * PRICES.perArch);
       }
+      clearError();
       renderTotal();
     }
 
@@ -592,8 +620,10 @@
       return digits.length >= 8 && digits.length <= 15;
     }
 
+    var isSubmittingMould = false;
     $('mouldForm').addEventListener('submit', async function (e) {
       e.preventDefault();
+      if (isSubmittingMould) return;
       clearError();
 
       var name = $('mName').value.trim();
@@ -602,11 +632,12 @@
       var address = $('mAddress').value.trim();
 
       if (!archKey()) return showError('Select an arch first — tap the upper row, the lower row, or both.');
-      if (name.length < 2) return showError('Please type your full name.');
-      if (!validPhone(phone)) return showError('Please type a phone or WhatsApp number we can reach you on.');
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return showError('Please type a valid email — the payment link goes there.');
-      if (!address && !GEO) return showError('Add your area or landmark, or tap “Use My Current Location”.');
+      if (name.length < 2) { $('mName').focus(); return showError('Please type your full name.'); }
+      if (!validPhone(phone)) { $('mPhone').focus(); return showError('Please type a phone or WhatsApp number we can reach you on.'); }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { $('mEmail').focus(); return showError('Please type a valid email — the payment link goes there.'); }
+      if (!address && !GEO) { $('mAddress').focus(); return showError('Add your area or landmark, or tap “Use My Current Location”.'); }
 
+      isSubmittingMould = true;
       var n = archCount();
       var moulds = n * PRICES.perArch;
       var delivery = PRICES.delivery;
@@ -614,7 +645,7 @@
 
       var btn = $('submitBtn');
       btn.disabled = true;
-      btn.textContent = 'Sending…';
+      btn.textContent = 'Sending Request…';
 
       var order = {
         arches: archKey(),
@@ -638,18 +669,19 @@
 
       var savedId = '';
       var savedBy = '';
+      var workerRejectedMsg = '';
 
-      /* 1) The Worker saves the order. It signs in as the studio account
-            before writing, which is what Firestore's rules require — a
-            visitor's browser is anonymous, so a direct write is refused.
-            It also recalculates the price from settings/site and alerts
-            Telegram / WhatsApp / email in the same call. */
+      /* 1) Primary: Worker saves the order, verifies pricing from settings/site,
+            and notifies Telegram/WhatsApp/email in one server-authenticated call. */
       try {
+        var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+        var tmr = setTimeout(function () { if (ctrl) { try { ctrl.abort(); } catch (_) {} } }, 12000);
         var resp = await fetch(WORKER_BASE + '/api/moulds/order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(order)
-        });
+          body: JSON.stringify(order),
+          signal: ctrl ? ctrl.signal : undefined
+        }).finally(function () { clearTimeout(tmr); });
         var res = await resp.json().catch(function () { return null; });
         if (res && res.ok) {
           savedId = String(res.id || '');
@@ -659,6 +691,10 @@
             if (Number(res.deliveryFee) >= 0) delivery = Number(res.deliveryFee);
             if (Number(res.mouldPrice) >= 0) moulds = Number(res.mouldPrice);
           }
+        } else if (resp.status === 429) {
+          workerRejectedMsg = 'Too many requests — please wait a minute and try again.';
+        } else if (resp.status === 400 && res && res.error) {
+          workerRejectedMsg = String(res.error);
         } else if (res && res.error) {
           console.warn('[moulds] worker declined:', res.error);
         }
@@ -666,26 +702,32 @@
         console.warn('[moulds] worker unreachable', e);
       }
 
-      /* 2) Fallback: write straight from the browser (works whenever the
-            Firestore rules allow the public create). */
+      if (workerRejectedMsg) {
+        isSubmittingMould = false;
+        btn.disabled = false;
+        btn.textContent = 'Confirm My Mould Kit';
+        return showError(workerRejectedMsg);
+      }
+
+      /* 2) Fallback: lazy-initialize Firebase and save directly from the browser */
       if (!savedBy) {
         try {
-          if (!db) throw new Error('No database connection');
-          var ref = await db.collection('mould_orders').add(Object.assign({}, order, {
+          var fallbackDb = getFallbackDb();
+          if (!fallbackDb) throw new Error('No database connection');
+          var ref = await fallbackDb.collection('mould_orders').add(Object.assign({}, order, {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           }));
           savedId = ref && ref.id ? ref.id : '';
           savedBy = 'browser';
         } catch (err) {
           console.error('[moulds] save failed', err);
+          isSubmittingMould = false;
           btn.disabled = false;
           btn.textContent = 'Confirm My Mould Kit';
-          return showError('We could not send your request — check your connection and try again, or message us on Instagram.');
+          return showError('We could not send your request right now — check your connection and try again, or message us on Instagram.');
         }
       }
 
-      // ── ping the studio only when the browser did the save (the Worker
-      //    already alerted everyone when it saved the order itself) ──
       if (savedBy === 'browser') {
         try {
           if (window.EGYGZ && window.EGYGZ.notify) {
@@ -705,6 +747,9 @@
       }
 
       // ── confirmation ──
+      isSubmittingMould = false;
+      btn.disabled = false;
+      btn.textContent = 'Confirm My Mould Kit';
       $('mouldForm').style.display = 'none';
       $('successDetail').textContent = archLabel() + ' · ' + egp(total) + ' (' + egp(moulds) + ' moulds + ' + egp(delivery) + ' delivery). We will email ' + email + ' with the payment link.';
       $('successRef').textContent = savedId ? ('Order ' + String(savedId).slice(0, 8).toUpperCase()) : '';

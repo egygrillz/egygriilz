@@ -199,6 +199,7 @@
     @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
   <link rel="canonical" href="https://egygrillz.com/egygz-client-intake">
+  <script src="/assets/calc-engine.js?v=4"></script>
 </head>
 <body>
 <div class="wrap">
@@ -208,6 +209,7 @@
             <div class="brand">EGYGRILLZ<small id="heroSub">Design details</small></div>
         </div>
         <div class="tools">
+            <button class="tool" id="pasteCodeBtn" type="button" title="Paste calculator code" style="width:auto;padding:0 10px;font-size:11px;font-weight:600">Code</button>
             <button class="tool" id="themeBtn" type="button" title="Theme">
                 <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
             </button>
@@ -274,7 +276,7 @@ const I18N = {
         stRateFull: "Today's price per tooth (EGP) — optional",
         barsFull: "Full iced on Bars uses a fixed studio price — nothing else to choose.",
         finT: "Finishing", finH: "Optional extras — pick “none” if you don't want them.",
-        plating: "Plating", enamel: "Enamel colors", engraving: "Engraving",
+        plating: "Plating", enamel: "Enamel colors", engraving: "Engraving", anodize: "Titanium anodizing",
         timeT: "Timing & mold", timeH: "Almost done.",
         timeline: "How soon do you need it?", mold: "Mold / scan",
         notesT: "Anything else?", notesH: "Allergies, references, deadline, questions — anything you want us to know.",
@@ -309,7 +311,7 @@ const I18N = {
         stRateFull: "سعر الضرس النهارده (جنيه) — اختياري",
         barsFull: "الفولي آيسد مع البارز بسعر ثابت من الاستوديو — مفيش اختيارات تانية.",
         finT: "التشطيب", finH: "إضافات اختيارية — اختار «بدون» لو مش عايزها.",
-        plating: "الطلاء", enamel: "ألوان الإيناميل", engraving: "النقش",
+        plating: "الطلاء", enamel: "ألوان الإيناميل", engraving: "النقش", anodize: "أنودة التيتانيوم",
         timeT: "الوقت والمقاس", timeH: "فاضل خطوة صغيرة.",
         timeline: "محتاجه إمتى؟", mold: "المقاس / السكان",
         notesT: "أي حاجة تانية؟", notesH: "حساسية، صور مرجعية، ميعاد، أسئلة — أي حاجة تحب نعرفها.",
@@ -371,9 +373,18 @@ const OPT = {
         { v: "invisible", en: "Invisible", ar: "إنفزيبل" }
     ],
     plating: [
-        { v: "none", en: "None", ar: "بدون" }, { v: "blackgold", en: "Black gold", ar: "ذهب أسود" },
-        { v: "whitegold", en: "White gold", ar: "ذهب أبيض" }, { v: "rosegold", en: "Rose gold", ar: "ذهب وردي" },
+        { v: "none", en: "None", ar: "بدون" },
+        { v: "yellowgold", en: "Yellow gold", ar: "ذهب أصفر" },
+        { v: "blackgold", en: "Black gold", ar: "ذهب أسود" },
+        { v: "whitegold", en: "White gold", ar: "ذهب أبيض" },
+        { v: "rosegold", en: "Rose gold", ar: "ذهب وردي" },
         { v: "silverplating", en: "Silver plating", ar: "طلاء فضة" }
+    ],
+    anodize: [
+        { v: "none", en: "None", ar: "بدون" },
+        { v: "single", en: "Single color", ar: "لون واحد" },
+        { v: "dual", en: "Dual color", ar: "لونين" },
+        { v: "multi", en: "Multi / rainbow", ar: "متعدد / قوس قزح" }
     ],
     enamel: [
         { v: "none", en: "None", ar: "بدون" }, { v: "single", en: "Single color", ar: "لون واحد" },
@@ -420,7 +431,7 @@ const IMG = (() => {
     const MAP = {
         materials: { chrome: "CHROME.png", titanium: "TITANUM.png", silver: "SILVER.png", gold: "GOLD.png" },
         levels: { "0.5": "LEVEL 0.5.png", "1": "LEVEL 1.png", "2": "LEVEL 2.png", "3": "LEVEL 3.png", "4": "LEVEL 4.png", "5": "LEVEL 5.png", "6": "LEVEL 6.png" },
-        plating: { blackgold: "BLACK GOLD PLATING.png", whitegold: "WHITE GOLD PLATING.png", rosegold: "ROSE GOLD PLATING.png", silverplating: "SILVER PLATING.png" }
+        plating: { yellowgold: "YELLOW GOLD PLATING.png", blackgold: "BLACK GOLD PLATING.png", whitegold: "WHITE GOLD PLATING.png", rosegold: "ROSE GOLD PLATING.png", silverplating: "SILVER PLATING.png" }
     };
     const ready = Promise.resolve();
     function hydrate(root) {
@@ -479,7 +490,7 @@ const state = {
     lang: params.get("lang") === "ar" ? "ar" : "en",
     step: 0,
     burned: false,
-    answers: { c: "", n: "", m: "", karat: "18", goldRate: "", t: "6", l: "1", s: "none", at: "cz", sc: "1", ss: "flush", ft: "cz", cv: "standardpave", rl: "", rf: "", pl: "none", en: "none", eg: "none", tl: "standard", md: "none", nt: "" }
+    answers: { c: "", n: "", m: "", karat: "18", goldRate: "", t: "6", l: "1", s: "none", at: "cz", sc: "1", ss: "flush", ft: "cz", cv: "standardpave", rl: "", rf: "", pl: "none", en: "none", eg: "none", an: "none", tl: "standard", md: "none", nt: "" }
 };
 
 /* ---------------- helpers ---------------- */
@@ -545,7 +556,7 @@ function currentSteps() {
 
 function renderExpired() {
     const L = I18N[state.lang];
-    $("#a1geRow").innerHTML = `<span class="badge expired"><i></i>${esc(L.badgeExpired)}</span>`;
+    $("#badgeRow").innerHTML = `<span class="badge expired"><i></i>${esc(L.badgeExpired)}</span>`;
     $("#bar").style.width = "100%";
     $("#stepMeta").textContent = "";
     $("#dots").innerHTML = "";
@@ -555,7 +566,7 @@ function renderExpired() {
         <div class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div>
         <h1>${esc(L.expiredT)}</h1>
         <p class="hint" style="margin-bottom:16px">${esc(L.expiredH)}</p>
-        ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(state.lang === "ar" ? "مرحباً EGYGRILLZ — محتاج لينك جديد لتفاصيل التصميم" : "Hi EGYGRILLZ — I need a fresh design-details link please")}" target="_blank" rel="noopener">${esc(L.expiredBtn)}</a>` : ""}
+        ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(state.lang === "ar" ? "مرحباً EGYGRILLZ — محتاج لينك جديد لتفاصيل التصميم" : "Hi EGYGRILLZ — I need a fresh design-details link please")}" target="_blank" rel="noopener noreferrer">${esc(L.expiredBtn)}</a>` : ""}
     </div>`;
 }
 
@@ -566,16 +577,17 @@ function render() {
     $("#heroSub").textContent = L.sub;
     $("#footNote").textContent = L.footer;
     $("#langBtn").textContent = state.lang === "en" ? "ع" : "EN";
-    $("#a0kBtn").textContent = L.back;
+    $("#backBtn").textContent = L.back;
     $("#nextBtn").textContent = L.next;
     $("#themeBtn").title = "Theme";
 
     const status = tokenStatus();
     // "unknown"/"unverified" = the link was created on the studio's device — let the client in.
     if (status === "used") { renderExpired(); return; }
-    $("#a1geRow").innerHTML = `<span class="badge"><i></i>${esc((status === "live" || status === "unverified") ? L.badgeLive : L.badgePlain)}</span>`;
+    $("#badgeRow").innerHTML = `<span class="badge"><i></i>${esc((status === "live" || status === "unverified") ? L.badgeLive : L.badgePlain)}</span>`;
 
     const steps = currentSteps();
+    if (state.step >= steps.length) state.step = steps.length - 1;
     const key = steps[state.step];
     const a = state.answers;
     const noStones = a.m === "chrome" || a.m === "titanium";
@@ -584,7 +596,7 @@ function render() {
     $("#stepMeta").textContent = L.step.replace("{a}", state.step + 1).replace("{b}", steps.length);
     $("#dots").innerHTML = steps.map((_, i) => `<i class="${i === state.step ? "now" : i < state.step ? "done" : ""}"></i>`).join("");
     $("#nav").classList.toggle("hidden", key === "done");
-    $("#a0kBtn").disabled = state.step === 0;
+    $("#backBtn").disabled = state.step === 0;
 
     let html = "";
     if (key === "name") {
@@ -633,6 +645,7 @@ function render() {
     if (key === "fin") {
         html = `<div class="card step-enter"><h1>${esc(L.finT)}</h1><p class="hint">${esc(L.finH)}</p>
             <div class="field"><label class="f">${esc(L.plating)}</label>${optsHtml("plating", a.pl, true)}</div>
+            ${a.m === "titanium" ? `<div class="field"><label class="f">${esc(L.anodize)}</label>${selHtml("anodize", a.an)}</div>` : ""}
             <div class="field"><label class="f">${esc(L.enamel)}</label>${selHtml("enamel", a.en)}</div>
             <div class="field" style="margin-bottom:0"><label class="f">${esc(L.engraving)}</label>${selHtml("engraving", a.eg)}</div></div>`;
     }
@@ -645,21 +658,23 @@ function render() {
         html = `<div class="card step-enter"><h1>${esc(L.notesT)}</h1><p class="hint">${esc(L.notesH)}</p>
             <div class="field" style="margin-bottom:0"><label class="f">${esc(L.notesL)}</label><textarea data-input="nt" maxlength="300">${esc(a.nt)}</textarea></div></div>`;
     }
+    let generatedCode = "";
     if (key === "done") {
-        const code = makeCode();
+        generatedCode = makeCode();
         html = `<div class="card step-enter"><div class="center" style="margin-bottom:14px">
                 <div class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
                 <h1>${esc(L.doneT)}</h1><p class="hint" style="margin-bottom:0">${esc(L.doneH)}</p>
             </div>
             <label class="f">${esc(L.codeL)}</label>
-            <textarea class="codebox" id="codeBox" readonly>${esc(code)}</textarea>
+            <textarea class="codebox" id="codeBox" readonly>${esc(generatedCode)}</textarea>
             ${summaryHtml()}
             <div style="display:flex;flex-direction:column;gap:10px">
-                ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(messageText())}" target="_blank" rel="noopener">
+                ${WA_NUMBER ? `<a class="btn wa" style="text-decoration:none" href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(messageText())}" target="_blank" rel="noopener noreferrer">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5.1-1.3A10 10 0 1012 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-1.6-.5-3.4-2-4.5-3.7-.6-.9-1-2-1-2.7 0-.7.4-1.5.9-1.8.2-.1.4-.1.6-.1h.4c.2 0 .3 0 .5.4l.7 1.7c.1.2 0 .4-.1.5l-.4.5c-.1.2-.2.3 0 .6.5.8 1 1.4 1.9 2 .3.2.5.2.7 0l.6-.7c.2-.2.4-.2.6-.1l1.6.8c.4.2.4.3.4.5s0 .6-.2 1z"/></svg>
                     ${esc(L.wa)}</a>` : ""}
                 <button class="btn primary block" type="button" id="copyMsgBtn">${esc(L.copyMsg)}</button>
                 <button class="btn block" type="button" id="copyCodeBtn">${esc(L.copyCode)}</button>
+                <button class="btn ghost block" type="button" id="addMixedGroupBtn">${state.lang === "ar" ? "+ إضافة أسنان بمستوى مختلف في نفس الطقم" : "+ Add more teeth with a different level in this set"}</button>
             </div></div>`;
         if (!state.burned) { burnToken(); state.burned = true; }
     }
@@ -671,8 +686,18 @@ function render() {
     $("#nextBtn").textContent = L.next;
 
     if (key === "done") {
-        if ($("#copyCodeBtn")) $("#copyCodeBtn").onclick = () => copy(code, L.copied, L.copyFail);
+        if ($("#copyCodeBtn")) $("#copyCodeBtn").onclick = () => copy(generatedCode, L.copied, L.copyFail);
         if ($("#copyMsgBtn")) $("#copyMsgBtn").onclick = () => copy(messageText(), L.copied, L.copyFail);
+        if ($("#addMixedGroupBtn")) $("#addMixedGroupBtn").onclick = () => {
+            state.savedGroups = state.savedGroups || [];
+            state.savedGroups.push(answerToGroup(state.answers));
+            state.answers.t = "2";
+            state.answers.l = "1";
+            state.answers.s = "none";
+            state.step = Math.max(0, currentSteps().indexOf("teeth"));
+            render();
+            toast(state.lang === "ar" ? "أضف المجموعة التالية من الأسنان لنفس الطقم" : "Saved! Pick the next teeth group for this set");
+        };
     }
 }
 
@@ -685,6 +710,7 @@ document.addEventListener("click", e => {
             state.answers.m = val;
             if (val === "chrome" || val === "titanium") state.answers.s = "none";
             if (val !== "gold") state.answers.goldRate = "";
+            if (val !== "titanium") state.answers.an = "none";
         } else if (key === "level") state.answers.l = val;
         else if (key === "plating") state.answers.pl = val;
         else if (key === "stones") state.answers.s = val;
@@ -708,7 +734,7 @@ document.addEventListener("change", e => {
     else if (key === "karat") state.answers.karat = el.value;
     else if (key === "setting") state.answers.ss = el.value;
     else if (key === "coverage") state.answers.cv = el.value;
-    else if (["plating", "enamel", "engraving", "timeline", "mold"].includes(key)) state.answers[{ plating: "pl", enamel: "en", engraving: "eg", timeline: "tl", mold: "md" }[key]] = el.value;
+    else if (["plating", "enamel", "engraving", "anodize", "timeline", "mold"].includes(key)) state.answers[{ plating: "pl", enamel: "en", engraving: "eg", anodize: "an", timeline: "tl", mold: "md" }[key]] = el.value;
     render();
 });
 
@@ -731,7 +757,7 @@ $("#nextBtn").onclick = () => {
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
 };
-$("#a0kBtn").onclick = () => {
+$("#backBtn").onclick = () => {
     state.step = Math.max(0, state.step - 1);
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -760,8 +786,56 @@ function b64urlEncode(str) {
     bytes.forEach(b => bin += String.fromCharCode(b));
     return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
+function answerToGroup(a) {
+    const m = a.m || "chrome";
+    const g = {
+        material: m,
+        teeth: Math.max(1, Math.min(16, parseInt(a.t, 10) || 6)),
+        level: String(a.l || "1"),
+        plating: a.pl || "none",
+        enamel: a.en || "none",
+        engraving: a.eg || "none",
+        anodize: m === "titanium" ? (a.an || "none") : "none",
+    };
+    if (m === "gold") {
+        g.karat = a.karat || "18";
+        if (parseFloat(a.goldRate) > 0) g.goldPrice = parseFloat(a.goldRate);
+    }
+    if (m !== "chrome" && m !== "titanium") {
+        if (a.s === "accent") {
+            g.accent = { count: Math.max(1, parseInt(a.sc, 10) || 1), type: a.at || "cz", setting: a.ss || "flush" };
+            if (parseFloat(a.rl) > 0) { g.accent.price = parseFloat(a.rl); g.accent.customPrice = parseFloat(a.rl); }
+        } else if (a.s === "fulliced") {
+            if (String(a.l) === "0.5") g.full = { bars: true };
+            else {
+                g.full = { type: a.ft || "moissanite", coverage: a.cv || "standardpave" };
+                if (parseFloat(a.rf) > 0) { g.full.price = parseFloat(a.rf); g.full.customPrice = parseFloat(a.rf); }
+            }
+        }
+    }
+    return g;
+}
+function buildAllGroups() {
+    const prev = Array.isArray(state.savedGroups) ? state.savedGroups.slice() : [];
+    prev.push(answerToGroup(state.answers));
+    return prev;
+}
 function makeCode() {
     const a = state.answers;
+    const gs = buildAllGroups();
+    if (window.CalcEngine && typeof window.CalcEngine.encodeCode === "function") {
+        const line = gs.length > 1
+            ? { name: a.n.trim(), isMixed: true, material: gs[0].material, teeth: gs.reduce((s, x) => s + x.teeth, 0), level: "mixed", groups: gs }
+            : Object.assign({}, gs[0], { name: a.n.trim() });
+        const code = window.CalcEngine.encodeCode({
+            lines: [line],
+            timeline: a.tl || "standard",
+            mold: a.md || "none",
+            clientName: a.c.trim(),
+            notes: a.nt.trim(),
+        });
+        if (code) return code;
+    }
     const p = new URLSearchParams();
     p.set("c", a.c.trim());
     p.set("n", a.n.trim());
@@ -773,24 +847,89 @@ function makeCode() {
     if (a.s === "accent") { p.set("sc", a.sc); p.set("at", a.at); p.set("ss", a.ss); if (a.rl) p.set("ra", a.rl); }
     if (a.s === "fulliced") { p.set("ft", a.ft); if (a.l !== "0.5") p.set("cv", a.cv); if (a.rf) p.set("rf", a.rf); }
     p.set("pl", a.pl); p.set("en", a.en); p.set("eg", a.eg);
+    if (a.m === "titanium" && a.an && a.an !== "none") p.set("an", a.an);
     p.set("tl", a.tl); p.set("md", a.md);
     if (a.nt.trim()) p.set("nt", a.nt.trim());
     return "EGZ1:" + b64urlEncode(p.toString());
 }
+function loadAnyCode(raw) {
+    if (!window.CalcEngine || typeof window.CalcEngine.decodeCode !== "function") return false;
+    const dec = window.CalcEngine.decodeCode(raw);
+    if (!dec || !dec.lines || !dec.lines.length) return false;
+    const first = dec.lines[0];
+    const applyGrp = (g) => {
+        state.answers.m = g.material || "chrome";
+        state.answers.karat = g.karat || "18";
+        state.answers.goldRate = g.goldPrice ? String(g.goldPrice) : "";
+        state.answers.t = String(g.teeth || 6);
+        state.answers.l = String(g.level || "1");
+        state.answers.s = g.accent ? "accent" : (g.full ? "fulliced" : "none");
+        if (g.accent) {
+            state.answers.sc = String(g.accent.count || 1);
+            state.answers.at = g.accent.type || "cz";
+            state.answers.ss = g.accent.setting || "flush";
+            state.answers.rl = g.accent.customPrice ? String(g.accent.customPrice) : "";
+        }
+        if (g.full && !g.full.bars) {
+            state.answers.ft = g.full.type || "moissanite";
+            state.answers.cv = g.full.coverage || "standardpave";
+            state.answers.rf = g.full.customPrice ? String(g.full.customPrice) : "";
+        }
+        state.answers.pl = g.plating || "none";
+        state.answers.en = g.enamel || "none";
+        state.answers.eg = g.engraving || "none";
+        state.answers.an = g.anodize || "none";
+    };
+    if (Array.isArray(first.groups) && first.groups.length > 1) {
+        state.savedGroups = first.groups.slice(0, -1);
+        applyGrp(first.groups[first.groups.length - 1]);
+    } else {
+        state.savedGroups = [];
+        applyGrp(first);
+    }
+    if (first.name) state.answers.n = first.name;
+    if (dec.clientName) state.answers.c = dec.clientName;
+    else if (!state.answers.c) state.answers.c = "Client";
+    if (dec.timeline) state.answers.tl = dec.timeline;
+    if (dec.mold) state.answers.md = dec.mold;
+    if (dec.notes) state.answers.nt = dec.notes;
+    state.step = currentSteps().length - 1;
+    render();
+    toast(state.lang === "ar" ? "تم تحميل الكود بنجاح" : "Code loaded");
+    return true;
+}
+if ($("#pasteCodeBtn")) {
+    $("#pasteCodeBtn").onclick = () => {
+        const p = prompt(state.lang === "ar" ? "الصق كود التصميم (EGZ-... أو EGZ1:...):" : "Paste any EGYGRILLZ calculator code (EGZ-... or EGZ1:...):");
+        if (!p || !p.trim()) return;
+        if (!loadAnyCode(p.trim())) toast(state.lang === "ar" ? "كود غير صالح" : "Could not read that code");
+    };
+}
 function summaryRows() {
     const a = state.answers;
     const L = I18N[state.lang];
+    const gs = buildAllGroups();
     const rows = [];
     rows.push([L.sum.n, [a.c, a.n].filter(Boolean).join(" — ")]);
-    rows.push([L.sum.m, a.m === "gold" ? `${labelFor("material", "gold")} ${a.karat}K` : labelFor("material", a.m)]);
-    rows.push([L.sum.t, a.t]);
-    rows.push([L.sum.l, labelFor("level", a.l)]);
-    let stonesTxt = labelFor("stones", a.s);
-    if (a.s === "accent") stonesTxt = `${L.stAccent} · ${a.sc}× ${labelFor("stoneType", a.at)} · ${labelFor("setting", a.ss)}`;
-    if (a.s === "fulliced") stonesTxt = a.l === "0.5" ? labelFor("stones", "fulliced") : `${labelFor("stones", "fulliced")} · ${labelFor("stoneType", a.ft)} · ${labelFor("coverage", a.cv)}`;
-    rows.push([L.sum.s, stonesTxt]);
-    const fin = [a.pl !== "none" && labelFor("plating", a.pl), a.en !== "none" && labelFor("enamel", a.en), a.eg !== "none" && labelFor("engraving", a.eg)].filter(Boolean);
-    rows.push([L.sum.f, fin.length ? fin.join(" · ") : L.none]);
+    if (gs.length > 1) {
+        const totT = gs.reduce((s, g) => s + g.teeth, 0);
+        rows.push([L.sum.t, `${totT} (${gs.length} groups)`]);
+        gs.forEach((g, idx) => {
+            const mTxt = g.material === "gold" ? `${labelFor("material", "gold")} ${g.karat}K` : labelFor("material", g.material);
+            const lvTxt = labelFor("level", g.level);
+            rows.push([`#${idx + 1}`, `${g.teeth}T · ${mTxt} · ${lvTxt}`]);
+        });
+    } else {
+        rows.push([L.sum.m, a.m === "gold" ? `${labelFor("material", "gold")} ${a.karat}K` : labelFor("material", a.m)]);
+        rows.push([L.sum.t, a.t]);
+        rows.push([L.sum.l, labelFor("level", a.l)]);
+        let stonesTxt = labelFor("stones", a.s);
+        if (a.s === "accent") stonesTxt = `${L.stAccent} · ${a.sc}× ${labelFor("stoneType", a.at)} · ${labelFor("setting", a.ss)}`;
+        if (a.s === "fulliced") stonesTxt = a.l === "0.5" ? labelFor("stones", "fulliced") : `${labelFor("stones", "fulliced")} · ${labelFor("stoneType", a.ft)} · ${labelFor("coverage", a.cv)}`;
+        rows.push([L.sum.s, stonesTxt]);
+        const fin = [a.pl !== "none" && labelFor("plating", a.pl), a.m === "titanium" && a.an !== "none" && labelFor("anodize", a.an), a.en !== "none" && labelFor("enamel", a.en), a.eg !== "none" && labelFor("engraving", a.eg)].filter(Boolean);
+        rows.push([L.sum.f, fin.length ? fin.join(" · ") : L.none]);
+    }
     rows.push([L.sum.tl, labelFor("timeline", a.tl)]);
     rows.push([L.sum.md, labelFor("mold", a.md)]);
     if (a.nt.trim()) rows.push([L.sum.nt, a.nt.trim()]);
@@ -815,6 +954,11 @@ async function copy(text, okMsg, failMsg) {
 /* ---------------- boot ---------------- */
 setTheme(getTheme());
 render();
+try {
+    const _sp = new URLSearchParams(window.location.search);
+    const _qc = _sp.get("c") || _sp.get("code");
+    if (_qc) loadAnyCode(_qc);
+} catch (e) {}
 </script>
 </body>
 </html>
