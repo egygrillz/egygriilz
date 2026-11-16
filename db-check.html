@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGYGRILLZ — Connection Check</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+         background:#faf9f7; color:#1a1a1a; padding:40px 20px; }
+  .wrap { max-width:720px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 6px; letter-spacing:-.3px; }
+  .sub { color:#777; font-size:13px; margin:0 0 28px; }
+  .card { background:#fff; border:1px solid #e6e3df; padding:22px 24px; margin-bottom:16px; }
+  .row { display:flex; justify-content:space-between; gap:16px; padding:9px 0;
+         border-bottom:1px solid #f2f0ed; font-size:13px; }
+  .row:last-child { border-bottom:0; }
+  .k { color:#777; }
+  .v { font-weight:600; text-align:right; word-break:break-all; }
+  .ok { color:#1a7f45; }
+  .bad { color:#b03030; }
+  .warn { color:#9a6a00; }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:12px; font-weight:400; }
+  h2 { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#9a9a9a;
+       margin:0 0 12px; font-weight:600; }
+  .big { font-size:15px; font-weight:700; padding:16px 24px; border:1px solid #1a1a1a;
+         background:#1a1a1a; color:#fff; margin-bottom:16px; }
+  .big.pass { background:#f0f7f2; border-color:#c5e0d0; color:#1a7f45; }
+  .big.fail { background:#fdf1f1; border-color:#f0cccc; color:#b03030; }
+  button { padding:10px 18px; background:#1a1a1a; color:#fff; border:0; cursor:pointer;
+           font-size:12px; letter-spacing:1px; text-transform:uppercase; }
+  button:disabled { opacity:.5; cursor:default; }
+  .hint { font-size:12px; color:#777; line-height:1.7; margin-top:14px; }
+  code { background:#f4f2ef; padding:2px 6px; font-size:11px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Connection Check</h1>
+  <p class="sub">يقولك بالظبط إيه اللي واقف: الجلسة، ولا قواعد قاعدة البيانات. صوّر الشاشة وابعتلي.</p>
+
+  <div id="verdict" class="big">Checking…</div>
+
+  <div class="card">
+    <h2>Sign-in</h2>
+    <div id="authBox"><div class="row"><span class="k">Loading…</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Database — reading each collection</h2>
+    <div id="dbBox"><div class="row"><span class="k">Waiting for sign-in…</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Writing (safe test — deletes itself)</h2>
+    <div id="writeBox"><div class="row"><span class="k">Not run yet</span></div></div>
+    <button id="btn" style="margin-top:16px" disabled>Run write test</button>
+    <p class="hint">بيكتب مستند تجريبي في <code>quotes</code> وبيمسحه في نفس اللحظة. مفيش أي بيانات حقيقية بتتلمس.</p>
+  </div>
+
+  <p class="hint" id="hint"></p>
+</div>
+
+<script type="module">
+import { requireAuth, signOut, firebaseApp } from '/assets/firebase-auth-gate.js';
+import { getFirestore, collection, getDocs, limit, query,
+         doc, setDoc, deleteDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const row = (k, v, cls) =>
+  `<div class="row"><span class="k">${k}</span><span class="v ${cls || ''}">${v}</span></div>`;
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+let user = null;
+try {
+  user = await requireAuth();
+} catch (e) {
+  document.getElementById('verdict').className = 'big fail';
+  document.getElementById('verdict').textContent = 'Sign-in failed to load';
+  document.getElementById('authBox').innerHTML =
+    row('Error', esc(e && e.message), 'bad');
+  throw e;
+}
+
+/* ── 1) من انت ── */
+document.getElementById('authBox').innerHTML =
+  row('Email', esc(user.email || '—'), user.email ? 'ok' : 'bad') +
+  row('UID', esc(user.uid || '—'), 'mono') +
+  row('Email verified', user.emailVerified ? 'yes' : 'no',
+      user.emailVerified ? 'ok' : 'warn') +
+  row('Project', 'egygrillz-studio', 'mono');
+
+/* ── 2) القواعد: هل بتسمح بالقراءة ── */
+const db = getFirestore(firebaseApp());
+const COLLECTIONS = ['clients', 'quotes', 'invoices', 'appointments', 'messages', 'settings'];
+const results = {};
+
+const dbBox = document.getElementById('dbBox');
+dbBox.innerHTML = '';
+
+for (const name of COLLECTIONS) {
+  let line;
+  try {
+    const snap = await getDocs(query(collection(db, name), limit(1)));
+    results[name] = { ok: true, n: snap.size };
+    line = row(name, snap.size + ' doc(s) — allowed', 'ok');
+  } catch (e) {
+    const code = (e && e.code) || '';
+    const denied = /permission|insufficient/i.test(code + ' ' + (e.message || ''));
+    results[name] = { ok: false, code, denied };
+    line = row(name,
+      denied ? 'DENIED by rules (permission)' : esc(code || e.message),
+      'bad');
+  }
+  dbBox.insertAdjacentHTML('beforeend', line);
+}
+
+/* ── 3) الحكم ── */
+const deniedList = COLLECTIONS.filter(c => results[c] && results[c].denied);
+const brokenList = COLLECTIONS.filter(c => results[c] && !results[c].ok && !results[c].denied);
+
+const verdict = document.getElementById('verdict');
+const hint = document.getElementById('hint');
+
+if (!deniedList.length && !brokenList.length) {
+  verdict.className = 'big pass';
+  verdict.textContent = 'Everything works — the database accepts you';
+  hint.innerHTML = 'يعني المشكلة مش في القواعد ولا في الجلسة. لو الصفحة لسه مش بتفتح، ابعتيلي صورة الـ Console (F12).';
+} else if (deniedList.length) {
+  verdict.className = 'big fail';
+  verdict.textContent = 'The database is refusing this account';
+  hint.innerHTML =
+    `القواعد رافضة القراءة لـ: <strong>${deniedList.join(', ')}</strong>.<br><br>` +
+    `ده معناه إن القواعد بتسمح لإيميل معيّن بس (<code>studio@egygillz.com</code>) ` +
+    `أو لـ UID معيّن. الحل: ترفع ملف القواعد الجديد اللي هبعتهولك — بيسمح لأي حساب ` +
+    `مسجّل دخول، فمش هيقفل تاني.`;
+} else {
+  verdict.className = 'big fail';
+  verdict.textContent = 'The database could not be reached';
+  hint.innerHTML =
+    `مشكلة اتصال — مش قواعد. الأكواد: <code>${brokenList.map(c => results[c].code).join(' , ')}</code>.<br><br>` +
+    `غالبًا حجب شبكة أو إعلانات. جرّب تشيل مانع الإعلانات وتعمل Refresh.`;
+}
+
+/* ── 4) اختبار الكتابة ── */
+const btn = document.getElementById('btn');
+const writeBox = document.getElementById('writeBox');
+btn.disabled = false;
+btn.addEventListener('click', async () => {
+  btn.disabled = true;
+  writeBox.innerHTML = row('Working…', '');
+  const id = 'diagnostic_' + Date.now();
+  let out = '';
+  try {
+    await setDoc(doc(db, 'quotes', id), { diagnostic: true, createdAt: serverTimestamp() });
+    out += row('Write to quotes', 'allowed', 'ok');
+    await deleteDoc(doc(db, 'quotes', id));
+    out += row('Delete it again', 'allowed', 'ok');
+    out += row('Cleanup', 'done — nothing left behind', 'ok');
+  } catch (e) {
+    const denied = /permission|insufficient/i.test(((e && e.code) || '') + (e.message || ''));
+    out += row('Write to quotes', denied ? 'DENIED by rules' : esc(e.message), 'bad');
+    try { await deleteDoc(doc(db, 'quotes', id)); } catch (_) {}
+  }
+  writeBox.innerHTML = out;
+  btn.disabled = false;
+  btn.textContent = 'Run again';
+});
+
+/* ── 5) خروج ── */
+document.getElementById('authBox').insertAdjacentHTML('beforeend',
+  `<div class="row"><span class="k">Switch account</span>` +
+  `<span class="v"><a href="#" id="so" style="color:#b03030">sign out</a></span></div>`);
+document.getElementById('so').addEventListener('click', e => {
+  e.preventDefault(); signOut(); setTimeout(() => location.reload(), 600);
+});
+</script>
+</body>
+</html>

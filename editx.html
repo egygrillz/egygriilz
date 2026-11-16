@@ -69,6 +69,10 @@
     }
 
     /** iframe بيتحمّل أول مرة بس — بعد كده بيفضل عايش */
+    function openDbCheck(){
+      window.open('db-check.html', '_blank');
+    }
+
     function loadFrame(id, url){
       var f = document.getElementById(id);
       if(!f) return;
@@ -673,6 +677,7 @@
         <div class="nav-section">Site</div>
         <button class="nav-item" data-page="pages" onclick="showPage('pages')"><i class="fas fa-file-alt"></i> Pages Editor</button>
         <button class="nav-item" data-page="backup" onclick="showPage('backup')"><i class="fas fa-save"></i> Backup</button>
+        <button class="nav-item" onclick="openDbCheck()"><i class="fas fa-plug-circle-check"></i> Connection Check</button>
         <button class="nav-item" data-page="setup" onclick="showPage('setup')"><i class="fas fa-cog"></i> GitHub Setup</button>
       </nav>
       <div class="sidebar-footer"><button class="logout-btn" onclick="logout()">Logout</button></div>
@@ -1134,7 +1139,12 @@
       messagingSenderId: "1022362401463",
       appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
     });
-    firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true);
+    /* AppCheck اختياري — لو فشل (شبكة/حجب) الصفحة لازم تكمل عادي */
+    try {
+      firebase.appCheck().activate('6LcUCdQtAAAAAFgAXGJeXAb2GrIWzM1B1Dm1ZGUj', true);
+    } catch (acErr) {
+      console.warn('AppCheck not activated (optional):', acErr && acErr.message);
+    }
     db = firebase.firestore();
   } catch(e) { console.error('Firebase init failed:', e); }
 
