@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EGYGRILLZ — Admin</title>
   <meta name="robots" content="noindex, nofollow">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+  <script data-cfasync="false" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
@@ -24,6 +25,10 @@
     function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open');}
 
     function showPage(name){
+      if(name==='sets'||name==='golds'||name==='silvers'||name==='diamonds'||name==='latest'||name==='gallery'||name==='heroes'){
+        var targetCat = name;
+        name = 'inventory';
+      }
       document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
       document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
       var panel=document.getElementById('panel-'+name);
@@ -35,13 +40,17 @@
       if(name==='appointments') loadAppointments();
       if(name==='clients') loadClients();
       if(name==='messages') loadMessages();
-      if(name==='gallery') loadCategory('gallery');
-      if(name==='heroes') loadHeroPanel(document.getElementById('hero-page').value);
       if(name==='schedule') loadScheduleSettings();
       if(name==='settings') loadSiteSettings();
-      if(name==='quotes') loadFrame('frame-quotes','quotes.html');
-      if(name==='invoices') loadFrame('frame-invoices','invoice.html');
-      if(name==='sets'||name==='golds'||name==='silvers'||name==='diamonds'||name==='latest') loadCategory(name);
+      if(name==='invoices') openInvoicesPanel();
+      if(name==='inventory') {
+        if(targetCat==='heroes'){
+          loadInventory().then(function(){ toggleHeroSection(true); });
+        } else {
+          if(targetCat) setInvCategory(targetCat);
+          loadInventory();
+        }
+      }
     }
 
     async function openDbCheck(){
@@ -67,34 +76,6 @@
       showToast(parts.join(' | '), 'success');
     }
 
-    function loadFrame(id, url){
-      var f = document.getElementById(id);
-      if(!f) return;
-      if(!f.getAttribute('src')) f.setAttribute('src', url);
-      return f;
-    }
-
-    window.addEventListener('message', function(ev){
-      if(ev.origin !== window.location.origin) return;
-      if(ev.data && ev.data.type === 'egygz:openInvoiceFromQuote' && ev.data.payload){
-        try { localStorage.setItem('egygz_pending_invoice_from_quote', JSON.stringify(ev.data.payload)); } catch(e){}
-        showPage('invoices');
-        var invFrame = document.getElementById('frame-invoices');
-        var sendPayload = function(){
-          try { invFrame.contentWindow.postMessage({ type: 'egygz:applyQuoteTransfer', payload: ev.data.payload }, window.location.origin); } catch(e){}
-        };
-        if(invFrame && invFrame.contentWindow && invFrame.dataset.loaded === '1') {
-          sendPayload();
-        } else if(invFrame) {
-          invFrame.addEventListener('load', function onLd(){
-            invFrame.dataset.loaded = '1';
-            invFrame.removeEventListener('load', onLd);
-            sendPayload();
-          });
-        }
-      }
-    });
-
     function loadSiteSettings(){
       var box = document.getElementById('site-settings-box');
       if (!box || !window.SiteConfig) return;
@@ -106,7 +87,7 @@
     }
 
     function pageTitle(n){
-      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',quotes:'Quotes',invoices:'Invoices',sets:'Sets',golds:'Golds',silvers:'Silvers',diamonds:'Diamonds',gallery:'Gallery',heroes:'Page Heroes',latest:'Latest Designs',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
+      var map={overview:'Overview',appointments:'Appointments',clients:'Clients',messages:'Messages',schedule:'Schedule Settings',settings:'Site Settings',invoices:'Invoices',inventory:'Inventory',pages:'Pages Editor',backup:'Backup',setup:'GitHub Setup'};
       return map[n]||n;
     }
   </script>
@@ -645,6 +626,133 @@
       .table-wrap{border-radius:12px;}
       table tbody td,table thead th{padding:11px 12px;}
     }
+
+    /* ── UNIFIED INVENTORY ── */
+    .inv-cat-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+    .inv-cat-pill{
+      padding:7px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+      border:1px solid var(--line);background:var(--glass-2);color:var(--ink-2);
+      cursor:pointer;border-radius:8px;font-family:'Arimo',sans-serif;transition:all .18s ease;
+    }
+    .inv-cat-pill:hover{border-color:var(--ink);color:var(--ink);}
+    .inv-cat-pill.active{background:#1f1f1f;color:#fff;border-color:#1f1f1f;}
+    .inv-cat-pill span{opacity:0.65;margin-left:4px;font-weight:400;}
+    .card-cat-badge{
+      position:absolute;top:10px;left:10px;z-index:8;
+      background:rgba(31,31,31,0.82);color:#fff;font-size:8px;font-weight:700;
+      letter-spacing:1.2px;text-transform:uppercase;padding:3px 8px;border-radius:3px;
+      backdrop-filter:blur(4px);
+    }
+    .badge-paid{background:#eaf7f0;color:#3f7a58;}
+    .badge-partial{background:#fdf3e6;color:#b8792e;}
+    .inv-hero-toggle-card{margin-bottom:20px;}
+    .inv-hero-body{display:none;padding:22px;border-top:1px solid var(--line-2);}
+    .inv-hero-body.open{display:block;}
+
+    /* ── NATIVE INVOICES PANEL ── */
+    .inv-subpanel{display:none;}
+    .inv-subpanel.active{display:block;}
+    .inv-builder-grid{display:grid;grid-template-columns:1fr minmax(400px,470px);gap:24px;align-items:start;}
+    @media(max-width:1100px){.inv-builder-grid{grid-template-columns:1fr;}}
+    .inv-step-card{padding:24px;margin-bottom:20px;overflow:visible;}
+    .inv-step-eyebrow{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px;}
+    .inv-step-title{font-family:'Playfair Display',serif;font-size:19px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:18px;}
+    .inv-search-wrap{position:relative;}
+    .inv-search-wrap input{padding-right:32px;}
+    .inv-search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#bbb;font-size:12px;pointer-events:none;}
+    .inv-dropdown{
+      position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);
+      box-shadow:0 12px 30px rgba(0,0,0,0.12);z-index:400;max-height:250px;overflow-y:auto;display:none;border-radius:0 0 8px 8px;
+    }
+    .inv-dropdown.open{display:block;}
+    .inv-dropdown-opt{padding:10px 14px;cursor:pointer;border-bottom:1px solid #f5f5f5;transition:background .15s;display:flex;align-items:center;gap:12px;}
+    .inv-dropdown-opt:last-child{border-bottom:none;}
+    .inv-dropdown-opt:hover{background:#f8f8f8;}
+    .inv-dropdown-opt img{width:38px;height:46px;object-fit:cover;flex-shrink:0;background:#f0f0f0;border-radius:2px;}
+    .inv-dropdown-empty{padding:14px;text-align:center;color:#aaa;font-size:12px;}
+    .inv-client-selected{
+      background:#f8f8f6;padding:14px 18px;margin-top:12px;border-left:3px solid #1f1f1f;
+      border-radius:0 6px 6px 0;display:none;
+    }
+    .inv-client-selected.visible{display:block;}
+    .inv-rate-banner{
+      background:#f8f8f6;border-left:2px solid #1f1f1f;padding:10px 14px;font-size:11px;color:#666;
+      margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-radius:0 4px 4px 0;
+    }
+    .inv-rate-banner input{border:none;border-bottom:1px solid #ccc;background:transparent;font-family:'Arimo',sans-serif;font-size:12px;width:68px;outline:none;text-align:center;}
+    .inv-tool-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+    .inv-svc-bar{display:none;flex-wrap:wrap;gap:6px;padding:12px;background:#f8f8f8;border:1px solid #eee;margin-bottom:14px;border-radius:4px;}
+    .inv-svc-bar.open{display:flex;}
+    .inv-svc-chip{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;border:1px solid #ddd;background:#fff;padding:6px 12px;cursor:pointer;font-family:'Arimo',sans-serif;border-radius:2px;transition:.15s;}
+    .inv-svc-chip:hover{background:#1f1f1f;color:#fff;border-color:#1f1f1f;}
+    .inv-design-picker{display:none;margin-bottom:16px;padding:16px;background:#f8f8f8;border:1px solid #eee;border-radius:4px;}
+    .inv-design-picker.open{display:block;}
+    .inv-dpick-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+    .inv-dpick-tab{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid #ddd;background:#fff;padding:7px 14px;cursor:pointer;font-family:'Arimo',sans-serif;border-radius:2px;}
+    .inv-dpick-tab.active{background:#1f1f1f;color:#fff;border-color:#1f1f1f;}
+    .inv-design-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:10px;max-height:260px;overflow-y:auto;}
+    .inv-design-thumb{cursor:pointer;border:1px solid #eee;background:#fff;overflow:hidden;border-radius:3px;transition:.15s;}
+    .inv-design-thumb:hover{border-color:#1f1f1f;transform:translateY(-2px);}
+    .inv-design-thumb img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;}
+    .inv-design-thumb-name{font-size:9px;padding:5px;text-align:center;}
+    .inv-design-thumb-price{font-size:9px;font-weight:700;padding:0 5px 5px;text-align:center;color:#666;}
+    .inv-items-cols{display:grid;grid-template-columns:1fr 64px 100px 30px;gap:10px;padding:6px 0;border-bottom:1px solid #eee;margin-bottom:4px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#aaa;}
+    .inv-item-row{display:grid;grid-template-columns:1fr 64px 100px 30px;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid #f2f2f2;}
+    .inv-item-row:last-child{border-bottom:none;}
+    .inv-item-input{width:100%;border:none;border-bottom:1px solid #e5e5e5;background:transparent;font-family:'Arimo',sans-serif;font-size:13px;padding:5px 0;outline:none;color:var(--ink);}
+    .inv-item-input:focus{border-bottom-color:#1f1f1f;}
+    .inv-item-spec{width:100%;border:none;border-bottom:1px dashed #eee;background:transparent;font-family:'Arimo',sans-serif;font-size:11px;color:#888;padding:3px 0;margin-top:3px;outline:none;}
+    .inv-item-spec:focus{border-bottom-color:#1f1f1f;color:#333;}
+    .inv-item-remove{background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;padding:6px;transition:.15s;}
+    .inv-item-remove:hover{color:#c0392b;}
+    .inv-pmeth-btns{display:flex;gap:6px;flex-wrap:wrap;}
+    .inv-pmeth-btn{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid #ddd;background:#fff;padding:8px 14px;cursor:pointer;font-family:'Arimo',sans-serif;color:#777;border-radius:2px;transition:.15s;}
+    .inv-pmeth-btn.active{background:#1f1f1f;color:#fff;border-color:#1f1f1f;}
+    .inv-totals-box{border-top:1px solid #eee;padding-top:14px;margin-top:14px;}
+    .inv-tot-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:#666;}
+    .inv-tot-row.grand{font-size:14px;font-weight:700;color:#1a1a1a;border-top:1px solid #1a1a1a;margin-top:8px;padding-top:10px;}
+    .inv-tot-row.usd{font-size:10px;color:#aaa;}
+
+    /* Preview sheet */
+    .inv-preview-sticky{position:sticky;top:76px;}
+    .inv-sheet{background:#fff;border:1px solid #e8e8e8;padding:34px 30px;box-shadow:var(--shadow);border-radius:4px;}
+    .inv-sheet-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #000;}
+    .inv-brand-name{font-family:'Playfair Display',serif;font-size:20px;letter-spacing:3px;font-weight:700;}
+    .inv-brand-sub{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#999;margin-top:2px;}
+    .inv-meta{text-align:right;}
+    .inv-num{font-family:'Playfair Display',serif;font-size:17px;}
+    .inv-date{font-size:10px;color:#999;margin-top:2px;}
+    .inv-badge{display:inline-block;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;margin-top:6px;border:1px solid currentColor;}
+    .inv-badge.paid{color:#1f1f1f;border-color:#1f1f1f;}
+    .inv-badge.partial{color:#e67e22;border-color:#e67e22;}
+    .inv-badge.pending{color:#c0392b;border-color:#c0392b;}
+    .inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;}
+    .inv-party-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#aaa;margin-bottom:4px;}
+    .inv-party-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+    .inv-party-detail{font-size:11px;color:#666;line-height:1.5;}
+    .inv-sheet-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    .inv-sheet-table th{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#aaa;padding:8px 0;border-bottom:1px solid #eee;text-align:left;background:none;}
+    .inv-sheet-table td{font-size:12px;padding:9px 0;border-bottom:1px solid #f5f5f5;vertical-align:top;white-space:normal;}
+    .inv-sheet-table th:last-child,.inv-sheet-table td:last-child{text-align:right;}
+    .inv-sheet-table tr:hover{background:transparent;}
+    .inv-sheet-table tr:last-child td{border-bottom:none;}
+    .inv-payment-box{margin-top:16px;padding-top:12px;border-top:1px solid #f0f0f0;}
+    .inv-deposit-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#27ae60;}
+    .inv-remaining-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#c0392b;}
+    .inv-sheet-footer{margin-top:22px;padding-top:14px;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:flex-end;}
+    .inv-signature{font-family:'Alex Brush',cursive;font-size:16px;color:#999;}
+    .inv-footer-note{font-size:9px;color:#aaa;text-align:right;max-width:170px;line-height:1.5;}
+    .inv-preview-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+    .inv-calc-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .inv-calc-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+    @media(max-width:560px){.inv-calc-grid-2,.inv-calc-grid-3{grid-template-columns:1fr;}}
+    .inv-calc-total-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#f8f8f8;border-left:3px solid #1f1f1f;margin-top:12px;}
+    .inv-quote-import-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;}
+    .inv-quote-import-row:last-child{border-bottom:none;}
+    #inv-pdf-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9800;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+    #inv-pdf-overlay.open{display:flex;}
+    .inv-pdf-spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:invSpin 0.8s linear infinite;}
+    @keyframes invSpin{to{transform:rotate(360deg);}}
   </style>
   <link rel="canonical" href="https://egygrillz.com/editx">
 </head>
@@ -677,19 +785,12 @@
         <button class="nav-item active" data-page="overview" onclick="showPage('overview')"><i class="fas fa-chart-bar"></i> Overview</button>
         <button class="nav-item" data-page="appointments" onclick="showPage('appointments')"><i class="fas fa-calendar-check"></i> Appointments</button>
         <button class="nav-item" data-page="clients" onclick="showPage('clients')"><i class="fas fa-users"></i> Clients</button>
-        <button class="nav-item" data-page="quotes" onclick="showPage('quotes')"><i class="fas fa-file-invoice-dollar"></i> Quotes</button>
         <button class="nav-item" data-page="invoices" onclick="showPage('invoices')"><i class="fas fa-receipt"></i> Invoices</button>
         <button class="nav-item" data-page="messages" onclick="showPage('messages')"><i class="fas fa-envelope"></i> Messages <span class="badge" id="unread-badge" style="display:none">0</span></button>
         <button class="nav-item" data-page="schedule" onclick="showPage('schedule')"><i class="fas fa-clock"></i> Schedule Settings</button>
         <button class="nav-item" data-page="settings" onclick="showPage('settings')"><i class="fas fa-sliders"></i> Site Settings</button>
         <div class="nav-section">Inventory</div>
-        <button class="nav-item" data-page="sets" onclick="showPage('sets')"><i class="fas fa-images"></i> Sets</button>
-        <button class="nav-item" data-page="golds" onclick="showPage('golds')"><i class="fas fa-circle-dollar-to-slot"></i> Golds</button>
-        <button class="nav-item" data-page="silvers" onclick="showPage('silvers')"><i class="fas fa-gem"></i> Silvers</button>
-        <button class="nav-item" data-page="gallery" onclick="showPage('gallery')"><i class="fas fa-images"></i> Gallery</button>
-        <button class="nav-item" data-page="heroes" onclick="showPage('heroes')"><i class="fas fa-panorama"></i> Page Heroes</button>
-        <button class="nav-item" data-page="diamonds" onclick="showPage('diamonds')"><i class="fas fa-gem"></i> Diamonds</button>
-        <button class="nav-item" data-page="latest" onclick="showPage('latest')"><i class="fas fa-fire"></i> Latest Designs</button>
+        <button class="nav-item" data-page="inventory" onclick="showPage('inventory')"><i class="fas fa-layer-group"></i> Inventory</button>
         <div class="nav-section">Site</div>
         <button class="nav-item" data-page="pages" onclick="showPage('pages')"><i class="fas fa-file-alt"></i> Pages Editor</button>
         <button class="nav-item" data-page="backup" onclick="showPage('backup')"><i class="fas fa-save"></i> Backup</button>
@@ -857,157 +958,363 @@
           </div>
         </div>
 
-        <!-- SETS -->
-        <div class="panel" id="panel-sets">
-          <div class="page-header-row">
-            <div><p class="ph-title">Sets</p><p class="ph-sub">Click any field to edit inline</p></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-muted2" id="reorder-btn-sets" onclick="toggleCatReorder('sets')"><i class="fas fa-sort"></i> Reorder</button>
-              <button class="btn-black" id="reorder-save-sets" style="display:none;" onclick="saveCatOrder('sets')">Save Order</button>
-              <button class="btn-outline-sm" onclick="openModal('sets')">+ Add Set</button>
-            </div>
-          </div>
-          <div class="filter-bar-orig">
-            <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search sets…" oninput="filterGrid('sets',this.value,document.getElementById('sort-sets').value)"></div>
-            <select class="filter-select-orig" id="sort-sets" onchange="filterGrid('sets',document.querySelector('#panel-sets .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select>
-            <span class="filter-count" id="count-sets"></span>
-          </div>
-          <div class="bulk-bar" id="bulk-sets"><span class="bulk-count" id="bulk-count-sets">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('sets')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('sets')">Clear</button></div>
-          <div class="grid" id="grid-sets"><div class="empty-state"><i class="fas fa-images"></i><p>Loading…</p></div></div>
-        </div>
-
-        <!-- GOLDS -->
-
-        <div class="panel" id="panel-gallery">
+        <!-- UNIFIED INVENTORY -->
+        <div class="panel" id="panel-inventory">
           <div class="page-header-row">
             <div>
-              <p class="ph-title">Gallery Photos</p>
-              <p class="ph-sub">Standalone gallery photos shown on the gallery page</p>
+              <p class="ph-title">Inventory</p>
+              <p class="ph-sub">All collections, sets, gallery photos, and page heroes — click any field to edit inline</p>
             </div>
-            <button class="btn-outline-sm" onclick="openModal('gallery')">+ Add Photo</button>
-          </div>
-          <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search gallery…" oninput="filterGrid('gallery',this.value,'')"></div><span class="filter-count" id="count-gallery"></span></div>
-          <div class="bulk-bar" id="bulk-gallery"><span class="bulk-count" id="bulk-count-gallery">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('gallery')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('gallery')">Clear</button></div>
-          <div class="grid" id="grid-gallery"><div class="empty-state"><i class="fas fa-images"></i><p>Loading…</p></div></div>
-        </div>
-        <div class="panel" id="panel-golds">
-          <div class="page-header-row">
-            <div><p class="ph-title">Golds</p><p class="ph-sub">Click any field to edit inline</p></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-muted2" id="reorder-btn-golds" onclick="toggleCatReorder('golds')"><i class="fas fa-sort"></i> Reorder</button>
-              <button class="btn-black" id="reorder-save-golds" style="display:none;" onclick="saveCatOrder('golds')">Save Order</button>
-              <button class="btn-outline-sm" onclick="openModal('golds')">+ Add Gold</button>
-            </div>
-          </div>
-          <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search golds…" oninput="filterGrid('golds',this.value,document.getElementById('sort-golds').value)"></div><select class="filter-select-orig" id="sort-golds" onchange="filterGrid('golds',document.querySelector('#panel-golds .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-golds"></span></div>
-          <div class="bulk-bar" id="bulk-golds"><span class="bulk-count" id="bulk-count-golds">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('golds')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('golds')">Clear</button></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('golds')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">Change any price in the cards below, then press this button once</span></div>
-          <div class="grid" id="grid-golds"></div>
-        </div>
-
-        <!-- SILVERS -->
-        <div class="panel" id="panel-silvers">
-          <div class="page-header-row">
-            <div><p class="ph-title">Silvers</p><p class="ph-sub">Click any field to edit inline</p></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-muted2" id="reorder-btn-silvers" onclick="toggleCatReorder('silvers')"><i class="fas fa-sort"></i> Reorder</button>
-              <button class="btn-black" id="reorder-save-silvers" style="display:none;" onclick="saveCatOrder('silvers')">Save Order</button>
-              <button class="btn-outline-sm" onclick="openModal('silvers')">+ Add Silver</button>
-            </div>
-          </div>
-          <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search silvers…" oninput="filterGrid('silvers',this.value,document.getElementById('sort-silvers').value)"></div><select class="filter-select-orig" id="sort-silvers" onchange="filterGrid('silvers',document.querySelector('#panel-silvers .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-silvers"></span></div>
-          <div class="bulk-bar" id="bulk-silvers"><span class="bulk-count" id="bulk-count-silvers">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('silvers')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('silvers')">Clear</button></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('silvers')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">Change any price in the cards below, then press this button once</span></div>
-          <div class="grid" id="grid-silvers"></div>
-        </div>
-
-        <!-- DIAMONDS -->
-        <div class="panel" id="panel-diamonds">
-          <div class="page-header-row">
-            <div><p class="ph-title">Diamonds</p><p class="ph-sub">Click any field to edit inline</p></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-muted2" id="reorder-btn-diamonds" onclick="toggleCatReorder('diamonds')"><i class="fas fa-sort"></i> Reorder</button>
-              <button class="btn-black" id="reorder-save-diamonds" style="display:none;" onclick="saveCatOrder('diamonds')">Save Order</button>
-              <button class="btn-outline-sm" onclick="openModal('diamonds')">+ Add Diamond</button>
-            </div>
-          </div>
-          <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search diamonds…" oninput="filterGrid('diamonds',this.value,document.getElementById('sort-diamonds').value)"></div><select class="filter-select-orig" id="sort-diamonds" onchange="filterGrid('diamonds',document.querySelector('#panel-diamonds .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-diamonds"></span></div>
-          <div class="bulk-bar" id="bulk-diamonds"><span class="bulk-count" id="bulk-count-diamonds">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('diamonds')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('diamonds')">Clear</button></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('diamonds')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">Change any price in the cards below, then press this button once</span></div>
-          <div class="grid" id="grid-diamonds"></div>
-        </div>
-
-        <!-- LATEST -->
-        <div class="panel" id="panel-latest">
-          <div class="page-header-row">
-            <div><p class="ph-title">Latest Designs</p><p class="ph-sub">Drag to reorder — first item shows first on site</p></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-muted2" id="reorder-btn-latest" onclick="toggleCatReorder('latest')"><i class="fas fa-sort"></i> Reorder</button>
-              <button class="btn-black" id="reorder-save-latest" style="display:none;" onclick="saveCatOrder('latest')">Save Order</button>
-              <button class="btn-outline-sm" onclick="openModal('latest')">+ Add Design</button>
-            </div>
-          </div>
-          <div class="filter-bar-orig"><div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" placeholder="Search latest…" oninput="filterGrid('latest',this.value,document.getElementById('sort-latest').value)"></div><select class="filter-select-orig" id="sort-latest" onchange="filterGrid('latest',document.querySelector('#panel-latest .search-input').value,this.value)"><option value="">Sort: Default</option><option value="name">Name A–Z</option><option value="newest">Newest First</option><option value="tag-featured">Featured</option><option value="tag-sold">Sold</option></select><span class="filter-count" id="count-latest"></span></div>
-          <div class="bulk-bar" id="bulk-latest"><span class="bulk-count" id="bulk-count-latest">0 selected</span><button class="btn-bulk-del" onclick="bulkDelete('latest')">Delete Selected</button><button class="btn-bulk-clear" onclick="clearBulk('latest')">Clear</button></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;"><button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPrices('latest')"><i class="fas fa-floppy-disk"></i> Save all prices</button><span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">Change any price in the cards below, then press this button once</span></div>
-          <div class="grid" id="grid-latest"></div>
-        </div>
-
-        <!-- BACKUP -->
-
-
-        <div class="panel" id="panel-quotes">
-          <div class="page-header-row"><div><p class="ph-title">Quotes</p><p class="ph-sub">Build a quotation, print it, or send it to Telegram</p></div></div>
-          <div class="section-card" style="padding:0;overflow:hidden;">
-            <iframe id="frame-quotes" title="Quotes" style="width:100%;height:calc(100vh - 190px);border:0;display:block;"></iframe>
-          </div>
-        </div>
-
-        <div class="panel" id="panel-invoices">
-          <div class="page-header-row"><div><p class="ph-title">Invoices</p><p class="ph-sub">Create and print invoices</p></div></div>
-          <div class="section-card" style="padding:0;overflow:hidden;">
-            <iframe id="frame-invoices" title="Invoices" style="width:100%;height:calc(100vh - 190px);border:0;display:block;"></iframe>
-          </div>
-        </div>
-
-        <div class="panel" id="panel-heroes">
-          <div class="page-header-row">
-            <div>
-              <p class="ph-title">Page Heroes</p>
-              <p class="ph-sub">Choose the hero image for each public page and arrange design display order</p>
+              <button class="btn-muted2" id="inv-hero-toggle-btn" onclick="toggleHeroSection()"><i class="fas fa-panorama"></i> Page Heroes</button>
+              <button class="btn-muted2" id="reorder-btn-inv" onclick="toggleInvReorder()"><i class="fas fa-sort"></i> Reorder</button>
+              <button class="btn-black" id="reorder-save-inv" style="display:none;" onclick="saveInvOrder()">Save Order</button>
+              <button class="btn-outline-sm" onclick="openModal(invCurrentCat==='all'?'sets':invCurrentCat)">+ Add Item</button>
             </div>
           </div>
 
-          <div class="section-card" style="padding:22px;margin-bottom:18px;">
-            <label style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#999;">Page</label>
-            <select id="hero-page" class="form-input" style="margin:8px 0 18px;" onchange="loadHeroPanel(this.value)">
-              <option value="index">Home — index</option>
-              <option value="golds">Golds</option>
-              <option value="silvers">Silvers</option>
-              <option value="diamonds">Diamonds</option>
-              <option value="latest-designs">Latest Designs</option>
-              <option value="grillz-gallery">Gallery</option>
-            </select>
-
-            <label style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#999;">Hero image</label>
-            <div id="hero-current" style="margin:10px 0 14px;font-size:12px;color:#666;"></div>
-
-            <div class="filter-bar-orig" style="padding:0;border:0;margin-bottom:12px;">
-              <div class="search-input-wrap"><i class="fas fa-search"></i>
-                <input class="search-input" id="hero-search" placeholder="Search designs…" oninput="renderHeroPicker()">
+          <!-- Page Heroes & Display Order (collapsible inside unified Inventory) -->
+          <div class="section-card inv-hero-toggle-card">
+            <div class="section-card-header" style="cursor:pointer;" onclick="toggleHeroSection()">
+              <span class="section-card-title"><i class="fas fa-panorama"></i> Page Heroes &amp; Display Order</span>
+              <span id="inv-hero-chevron" style="font-size:11px;color:#888;"><i class="fas fa-chevron-down"></i> Expand</span>
+            </div>
+            <div class="inv-hero-body" id="inv-hero-body">
+              <div style="margin-bottom:20px;">
+                <label class="form-label">Page</label>
+                <select id="hero-page" class="form-input" style="margin:6px 0 16px;max-width:340px;" onchange="loadHeroPanel(this.value)">
+                  <option value="index">Home — index</option>
+                  <option value="golds">Golds</option>
+                  <option value="silvers">Silvers</option>
+                  <option value="diamonds">Diamonds</option>
+                  <option value="latest-designs">Latest Designs</option>
+                  <option value="grillz-gallery">Gallery</option>
+                </select>
+                <label class="form-label">Hero image</label>
+                <div id="hero-current" style="margin:8px 0 14px;font-size:12px;color:#666;"></div>
+                <div class="filter-bar-orig" style="padding:0;border:0;margin-bottom:12px;">
+                  <div class="search-input-wrap"><i class="fas fa-search"></i>
+                    <input class="search-input" id="hero-search" placeholder="Search designs…" oninput="renderHeroPicker()">
+                  </div>
+                </div>
+                <div id="hero-picker" class="grid" style="max-height:360px;overflow-y:auto;"></div>
+              </div>
+              <div style="border-top:1px solid #eee;padding-top:18px;">
+                <p style="font-size:12px;color:#666;line-height:1.7;margin-bottom:12px;">
+                  Display order for this page — use the arrows to move items up or down. Saved directly to the site catalog.
+                </p>
+                <div id="order-list"></div>
+                <button class="btn-black" style="margin-top:14px;" onclick="saveHeroOrder()">
+                  <i class="fas fa-floppy-disk"></i> Save order
+                </button>
               </div>
             </div>
-            <div id="hero-picker" class="grid" style="max-height:420px;overflow-y:auto;"></div>
           </div>
 
-          <div class="section-card" style="padding:22px;">
-            <p style="font-size:12px;color:#666;line-height:1.7;margin-bottom:14px;">
-              Display order for this page — use the arrows to move items up or down. Saved directly to the site catalog.
-            </p>
-            <div id="order-list"></div>
-            <button class="btn-black" style="margin-top:16px;" onclick="saveHeroOrder()">
-              <i class="fas fa-floppy-disk"></i> Save order
-            </button>
+          <!-- Category Filter Pills -->
+          <div class="inv-cat-pills" id="inv-cat-pills">
+            <button type="button" class="inv-cat-pill active" data-cat="all" onclick="setInvCategory('all')">All <span id="pill-count-all"></span></button>
+            <button type="button" class="inv-cat-pill" data-cat="sets" onclick="setInvCategory('sets')">Sets <span id="pill-count-sets"></span></button>
+            <button type="button" class="inv-cat-pill" data-cat="golds" onclick="setInvCategory('golds')">Golds <span id="pill-count-golds"></span></button>
+            <button type="button" class="inv-cat-pill" data-cat="silvers" onclick="setInvCategory('silvers')">Silvers <span id="pill-count-silvers"></span></button>
+            <button type="button" class="inv-cat-pill" data-cat="diamonds" onclick="setInvCategory('diamonds')">Diamonds <span id="pill-count-diamonds"></span></button>
+            <button type="button" class="inv-cat-pill" data-cat="latest" onclick="setInvCategory('latest')">Latest Designs <span id="pill-count-latest"></span></button>
+            <button type="button" class="inv-cat-pill" data-cat="gallery" onclick="setInvCategory('gallery')">Gallery <span id="pill-count-gallery"></span></button>
+          </div>
+
+          <!-- Search, Sort & Count -->
+          <div class="filter-bar-orig">
+            <div class="search-input-wrap"><i class="fas fa-search"></i><input class="search-input" id="inv-search-input" placeholder="Search all inventory…" oninput="renderUnifiedInventory()"></div>
+            <select class="filter-select-orig" id="inv-sort-select" onchange="renderUnifiedInventory()">
+              <option value="">Sort: Default</option>
+              <option value="name">Name A–Z</option>
+              <option value="newest">Newest First</option>
+              <option value="tag-featured">Featured</option>
+              <option value="tag-sold">Sold</option>
+            </select>
+            <span class="filter-count" id="count-inventory"></span>
+          </div>
+
+          <!-- Bulk Bar & Save All Prices -->
+          <div class="bulk-bar" id="bulk-inventory">
+            <span class="bulk-count" id="bulk-count-inventory">0 selected</span>
+            <button class="btn-bulk-del" onclick="bulkDeleteInventory()">Delete Selected</button>
+            <button class="btn-bulk-clear" onclick="clearBulkInventory()">Clear</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 16px;">
+            <button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="saveAllPricesInventory()"><i class="fas fa-floppy-disk"></i> Save all edits</button>
+            <span style="font-size:11px;color:var(--ink-2);letter-spacing:.5px;">Change any name, description, or price inline below, then press this button once</span>
+          </div>
+
+          <!-- Unified Grid -->
+          <div class="grid" id="grid-inventory"><div class="empty-state"><i class="fas fa-images"></i><p>Loading…</p></div></div>
+        </div>
+
+        <!-- INVOICES (NATIVE) -->
+        <div class="panel" id="panel-invoices">
+          <div class="page-header-row">
+            <div><p class="ph-title">Invoices</p><p class="ph-sub">Create, print, and manage studio invoices</p></div>
+            <div class="filter-tabs" id="inv-sub-tabs">
+              <button type="button" class="filter-tab active" data-inv-tab="builder" onclick="switchInvTab('builder',this)">New Invoice</button>
+              <button type="button" class="filter-tab" data-inv-tab="accounting" onclick="switchInvTab('accounting',this)">All Invoices</button>
+            </div>
+          </div>
+
+          <!-- Sub-view: New Invoice Builder -->
+          <div class="inv-subpanel active" id="inv-tab-builder">
+            <div class="inv-builder-grid">
+              <div>
+                <!-- Step 1: Client -->
+                <div class="section-card inv-step-card">
+                  <div class="inv-step-eyebrow">Step 1</div>
+                  <div class="inv-step-title">Select Client</div>
+                  <div class="form-group">
+                    <label class="form-label">Search by name or phone</label>
+                    <div class="inv-search-wrap">
+                      <input type="text" class="form-input" id="inv-client-search" placeholder="Type to search clients…">
+                      <i class="fas fa-search inv-search-icon"></i>
+                      <div class="inv-dropdown" id="inv-client-dropdown"></div>
+                    </div>
+                  </div>
+                  <div class="inv-client-selected" id="inv-client-card">
+                    <div style="font-family:'Playfair Display',serif;font-size:16px;margin-bottom:3px;" id="inv-cc-name"></div>
+                    <div style="font-size:12px;color:#666;" id="inv-cc-info"></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+                      <span class="status-badge badge-pending" id="inv-cc-badge"></span>
+                      <button type="button" class="btn-sm btn-del" id="inv-client-clear-btn">Clear</button>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-outline-sm" id="inv-open-add-client-btn" style="margin-top:10px;">+ New Client</button>
+                </div>
+
+                <!-- Step 2: Invoice Details -->
+                <div class="section-card inv-step-card">
+                  <div class="inv-step-eyebrow">Step 2</div>
+                  <div class="inv-step-title">Invoice Details</div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Invoice Number</label>
+                      <input type="text" class="form-input" id="inv-number">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Issue Date</label>
+                      <input type="date" class="form-input" id="inv-date">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Due Date</label>
+                      <input type="date" class="form-input" id="inv-due">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Status</label>
+                      <select class="form-select" id="inv-status">
+                        <option value="pending">Pending</option>
+                        <option value="partial">Partial Payment</option>
+                        <option value="paid">Paid</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea class="form-textarea" id="inv-notes" placeholder="Any special notes or instructions…"></textarea>
+                  </div>
+                </div>
+
+                <!-- Step 3: Items -->
+                <div class="section-card inv-step-card">
+                  <div class="inv-step-eyebrow">Step 3</div>
+                  <div class="inv-step-title">Items</div>
+
+                  <div class="inv-rate-banner">
+                    <span>EGP / USD rate: 1 USD = <input type="number" id="inv-usd-rate" value="50" min="1" step="0.5"> EGP</span>
+                    <span style="color:#aaa;font-size:10px;">for USD display only</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Search designs to add</label>
+                    <div class="inv-search-wrap">
+                      <input type="text" class="form-input" id="inv-item-search" placeholder="Search by design name, category…">
+                      <i class="fas fa-search inv-search-icon"></i>
+                      <div class="inv-dropdown" id="inv-item-search-dropdown"></div>
+                    </div>
+                  </div>
+
+                  <div class="inv-tool-btns">
+                    <button type="button" class="btn-outline-sm" id="inv-open-calc-btn"><i class="fas fa-calculator"></i> Custom Grillz</button>
+                    <button type="button" class="btn-outline-sm" id="inv-toggle-svc-btn"><i class="fas fa-concierge-bell"></i> Studio Service</button>
+                    <button type="button" class="btn-outline-sm" id="inv-add-item-btn"><i class="fas fa-plus"></i> Blank Line</button>
+                    <button type="button" class="btn-muted2" id="inv-open-import-quote-btn"><i class="fas fa-file-import"></i> Import Quote</button>
+                    <button type="button" class="btn-muted2" id="inv-toggle-picker-btn">+ Browse Designs</button>
+                  </div>
+
+                  <div class="inv-svc-bar" id="inv-svc-quick-bar">
+                    <button type="button" class="inv-svc-chip" data-svc="impression">+ Dental Impression</button>
+                    <button type="button" class="inv-svc-chip" data-svc="consultation">+ Consultation</button>
+                    <button type="button" class="inv-svc-chip" data-svc="toothgem">+ Toothgem</button>
+                    <button type="button" class="inv-svc-chip" data-svc="polishing">+ Clean &amp; Polish</button>
+                    <button type="button" class="inv-svc-chip" data-svc="fitting">+ Fitting</button>
+                    <button type="button" class="inv-svc-chip" data-svc="shipping">+ Shipping</button>
+                  </div>
+
+                  <div class="inv-design-picker" id="inv-design-picker">
+                    <div class="inv-dpick-tabs">
+                      <button type="button" class="inv-dpick-tab active" data-cat="golds">Golds</button>
+                      <button type="button" class="inv-dpick-tab" data-cat="silvers">Silvers</button>
+                      <button type="button" class="inv-dpick-tab" data-cat="diamonds">Diamonds</button>
+                      <button type="button" class="inv-dpick-tab" data-cat="sets">Sets</button>
+                      <button type="button" class="inv-dpick-tab" data-cat="latest-designs">Latest</button>
+                    </div>
+                    <div class="inv-design-grid" id="inv-design-grid">
+                      <div style="text-align:center;padding:20px;color:#aaa;font-size:12px;">Loading designs…</div>
+                    </div>
+                  </div>
+
+                  <div id="inv-items-list">
+                    <div class="empty-state" style="padding:24px;" id="inv-items-empty"><p>No items added yet</p></div>
+                  </div>
+
+                  <div class="inv-totals-box">
+                    <div class="inv-tot-row"><span>Subtotal</span><span id="inv-tot-subtotal">0 EGP</span></div>
+                    <div class="inv-tot-row" style="align-items:center;">
+                      <span>Discount</span>
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="inv-discount-val" value="0" min="0" style="width:68px;border:none;border-bottom:1px solid #ddd;text-align:right;font-size:12px;outline:none;font-family:Arimo,sans-serif;">
+                        <select id="inv-discount-type" style="border:none;border-bottom:1px solid #ddd;font-size:11px;outline:none;font-family:Arimo,sans-serif;background:transparent;">
+                          <option value="egp">EGP</option>
+                          <option value="pct">%</option>
+                        </select>
+                      </span>
+                    </div>
+                    <div class="inv-tot-row grand"><span>TOTAL</span><span id="inv-tot-total">0 EGP</span></div>
+                    <div class="inv-tot-row usd"><span></span><span id="inv-tot-usd">≈ $0.00</span></div>
+                  </div>
+                </div>
+
+                <!-- Step 4: Payment -->
+                <div class="section-card inv-step-card">
+                  <div class="inv-step-eyebrow">Step 4</div>
+                  <div class="inv-step-title">Payment</div>
+                  <div class="form-group">
+                    <label class="form-label">Payment Method</label>
+                    <div class="inv-pmeth-btns" id="inv-pmeth-btns">
+                      <button type="button" class="inv-pmeth-btn active" data-method="Cash">Cash</button>
+                      <button type="button" class="inv-pmeth-btn" data-method="InstaPay">InstaPay</button>
+                      <button type="button" class="inv-pmeth-btn" data-method="Vodafone Cash">Vodafone Cash</button>
+                      <button type="button" class="inv-pmeth-btn" data-method="Card">Card</button>
+                      <button type="button" class="inv-pmeth-btn" data-method="Bank Transfer">Bank</button>
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Deposit Paid (EGP)</label>
+                    <input type="number" class="form-input" id="inv-deposit-val" value="0" min="0">
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT: Live Preview -->
+              <div class="inv-preview-sticky">
+                <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:10px;">Live Preview</div>
+                <div class="inv-sheet" id="inv-live-preview">
+                  <div class="inv-sheet-header">
+                    <div>
+                      <div class="inv-brand-name">EGYGRILLZ</div>
+                      <div class="inv-brand-sub">Custom Dental Jewelry · Egypt</div>
+                    </div>
+                    <div class="inv-meta">
+                      <div class="inv-num" id="inv-prev-num">EGY-001</div>
+                      <div class="inv-date" id="inv-prev-date"></div>
+                      <div><span class="inv-badge pending" id="inv-prev-status">Pending</span></div>
+                    </div>
+                  </div>
+                  <div class="inv-parties">
+                    <div>
+                      <div class="inv-party-label">From</div>
+                      <div class="inv-party-name">EGYGRILLZ Studio</div>
+                      <div class="inv-party-detail">Smart Smile Dental Clinic<br>Heliopolis, Cairo, Egypt<br>egygrillz@gmail.com</div>
+                    </div>
+                    <div>
+                      <div class="inv-party-label">Bill To</div>
+                      <div class="inv-party-name" id="inv-prev-client-name">—</div>
+                      <div class="inv-party-detail" id="inv-prev-client-detail">No client selected</div>
+                    </div>
+                  </div>
+                  <table class="inv-sheet-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th style="text-align:right">Qty</th>
+                        <th style="text-align:right">Price</th>
+                        <th style="text-align:right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody id="inv-prev-items">
+                      <tr><td colspan="4" style="text-align:center;color:#ccc;font-size:11px;padding:18px 0;">No items yet</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="inv-totals-box" style="margin-top:8px;">
+                    <div class="inv-tot-row"><span>Subtotal</span><span id="inv-prev-subtotal">0 EGP</span></div>
+                    <div class="inv-tot-row" id="inv-prev-discount-row" style="display:none;"><span>Discount</span><span id="inv-prev-discount">0 EGP</span></div>
+                    <div class="inv-tot-row grand"><span>Total</span><span id="inv-prev-total">0 EGP</span></div>
+                    <div class="inv-tot-row usd"><span></span><span id="inv-prev-usd">≈ $0.00</span></div>
+                    <div class="inv-tot-row" style="font-size:9px;color:#aaa;"><span></span><span><i class="fas fa-check"></i> Tax Free · No VAT Applied</span></div>
+                  </div>
+                  <div class="inv-payment-box">
+                    <div class="inv-party-label">Payment</div>
+                    <div style="font-size:11px;color:#555;" id="inv-prev-payment-method">Cash</div>
+                    <div class="inv-deposit-row" id="inv-prev-deposit-row" style="display:none;"><span>Deposit Paid</span><span id="inv-prev-deposit">0 EGP</span></div>
+                    <div class="inv-remaining-row" id="inv-prev-remaining-row" style="display:none;"><span>Balance Due</span><span id="inv-prev-remaining">0 EGP</span></div>
+                  </div>
+                  <div class="inv-sheet-footer">
+                    <div class="inv-signature">DR Mohamed Mahdy</div>
+                    <div class="inv-footer-note" id="inv-prev-notes"></div>
+                  </div>
+                </div>
+
+                <div class="inv-preview-actions">
+                  <button type="button" class="btn-black" style="flex:1;" id="inv-save-btn"><i class="fas fa-save"></i> Save</button>
+                  <button type="button" class="btn-outline-sm" style="flex:1;" id="inv-pdf-btn"><i class="fas fa-file-pdf"></i> PDF</button>
+                  <button type="button" class="btn-outline-sm" style="flex:1;" id="inv-email-btn"><i class="fas fa-envelope"></i> Email</button>
+                </div>
+                <button type="button" class="btn-muted2" id="inv-reset-btn" style="width:100%;margin-top:8px;"><i class="fas fa-rotate-left"></i> Reset Form</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-view: All Invoices -->
+          <div class="inv-subpanel" id="inv-tab-accounting">
+            <div class="stat-grid">
+              <div class="stat-card stat-highlight"><div class="stat-label">Total Revenue</div><div class="stat-val" id="inv-acc-total-rev">0</div><div class="stat-sub">EGP collected</div></div>
+              <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-val" id="inv-acc-outstanding">0</div><div class="stat-sub">EGP pending</div></div>
+              <div class="stat-card"><div class="stat-label">Total Invoices</div><div class="stat-val" id="inv-acc-count">0</div><div class="stat-sub">all time</div></div>
+              <div class="stat-card"><div class="stat-label">Average Invoice</div><div class="stat-val" id="inv-acc-avg">0</div><div class="stat-sub">EGP per order</div></div>
+            </div>
+
+            <div class="section-card">
+              <div class="filter-row">
+                <div class="filter-tabs" id="inv-acc-filter-tabs">
+                  <button type="button" class="filter-tab active" data-filter="all">All</button>
+                  <button type="button" class="filter-tab" data-filter="pending">Pending</button>
+                  <button type="button" class="filter-tab" data-filter="partial">Partial</button>
+                  <button type="button" class="filter-tab" data-filter="paid">Paid</button>
+                </div>
+                <div class="search-box"><i class="fas fa-search"></i><input id="inv-acc-search-input" placeholder="Search by number, client name…"></div>
+                <button type="button" class="btn-outline-sm" id="inv-new-btn">+ New Invoice</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Number</th>
+                      <th>Client</th>
+                      <th>Date</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inv-list-tbody"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
         <div class="panel" id="panel-settings">
@@ -1103,6 +1410,17 @@
     <div class="modal-header"><h2 id="modal-title">Add Item</h2><button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <input type="hidden" id="edit-id"><input type="hidden" id="edit-category">
+      <div class="form-group" id="modal-cat-group">
+        <label class="form-label">Category *</label>
+        <select class="form-select" id="f-category" onchange="onModalCatChange(this.value)">
+          <option value="sets">Sets</option>
+          <option value="golds">Golds</option>
+          <option value="silvers">Silvers</option>
+          <option value="diamonds">Diamonds</option>
+          <option value="latest">Latest Designs</option>
+          <option value="gallery">Gallery</option>
+        </select>
+      </div>
       <div class="form-row"><div class="form-group"><label class="form-label">Name *</label><input type="text" class="form-input" id="f-name" placeholder="Item name"></div><div class="form-group"><label class="form-label">Price</label><input type="text" class="form-input" id="f-price" placeholder="e.g. 21,900 EGP"></div></div>
       <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-desc" placeholder="Describe this piece…"></textarea></div>
       <div class="form-group">
@@ -1137,7 +1455,7 @@
   <div class="modal" style="max-width:640px;">
     <div class="modal-header"><h2 id="client-modal-name">Client</h2><button class="modal-close" onclick="closeClientModal()">×</button></div>
     <div class="modal-body" id="client-modal-body"></div>
-    <div class="modal-footer"><button class="btn-muted2" onclick="closeClientModal()">Close</button><button class="btn-black" id="client-edit-btn" onclick="editClientFromModal()">Edit</button><button class="btn-del-confirm" id="client-del-btn" onclick="deleteClientFromModal()">Delete</button></div>
+    <div class="modal-footer"><button class="btn-muted2" onclick="closeClientModal()">Close</button><button class="btn-outline-sm" onclick="createInvoiceForClientFromModal()"><i class="fas fa-receipt"></i> Invoice</button><button class="btn-black" id="client-edit-btn" onclick="editClientFromModal()">Edit</button><button class="btn-del-confirm" id="client-del-btn" onclick="deleteClientFromModal()">Delete</button></div>
   </div>
 </div>
 
@@ -1180,6 +1498,228 @@
   <div class="drawer-header"><div><div class="drawer-title">Arrange Photos</div><div class="drawer-sub" id="drawer-item-name">—</div></div><button class="drawer-close" onclick="closeDrawer()">×</button></div>
   <div class="drawer-body"><div class="drawer-hint"><strong>Drag photos to reorder.</strong> First photo = cover. You can delete or add new ones.</div><div class="reorder-grid" id="reorder-grid"></div><input type="file" id="drawer-file-input" multiple accept="image/*,video/*" style="display:none" onchange="drawerAddFiles(this.files)"></div>
   <div class="drawer-footer"><button class="btn-muted2" onclick="closeDrawer()">Done</button><button class="btn-black" id="drawer-save-btn" onclick="saveDrawerOrder()">Save Order</button></div>
+</div>
+
+<!-- INVOICE: CUSTOM GRILLZ CALCULATOR MODAL -->
+<div class="modal-overlay" id="inv-calc-modal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header"><h2>Custom Grillz Calculator</h2><button class="modal-close" id="inv-close-calc-modal">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Design Label (optional)</label>
+        <input type="text" class="form-input" id="inv-cm-name" placeholder="e.g. Top 6 Silver · Bottom Bars">
+      </div>
+      <div class="inv-calc-grid-2">
+        <div class="form-group">
+          <label class="form-label">Material</label>
+          <select class="form-select" id="inv-cm-material">
+            <option value="chrome">Cobalt Chrome</option>
+            <option value="titanium">Titanium</option>
+            <option value="silver">Sterling Silver 925</option>
+            <option value="gold">Gold</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teeth (1-16)</label>
+          <input type="number" class="form-input" id="inv-cm-teeth" min="1" max="16" value="6">
+        </div>
+      </div>
+      <div class="inv-calc-grid-2" id="inv-cm-gold-wrap" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Karat</label>
+          <select class="form-select" id="inv-cm-karat">
+            <option value="10">10K</option>
+            <option value="14">14K</option>
+            <option value="18" selected>18K</option>
+            <option value="21">21K</option>
+            <option value="22">22K</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Today's 24K Gold (EGP/g)</label>
+          <input type="number" class="form-input" id="inv-cm-gold-rate" min="0" step="any" placeholder="Enter EGP/g">
+        </div>
+      </div>
+      <div class="inv-calc-grid-2">
+        <div class="form-group">
+          <label class="form-label">Design Level</label>
+          <select class="form-select" id="inv-cm-level">
+            <option value="0.5">0.5 Bars (Half Base)</option>
+            <option value="1">1 Solid (+0%)</option>
+            <option value="2">2 Open Face (+10%)</option>
+            <option value="3">3 Mid Detail (+15%)</option>
+            <option value="4">4 Complex (+25%)</option>
+            <option value="5">5 Scorpion (+40%)</option>
+            <option value="6">6 Ultimate (+60%)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stones</label>
+          <select class="form-select" id="inv-cm-stones">
+            <option value="none">No Stones</option>
+            <option value="accent">Accent Stones</option>
+            <option value="full">Full Iced</option>
+            <option value="bars">Full Iced on Bars</option>
+          </select>
+        </div>
+      </div>
+      <div class="inv-calc-grid-3" id="inv-cm-accent-wrap" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Count</label>
+          <input type="number" class="form-input" id="inv-cm-acount" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-select" id="inv-cm-atype">
+            <option value="cz">CZ</option>
+            <option value="moissanite">Moissanite</option>
+            <option value="labgrown">Lab-Grown</option>
+            <option value="natural">Natural</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Setting</label>
+          <select class="form-select" id="inv-cm-asetting">
+            <option value="flush">Flush</option>
+            <option value="twoprong">2-Prong</option>
+            <option value="threeprong">3-Prong</option>
+            <option value="fourprong">4-Prong</option>
+            <option value="sixprong">6-Prong</option>
+            <option value="bezelfull">Bezel Full</option>
+            <option value="bezelhalf">Bezel Half</option>
+            <option value="bar">Bar</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="inv-cm-acustom-wrap" style="display:none;">
+        <label class="form-label">Stone Price (EGP / stone)</label>
+        <input type="number" class="form-input" id="inv-cm-acustom" min="0" step="any" placeholder="Enter today's rate">
+      </div>
+      <div class="inv-calc-grid-2" id="inv-cm-full-wrap" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Stone Type</label>
+          <select class="form-select" id="inv-cm-ftype">
+            <option value="cz">CZ</option>
+            <option value="moissanite">Moissanite</option>
+            <option value="labgrown">Lab-Grown</option>
+            <option value="natural">Natural</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Coverage</label>
+          <select class="form-select" id="inv-cm-fcov">
+            <option value="standardpave">Standard Pave</option>
+            <option value="frenchpave">French Pave</option>
+            <option value="micropave">Micro-Pave</option>
+            <option value="channel">Channel</option>
+            <option value="invisible">Invisible</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="inv-cm-fcustom-wrap" style="display:none;">
+        <label class="form-label">Full-Iced Price (EGP / tooth)</label>
+        <input type="number" class="form-input" id="inv-cm-fcustom" min="0" step="any" placeholder="Enter today's rate">
+      </div>
+      <div class="inv-calc-grid-3">
+        <div class="form-group">
+          <label class="form-label">Plating</label>
+          <select class="form-select" id="inv-cm-plating">
+            <option value="none">None</option>
+            <option value="yellowgold">Yellow Gold</option>
+            <option value="blackgold">Black Gold</option>
+            <option value="whitegold">White Gold</option>
+            <option value="rosegold">Rose Gold</option>
+            <option value="silverplating">Silver Plating</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Enamel</label>
+          <select class="form-select" id="inv-cm-enamel">
+            <option value="none">None</option>
+            <option value="single">Single</option>
+            <option value="multi">Multi</option>
+            <option value="master">Master</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Engraving</label>
+          <select class="form-select" id="inv-cm-engraving">
+            <option value="none">None</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="inv-cm-ano-wrap" style="display:none;">
+        <label class="form-label">Titanium Anodizing</label>
+        <select class="form-select" id="inv-cm-anodize">
+          <option value="none">None</option>
+          <option value="single">Single Color</option>
+          <option value="dual">Dual Color</option>
+          <option value="multi">Multi Color</option>
+        </select>
+      </div>
+      <div class="inv-calc-total-bar">
+        <div>
+          <div class="form-label" style="margin:0;">Calculated Line Total</div>
+          <div id="inv-cm-spec-preview" style="font-size:11px;color:#666;margin-top:2px;">—</div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;" id="inv-cm-total-preview">0 EGP</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-muted2" id="inv-cancel-calc-modal">Cancel</button>
+      <button class="btn-black" id="inv-apply-calc-modal">Add to Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE: IMPORT QUOTE MODAL -->
+<div class="modal-overlay" id="inv-import-quote-modal">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header"><h2>Import Saved Quote</h2><button class="modal-close" id="inv-close-import-quote">&times;</button></div>
+    <div class="modal-body">
+      <div id="inv-import-quote-list" style="max-height:360px;overflow-y:auto;">
+        <div style="text-align:center;padding:24px;color:#aaa;font-size:12px;">Loading quotes…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE: QUICK ADD CLIENT MODAL -->
+<div class="modal-overlay" id="inv-add-client-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header"><h2>New Client</h2><button class="modal-close" id="inv-close-add-client">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input type="text" class="form-input" id="inv-nc-name" placeholder="Client full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone * (used as ID)</label>
+        <input type="tel" class="form-input" id="inv-nc-phone" placeholder="01XXXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="inv-nc-email" placeholder="client@email.com">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="inv-nc-notes" placeholder="VIP, preferences, allergies…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-muted2" id="inv-cancel-add-client">Cancel</button>
+      <button class="btn-black" id="inv-save-new-client">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE: PDF LOADING OVERLAY -->
+<div id="inv-pdf-overlay">
+  <div class="inv-pdf-spinner"></div>
+  <div style="color:#fff;font-size:11px;letter-spacing:3px;text-transform:uppercase;">Generating PDF…</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2290,6 +2830,24 @@
 
   /* PAGE HEROES — per-page hero image & design order */
   var _heroState = { page: 'index', meta: {}, items: [] };
+  var invCurrentCat = 'all';
+
+  function catalogBaseUrl() {
+    if (GH && GH.owner && GH.repo) {
+      return 'https://raw.githubusercontent.com/' + GH.owner + '/' + GH.repo + '/' + (GH.branch || 'main') + '/';
+    }
+    return '';
+  }
+
+  function toggleHeroSection(forceOpen) {
+    var body = document.getElementById('inv-hero-body');
+    var chev = document.getElementById('inv-hero-chevron');
+    if (!body) return;
+    var shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !body.classList.contains('open');
+    body.classList.toggle('open', shouldOpen);
+    if (chev) chev.innerHTML = shouldOpen ? '<i class="fas fa-chevron-up"></i> Collapse' : '<i class="fas fa-chevron-down"></i> Expand';
+    if (shouldOpen) loadHeroPanel(document.getElementById('hero-page').value);
+  }
 
   async function loadPageMeta() {
     if (!db) return {};
@@ -2314,8 +2872,7 @@
     /* 1) Load catalog */
     var all = [];
     try {
-      var raw = 'https://raw.githubusercontent.com/' + GH.owner + '/' + GH.repo + '/' + GH.branch + '/';
-      all = await (await fetch(raw + CATALOG + '?t=' + Date.now())).json();
+      all = await (await fetch(catalogBaseUrl() + CATALOG + '?t=' + Date.now())).json();
     } catch (e) { all = []; }
     all = Array.isArray(all) ? all : [];
 
@@ -2423,10 +2980,10 @@
   }
 
   async function saveHeroOrder() {
+    if(!GH.owner||!GH.repo){showToast('GitHub not set up','error');return;}
     try {
       showToast('Saving order…', '');
-      var raw = 'https://raw.githubusercontent.com/' + GH.owner + '/' + GH.repo + '/' + GH.branch + '/';
-      var all = await (await fetch(raw + CATALOG + '?t=' + Date.now())).json();
+      var all = await readCatalog();
       _heroState.items.forEach(function (x, i) {
         var e = all.find(function (y) { return y.id === x.id; });
         if (e) e.order = i + 1;
@@ -2434,6 +2991,7 @@
       await writeCatalog(all, 'Reorder ' + _heroState.page);
       showToast('Order saved to GitHub', 'success');
       loadHeroPanel(_heroState.page);
+      loadInventory();
     } catch (e) {
       showToast('Error: ' + e.message, 'error');
     }
@@ -2458,95 +3016,127 @@
   }
 
   async function loadAllPanels(){
-    for(var cat in CAT){ loadCategory(cat).catch(function(){}); }
+    return loadInventory();
   }
 
   async function loadCategory(cat){
-    if(!GH.owner||!GH.repo){renderEmptyInv(cat,'Go to GitHub Setup first.');return;}
-    var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
+    return loadInventory();
+  }
+
+  async function loadInventory(){
     var all=[];
-    try{ all=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); }catch(e){ all=[]; }
+    try{ all=await (await fetch(catalogBaseUrl()+CATALOG+'?t='+Date.now())).json(); }catch(e){ all=[]; }
     all=Array.isArray(all)?all:[];
-    /* Filter entries belonging strictly to this category */
-    var want = (cat === 'latest') ? 'latest-designs' : (cat === 'gallery' ? 'grillz-gallery' : cat);
-    var mine = all.filter(function(x){ return x.category === want; });
-    mine.forEach(function(x){
-      x.id = x.id || x.folder;
-      x.folder = x.folder || x.id;
-      x.catFolder = x.category || want;
-      x.desc = x.description || x.desc || '';
-      x.images = Array.isArray(x.images) ? x.images.slice() : [];
-      x.videos = Array.isArray(x.videos) ? x.videos.slice() : [];
+    var totalCount=0;
+    Object.keys(CAT).forEach(function(cat){
+      var want = (cat === 'latest') ? 'latest-designs' : (cat === 'gallery' ? 'grillz-gallery' : cat);
+      var mine = all.filter(function(x){ return x.category === want; }).map(function(x){
+        var copy = Object.assign({}, x);
+        copy.id = copy.id || copy.folder;
+        copy.folder = copy.folder || copy.id;
+        copy.catFolder = copy.category || want;
+        copy._catKey = cat;
+        copy.desc = copy.description || copy.desc || '';
+        copy.images = Array.isArray(copy.images) ? copy.images.slice() : [];
+        copy.videos = Array.isArray(copy.videos) ? copy.videos.slice() : [];
+        return copy;
+      });
+      mine.sort(function(a,b){ return (a.order||999) - (b.order||999); });
+      cache[cat]={list:mine.map(function(x){return x.id;}), items:mine, folder:want, catalog:all};
+      totalCount += mine.length;
+      var pillEl = document.getElementById('pill-count-'+cat);
+      if(pillEl) pillEl.textContent = '('+mine.length+')';
     });
-    mine.sort(function(a,b){ return (a.order||999) - (b.order||999); });
-    cache[cat]={list:mine.map(function(x){return x.id;}), items:mine, folder:want, catalog:all};
-    renderGrid(cat);
+    var allPill = document.getElementById('pill-count-all');
+    if(allPill) allPill.textContent = '('+totalCount+')';
+    renderUnifiedInventory();
+    var heroBody = document.getElementById('inv-hero-body');
+    if(heroBody && heroBody.classList.contains('open')){
+      loadHeroPanel(document.getElementById('hero-page').value);
+    }
+  }
+
+  function setInvCategory(cat){
+    invCurrentCat = cat || 'all';
+    document.querySelectorAll('#inv-cat-pills .inv-cat-pill').forEach(function(btn){
+      btn.classList.toggle('active', btn.dataset.cat === invCurrentCat);
+    });
+    if(invReorderMode){
+      invReorderMode = false;
+      var btn = document.getElementById('reorder-btn-inv');
+      var saveBtn = document.getElementById('reorder-save-inv');
+      if(btn) btn.innerHTML = '<i class="fas fa-sort"></i> Reorder';
+      if(saveBtn) saveBtn.style.display = 'none';
+      disableInvDrag();
+    }
+    renderUnifiedInventory();
   }
 
   function renderEmptyInv(cat,msg){
-    var el=document.getElementById('grid-'+cat);
+    var el=document.getElementById('grid-inventory');
     if(el) el.innerHTML='<div class="empty-state"><i class="fas fa-images"></i><p>'+msg+'</p></div>';
-    var countEl=document.getElementById('count-'+cat);if(countEl) countEl.textContent='';
+    var countEl=document.getElementById('count-inventory');if(countEl) countEl.textContent='';
   }
 
   // ‑‑ BULK SELECT ‑‑
   var bulkSelected={sets:new Set(),golds:new Set(),silvers:new Set(),diamonds:new Set(),latest:new Set(),gallery:new Set()};
   function toggleBulkSelect(cat,id,checkbox){
+    if(!bulkSelected[cat]) bulkSelected[cat] = new Set();
     if(checkbox.checked) bulkSelected[cat].add(id);else bulkSelected[cat].delete(id);
-    updateBulkBar(cat);
+    updateBulkBar();
     checkbox.closest('.set-card').classList.toggle('bulk-selected',checkbox.checked);
   }
-  function updateBulkBar(cat){
-    var count=bulkSelected[cat].size;
-    var bar=document.getElementById('bulk-'+cat);
-    var cnt=document.getElementById('bulk-count-'+cat);
+  function updateBulkBar(){
+    var count=0;
+    Object.keys(bulkSelected).forEach(function(k){ count += bulkSelected[k].size; });
+    var bar=document.getElementById('bulk-inventory');
+    var cnt=document.getElementById('bulk-count-inventory');
     if(bar) bar.classList.toggle('visible',count>0);
     if(cnt) cnt.textContent=count+' item'+(count!==1?'s':'')+' selected';
   }
-  function clearBulk(cat){
-    bulkSelected[cat].clear();
-    document.querySelectorAll('#grid-'+cat+' .card-checkbox').forEach(function(cb){cb.checked=false;cb.closest('.set-card').classList.remove('bulk-selected');});
-    updateBulkBar(cat);
+  function clearBulkInventory(){
+    Object.keys(bulkSelected).forEach(function(k){ bulkSelected[k].clear(); });
+    document.querySelectorAll('#grid-inventory .card-checkbox').forEach(function(cb){cb.checked=false;cb.closest('.set-card').classList.remove('bulk-selected');});
+    updateBulkBar();
   }
-  async function bulkDelete(cat){
-    var ids=[...bulkSelected[cat]];if(!ids.length) return;
+  async function bulkDeleteInventory(){
+    var ids=[];
+    Object.keys(bulkSelected).forEach(function(k){ bulkSelected[k].forEach(function(id){ ids.push(id); }); });
+    if(!ids.length) return;
+    if(!GH.token||!GH.owner||!GH.repo){showToast('Configure GitHub Setup first','error');return;}
     if(!confirm('Delete '+ids.length+' item(s)?')) return;
     showToast('Deleting…','');
     try{
       var list=await readCatalog();
       var keep=list.filter(function(x){return !ids.includes(x.id);});
       await writeCatalog(keep,'Bulk remove '+ids.length+' design(s)');
-      if(cache[cat]){
-        cache[cat].list=cache[cat].list.filter(function(x){return !ids.includes(x);});
-        cache[cat].items=cache[cat].items.filter(function(i){return !ids.includes(i.id);});
-        cache[cat].catalog=keep;
-      }
-      bulkSelected[cat].clear();updateBulkBar(cat);renderGrid(cat);
+      clearBulkInventory();
+      await loadInventory();
       showToast('Deleted '+ids.length+' item(s)','success');
     } catch(err){showToast('Error: '+err.message,'error');}
   }
 
-  // ‑‑ CATEGORY REORDER (drag cards) ‑‑
-  var catReorderMode = {};
+  // ‑‑ UNIFIED REORDER (drag cards) ‑‑
+  var invReorderMode = false;
   var catDragSrc = null;
 
-  function toggleCatReorder(cat) {
-    catReorderMode[cat] = !catReorderMode[cat];
-    var btn = document.getElementById('reorder-btn-'+cat);
-    var saveBtn = document.getElementById('reorder-save-'+cat);
-    if(catReorderMode[cat]){
+  function toggleInvReorder() {
+    invReorderMode = !invReorderMode;
+    var btn = document.getElementById('reorder-btn-inv');
+    var saveBtn = document.getElementById('reorder-save-inv');
+    if(invReorderMode){
       btn.innerHTML = '× Cancel';
       saveBtn.style.display = '';
-      enableCatDrag(cat);
+      enableInvDrag();
     } else {
       btn.innerHTML = '<i class="fas fa-sort"></i> Reorder';
       saveBtn.style.display = 'none';
-      disableCatDrag(cat);
+      disableInvDrag();
     }
   }
 
-  function enableCatDrag(cat){
-    var cards = document.querySelectorAll('#grid-'+cat+' .set-card');
+  function enableInvDrag(){
+    var cards = document.querySelectorAll('#grid-inventory .set-card');
     cards.forEach(function(card){
       card.setAttribute('draggable','true');
       card.style.cursor='grab';
@@ -2554,11 +3144,11 @@
       card.style.outlineOffset='2px';
       card._dragStart = function(e){ catDragSrc=card; e.dataTransfer.effectAllowed='move'; card.style.opacity='0.4'; };
       card._dragOver = function(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; if(card!==catDragSrc){card.style.outline='2px solid #000';card.style.outlineOffset='2px';} };
-      card._dragLeave = function(){ if(catReorderMode[cat]) card.style.outline='2px dashed #ccc'; };
+      card._dragLeave = function(){ if(invReorderMode) card.style.outline='2px dashed #ccc'; };
       card._drop = function(e){
         e.stopPropagation();
         if(catDragSrc&&catDragSrc!==card){
-          var grid=document.getElementById('grid-'+cat);
+          var grid=document.getElementById('grid-inventory');
           var items=Array.from(grid.querySelectorAll('.set-card'));
           var srcIdx=items.indexOf(catDragSrc),tgtIdx=items.indexOf(card);
           if(tgtIdx>srcIdx) grid.insertBefore(catDragSrc,card.nextSibling);
@@ -2567,7 +3157,7 @@
       };
       card._dragEnd = function(){
         card.style.opacity='';
-        document.querySelectorAll('#grid-'+cat+' .set-card').forEach(function(c){if(catReorderMode[cat])c.style.outline='2px dashed #ccc';});
+        document.querySelectorAll('#grid-inventory .set-card').forEach(function(c){if(invReorderMode)c.style.outline='2px dashed #ccc';});
         catDragSrc=null;
       };
       card.addEventListener('dragstart',card._dragStart);
@@ -2578,8 +3168,8 @@
     });
   }
 
-  function disableCatDrag(cat){
-    var cards=document.querySelectorAll('#grid-'+cat+' .set-card');
+  function disableInvDrag(){
+    var cards=document.querySelectorAll('#grid-inventory .set-card');
     cards.forEach(function(card){
       card.setAttribute('draggable','false');
       card.style.cursor='';card.style.outline='';card.style.outlineOffset='';
@@ -2591,63 +3181,76 @@
     });
   }
 
-  async function saveCatOrder(cat){
+  async function saveInvOrder(){
     if(!GH.owner||!GH.repo){showToast('GitHub not set up','error');return;}
-    var cards=document.querySelectorAll('#grid-'+cat+' .set-card');
-    var newOrder=Array.from(cards).map(function(c){return c.getAttribute('data-id');}).filter(Boolean);
+    var cards=document.querySelectorAll('#grid-inventory .set-card');
+    var perCatCounters={};
     try{
       var list=await readCatalog();
-      newOrder.forEach(function(id,i){
+      Array.from(cards).forEach(function(c){
+        var id=c.getAttribute('data-id');
+        var cat=c.getAttribute('data-cat');
+        if(!id) return;
+        perCatCounters[cat]=(perCatCounters[cat]||0)+1;
         var e=catalogEntry(list,id);
-        if(e) e.order=i+1;
+        if(e) e.order=perCatCounters[cat];
       });
-      /* Update catalog order field */
-      await writeCatalog(list,'Reorder '+cat);
-      if(cache[cat]){
-        cache[cat].list=newOrder;
-        cache[cat].items.sort(function(a,b){return newOrder.indexOf(a.id)-newOrder.indexOf(b.id);});
-      }
+      await writeCatalog(list,'Reorder inventory ('+invCurrentCat+')');
       showToast(' Order saved to GitHub!','success');
-      toggleCatReorder(cat);
+      toggleInvReorder();
+      loadInventory();
     } catch(e){showToast('Error: '+e.message,'error');}
   }
 
-  // ‑‑ FILTER + RENDER GRID ‑‑
-  function filterGrid(cat,query,sort){
-    var data=cache[cat]||{};var items=data.items||[];
-    var filtered=items.filter(function(item){var q=(query||'').toLowerCase();if(!q) return true;return (item.name||'').toLowerCase().includes(q)||(item.desc||'').toLowerCase().includes(q);});
-    if(sort==='tag-featured') filtered=filtered.filter(function(i){return getTags(cat,i.id).includes('featured');});
-    if(sort==='tag-sold') filtered=filtered.filter(function(i){return getTags(cat,i.id).includes('sold');});
+  // ‑‑ FILTER + RENDER UNIFIED GRID ‑‑
+  var CAT_BADGE_LABELS = {sets:'Sets', golds:'Golds', silvers:'Silvers', diamonds:'Diamonds', latest:'Latest', gallery:'Gallery'};
+
+  function renderUnifiedInventory(){
+    var queryEl=document.getElementById('inv-search-input');
+    var sortEl=document.getElementById('inv-sort-select');
+    var query=(queryEl?queryEl.value:'').trim().toLowerCase();
+    var sort=sortEl?sortEl.value:'';
+    var items=[];
+    var cats = invCurrentCat==='all' ? Object.keys(CAT) : [invCurrentCat];
+    cats.forEach(function(cat){
+      var data=cache[cat]||{};
+      (data.items||[]).forEach(function(it){
+        items.push(Object.assign({}, it, {_catKey: cat}));
+      });
+    });
+    var filtered=items.filter(function(item){
+      if(!query) return true;
+      var catLbl=(CAT_BADGE_LABELS[item._catKey]||item._catKey||'').toLowerCase();
+      return (item.name||'').toLowerCase().includes(query) ||
+             (item.desc||'').toLowerCase().includes(query) ||
+             catLbl.includes(query);
+    });
+    if(sort==='tag-featured') filtered=filtered.filter(function(i){return getTags(i._catKey,i.id).includes('featured');});
+    if(sort==='tag-sold') filtered=filtered.filter(function(i){return getTags(i._catKey,i.id).includes('sold');});
     if(sort==='name') filtered=[...filtered].sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
     if(sort==='newest') filtered=[...filtered].reverse();
-    renderGridItems(cat,filtered);
-  }
 
-  function renderGrid(cat){
-    var data=cache[cat]||{};var items=data.items||[];
-    var el=document.getElementById('count-'+cat);
-    if(el) el.textContent=items.length?items.length+' item'+(items.length!==1?'s':''):'';
-    renderGridItems(cat,items);
-  }
+    var countEl=document.getElementById('count-inventory');
+    if(countEl) countEl.textContent=filtered.length+' item'+(filtered.length!==1?'s':'');
 
-  function renderGridItems(cat,items){
-    var grid=document.getElementById('grid-'+cat);
-    var catInfo=cache[cat]||CAT[cat];var folder=catInfo.folder||cat;
-    var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
-    if(!items.length){renderEmptyInv(cat,'No items found.');return;}
+    var grid=document.getElementById('grid-inventory');
+    if(!grid) return;
+    var base=catalogBaseUrl();
+    if(!filtered.length){renderEmptyInv('inventory','No items found.');return;}
     var TAGS_MAP={new:{label:'New',cls:'tag-new'},featured:{label:'<i class="fas fa-star"></i> Featured',cls:'tag-featured'},sold:{label:'Sold',cls:'tag-sold'},sale:{label:'Sale',cls:'tag-sale'}};
-    grid.innerHTML=items.map(function(item){
+    grid.innerHTML=filtered.map(function(item){
+      var cat=item._catKey;
       var tags=getTags(cat,item.id);
       var tagHtml=tags.length?'<div class="tag-row">'+tags.map(function(t){return '<span class="tag '+(TAGS_MAP[t]&&TAGS_MAP[t].cls||'')+'">'+( TAGS_MAP[t]&&TAGS_MAP[t].label||t)+'</span>';}).join('')+'</div>':'';
       var allMedia=(item.images||[]).concat(item.videos||[]);
       var mediaHtml=allMedia.map(function(file,i){
-        if(isVideoFile(file)) return '<video src="'+raw+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
-        /* Load grid card preview directly from repository image */
-        return '<img src="'+raw+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
+        if(isVideoFile(file)) return '<video src="'+base+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
+        return '<img src="'+base+itemRoot(item)+file+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
       }).join('');
       var hasVideo=allMedia.some(function(f){return isVideoFile(f);});
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
       return '<div class="set-card '+(isChecked?'bulk-selected':'')+'" data-id="'+item.id+'" data-cat="'+cat+'">'+
+        '<span class="card-cat-badge">'+(CAT_BADGE_LABELS[cat]||cat)+'</span>'+
         '<input type="checkbox" class="card-checkbox" '+(isChecked?'checked':'')+' onchange="toggleBulkSelect(\''+cat+'\',\''+item.id+'\',this)">'+
         '<div class="mini-slider">'+(mediaHtml||'<div class="no-img"><i class="fas fa-camera"></i></div>')+(hasVideo?'<span class="video-badge"><i class="fas fa-play"></i> Video</span>':'')+'</div>'+
         '<div class="set-info">'+
@@ -2698,14 +3301,14 @@
   // ‑‑ INLINE EDIT ‑‑
 
   
-  async function saveAllPrices(cat){
-    var cardSel = '.set-card[data-cat="' + cat + '"]';
-    var cards = Array.prototype.slice.call(document.querySelectorAll(cardSel));
-    if(!cards.length){ showToast('No cards in this section','error'); return; }
+  async function saveAllPricesInventory(){
+    var cards = Array.prototype.slice.call(document.querySelectorAll('#grid-inventory .set-card'));
+    if(!cards.length){ showToast('No cards to save','error'); return; }
 
     var pending = [];
     cards.forEach(function(card){
       var id = card.dataset.id;
+      var cat = card.dataset.cat;
       var item = cache[cat] && cache[cat].items.find(function(i){ return i.id === id; });
       if(!item) return;
       var nameInp  = card.querySelector('.editable-field.name input');
@@ -2715,11 +3318,11 @@
       var desc  = descInp  ? descInp.value.trim()  : (item.desc  || '');
       var price = priceInp ? priceInp.value.trim() : (item.price || '');
       if(name === (item.name||'') && desc === (item.desc||'') && price === (item.price||'')) return;
-      pending.push({ id:id, item:item, name:name, desc:desc, price:price });
+      pending.push({ id:id, item:item, name:name, desc:desc, price:price, cat:cat });
     });
 
     if(!pending.length){ showToast('No changes to save',''); return; }
-    if(!confirm('Save ' + pending.length + ' edit(s) in ' + cat + '')) return;
+    if(!confirm('Save ' + pending.length + ' edit(s)?')) return;
 
     var ok = 0, fail = 0;
     for(var i=0;i<pending.length;i++){
@@ -2731,13 +3334,13 @@
         entry.name = u.name; entry.price = u.price; entry.description = u.desc;
         await writeCatalog(list, 'Update ' + u.id + ' name/price/desc');
         u.item.name = u.name; u.item.desc = u.desc; u.item.price = u.price;
-        var card = document.querySelector(cardSel + '[data-id="' + u.id + '"]');
+        var card = document.querySelector('#grid-inventory .set-card[data-id="' + u.id + '"]');
         if(card){
           var pad = function(sel, val){ var e = card.querySelector(sel); if(e) e.textContent = val; };
           pad('.editable-field.name .field-val', u.name);
           pad('.editable-field.desc .field-val', u.desc);
           pad('.editable-field.price .field-val', u.price);
-          cancelInlineEdit(cat, u.id);
+          cancelInlineEdit(u.cat, u.id);
         }
         ok++;
       }catch(e){ fail++; console.warn(e); }
@@ -2917,9 +3520,25 @@
       document.getElementById('file-input').accept='image/*';
     }
   }
+  function onModalCatChange(cat){
+    currentEditCat = cat;
+    document.getElementById('edit-category').value = cat;
+    var catGroup = document.getElementById('modal-cat-group');
+    if(catGroup) catGroup.style.display = currentMode === 'edit' ? 'none' : '';
+    if(currentMode === 'add'){
+      document.getElementById('modal-title').textContent = 'Add ' + ((CAT[cat] && CAT[cat].label) || cap(cat));
+    }
+    setUploadHint(cat);
+  }
   function openModal(cat){
-    currentMode='add';resetModal();currentEditCat=cat;
+    currentMode='add';resetModal();
+    cat = (cat && CAT[cat]) ? cat : (invCurrentCat !== 'all' && CAT[invCurrentCat] ? invCurrentCat : 'sets');
+    currentEditCat=cat;
     document.getElementById('edit-category').value=cat;
+    var fcat=document.getElementById('f-category');
+    if(fcat) fcat.value=cat;
+    var catGroup=document.getElementById('modal-cat-group');
+    if(catGroup) catGroup.style.display='';
     document.getElementById('modal-title').textContent=
       'Add ' + ((CAT[cat] && CAT[cat].label) || cap(cat));
     document.getElementById('publish-btn').textContent='Publish to Site';
@@ -2933,6 +3552,10 @@
     pendingImages=[];existingImages=[].concat(item.images||[],item.videos||[]);
     document.getElementById('edit-id').value=id;
     document.getElementById('edit-category').value=cat;
+    var fcat=document.getElementById('f-category');
+    if(fcat) fcat.value=cat;
+    var catGroup=document.getElementById('modal-cat-group');
+    if(catGroup) catGroup.style.display='none';
     document.getElementById('f-name').value=item.name||'';
     document.getElementById('f-price').value=item.price||'';
     document.getElementById('f-desc').value=item.desc||item.description||'';
@@ -3041,6 +3664,9 @@
   async function publishItem(){
     if(!GH.token||!GH.owner||!GH.repo){alert('GitHub Setup incomplete!');return;}
     var cat=document.getElementById('edit-category').value;
+    var fcatEl=document.getElementById('f-category');
+    if(currentMode==='add' && fcatEl && fcatEl.value) cat=fcatEl.value;
+    if(!CAT[cat]) cat='sets';
     var catInfo=CAT[cat]||CAT.sets;
     var name=document.getElementById('f-name').value.trim();
     var price=document.getElementById('f-price').value.trim();
@@ -3164,10 +3790,10 @@
         cache[_dCat].list=cache[_dCat].list.filter(function(x){return x!==_dId;});
         cache[_dCat].items=cache[_dCat].items.filter(function(i){return i.id!==_dId;});
         cache[_dCat].catalog=keep;
-        renderGrid(_dCat);
+        renderUnifiedInventory();
       }
       showToast(' Item removed','success');
-      setTimeout(function(){loadCategory(_dCat);},2000);
+      setTimeout(function(){loadInventory();},2000);
     } catch(err){showToast('Error: '+err.message,'error');}
   }
 
@@ -3342,6 +3968,1305 @@
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script data-cfasync="false" src="assets/calc-engine.js"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
+
+<script data-cfasync="false">
+/* ══════════════════════════════════════════════════════════════════════
+   EGYGRILLZ — INVOICES  (native panel, no iframe)
+   Everything lives inside #panel-invoices and uses inv-* ids so it can
+   never collide with the inventory / clients screens.
+   ══════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var LS_KEY = 'egy_invoices';
+
+  /* state */
+  var lineItems = [];          // current invoice lines
+  var selectedClient = null;
+  var paymentMethod = 'Cash';
+  var currentCategory = 'golds';
+  var designCache = {};
+  var allDesigns = [];
+  var catalogAll = [];
+  var editingInvoiceId = null;
+  var accStatusFilter = 'all';
+  var pendingQuoteId = '';
+  var invAll = [];             // merged local + Firestore invoices
+  var invClients = [];
+  var wired = false;
+
+  /* ───────────── tiny helpers ───────────── */
+  function el(id) { return document.getElementById(id); }
+  function fmt(n) { return Math.round(Number(n) || 0).toLocaleString('en-EG'); }
+  function money(n) { return fmt(n) + ' EGP'; }
+  function todayStr() { return new Date().toISOString().slice(0, 10); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function escA(s) { return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function setTxt(id, v) { var e = el(id); if (e) e.textContent = v; }
+  function toast(msg, type) { if (typeof window.showToast === 'function') window.showToast(msg, type || ''); }
+  function CE() { return window.CalcEngine; }
+  function db() { return window.db; }
+
+  /* ───────────── invoice storage (local + Firestore) ───────────── */
+  function getLocal() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') || []; } catch (e) { return []; }
+  }
+  function saveLocal(arr) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch (e) {}
+  }
+  function mergeInvoices(a, b) {
+    var map = {};
+    (a || []).forEach(function (i) { var k = String(i.id || i.number || ''); if (k) map[k] = i; });
+    (b || []).forEach(function (i) { var k = String(i.id || i.number || ''); if (k) map[k] = i; });
+    return Object.keys(map).map(function (k) { return map[k]; }).sort(function (x, y) {
+      return String(y.createdAt || y.date || '').localeCompare(String(x.createdAt || x.date || ''));
+    });
+  }
+  async function fetchRemoteInvoices() {
+    if (!db()) return [];
+    try {
+      var snap = await db().collection('invoices').limit(250).get();
+      var out = [];
+      snap.forEach(function (d) { out.push(Object.assign({ id: d.id }, d.data())); });
+      return out;
+    } catch (e) { console.warn('[invoices] Firestore read failed', e); return []; }
+  }
+  async function refreshList() {
+    var remote = await fetchRemoteInvoices();
+    invAll = mergeInvoices(getLocal(), remote);
+    saveLocal(invAll);
+    return invAll;
+  }
+  function genInvNum() {
+    var max = 0;
+    getLocal().concat(invAll).forEach(function (i) {
+      var m = String(i.number || '').match(/(\d+)/);
+      if (m) max = Math.max(max, parseInt(m[1], 10) || 0);
+    });
+    return 'EGY-' + String(max + 1).padStart(3, '0');
+  }
+
+  /* ───────────── clients ───────────── */
+  async function loadInvClients() {
+    invClients = (window.allClients || []).slice();
+    if (!invClients.length && db()) {
+      try {
+        var snap = await db().collection('clients').limit(1000).get();
+        invClients = [];
+        snap.forEach(function (d) { invClients.push(Object.assign({ id: d.id }, d.data())); });
+      } catch (e) { console.warn('[invoices] clients read failed', e); }
+    }
+    invClients.sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
+    return invClients;
+  }
+
+  function renderClientDropdown(matches) {
+    var dd = el('inv-client-dropdown');
+    if (!dd) return;
+    if (!matches.length) {
+      dd.innerHTML = '<div class="inv-dropdown-empty">No clients found</div>';
+      dd.classList.add('open');
+      return;
+    }
+    dd.innerHTML = matches.map(function (c) {
+      return '<div class="inv-dropdown-opt" data-id="' + escA(c.id) + '">' +
+        '<div><div style="font-size:12px;font-weight:600;">' + esc(c.name || c.id) + '</div>' +
+        '<div style="font-size:10px;color:#999;">' + esc(c.phone || '') +
+        (c.email ? ' · ' + esc(c.email) : '') + '</div></div></div>';
+    }).join('');
+    dd.classList.add('open');
+    dd.querySelectorAll('.inv-dropdown-opt').forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        var c = invClients.find(function (x) { return String(x.id) === String(opt.dataset.id); });
+        if (c) selectClient(c);
+        dd.classList.remove('open');
+      });
+    });
+  }
+
+  function selectClient(c) {
+    if (!c) return;
+    selectedClient = c;
+    var inp = el('inv-client-search');
+    if (inp && document.activeElement !== inp) inp.value = c.name || c.id || '';
+    var card = el('inv-client-card');
+    if (card) card.classList.add('visible');
+    setTxt('inv-cc-name', c.name || c.id || '');
+    setTxt('inv-cc-info', [c.phone, c.email].filter(Boolean).join(' · ') || '—');
+    var badge = el('inv-cc-badge');
+    if (badge) {
+      badge.textContent = (c.totalAppointments || 0) + ' visit' + ((c.totalAppointments || 0) === 1 ? '' : 's');
+      badge.className = 'status-badge badge-pending';
+    }
+    updatePreview();
+  }
+
+  function clearClient() {
+    selectedClient = null;
+    var i = el('inv-client-search');
+    if (i) i.value = '';
+    var card = el('inv-client-card');
+    if (card) card.classList.remove('visible');
+    var dd = el('inv-client-dropdown');
+    if (dd) dd.classList.remove('open');
+    updatePreview();
+  }
+
+  /* ───────────── catalogue / designs ───────────── */
+  async function loadCatalog() {
+    if (catalogAll.length) return catalogAll;
+    try {
+      var base = (typeof window.catalogBaseUrl === 'function') ? window.catalogBaseUrl() : '';
+      var r = await fetch(base + 'assets/images/catalog.json?t=' + Date.now());
+      catalogAll = r.ok ? await r.json() : [];
+    } catch (e) { catalogAll = []; }
+    if (!Array.isArray(catalogAll)) catalogAll = [];
+    designCache = {};
+    allDesigns = [];
+    catalogAll.forEach(function (item) {
+      if (item.category === 'grillz-gallery') return;
+      var d = {
+        id: item.id || item.folder,
+        name: item.name || item.id || item.folder,
+        desc: item.description || '',
+        price: item.price || '',
+        calc: item.calc || null,
+        images: (item.images || []).concat(item.videos || []),
+        folder: item.folder || item.id,
+        cat: item.category
+      };
+      d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
+      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
+      allDesigns.push(d);
+    });
+    return catalogAll;
+  }
+
+  function renderItemDropdown(matches, q) {
+    var dd = el('inv-item-search-dropdown');
+    if (!dd) return;
+    if (!matches.length) {
+      dd.innerHTML = '<div class="inv-dropdown-empty">No designs found for "' + esc(q) + '"</div>';
+      dd.classList.add('open');
+      return;
+    }
+    dd.innerHTML = matches.map(function (d, i) {
+      var src = d.images && d.images[0] ? (d.root + d.images[0]) : '';
+      return '<div class="inv-dropdown-opt" data-i="' + i + '">' +
+        (src ? '<img src="' + escA(src) + '" alt="" loading="lazy">' : '') +
+        '<div><div style="font-size:12px;font-weight:600;">' + esc(d.name) + '</div>' +
+        '<div style="font-size:10px;color:#999;">' + esc(d.price || '') +
+        (d.cat ? ' · ' + esc(d.cat) : '') + '</div></div></div>';
+    }).join('');
+    dd.classList.add('open');
+    dd.querySelectorAll('.inv-dropdown-opt').forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        var d = matches[parseInt(opt.dataset.i, 10)];
+        if (!d) return;
+        if (d.calc && (!d.priceNum || d.priceNum <= 0) && CE()) {
+          openCalcWithPreset(d.name, d.calc);
+        } else {
+          addCustomItem({ name: d.name, spec: d.calc && CE() ? CE().lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0 });
+          toast('Added: ' + d.name, 'success');
+        }
+        dd.classList.remove('open');
+        var inp = el('inv-item-search');
+        if (inp) inp.value = '';
+      });
+    });
+  }
+
+  async function loadDesigns(cat) {
+    var grid = el('inv-design-grid');
+    if (!grid) return;
+    if (designCache[cat]) { renderDesignGrid(designCache[cat]); return; }
+    grid.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;font-size:12px;">Loading…</div>';
+    await loadCatalog();
+    var want = cat;
+    var list = [];
+    catalogAll.forEach(function (item) {
+      if (item.category === 'grillz-gallery') return;
+      if (want && item.category !== want) return;
+      if (list.length >= 24) return;
+      var d = {
+        id: item.id || item.folder,
+        name: item.name || item.id || item.folder,
+        price: item.price || '',
+        calc: item.calc || null,
+        images: (item.images || []).concat(item.videos || []),
+        folder: item.folder || item.id,
+        cat: item.category
+      };
+      d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
+      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
+      list.push(d);
+    });
+    designCache[cat] = list;
+    renderDesignGrid(list);
+  }
+
+  function renderDesignGrid(list) {
+    var grid = el('inv-design-grid');
+    if (!grid) return;
+    if (!list.length) {
+      grid.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;font-size:12px;">No designs found</div>';
+      return;
+    }
+    grid.innerHTML = list.map(function (d, i) {
+      var src = d.images && d.images[0] ? (d.root + d.images[0]) : '';
+      return '<div class="inv-design-thumb" data-i="' + i + '">' +
+        (src ? '<img src="' + escA(src) + '" alt="" loading="lazy">'
+             : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="fas fa-image"></i></div>') +
+        '<div class="inv-design-thumb-name">' + esc(d.name) + '</div>' +
+        '<div class="inv-design-thumb-price">' + esc(d.price || '') + '</div></div>';
+    }).join('');
+    grid.querySelectorAll('.inv-design-thumb').forEach(function (th) {
+      th.addEventListener('click', function () {
+        var d = list[parseInt(th.dataset.i, 10)];
+        if (!d) return;
+        if (d.calc && (!d.priceNum || d.priceNum <= 0) && CE()) { openCalcWithPreset(d.name, d.calc); return; }
+        addCustomItem({ name: d.name, spec: d.calc && CE() ? CE().lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0 });
+        toast('Added: ' + d.name, 'success');
+      });
+    });
+  }
+
+  /* ───────────── line items ───────────── */
+  function addCustomItem(prefill) {
+    var p = prefill || {};
+    lineItems.push({
+      id: p.id || (Date.now() + Math.random()),
+      name: p.name || '',
+      spec: p.spec || '',
+      qty: Number(p.qty) || 1,
+      price: Number(p.price) || 0
+    });
+    renderItems();
+    updatePreview();
+  }
+  function removeItem(id) {
+    lineItems = lineItems.filter(function (i) { return String(i.id) !== String(id); });
+    renderItems();
+    updatePreview();
+    toast('Item removed');
+  }
+  function renderItems() {
+    var wrap = el('inv-items-list');
+    if (!wrap) return;
+    if (!lineItems.length) {
+      wrap.innerHTML = '<div class="empty-state" style="padding:24px;" id="inv-items-empty"><p>No items added yet</p></div>';
+      return;
+    }
+    var html = '<div class="inv-items-cols"><div>Description &amp; Spec</div><div>Qty</div><div>Price EGP</div><div></div></div>';
+    lineItems.forEach(function (it) {
+      html += '<div class="inv-item-row" data-row="' + escA(it.id) + '">' +
+        '<div><input class="inv-item-input" data-id="' + escA(it.id) + '" data-field="name" placeholder="Item name / description" value="' + escA(it.name) + '">' +
+        '<input class="inv-item-spec" data-id="' + escA(it.id) + '" data-field="spec" placeholder="Material / teeth / finish spec (optional)" value="' + escA(it.spec || '') + '"></div>' +
+        '<input class="inv-item-input" type="number" min="1" data-id="' + escA(it.id) + '" data-field="qty" value="' + escA(it.qty) + '" style="text-align:center;">' +
+        '<input class="inv-item-input" type="number" min="0" step="1" data-id="' + escA(it.id) + '" data-field="price" value="' + escA(it.price) + '">' +
+        '<button class="inv-item-remove" data-remove="' + escA(it.id) + '" title="Remove">&times;</button>' +
+        '</div>';
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('input[data-id]').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        var it = lineItems.find(function (x) { return String(x.id) === String(inp.dataset.id); });
+        if (!it) return;
+        var f = inp.dataset.field;
+        it[f] = (f === 'name' || f === 'spec') ? inp.value : Math.max(0, Number(inp.value) || 0);
+        updatePreview();
+      });
+    });
+    wrap.querySelectorAll('[data-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function () { removeItem(btn.dataset.remove); });
+    });
+  }
+
+  /* ───────────── totals + preview ───────────── */
+  function numVal(id) { var e = el(id); return e ? (parseFloat(e.value) || 0) : 0; }
+  function strVal(id) { var e = el(id); return e ? String(e.value || '').trim() : ''; }
+
+  function calcTotals() {
+    var subtotal = lineItems.reduce(function (s, i) { return s + (Number(i.qty) || 0) * (Number(i.price) || 0); }, 0);
+    var discVal = numVal('inv-discount-val');
+    var discType = el('inv-discount-type') ? el('inv-discount-type').value : 'egp';
+    var discount = discType === 'pct' ? subtotal * discVal / 100 : discVal;
+    var total = Math.max(0, subtotal - discount);
+    var rate = numVal('inv-usd-rate') || 50;
+    var deposit = numVal('inv-deposit-val');
+    var remaining = Math.max(0, total - deposit);
+    return {
+      subtotal: subtotal, discount: discount, total: total,
+      usd: total / rate, deposit: deposit, remaining: remaining, rate: rate
+    };
+  }
+
+  function updatePreview() {
+    var t = calcTotals();
+    var num = strVal('inv-number') || 'EGY-001';
+    var date = strVal('inv-date');
+    var status = el('inv-status') ? el('inv-status').value : 'pending';
+    var notes = strVal('inv-notes');
+
+    setTxt('inv-prev-num', num);
+    setTxt('inv-prev-date', date ? new Date(date + 'T00:00:00').toLocaleDateString('en-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '');
+
+    var badge = el('inv-prev-status');
+    if (badge) {
+      badge.textContent = status === 'paid' ? 'Paid' : status === 'partial' ? 'Partial Payment' : 'Pending';
+      badge.className = 'inv-badge ' + status;
+    }
+
+    if (selectedClient) {
+      setTxt('inv-prev-client-name', selectedClient.name || selectedClient.id || '—');
+      var det = el('inv-prev-client-detail');
+      if (det) det.innerHTML = [esc(selectedClient.phone), esc(selectedClient.email)].filter(Boolean).join('<br>') || 'No contact details';
+    } else {
+      setTxt('inv-prev-client-name', '—');
+      var det2 = el('inv-prev-client-detail');
+      if (det2) det2.textContent = 'No client selected';
+    }
+
+    var tbody = el('inv-prev-items');
+    if (tbody) {
+      if (!lineItems.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#ccc;font-size:11px;padding:18px 0;">No items yet</td></tr>';
+      } else {
+        tbody.innerHTML = lineItems.map(function (i) {
+          return '<tr>' +
+            '<td>' + (esc(i.name) || '—') + (i.spec ? '<div style="font-size:10px;color:#888;margin-top:2px;">' + esc(i.spec) + '</div>' : '') + '</td>' +
+            '<td style="text-align:right;">' + esc(i.qty) + '</td>' +
+            '<td style="text-align:right;">' + money(i.price) + '</td>' +
+            '<td style="text-align:right;">' + money((Number(i.qty) || 0) * (Number(i.price) || 0)) + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+    }
+
+    setTxt('inv-prev-subtotal', money(t.subtotal));
+    var dRow = el('inv-prev-discount-row');
+    if (dRow) {
+      dRow.style.display = t.discount > 0 ? 'flex' : 'none';
+      setTxt('inv-prev-discount', '-' + money(t.discount));
+    }
+    setTxt('inv-prev-total', money(t.total));
+    setTxt('inv-prev-usd', '≈ $' + t.usd.toFixed(2));
+
+    setTxt('inv-tot-subtotal', money(t.subtotal));
+    setTxt('inv-tot-total', money(t.total));
+    setTxt('inv-tot-usd', '≈ $' + t.usd.toFixed(2));
+
+    setTxt('inv-prev-payment-method', paymentMethod);
+    var depRow = el('inv-prev-deposit-row');
+    var remRow = el('inv-prev-remaining-row');
+    if (depRow) depRow.style.display = t.deposit > 0 ? 'flex' : 'none';
+    if (remRow) remRow.style.display = t.deposit > 0 ? 'flex' : 'none';
+    setTxt('inv-prev-deposit', money(t.deposit));
+    setTxt('inv-prev-remaining', money(t.remaining));
+    setTxt('inv-prev-notes', notes || '');
+  }
+
+  /* ───────────── calculator modal ───────────── */
+  function syncCalcModal() {
+    var E = CE();
+    if (!E) return;
+    var S = E.get();
+    var mat = el('inv-cm-material') ? el('inv-cm-material').value : 'chrome';
+    var isGold = mat === 'gold';
+    var isTi = mat === 'titanium';
+    var noStones = !E.allowsStones(mat);
+    if (el('inv-cm-gold-wrap')) el('inv-cm-gold-wrap').style.display = isGold ? '' : 'none';
+    if (el('inv-cm-ano-wrap')) el('inv-cm-ano-wrap').style.display = isTi ? '' : 'none';
+
+    var st = el('inv-cm-stones');
+    if (st) {
+      if (noStones) { st.value = 'none'; st.disabled = true; } else { st.disabled = false; }
+    }
+    var mode = st ? st.value : 'none';
+    if (el('inv-cm-accent-wrap')) el('inv-cm-accent-wrap').style.display = mode === 'accent' ? '' : 'none';
+    if (el('inv-cm-full-wrap')) el('inv-cm-full-wrap').style.display = mode === 'full' ? '' : 'none';
+
+    var aType = el('inv-cm-atype') ? el('inv-cm-atype').value : 'cz';
+    var fType = el('inv-cm-ftype') ? el('inv-cm-ftype').value : 'cz';
+    if (el('inv-cm-acustom-wrap')) el('inv-cm-acustom-wrap').style.display = (mode === 'accent' && S.accentPrice[aType] === null) ? '' : 'none';
+    if (el('inv-cm-fcustom-wrap')) el('inv-cm-fcustom-wrap').style.display = (mode === 'full' && S.fullPrice[fType] === null) ? '' : 'none';
+
+    var calc = E.calculateLine(readCalcLine());
+    setTxt('inv-cm-spec-preview', E.lineLabel(calc));
+    setTxt('inv-cm-total-preview', money(calc.subtotal));
+  }
+
+  function readCalcLine() {
+    var E = CE();
+    var mat = el('inv-cm-material') ? el('inv-cm-material').value : 'chrome';
+    var noStones = E ? !E.allowsStones(mat) : false;
+    var mode = noStones ? 'none' : (el('inv-cm-stones') ? el('inv-cm-stones').value : 'none');
+    var gp = numVal('inv-cm-gold-rate');
+    var line = {
+      name: strVal('inv-cm-name'),
+      material: mat,
+      karat: el('inv-cm-karat') ? el('inv-cm-karat').value : '18',
+      goldPrice: gp > 0 ? gp : undefined,
+      teeth: Math.max(1, Math.min(16, parseInt(strVal('inv-cm-teeth'), 10) || 6)),
+      level: el('inv-cm-level') ? el('inv-cm-level').value : '1',
+      plating: el('inv-cm-plating') ? el('inv-cm-plating').value : 'none',
+      enamel: el('inv-cm-enamel') ? el('inv-cm-enamel').value : 'none',
+      engraving: el('inv-cm-engraving') ? el('inv-cm-engraving').value : 'none',
+      anodize: mat === 'titanium' && el('inv-cm-anodize') ? el('inv-cm-anodize').value : 'none'
+    };
+    if (mode === 'accent') {
+      var cp = strVal('inv-cm-acustom');
+      line.accent = {
+        count: Math.max(1, parseInt(strVal('inv-cm-acount'), 10) || 1),
+        type: el('inv-cm-atype') ? el('inv-cm-atype').value : 'cz',
+        setting: el('inv-cm-asetting') ? el('inv-cm-asetting').value : 'flush',
+        customPrice: cp !== '' ? Number(cp) : undefined
+      };
+    } else if (mode === 'full') {
+      var fp = strVal('inv-cm-fcustom');
+      line.full = {
+        type: el('inv-cm-ftype') ? el('inv-cm-ftype').value : 'cz',
+        coverage: el('inv-cm-fcov') ? el('inv-cm-fcov').value : 'standardpave',
+        customPrice: fp !== '' ? Number(fp) : undefined
+      };
+    } else if (mode === 'bars') {
+      line.full = { bars: true };
+    }
+    return line;
+  }
+
+  function openCalcWithPreset(name, calc) {
+    var c = calc || {};
+    var E = CE();
+    if (!E) { toast('Pricing engine not loaded', 'error'); return; }
+    if (el('inv-cm-name')) el('inv-cm-name').value = name || c.name || '';
+    if (el('inv-cm-material')) el('inv-cm-material').value = c.material || 'chrome';
+    if (el('inv-cm-karat')) el('inv-cm-karat').value = c.karat || '18';
+    if (el('inv-cm-gold-rate')) el('inv-cm-gold-rate').value = E.get().goldPrice || '';
+    if (el('inv-cm-teeth')) el('inv-cm-teeth').value = c.teeth || 6;
+    if (el('inv-cm-level')) el('inv-cm-level').value = String(c.level || '1');
+    if (el('inv-cm-plating')) el('inv-cm-plating').value = c.plating || 'none';
+    if (el('inv-cm-enamel')) el('inv-cm-enamel').value = c.enamel || 'none';
+    if (el('inv-cm-engraving')) el('inv-cm-engraving').value = c.engraving || 'none';
+    if (el('inv-cm-anodize')) el('inv-cm-anodize').value = c.anodize || 'none';
+    var mode = c.accent ? 'accent' : (c.full && c.full.bars ? 'bars' : (c.full ? 'full' : 'none'));
+    if (el('inv-cm-stones')) el('inv-cm-stones').value = mode;
+    if (c.accent) {
+      if (el('inv-cm-acount')) el('inv-cm-acount').value = c.accent.count || 1;
+      if (el('inv-cm-atype')) el('inv-cm-atype').value = c.accent.type || 'cz';
+      if (el('inv-cm-asetting')) el('inv-cm-asetting').value = c.accent.setting || 'flush';
+    }
+    if (c.full && !c.full.bars) {
+      if (el('inv-cm-ftype')) el('inv-cm-ftype').value = c.full.type || 'moissanite';
+      if (el('inv-cm-fcov')) el('inv-cm-fcov').value = c.full.coverage || 'standardpave';
+    }
+    syncCalcModal();
+    if (el('inv-calc-modal')) el('inv-calc-modal').classList.add('open');
+  }
+
+  function closeCalc() { if (el('inv-calc-modal')) el('inv-calc-modal').classList.remove('open'); }
+
+  /* ───────────── quote import ───────────── */
+  function transferFromQuote(q) {
+    var E = CE();
+    var order = q.order || {};
+    var items = [];
+    (order.lines || []).forEach(function (l) {
+      items.push({
+        name: l.name || (E ? E.LABELS.material[l.material] + ' Grillz' : 'Custom Grillz'),
+        spec: E ? E.lineLabel(l) : '',
+        qty: 1,
+        price: Number(l.subtotal) || 0
+      });
+    });
+    (order.services || []).forEach(function (sv) {
+      items.push({ name: sv.name || 'Studio Service', spec: 'Studio Service', qty: Number(sv.qty) || 1, price: Number(sv.unitPrice) || 0 });
+    });
+    if (order.timelineAmount) items.push({ name: 'Rush Timeline', spec: 'Order Timeline Surcharge', qty: 1, price: Number(order.timelineAmount) || 0 });
+    if (order.moldCost) items.push({ name: 'Mold Fee', spec: 'Studio Mold Fee', qty: 1, price: Number(order.moldCost) || 0 });
+    return {
+      quoteId: q.id || '',
+      clientName: q.clientName || '',
+      clientPhone: q.clientPhone || '',
+      clientEmail: q.clientEmail || '',
+      notes: q.notes || '',
+      discountAmount: Number(order.discountAmount) || 0,
+      depositAmount: Number(order.deposit) || 0,
+      items: items
+    };
+  }
+
+  function applyImportedQuote(transfer) {
+    if (!transfer || !Array.isArray(transfer.items)) { toast('Nothing to import', 'error'); return; }
+    pendingQuoteId = transfer.quoteId || '';
+    if (transfer.clientName) {
+      var found = invClients.find(function (c) {
+        return (transfer.clientPhone && (c.phone === transfer.clientPhone || String(c.id) === String(transfer.clientPhone)))
+          || String(c.name || '').toLowerCase() === String(transfer.clientName).toLowerCase();
+      });
+      if (found) selectClient(found);
+      else selectClient({ id: transfer.clientPhone || transfer.clientName, name: transfer.clientName, phone: transfer.clientPhone || '', email: transfer.clientEmail || '' });
+    }
+    lineItems = transfer.items.map(function (it) {
+      return { id: Date.now() + Math.random(), name: it.name || '', spec: it.spec || '', qty: Number(it.qty) || 1, price: Number(it.price) || 0 };
+    });
+    if (transfer.notes && el('inv-notes')) el('inv-notes').value = transfer.notes;
+    if (transfer.discountAmount > 0) {
+      if (el('inv-discount-val')) el('inv-discount-val').value = transfer.discountAmount;
+      if (el('inv-discount-type')) el('inv-discount-type').value = 'egp';
+    }
+    if (transfer.depositAmount > 0) {
+      if (el('inv-deposit-val')) el('inv-deposit-val').value = transfer.depositAmount;
+      if (el('inv-status')) el('inv-status').value = 'partial';
+    }
+    renderItems();
+    updatePreview();
+    toast('Quote imported', 'success');
+  }
+
+  async function openQuoteImport() {
+    var modal = el('inv-import-quote-modal');
+    var box = el('inv-import-quote-list');
+    if (modal) modal.classList.add('open');
+    if (!box) return;
+    box.innerHTML = '<div style="text-align:center;padding:22px;color:#aaa;font-size:12px;">Loading…</div>';
+    if (!db()) { box.innerHTML = '<div style="text-align:center;padding:22px;color:#aaa;font-size:12px;">Database unavailable</div>'; return; }
+    try {
+      var snap = await db().collection('quotes').limit(100).get();
+      var quotes = [];
+      snap.forEach(function (d) { quotes.push(Object.assign({ id: d.id }, d.data())); });
+      quotes.sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+      if (!quotes.length) {
+        box.innerHTML = '<div style="text-align:center;padding:22px;color:#aaa;font-size:12px;">No saved quotes found</div>';
+        return;
+      }
+      box.innerHTML = quotes.map(function (q, i) {
+        return '<div class="inv-quote-import-row">' +
+          '<div><div style="font-size:12px;font-weight:600;">' + esc(q.clientName || 'Quote') + '</div>' +
+          '<div style="font-size:10px;color:#999;">' + esc(q.designLabel || '') + ' · ' + money(q.total || 0) + '</div></div>' +
+          '<button type="button" class="btn-outline-sm" data-q="' + i + '">Import</button></div>';
+      }).join('');
+      box.querySelectorAll('[data-q]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var q = quotes[parseInt(btn.dataset.q, 10)];
+          if (!q) return;
+          applyImportedQuote(transferFromQuote(q));
+          if (modal) modal.classList.remove('open');
+        });
+      });
+    } catch (e) {
+      console.warn('[invoices] quotes read failed', e);
+      box.innerHTML = '<div style="text-align:center;padding:22px;color:#aaa;font-size:12px;">Could not load quotes</div>';
+    }
+  }
+
+  /* ───────────── save / PDF / email ───────────── */
+  function buildInvoicePayload() {
+    var t = calcTotals();
+    var status = el('inv-status') ? el('inv-status').value : 'pending';
+    var num = strVal('inv-number') || genInvNum();
+    var id = editingInvoiceId ? String(editingInvoiceId) : (num.replace(/[^a-zA-Z0-9_-]/g, '') || String(Date.now()));
+    return {
+      id: id,
+      number: num,
+      date: strVal('inv-date') || todayStr(),
+      due: strVal('inv-due'),
+      status: status,
+      paid: status === 'paid',
+      notes: strVal('inv-notes'),
+      clientId: selectedClient ? (selectedClient.id || null) : null,
+      clientName: selectedClient ? (selectedClient.name || '—') : '—',
+      clientEmail: selectedClient ? (selectedClient.email || '') : '',
+      clientPhone: selectedClient ? (selectedClient.phone || '') : '',
+      quoteId: pendingQuoteId || '',
+      items: lineItems.map(function (i) {
+        return { name: i.name || '', spec: i.spec || '', qty: Number(i.qty) || 1, price: Number(i.price) || 0 };
+      }),
+      subtotal: t.subtotal, discount: t.discount, total: t.total,
+      deposit: t.deposit, remaining: t.remaining,
+      paymentMethod: paymentMethod,
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  async function saveInvoice() {
+    if (!selectedClient) { toast('Select a client first', 'error'); return; }
+    if (!lineItems.length) { toast('Add at least one item', 'error'); return; }
+    var data = buildInvoicePayload();
+    var local = getLocal();
+    var idx = local.findIndex(function (i) { return String(i.id) === String(data.id); });
+    if (idx > -1) { data.createdAt = local[idx].createdAt || data.createdAt; local[idx] = data; }
+    else local.unshift(data);
+    saveLocal(local);
+    editingInvoiceId = data.id;
+    invAll = mergeInvoices(getLocal(), invAll);
+    if (db()) {
+      try {
+        await db().collection('invoices').doc(String(data.id)).set(data, { merge: true });
+        toast('Invoice saved · ' + data.number, 'success');
+      } catch (e) {
+        console.warn('[invoices] Firestore save failed', e);
+        toast('Saved locally only — check Firestore rules', 'error');
+      }
+    } else {
+      toast('Saved locally · ' + data.number, 'success');
+    }
+    renderAccounting();
+  }
+
+  /* jsPDF cannot render many unicode glyphs — normalise before drawing */
+  var PDF_MAP = {
+    '\u2014': '-', '\u2013': '-', '\u00b7': '-', '\u00d7': 'x', '\u2019': "'", '\u2018': "'",
+    '\u201c': '"', '\u201d': '"', '\u2026': '...', '\u2022': '-', '\u060c': ',', '\u061f': '?'
+  };
+  function pdfSafe(str) {
+    var out = '';
+    var s = String(str == null ? '' : str);
+    for (var i = 0; i < s.length; i++) {
+      var ch = s[i];
+      if (PDF_MAP[ch] !== undefined) { out += PDF_MAP[ch]; continue; }
+      var c = ch.charCodeAt(0);
+      if ((c >= 0x20 && c <= 0x7e) || (c >= 0xa0 && c <= 0xff) || c === 0x0a) out += ch;
+    }
+    return out;
+  }
+
+  async function downloadPDF() {
+    var overlayEl = el('inv-pdf-overlay');
+    var btn = el('inv-pdf-btn');
+    var JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPDFCtor) { toast('PDF library not loaded — refresh the page', 'error'); return; }
+    if (overlayEl) overlayEl.classList.add('open');
+    if (btn) btn.disabled = true;
+    try {
+      var docPdf = new JsPDFCtor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      var W = docPdf.internal.pageSize.getWidth();
+      var H = docPdf.internal.pageSize.getHeight();
+      var M = 44;
+      var y = 54;
+      var t = calcTotals();
+      var num = strVal('inv-number') || 'EGY-001';
+      var date = strVal('inv-date') || todayStr();
+      var due = strVal('inv-due');
+      var status = el('inv-status') ? el('inv-status').value : 'pending';
+      var notes = strVal('inv-notes');
+
+      docPdf.setFillColor(26, 26, 26);
+      docPdf.rect(0, 0, W, 6, 'F');
+
+      docPdf.setFont('times', 'bold'); docPdf.setFontSize(22); docPdf.setTextColor(26, 26, 26);
+      docPdf.text('EGYGRILLZ', M, y);
+      docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8); docPdf.setTextColor(130, 130, 130);
+      docPdf.text('CUSTOM DENTAL JEWELRY - CAIRO, EGYPT', M, y + 14);
+      docPdf.text('Smart Smile Dental Clinic - 38 Abou Bakr El-Sdeek, Heliopolis', M, y + 26);
+      docPdf.text('egygrillz.com - egygrillz@gmail.com', M, y + 37);
+
+      docPdf.setFont('times', 'bold'); docPdf.setFontSize(14); docPdf.setTextColor(26, 26, 26);
+      docPdf.text('INVOICE', W - M, y, { align: 'right' });
+      docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(9.5); docPdf.setTextColor(60, 60, 60);
+      docPdf.text(pdfSafe(num), W - M, y + 15, { align: 'right' });
+      docPdf.setFontSize(8.5); docPdf.setTextColor(120, 120, 120);
+      docPdf.text(pdfSafe('Issued: ' + date + (due ? '  |  Due: ' + due : '')), W - M, y + 27, { align: 'right' });
+      docPdf.setFont('helvetica', 'bold');
+      docPdf.setTextColor(status === 'paid' ? 39 : status === 'partial' ? 210 : 192, status === 'paid' ? 140 : status === 'partial' ? 120 : 57, status === 'paid' ? 96 : status === 'partial' ? 20 : 43);
+      docPdf.text(status === 'paid' ? 'STATUS: PAID' : status === 'partial' ? 'STATUS: PARTIAL PAYMENT' : 'STATUS: PENDING', W - M, y + 40, { align: 'right' });
+
+      y += 60;
+      docPdf.setDrawColor(26, 26, 26); docPdf.setLineWidth(1.2);
+      docPdf.line(M, y, W - M, y);
+      y += 22;
+
+      docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(7.5); docPdf.setTextColor(150, 150, 150);
+      docPdf.text('BILL TO', M, y);
+      y += 14;
+      docPdf.setFont('times', 'bold'); docPdf.setFontSize(12); docPdf.setTextColor(26, 26, 26);
+      docPdf.text(pdfSafe(selectedClient ? (selectedClient.name || selectedClient.id) : 'Client'), M, y);
+      y += 14;
+      docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(9); docPdf.setTextColor(100, 100, 100);
+      if (selectedClient && (selectedClient.phone || selectedClient.email)) {
+        docPdf.text(pdfSafe([selectedClient.phone, selectedClient.email].filter(Boolean).join('  -  ')), M, y);
+        y += 14;
+      }
+
+      y += 12;
+      docPdf.setFontSize(7.5); docPdf.setTextColor(150, 150, 150);
+      docPdf.text('ITEM / DESCRIPTION', M, y);
+      docPdf.text('QTY', W - M - 165, y, { align: 'right' });
+      docPdf.text('PRICE', W - M - 90, y, { align: 'right' });
+      docPdf.text('TOTAL', W - M, y, { align: 'right' });
+      y += 7;
+      docPdf.setDrawColor(225, 225, 225); docPdf.setLineWidth(0.75);
+      docPdf.line(M, y, W - M, y);
+      y += 16;
+
+      lineItems.forEach(function (item) {
+        if (y > H - 150) { docPdf.addPage(); y = 56; }
+        var titleLines = docPdf.splitTextToSize(pdfSafe(item.name || 'Item'), W - M * 2 - 200);
+        docPdf.setFont('helvetica', 'bold'); docPdf.setFontSize(9.5); docPdf.setTextColor(26, 26, 26);
+        docPdf.text(titleLines[0] || 'Item', M, y);
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.text(String(item.qty), W - M - 165, y, { align: 'right' });
+        docPdf.text(fmt(item.price) + ' EGP', W - M - 90, y, { align: 'right' });
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.text(fmt((Number(item.qty) || 0) * (Number(item.price) || 0)) + ' EGP', W - M, y, { align: 'right' });
+        y += 13;
+        if (titleLines.length > 1) {
+          docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8.5); docPdf.setTextColor(90, 90, 90);
+          titleLines.slice(1).forEach(function (tl) { docPdf.text(tl, M, y); y += 11; });
+        }
+        if (item.spec) {
+          docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8); docPdf.setTextColor(125, 125, 125);
+          docPdf.splitTextToSize(pdfSafe(item.spec), W - M * 2 - 190).forEach(function (sl) {
+            docPdf.text(sl, M, y); y += 11;
+          });
+        }
+        docPdf.setDrawColor(244, 244, 244);
+        docPdf.line(M, y, W - M, y);
+        y += 12;
+      });
+
+      y += 10;
+      var sumX = W - M - 210;
+      function kvRow(lbl, val, opts) {
+        var o = opts || {};
+        if (y > H - 90) { docPdf.addPage(); y = 56; }
+        docPdf.setFont('helvetica', o.bold ? 'bold' : 'normal');
+        docPdf.setFontSize(o.size || 9.5);
+        docPdf.setTextColor.apply(docPdf, o.color || [90, 90, 90]);
+        docPdf.text(lbl, sumX, y);
+        docPdf.setTextColor.apply(docPdf, o.valColor || [26, 26, 26]);
+        docPdf.text(val, W - M, y, { align: 'right' });
+        y += o.gap || 15;
+      }
+      kvRow('Subtotal', fmt(t.subtotal) + ' EGP');
+      if (t.discount > 0) kvRow('Discount', '-' + fmt(t.discount) + ' EGP', { valColor: [180, 60, 50] });
+      docPdf.setDrawColor(26, 26, 26);
+      docPdf.line(sumX, y - 5, W - M, y - 5);
+      y += 8;
+      kvRow('TOTAL', fmt(t.total) + ' EGP', { bold: true, size: 12, color: [26, 26, 26], gap: 16 });
+      kvRow('USD Equivalent', '~ $' + t.usd.toFixed(2) + ' USD', { size: 8, color: [150, 150, 150], valColor: [150, 150, 150], gap: 14 });
+      kvRow('Tax', 'Tax Free - No VAT Applied', { size: 8, color: [150, 150, 150], valColor: [150, 150, 150], gap: 18 });
+      kvRow('Payment Method', pdfSafe(paymentMethod));
+      if (t.deposit > 0) {
+        kvRow('Deposit Paid', fmt(t.deposit) + ' EGP', { valColor: [39, 140, 96] });
+        kvRow('Balance Due', fmt(t.remaining) + ' EGP', { bold: true, valColor: [192, 57, 43] });
+      }
+
+      if (notes) {
+        y += 12;
+        docPdf.setFont('helvetica', 'bold'); docPdf.setFontSize(8); docPdf.setTextColor(140, 140, 140);
+        docPdf.text('NOTES', M, y); y += 12;
+        docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(9); docPdf.setTextColor(80, 80, 80);
+        docPdf.splitTextToSize(pdfSafe(notes), W - M * 2).forEach(function (line) {
+          if (y > H - 55) { docPdf.addPage(); y = 56; }
+          docPdf.text(line, M, y); y += 12;
+        });
+      }
+
+      docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8); docPdf.setTextColor(155, 155, 155);
+      docPdf.text('DR Mohamed Mahdy - EGYGRILLZ Studio', M, H - 34);
+      docPdf.text('egygrillz.com - @egygrillz', W - M, H - 34, { align: 'right' });
+
+      var safeNum = num.replace(/[^a-zA-Z0-9\-]/g, '');
+      var clientName = String(selectedClient ? (selectedClient.name || 'client') : 'client').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-]/g, '') || 'client';
+      docPdf.save('EGYGRILLZ-' + safeNum + '-' + clientName + '.pdf');
+      toast('PDF downloaded', 'success');
+    } catch (e) {
+      console.error('PDF error:', e);
+      toast('PDF failed: ' + e.message, 'error');
+    } finally {
+      if (overlayEl) overlayEl.classList.remove('open');
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function emailInvoice() {
+    if (!selectedClient || !selectedClient.email) { toast('Client has no email address', 'error'); return; }
+    var t = calcTotals();
+    var num = strVal('inv-number');
+    var status = el('inv-status') ? el('inv-status').value : 'pending';
+    var notes = strVal('inv-notes');
+    var itemLines = lineItems.map(function (i) {
+      return '  - ' + i.name + (i.spec ? ' (' + i.spec + ')' : '') + ' (x' + i.qty + '): ' + fmt((Number(i.qty) || 0) * (Number(i.price) || 0)) + ' EGP';
+    }).join('\n');
+    var subject = encodeURIComponent('EGYGRILLZ Invoice ' + num);
+    var body = encodeURIComponent(
+      'Dear ' + (selectedClient.name || 'Client') + ',\n\n' +
+      'Thank you for choosing EGYGRILLZ — Egypt\'s First Custom Dental Jewelry Studio.\n\n' +
+      'INVOICE: ' + num + '\n' +
+      'Date: ' + strVal('inv-date') + '\n' +
+      'Status: ' + status.toUpperCase() + '\n\n' +
+      '----------------------\nITEMS:\n' + itemLines + '\n----------------------\n' +
+      'Subtotal: ' + fmt(t.subtotal) + ' EGP\n' +
+      'Total: ' + fmt(t.total) + ' EGP' +
+      (t.deposit > 0 ? '\nDeposit Paid: ' + fmt(t.deposit) + ' EGP\nBalance Due: ' + fmt(t.remaining) + ' EGP' : '') + '\n' +
+      'Payment Method: ' + paymentMethod + '\n' +
+      'Tax: Free · No VAT Applied\n----------------------\n' +
+      (notes ? 'Notes: ' + notes + '\n' : '') +
+      '\nFor any questions contact us via Instagram @egygrillz or just reply to this email.\n\n' +
+      'With care,\nDR Mohamed Mahdy\nEGYGRILLZ Studio · Smart Smile Dental Clinic, Heliopolis, Cairo'
+    );
+    window.location.href = 'mailto:' + selectedClient.email + '?subject=' + subject + '&body=' + body;
+    toast('Opening email client…', 'success');
+  }
+
+  /* ───────────── accounting ───────────── */
+  function renderAccounting() {
+    var totalRev = 0, outstanding = 0, sum = 0;
+    invAll.forEach(function (i) {
+      var v = Number(i.total) || 0;
+      sum += v;
+      if (i.status === 'paid') totalRev += v;
+      else outstanding += Math.max(0, v - (Number(i.deposit) || 0));
+    });
+    setTxt('inv-acc-total-rev', fmt(totalRev));
+    setTxt('inv-acc-outstanding', fmt(outstanding));
+    setTxt('inv-acc-count', String(invAll.length));
+    setTxt('inv-acc-avg', fmt(invAll.length ? sum / invAll.length : 0));
+
+    var q = el('inv-acc-search-input') ? el('inv-acc-search-input').value.trim().toLowerCase() : '';
+    var list = invAll.slice();
+    if (accStatusFilter !== 'all') list = list.filter(function (i) { return i.status === accStatusFilter; });
+    if (q) {
+      list = list.filter(function (i) {
+        return String(i.number || '').toLowerCase().indexOf(q) > -1 ||
+          String(i.clientName || '').toLowerCase().indexOf(q) > -1 ||
+          String(i.clientPhone || '').indexOf(q) > -1;
+      });
+    }
+
+    var tb = el('inv-list-tbody');
+    if (!tb) return;
+    if (!list.length) {
+      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px;font-size:12px;">No invoices yet</td></tr>';
+      return;
+    }
+    tb.innerHTML = list.map(function (i) {
+      var badge = i.status === 'paid' ? 'badge-confirmed' : (i.status === 'partial' ? 'badge-partial' : 'badge-pending');
+      var label = i.status === 'paid' ? 'Paid' : (i.status === 'partial' ? 'Partial' : 'Pending');
+      return '<tr>' +
+        '<td style="font-weight:700;">' + esc(i.number || '—') + '</td>' +
+        '<td>' + esc(i.clientName || '—') + '</td>' +
+        '<td>' + esc(i.date || '') + '</td>' +
+        '<td>' + money(i.total || 0) + '</td>' +
+        '<td><span class="status-badge ' + badge + '">' + label + '</span></td>' +
+        '<td style="white-space:nowrap;">' +
+        '<button class="show-btn" data-edit="' + escA(i.id) + '">Edit</button> ' +
+        '<button class="show-btn" data-mail="' + escA(i.id) + '">Email</button> ' +
+        '<button class="show-btn no" data-del="' + escA(i.id) + '">Delete</button>' +
+        '</td></tr>';
+    }).join('');
+
+    tb.querySelectorAll('[data-edit]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var inv = invAll.find(function (i) { return String(i.id) === String(btn.dataset.edit); });
+        if (!inv) return;
+        loadIntoBuilder(inv);
+        switchInvTab('builder');
+      });
+    });
+    tb.querySelectorAll('[data-mail]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var inv = invAll.find(function (i) { return String(i.id) === String(btn.dataset.mail); });
+        if (!inv) return;
+        if (!inv.clientEmail) { toast('No email for this client', 'error'); return; }
+        var lines = (inv.items || []).map(function (i) {
+          return '  - ' + i.name + ' (x' + i.qty + '): ' + fmt((Number(i.qty) || 0) * (Number(i.price) || 0)) + ' EGP';
+        }).join('\n');
+        var subject = encodeURIComponent('EGYGRILLZ Invoice ' + inv.number);
+        var body = encodeURIComponent('Dear ' + inv.clientName + ',\n\nInvoice: ' + inv.number + '\nTotal: ' + fmt(inv.total) + ' EGP\nTax: Free · No VAT Applied\n\n' + lines + '\n\nThank you,\nEGYGRILLZ Studio · DR Mohamed Mahdy');
+        window.location.href = 'mailto:' + inv.clientEmail + '?subject=' + subject + '&body=' + body;
+      });
+    });
+    tb.querySelectorAll('[data-del]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var id = String(btn.dataset.del);
+        var ok = await invConfirm('Delete invoice', 'Delete invoice ' + id + '? This cannot be undone.');
+        if (!ok) return;
+        saveLocal(getLocal().filter(function (i) { return String(i.id) !== id; }));
+        invAll = invAll.filter(function (i) { return String(i.id) !== id; });
+        if (db()) { try { await db().collection('invoices').doc(id).delete(); } catch (e) { console.warn(e); } }
+        if (String(editingInvoiceId) === id) editingInvoiceId = null;
+        renderAccounting();
+        toast('Invoice deleted');
+      });
+    });
+  }
+
+  /* reusable confirm using the dashboard's #confirm-overlay (never window.confirm) */
+  function invConfirm(title, msg) {
+    return new Promise(function (resolve) {
+      var overlay = el('confirm-overlay');
+      var msgEl = el('confirm-msg');
+      var btn = el('confirm-del-btn');
+      if (!overlay || !btn || !msgEl) { resolve(true); return; }
+
+      var titleEl = overlay.querySelector('.confirm-box h3');
+      var cancel = overlay.querySelector('.confirm-actions .btn-muted2');
+      var prevTitle = titleEl ? titleEl.textContent : '';
+      var prevMsg = msgEl.textContent;
+      var prevOkOnclick = btn.onclick;
+      var prevCancelOnclick = cancel ? cancel.onclick : null;
+      var settled = false;
+
+      if (titleEl) titleEl.textContent = title;
+      msgEl.textContent = msg;
+      btn.onclick = null;   /* never let a stale item-delete handler fire */
+
+      function done(val) {
+        if (settled) return;
+        settled = true;
+        overlay.classList.remove('open');
+        btn.removeEventListener('click', onOk);
+        btn.onclick = prevOkOnclick;
+        if (titleEl) titleEl.textContent = prevTitle || 'Delete?';
+        msgEl.textContent = prevMsg;
+        if (cancel) {
+          cancel.removeEventListener('click', onCancel);
+          cancel.onclick = prevCancelOnclick;
+        }
+        resolve(val);
+      }
+      function onOk() { done(true); }
+      function onCancel() { done(false); }
+
+      btn.addEventListener('click', onOk);
+      if (cancel) {
+        cancel.onclick = null;
+        cancel.addEventListener('click', onCancel);
+      }
+      overlay.classList.add('open');
+    });
+  }
+
+  function loadIntoBuilder(inv) {
+    editingInvoiceId = inv.id;
+    if (el('inv-number')) el('inv-number').value = inv.number || '';
+    if (el('inv-date')) el('inv-date').value = inv.date || todayStr();
+    if (el('inv-due')) el('inv-due').value = inv.due || '';
+    if (el('inv-status')) el('inv-status').value = inv.status || 'pending';
+    if (el('inv-notes')) el('inv-notes').value = inv.notes || '';
+    if (el('inv-deposit-val')) el('inv-deposit-val').value = inv.deposit || 0;
+    if (inv.clientId) {
+      var c = invClients.find(function (x) { return String(x.id) === String(inv.clientId); });
+      if (c) selectClient(c);
+      else selectClient({ id: inv.clientId, name: inv.clientName || '', email: inv.clientEmail || '', phone: inv.clientPhone || '' });
+    } else {
+      clearClient();
+    }
+    lineItems = (inv.items || []).map(function (i) {
+      return { id: Date.now() + Math.random(), name: i.name || '', spec: i.spec || '', qty: Number(i.qty) || 1, price: Number(i.price) || 0 };
+    });
+    paymentMethod = inv.paymentMethod || 'Cash';
+    document.querySelectorAll('#inv-pmeth-btns .inv-pmeth-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.method === paymentMethod);
+    });
+    renderItems();
+    updatePreview();
+    toast('Invoice loaded · ' + (inv.number || ''), 'success');
+  }
+
+  function resetForm() {
+    clearClient();
+    lineItems = [];
+    editingInvoiceId = null;
+    pendingQuoteId = '';
+    ['inv-number', 'inv-notes', 'inv-due'].forEach(function (id) { if (el(id)) el(id).value = ''; });
+    if (el('inv-number')) el('inv-number').value = genInvNum();
+    if (el('inv-date')) el('inv-date').value = todayStr();
+    if (el('inv-status')) el('inv-status').value = 'pending';
+    if (el('inv-discount-val')) el('inv-discount-val').value = 0;
+    if (el('inv-deposit-val')) el('inv-deposit-val').value = 0;
+    if (el('inv-item-search')) el('inv-item-search').value = '';
+    paymentMethod = 'Cash';
+    document.querySelectorAll('#inv-pmeth-btns .inv-pmeth-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.method === 'Cash');
+    });
+    renderItems();
+    updatePreview();
+  }
+
+  /* ───────────── tabs ───────────── */
+  function switchInvTab(tab, btn) {
+    var name = tab || 'builder';
+    document.querySelectorAll('#panel-invoices .inv-subpanel').forEach(function (p) {
+      p.classList.toggle('active', p.id === 'inv-tab-' + name);
+    });
+    var tabs = btn ? [btn] : Array.prototype.slice.call(document.querySelectorAll('#inv-sub-tabs .filter-tab'));
+    tabs.forEach(function (b) { document.querySelectorAll('#inv-sub-tabs .filter-tab').forEach(function (x) { x.classList.remove('active'); }); });
+    var target = btn || document.querySelector('#inv-sub-tabs .filter-tab[data-inv-tab="' + name + '"]');
+    if (target) target.classList.add('active');
+    if (name === 'accounting') renderAccounting();
+  }
+
+  /* ───────────── wiring ───────────── */
+  function wire() {
+    if (wired) return;
+    wired = true;
+
+    function on(id, ev, fn) { var e = el(id); if (e) e.addEventListener(ev, fn); }
+
+    ['inv-number', 'inv-date', 'inv-due', 'inv-status', 'inv-notes',
+     'inv-discount-val', 'inv-discount-type', 'inv-deposit-val', 'inv-usd-rate'].forEach(function (id) {
+      on(id, 'input', updatePreview);
+      on(id, 'change', updatePreview);
+    });
+
+    /* client search */
+    var cs = el('inv-client-search');
+    if (cs) {
+      cs.addEventListener('input', function () {
+        var q = cs.value.trim().toLowerCase();
+        var dd = el('inv-client-dropdown');
+        if (!dd) return;
+        if (!q) { dd.classList.remove('open'); return; }
+        var matches = invClients.filter(function (c) {
+          return String(c.name || '').toLowerCase().indexOf(q) > -1 ||
+            String(c.id || '').indexOf(q) > -1 ||
+            String(c.email || '').toLowerCase().indexOf(q) > -1 ||
+            String(c.phone || '').indexOf(q) > -1;
+        }).slice(0, 8);
+        renderClientDropdown(matches);
+      });
+      cs.addEventListener('focus', function () { if (cs.value.trim()) cs.dispatchEvent(new Event('input')); });
+    }
+    on('inv-client-clear-btn', 'click', clearClient);
+
+    /* item search */
+    var is = el('inv-item-search');
+    if (is) {
+      is.addEventListener('input', function () {
+        var q = is.value.trim().toLowerCase();
+        var dd = el('inv-item-search-dropdown');
+        if (!dd) return;
+        if (!q) { dd.classList.remove('open'); return; }
+        var matches = allDesigns.filter(function (d) {
+          return String(d.name || '').toLowerCase().indexOf(q) > -1 ||
+            String(d.cat || '').toLowerCase().indexOf(q) > -1;
+        }).slice(0, 10);
+        renderItemDropdown(matches, is.value.trim());
+      });
+    }
+
+    /* close dropdowns on outside click */
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('.inv-builder-grid')) {
+        document.querySelectorAll('#panel-invoices .inv-dropdown').forEach(function (d) { d.classList.remove('open'); });
+      }
+    });
+
+    /* design picker */
+    on('inv-toggle-picker-btn', 'click', function () {
+      var p = el('inv-design-picker');
+      if (!p) return;
+      p.classList.toggle('open');
+      if (p.classList.contains('open')) loadDesigns(currentCategory || 'golds');
+    });
+    document.querySelectorAll('#panel-invoices .inv-dpick-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#panel-invoices .inv-dpick-tab').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentCategory = btn.dataset.cat || 'golds';
+        loadDesigns(currentCategory);
+      });
+    });
+
+    /* services bar */
+    on('inv-toggle-svc-btn', 'click', function () {
+      var bar = el('inv-svc-quick-bar');
+      if (bar) bar.classList.toggle('open');
+    });
+    document.querySelectorAll('#inv-svc-quick-bar [data-svc]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var k = btn.dataset.svc;
+        var E = CE();
+        var S = E ? E.get() : { servicePrices: {} };
+        var L = E ? E.LABELS.service : {};
+        addCustomItem({
+          name: (L && L[k]) || btn.textContent.replace(/^\+\s*/, '').trim(),
+          spec: 'Studio Service',
+          qty: 1,
+          price: Number((S.servicePrices && S.servicePrices[k]) || 0)
+        });
+        toast('Service added', 'success');
+      });
+    });
+
+    on('inv-add-item-btn', 'click', function () { addCustomItem({ name: '', spec: '', qty: 1, price: 0 }); });
+
+    /* calculator modal */
+    on('inv-open-calc-btn', 'click', function () { openCalcWithPreset('', null); });
+    on('inv-close-calc-modal', 'click', closeCalc);
+    on('inv-cancel-calc-modal', 'click', closeCalc);
+    var calcModal = el('inv-calc-modal');
+    if (calcModal) calcModal.addEventListener('click', function (e) { if (e.target === calcModal) closeCalc(); });
+    ['inv-cm-name', 'inv-cm-material', 'inv-cm-teeth', 'inv-cm-karat', 'inv-cm-gold-rate', 'inv-cm-level',
+     'inv-cm-stones', 'inv-cm-acount', 'inv-cm-atype', 'inv-cm-asetting', 'inv-cm-acustom',
+     'inv-cm-ftype', 'inv-cm-fcov', 'inv-cm-fcustom', 'inv-cm-plating', 'inv-cm-enamel',
+     'inv-cm-engraving', 'inv-cm-anodize'].forEach(function (id) {
+      var e = el(id);
+      if (!e) return;
+      e.addEventListener('input', syncCalcModal);
+      e.addEventListener('change', syncCalcModal);
+    });
+    on('inv-apply-calc-modal', 'click', function () {
+      var E = CE();
+      if (!E) { toast('Pricing engine not loaded', 'error'); return; }
+      var line = readCalcLine();
+      if (line.material === 'gold' && (!line.goldPrice || line.goldPrice <= 0)) {
+        toast("Enter today's 24K gold rate (EGP/g)", 'error');
+        return;
+      }
+      var calc = E.calculateLine(line);
+      var label = line.name || (E.LABELS.material[line.material] + ' Custom Grillz');
+      addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal });
+      closeCalc();
+      toast('Custom line added · ' + money(calc.subtotal), 'success');
+    });
+
+    /* quote import */
+    on('inv-open-import-quote-btn', 'click', openQuoteImport);
+    on('inv-close-import-quote', 'click', function () { var m = el('inv-import-quote-modal'); if (m) m.classList.remove('open'); });
+    var qModal = el('inv-import-quote-modal');
+    if (qModal) qModal.addEventListener('click', function (e) { if (e.target === qModal) qModal.classList.remove('open'); });
+
+    /* new client modal */
+    on('inv-open-add-client-btn', 'click', function () {
+      ['inv-nc-name', 'inv-nc-phone', 'inv-nc-email', 'inv-nc-notes'].forEach(function (id) { if (el(id)) el(id).value = ''; });
+      var m = el('inv-add-client-modal');
+      if (m) m.classList.add('open');
+    });
+    on('inv-close-add-client', 'click', function () { var m = el('inv-add-client-modal'); if (m) m.classList.remove('open'); });
+    on('inv-cancel-add-client', 'click', function () { var m = el('inv-add-client-modal'); if (m) m.classList.remove('open'); });
+    on('inv-save-new-client', 'click', async function () {
+      var name = strVal('inv-nc-name');
+      var phone = strVal('inv-nc-phone');
+      if (!name) { toast('Client name is required', 'error'); return; }
+      var payload = {
+        name: name,
+        phone: phone,
+        email: strVal('inv-nc-email'),
+        notes: strVal('inv-nc-notes'),
+        createdAt: new Date().toISOString(),
+        totalAppointments: 0
+      };
+      var created = { id: 'tmp_' + Date.now(), name: name, phone: phone, email: payload.email, notes: payload.notes };
+      if (db()) {
+        try {
+          var ref = await db().collection('clients').add(payload);
+          created.id = ref.id;
+          if (window.allClients) window.allClients.unshift(Object.assign({ id: ref.id }, payload));
+        } catch (e) {
+          console.warn('[invoices] client create failed', e);
+          toast('Saved locally only — check Firestore rules', 'error');
+        }
+      }
+      invClients.push(created);
+      invClients.sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
+      selectClient(created);
+      var m = el('inv-add-client-modal');
+      if (m) m.classList.remove('open');
+      toast('Client added', 'success');
+    });
+
+    /* payment method */
+    document.querySelectorAll('#inv-pmeth-btns .inv-pmeth-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#inv-pmeth-btns .inv-pmeth-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        paymentMethod = btn.dataset.method || 'Cash';
+        updatePreview();
+      });
+    });
+
+    /* actions */
+    on('inv-save-btn', 'click', saveInvoice);
+    on('inv-pdf-btn', 'click', downloadPDF);
+    on('inv-email-btn', 'click', emailInvoice);
+    on('inv-reset-btn', 'click', function () { resetForm(); toast('Form reset'); });
+
+    /* accounting */
+    on('inv-new-btn', 'click', function () { resetForm(); switchInvTab('builder'); });
+    on('inv-acc-search-input', 'input', renderAccounting);
+    document.querySelectorAll('#inv-acc-filter-tabs .filter-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#inv-acc-filter-tabs .filter-tab').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        accStatusFilter = btn.dataset.filter || 'all';
+        renderAccounting();
+      });
+    });
+    document.querySelectorAll('#inv-sub-tabs .filter-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () { switchInvTab(btn.dataset.invTab, btn); });
+    });
+  }
+
+  /* ───────────── public entry points ───────────── */
+  async function openInvoicesPanel() {
+    wire();
+    await loadInvClients();
+    loadCatalog();
+    await refreshList();
+
+    /* a quote sent from the standalone Quotes page can hand off an invoice */
+    try {
+      var pending = localStorage.getItem('egygz_pending_invoice_from_quote');
+      if (pending) {
+        localStorage.removeItem('egygz_pending_invoice_from_quote');
+        applyImportedQuote(JSON.parse(pending));
+      }
+    } catch (e) { console.warn('[invoices] pending quote handoff skipped', e); }
+
+    if (!el('inv-number') || !el('inv-number').value) {
+      if (el('inv-number')) el('inv-number').value = genInvNum();
+      if (el('inv-date')) el('inv-date').value = todayStr();
+    }
+    renderItems();
+    updatePreview();
+    renderAccounting();
+  }
+
+  function createInvoiceForClientFromModal() {
+    var id = window._viewingClientId;
+    var c = (window.allClients || []).find(function (x) { return String(x.id) === String(id); });
+    if (typeof window.closeClientModal === 'function') {
+      try { window.closeClientModal(); } catch (e) {}
+    }
+    if (typeof window.showPage === 'function') window.showPage('invoices');
+    if (c) {
+      var list = invClients.length ? invClients : (window.allClients || []);
+      if (!list.some(function (x) { return String(x.id) === String(c.id); })) invClients.push(c);
+      selectClient(c);
+      resetFormKeepClient(c);
+      toast('New invoice for ' + (c.name || 'client'), 'success');
+    }
+  }
+  function resetFormKeepClient(c) {
+    lineItems = [];
+    editingInvoiceId = null;
+    pendingQuoteId = '';
+    if (el('inv-number')) el('inv-number').value = genInvNum();
+    if (el('inv-date')) el('inv-date').value = todayStr();
+    if (el('inv-status')) el('inv-status').value = 'pending';
+    if (el('inv-notes')) el('inv-notes').value = '';
+    if (el('inv-discount-val')) el('inv-discount-val').value = 0;
+    if (el('inv-deposit-val')) el('inv-deposit-val').value = 0;
+    selectClient(c);
+    renderItems();
+    updatePreview();
+    switchInvTab('builder');
+  }
+
+  window.openInvoicesPanel = openInvoicesPanel;
+  window.switchInvTab = switchInvTab;
+  window.createInvoiceForClientFromModal = createInvoiceForClientFromModal;
+})();
+</script>
+
 
 <script data-cfasync="false">
 /* EGYGRILLZ – secure admin (drop-in override for editx.html) */
