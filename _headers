@@ -133,6 +133,9 @@
 /assets/crops.js
   Cache-Control: public, max-age=0, must-revalidate
 
+/assets/catalog.js
+  Cache-Control: public, max-age=0, must-revalidate
+
 /assets/egygz-notify.js
   Cache-Control: public, max-age=0, must-revalidate
 

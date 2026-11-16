@@ -25,7 +25,7 @@
     function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open');}
 
     function showPage(name){
-      if(name==='sets'||name==='golds'||name==='silvers'||name==='diamonds'||name==='latest'||name==='gallery'||name==='heroes'){
+      if(name==='sets'||name==='golds'||name==='silvers'||name==='diamonds'||name==='latest'||name==='gallery'){
         var targetCat = name;
         name = 'inventory';
       }
@@ -46,12 +46,8 @@
       if(name==='settings') loadSiteSettings();
       if(name==='invoices') openInvoicesPanel();
       if(name==='inventory') {
-        if(targetCat==='heroes'){
-          loadInventory().then(function(){ toggleHeroSection(true); });
-        } else {
-          if(targetCat) setInvCategory(targetCat);
-          loadInventory();
-        }
+        if(targetCat) setInvCategory(targetCat);
+        loadInventory();
       }
     }
 
@@ -667,9 +663,6 @@
     .design-price-spec{font-size:10px;color:#8a8a8a;letter-spacing:.6px;margin-top:2px;}
     .badge-paid{background:#f4f4f4;color:#666666;}
     .badge-partial{background:#f5f5f5;color:#7b7b7b;}
-    .inv-hero-toggle-card{margin-bottom:20px;}
-    .inv-hero-body{display:none;padding:22px;border-top:1px solid var(--line-2);}
-    .inv-hero-body.open{display:block;}
 
     /* ── NATIVE INVOICES PANEL ── */
     .inv-subpanel{display:none;}
@@ -1054,48 +1047,9 @@
               <p class="ph-sub">One list for every design. Filter by category or by the public page it is assigned to, set its page from each card, and let the calculator price it.</p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-muted2" id="inv-hero-toggle-btn" onclick="toggleHeroSection()"><i class="fas fa-panorama"></i> Page Heroes</button>
               <button class="btn-muted2" id="reorder-btn-inv" onclick="toggleInvReorder()"><i class="fas fa-sort"></i> Reorder</button>
               <button class="btn-black" id="reorder-save-inv" style="display:none;" onclick="saveInvOrder()">Save Order</button>
               <button class="btn-outline-sm" onclick="openModal(invCurrentCat==='all'?'sets':invCurrentCat)">+ Add Item</button>
-            </div>
-          </div>
-
-          <!-- Page Heroes & Display Order (collapsible inside unified Inventory) -->
-          <div class="section-card inv-hero-toggle-card">
-            <div class="section-card-header" style="cursor:pointer;" onclick="toggleHeroSection()">
-              <span class="section-card-title"><i class="fas fa-panorama"></i> Page Heroes &amp; Display Order</span>
-              <span id="inv-hero-chevron" style="font-size:11px;color:#888;"><i class="fas fa-chevron-down"></i> Expand</span>
-            </div>
-            <div class="inv-hero-body" id="inv-hero-body">
-              <div style="margin-bottom:20px;">
-                <label class="form-label">Page</label>
-                <select id="hero-page" class="form-input" style="margin:6px 0 16px;max-width:340px;" onchange="loadHeroPanel(this.value)">
-                  <option value="index">Home — index</option>
-                  <option value="golds">Golds</option>
-                  <option value="silvers">Silvers</option>
-                  <option value="diamonds">Diamonds</option>
-                  <option value="latest-designs">Latest Designs</option>
-                  <option value="grillz-gallery">Gallery</option>
-                </select>
-                <label class="form-label">Hero image</label>
-                <div id="hero-current" style="margin:8px 0 14px;font-size:12px;color:#666;"></div>
-                <div class="filter-bar-orig" style="padding:0;border:0;margin-bottom:12px;">
-                  <div class="search-input-wrap"><i class="fas fa-search"></i>
-                    <input class="search-input" id="hero-search" placeholder="Search designs…" oninput="renderHeroPicker()">
-                  </div>
-                </div>
-                <div id="hero-picker" class="grid" style="max-height:360px;overflow-y:auto;"></div>
-              </div>
-              <div style="border-top:1px solid #eee;padding-top:18px;">
-                <p style="font-size:12px;color:#666;line-height:1.7;margin-bottom:12px;">
-                  Display order for this page — use the arrows to move items up or down. Saved directly to the site catalog.
-                </p>
-                <div id="order-list"></div>
-                <button class="btn-black" style="margin-top:14px;" onclick="saveHeroOrder()">
-                  <i class="fas fa-floppy-disk"></i> Save order
-                </button>
-              </div>
             </div>
           </div>
 
@@ -1568,11 +1522,11 @@
         <div class="panel" id="panel-setup">
           <div class="page-header-row" style="margin-bottom:22px;"><div><p class="ph-title">GitHub Setup</p><p class="ph-sub">Connect your repository</p></div></div>
           <div class="setup-wrap">
-            <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:10px;">The dashboard commits directly to your GitHub repo. Your token is stored only in your browser.</p>
+            <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:10px;">This is optional. Prices, names, descriptions, page assignment, order, banners, settings and crops are saved to the site database and go live immediately. The GitHub connection is only needed to upload <strong>new photo/video files</strong> or to edit a page's HTML. The token is stored in this browser only — never on the server.</p>
             <div class="step-list">
               <div class="step-item"><span class="step-num">1</span>Go to <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">github.com/settings/tokens/new</a>, set expiry <strong>No expiration</strong>, Fine-grained token, select your repo, grant <strong>Contents: Read &amp; Write</strong>.</div>
               <div class="step-item"><span class="step-num">2</span>Paste token and repo details below and click Save.</div>
-              <div class="step-item"><span class="step-num">3</span>Every publish commits directly to GitHub — live within seconds.</div>
+              <div class="step-item"><span class="step-num">3</span>New photos are committed to the repo — live within seconds. Without it, everything else still saves.</div>
             </div>
             <div class="form-row"><div class="form-group"><label class="form-label">GitHub Username</label><input type="text" class="form-input" id="cfg-owner" placeholder="your-username"></div><div class="form-group"><label class="form-label">Repository Name</label><input type="text" class="form-input" id="cfg-repo" placeholder="egygrillz"></div></div>
             <div class="form-group"><label class="form-label">Branch</label><input type="text" class="form-input" id="cfg-branch" placeholder="main"></div>
@@ -2856,193 +2810,100 @@
     return 'assets/images/' + c + '/' + d + '/';
   }
 
-  /* Read and write master catalog.json */
-  async function readCatalog(){
-    var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
-    try{ var d=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); return Array.isArray(d)?d:[]; }
+  /* ── CATALOGUE ──────────────────────────────────────────────────────────
+     Names, prices, descriptions, page assignment and order are saved to
+     Firestore  settings/catalog  →  no GitHub token, no redeploy.
+
+     The seed file assets/images/catalog.json is still read, and the public
+     pages merge the two exactly the same way (assets/catalog.js):
+
+       items    the live catalogue (same id wins over the seed, new ids added)
+       deleted  tombstones, so a design removed here never comes back just
+                because it is still inside the seed file
+     ───────────────────────────────────────────────────────────────────── */
+  var CATALOG_COLLECTION = 'settings';
+  var CATALOG_DOC = 'catalog';
+
+  function mergeCatalog(seed, patch){
+    var byId={}, order=[];
+    (seed||[]).forEach(function(item){
+      if(!item||!item.id) return;
+      if(!byId[item.id]) order.push(item.id);
+      byId[item.id]=item;
+    });
+    ((patch&&patch.items)||[]).forEach(function(item){
+      if(!item||!item.id) return;
+      var prev=byId[item.id];
+      if(!prev) order.push(item.id);
+      byId[item.id]=prev?Object.assign({},prev,item):item;
+    });
+    ((patch&&patch.deleted)||[]).forEach(function(id){ delete byId[id]; });
+    return order.filter(function(id){ return !!byId[id]; }).map(function(id){ return byId[id]; });
+  }
+
+  async function readSeedCatalog(){
+    try{ var d=await (await fetch(CATALOG+'?t='+Date.now())).json(); return Array.isArray(d)?d:[]; }
     catch(e){ return []; }
   }
+
+  async function readCatalogPatch(){
+    if(!db) return {items:[],deleted:[]};
+    try{
+      var snap=await db.collection(CATALOG_COLLECTION).doc(CATALOG_DOC).get();
+      if(!snap.exists) return {items:[],deleted:[]};
+      var d=snap.data()||{};
+      return { items:Array.isArray(d.items)?d.items:[], deleted:Array.isArray(d.deleted)?d.deleted:[] };
+    }catch(e){ console.warn('catalogue read failed', e); return {items:[],deleted:[]}; }
+  }
+
+  async function readCatalog(){
+    var seed = await readSeedCatalog();
+    var patch = await readCatalogPatch();
+    return mergeCatalog(seed, patch);
+  }
+
   async function writeCatalog(list, message){
-    var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(list, null, 2))));
-    await putFile(CATALOG, b64, message || 'Update catalogue');
-    Object.keys(cache).forEach(function(k){
-      if(cache[k] && cache[k].catalog) cache[k].catalog = list;
+    if(!db) throw new Error('No database connection');
+    var items = (list||[]).filter(function(x){ return x && x.id; });
+    var payload = { items: items, deleted: [], updatedAt: new Date().toISOString() };
+    if(message) payload.message = String(message).slice(0,200);
+
+    /* keep every id that has disappeared as a tombstone */
+    var patch = await readCatalogPatch();
+    var live = {};
+    items.forEach(function(x){ live[x.id] = 1; });
+    var deleted = (patch.deleted||[]).filter(function(id){ return !live[id]; });
+    mergeCatalog(await readSeedCatalog(), patch).forEach(function(x){
+      if(x && x.id && !live[x.id] && deleted.indexOf(x.id) === -1) deleted.push(x.id);
     });
+    payload.deleted = deleted;
+
+    var size = JSON.stringify(payload).length;
+    if(size > 700000) throw new Error('Catalogue is too large for one Firestore document (' + Math.round(size/1024) + ' KB) — shorten some descriptions.');
+
+    try{
+      await db.collection(CATALOG_COLLECTION).doc(CATALOG_DOC).set(payload);
+    }catch(e){
+      if(/permission|insufficient/i.test(e.message||'')){
+        throw new Error('The database refused the write — settings/catalog needs the same write rule as settings/banners.');
+      }
+      throw e;
+    }
+    Object.keys(cache).forEach(function(k){
+      if(cache[k] && cache[k].catalog) cache[k].catalog = items;
+    });
+    return payload;
   }
   function catalogEntry(list, id){
     return list.find(function(x){ return x.id === id; });
   }
 
 
-  /* PAGE HEROES — per-page hero image & design order */
-  var _heroState = { page: 'index', meta: {}, items: [] };
   var invCurrentCat = 'all';
 
-  function catalogBaseUrl() {
-    if (GH && GH.owner && GH.repo) {
-      return 'https://raw.githubusercontent.com/' + GH.owner + '/' + GH.repo + '/' + (GH.branch || 'main') + '/';
-    }
-    return '';
-  }
-
-  function toggleHeroSection(forceOpen) {
-    var body = document.getElementById('inv-hero-body');
-    var chev = document.getElementById('inv-hero-chevron');
-    if (!body) return;
-    var shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !body.classList.contains('open');
-    body.classList.toggle('open', shouldOpen);
-    if (chev) chev.innerHTML = shouldOpen ? '<i class="fas fa-chevron-up"></i> Collapse' : '<i class="fas fa-chevron-down"></i> Expand';
-    if (shouldOpen) loadHeroPanel(document.getElementById('hero-page').value);
-  }
-
-  async function loadPageMeta() {
-    if (!db) return {};
-    try {
-      var snap = await db.collection('settings').doc('pageMeta').get();
-      return snap.exists ? (snap.data() || {}) : {};
-    } catch (e) { console.warn('pageMeta read failed', e); return {}; }
-  }
-
-  async function savePageMeta(meta) {
-    if (!db) throw new Error('No database');
-    await db.collection('settings').doc('pageMeta').set(meta, { merge: true });
-  }
-
-  async function loadHeroPanel(page) {
-    _heroState.page = page || 'index';
-    var box = document.getElementById('hero-picker');
-    var list = document.getElementById('order-list');
-    if (box) box.innerHTML = '<div class="empty-state"><p>Loading…</p></div>';
-    if (list) list.innerHTML = '';
-
-    /* 1) Load catalog */
-    var all = [];
-    try {
-      all = await (await fetch(catalogBaseUrl() + CATALOG + '?t=' + Date.now())).json();
-    } catch (e) { all = []; }
-    all = Array.isArray(all) ? all : [];
-
-    /* 2) Load saved page metadata */
-    var meta = await loadPageMeta();
-    _heroState.meta = meta || {};
-
-    /* 3) Filter designs matching selected page */
-    var want = _heroState.page;
-    var items = all.filter(function (x) {
-      if (want === 'index') return true;
-      if (want === 'grillz-gallery') return x.category === 'grillz-gallery';
-      return x.category === want;
-    });
-    items.forEach(function (x) {
-      x.id = x.id || x.folder;
-      x.folder = x.folder || x.id;
-      x._cat = x.category;
-    });
-    items.sort(function (a, b) { return (a.order || 999) - (b.order || 999); });
-    _heroState.items = items;
-
-    /* 4) Display current hero preview */
-    var cur = (meta[_heroState.page] || {}).hero || '';
-    var curBox = document.getElementById('hero-current');
-    if (curBox) {
-      if (cur) {
-        var base = (location.origin && location.origin !== 'null') ? location.origin + '/' : '';
-        curBox.innerHTML = '<img src="' + base + cur + '" data-crop="hero:' + _heroState.page + '" style="width:100%;max-width:360px;border:1px solid #eee;display:block;margin-bottom:8px;" alt="">' +
-          '<span>Current hero — ' + cur.split('/').slice(-2).join('/') + '</span>' +
-          '<button class="btn-muted2" style="display:block;margin-top:10px;" onclick="openCropEditor(\'hero\',\'' + _heroState.page + '\',\'' + cur + '\')"><i class="fas fa-crop-simple"></i> Adjust crop</button>';
-      } else {
-        curBox.innerHTML = '<span style="color:#999;">No hero set — the page keeps its default image.</span>';
-      }
-    }
-
-    renderHeroPicker();
-    renderOrderList();
-  }
-
-  function heroMediaUrl(item, file) {
-    /* Load from same origin rather than rate-limited raw.githubusercontent.com */
-    var base = (location.origin && location.origin !== 'null') ? location.origin + '/' : '';
-    return base + itemRoot(item) + file;
-  }
-
-  function renderHeroPicker() {
-    var box = document.getElementById('hero-picker');
-    if (!box) return;
-    var q = (document.getElementById('hero-search').value || '').toLowerCase();
-    var items = _heroState.items.filter(function (x) {
-      return !q || (x.name || '').toLowerCase().includes(q);
-    });
-    if (!items.length) { box.innerHTML = '<div class="empty-state"><p>No designs.</p></div>'; return; }
-
-    box.innerHTML = items.map(function (x) {
-      var img = (x.images || []).filter(function (f) { return !isVideoFile(f); })[0] || '';
-      var src = img ? heroMediaUrl(x, img) : '';
-      var isCur = ((_heroState.meta[_heroState.page] || {}).hero || '') === (itemRoot(x) + img);
-      return '<div class="set-card" style="cursor:pointer;' + (isCur ? 'outline:2px solid #1f1f1f;' : '') + '"' +
-        ' onclick="pickHero(\'' + x._cat + '\',\'' + x.folder + '\',\'' + img + '\')">' +
-        '<div class="card-img" style="position:relative;aspect-ratio:4/3;overflow:hidden;background:#f4f2ef;">' +
-        (src ? '<img src="' + src + '" data-crop="off" style="width:100%;height:100%;object-fit:cover;" loading="lazy" alt="">' : '') +
-        (isCur ? '<span style="position:absolute;top:8px;right:8px;background:#1f1f1f;color:#fff;font-size:9px;padding:3px 7px;letter-spacing:1px;">HERO</span>' : '') +
-        '</div>' +
-        '<div class="card-body" style="padding:8px 10px;"><div style="font-size:11px;font-weight:600;">' +
-        (x.name || x.folder) + '</div><div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:1px;">' +
-        x._cat + '</div></div></div>';
-    }).join('');
-  }
-
-  async function pickHero(cat, folder, file) {
-    if (!file) { showToast('No image on this item', 'error'); return; }
-    var path = itemRoot({ category: cat, folder: folder }) + file;
-    try {
-      showToast('Saving hero…', '');
-      _heroState.meta[_heroState.page] = Object.assign({}, _heroState.meta[_heroState.page], { hero: path });
-      await savePageMeta(_heroState.meta);
-      showToast('Hero saved for ' + _heroState.page, 'success');
-      loadHeroPanel(_heroState.page);
-    } catch (e) {
-      showToast('Could not save: ' + e.message, 'error');
-    }
-  }
-
-  function renderOrderList() {
-    var box = document.getElementById('order-list');
-    if (!box) return;
-    if (!_heroState.items.length) { box.innerHTML = '<p style="color:#999;font-size:12px;">No designs.</p>'; return; }
-    box.innerHTML = _heroState.items.map(function (x, i) {
-      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f2f0ed;">' +
-        '<span style="font-size:11px;color:#bbb;width:22px;">' + (i + 1) + '</span>' +
-        '<span style="flex:1;font-size:12px;">' + (x.name || x.folder) + '</span>' +
-        '<button class="show-btn" onclick="moveHeroItem(' + i + ',-1)" ' + (i === 0 ? 'disabled' : '') + '>&#8593;</button>' +
-        '<button class="show-btn" onclick="moveHeroItem(' + i + ',1)" ' + (i === _heroState.items.length - 1 ? 'disabled' : '') + '>&#8595;</button>' +
-        '</div>';
-    }).join('');
-  }
-
-  function moveHeroItem(i, dir) {
-    var j = i + dir;
-    if (j < 0 || j >= _heroState.items.length) return;
-    var arr = _heroState.items;
-    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
-    renderOrderList();
-  }
-
-  async function saveHeroOrder() {
-    if(!GH.owner||!GH.repo){showToast('GitHub not set up','error');return;}
-    try {
-      showToast('Saving order…', '');
-      var all = await readCatalog();
-      _heroState.items.forEach(function (x, i) {
-        var e = all.find(function (y) { return y.id === x.id; });
-        if (e) e.order = i + 1;
-      });
-      await writeCatalog(all, 'Reorder ' + _heroState.page);
-      showToast('Order saved to GitHub', 'success');
-      loadHeroPanel(_heroState.page);
-      loadInventory();
-    } catch (e) {
-      showToast('Error: ' + e.message, 'error');
-    }
-  }
+  /* Media always loads from this site — the repo copy is the same file and
+     raw.githubusercontent.com is rate-limited (and needs a token to be sure). */
+  function catalogBaseUrl() { return ''; }
 
   var cache = {};
   function getTags(cat,id){ return JSON.parse(localStorage.getItem('tags_'+cat+'_'+id)||'[]'); }
@@ -3072,7 +2933,7 @@
 
   async function loadInventory(){
     var all=[];
-    try{ all=await (await fetch(catalogBaseUrl()+CATALOG+'?t='+Date.now())).json(); }catch(e){ all=[]; }
+    try{ all = await readCatalog(); }catch(e){ all=[]; }
     all=Array.isArray(all)?all:[];
     var totalCount=0;
     Object.keys(CAT).forEach(function(cat){
@@ -3097,10 +2958,6 @@
     var allPill = document.getElementById('pill-count-all');
     if(allPill) allPill.textContent = '('+totalCount+')';
     renderUnifiedInventory();
-    var heroBody = document.getElementById('inv-hero-body');
-    if(heroBody && heroBody.classList.contains('open')){
-      loadHeroPanel(document.getElementById('hero-page').value);
-    }
   }
 
   function setInvCategory(cat){
@@ -3150,7 +3007,6 @@
     var ids=[];
     Object.keys(bulkSelected).forEach(function(k){ bulkSelected[k].forEach(function(id){ ids.push(id); }); });
     if(!ids.length) return;
-    if(!GH.token||!GH.owner||!GH.repo){showToast('Configure GitHub Setup first','error');return;}
     if(!confirm('Delete '+ids.length+' item(s)?')) return;
     showToast('Deleting…','');
     try{
@@ -3229,7 +3085,6 @@
   }
 
   async function saveInvOrder(){
-    if(!GH.owner||!GH.repo){showToast('GitHub not set up','error');return;}
     var cards=document.querySelectorAll('#grid-inventory .set-card');
     var perCatCounters={};
     try{
@@ -3243,7 +3098,7 @@
         if(e) e.order=perCatCounters[cat];
       });
       await writeCatalog(list,'Reorder inventory ('+invCurrentCat+')');
-      showToast(' Order saved to GitHub!','success');
+      showToast(' Order saved — live on the site','success');
       toggleInvReorder();
       loadInventory();
     } catch(e){showToast('Error: '+e.message,'error');}
@@ -3301,7 +3156,6 @@
 
   // ‑‑ ASSIGN A DESIGN TO A PUBLIC PAGE (writes catalog.json) ‑‑
   async function assignItemPage(cat, id, page){
-    if(!GH.token||!GH.owner||!GH.repo){ showToast('Configure GitHub Setup first','error'); renderUnifiedInventory(); return; }
     try{
       var list = await readCatalog();
       var entry = catalogEntry(list, id);
@@ -3549,7 +3403,7 @@
   var drawerRoot = '';
   function renderDrawerGrid(){
     var grid=document.getElementById('reorder-grid');
-    var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
+    var raw='';   /* same origin — this file is already deployed with the site */
     var html=drawerImages.map(function(file,i){
       var src=raw+drawerRoot+file+'?t='+Date.now();
       var isVid=isVideoFile(file);
@@ -3602,7 +3456,7 @@
       if(item){ item.images=imgs; item.videos=vids; }
       var card=document.querySelector('.set-card[data-id="'+drawerId+'"][data-cat="'+drawerCat+'"]');
       if(card){
-        var raw2='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
+        var raw2='';
         var slider=card.querySelector('.mini-slider');
         slider.innerHTML=drawerImages.map(function(file,i){
           if(isVideoFile(file)) return '<video src="'+raw2+drawerRoot+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
@@ -3755,7 +3609,7 @@
       var item=cache[cat]&&cache[cat].items.find(function(i){return i.id===id;});
       var catInfo=CAT[cat]||CAT.sets;
       var root=item?itemRoot(item):catRoot(cat)+id+'/';
-      var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
+      var raw='';   /* same origin — this file is already deployed with the site */
       existingImages.forEach(function(img,i){
         var isVid=isVideoFile(img);
         html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'existing\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'existing\')">'+
@@ -3783,7 +3637,8 @@
   function paintStorageMode(){
     var el = document.getElementById('storage-mode');
     if (!el) return;
-    el.textContent = 'Saved in your GitHub repo';
+    el.textContent = 'Saved to the site database';
+    el.title = 'Prices, names, pages and order save instantly. Photo files still go through the GitHub connection.';
     el.style.color = '#7c7c7c';
   }
 
@@ -3827,8 +3682,9 @@
   }
   function handleDrop(e){e.preventDefault();document.getElementById('upload-zone').classList.remove('drag');handleFiles(e.dataTransfer.files);}
 
+  function ghReady(){ return !!(GH.token && GH.owner && GH.repo); }
+
   async function publishItem(){
-    if(!GH.token||!GH.owner||!GH.repo){alert('GitHub Setup incomplete!');return;}
     var cat=document.getElementById('edit-category').value;
     var fcatEl=document.getElementById('f-category');
     if(currentMode==='add' && fcatEl && fcatEl.value) cat=fcatEl.value;
@@ -3842,6 +3698,19 @@
     var price=calcSpec ? fmtEGP(calcPriceOf({calc:calcSpec})) : '';
     var editId=document.getElementById('edit-id').value.trim();
     if(!name){showToast('Please enter a name.','error');return;}
+
+    /* Names, prices, descriptions and pages save to the database and are live
+       straight away. NEW PHOTOS still go through the GitHub connection,
+       because that is where the image files live. */
+    if(pendingImages.length && !ghReady()){
+      if(!confirm('New photos are uploaded through GitHub, and GitHub is not connected on this device.\n\n' +
+                  'OK  → save everything else (name, price, description, page) without the new photos\n' +
+                  'Cancel → add the GitHub token in GitHub Setup first')){
+        return;
+      }
+      pendingImages = [];
+      renderPreviews();
+    }
     if(!editId&&existingImages.length===0&&pendingImages.length===0){showToast('Please add at least one image.','error');return;}
 
     var btn=document.getElementById('publish-btn');
@@ -3877,7 +3746,7 @@
       var imgCounter = allExistingNums.length ? Math.max.apply(null, allExistingNums) + 1 : 0;
 
       var newNames = [];
-      for(var i=0;i<pendingImages.length;i++){
+      for(var i=0;i<pendingImages.length && ghReady();i++){
         var img = pendingImages[i];
         btn.textContent = 'Uploading ' + (i+1) + ' / ' + pendingImages.length + '…';
 
@@ -3927,7 +3796,7 @@
         });
       }
 
-      btn.textContent = 'Saving catalogue…';
+      btn.textContent = 'Saving to the site…';
       await writeCatalog(catalog, (currentMode === 'edit' ? 'Update ' : 'Add ') + itemId);
 
       setTags(cat, itemId, getActiveTags());
@@ -4002,8 +3871,7 @@
   }
   async function doRestore(){
     if(!restoreData) return;
-    if(!GH.token||!GH.owner||!GH.repo){alert('Please set up GitHub first.');return;}
-    if(!confirm('This will overwrite your current index files. Continue?')) return;
+    if(!confirm('This will overwrite your current catalogue. Continue?')) return;
     var btn=document.getElementById('restore-btn');btn.disabled=true;btn.textContent='Restoring…';showToast('Restoring…','');
     try{
       var list=await readCatalog();
@@ -4079,7 +3947,7 @@
     return '<!DOCTYPE html>\n'+doc.documentElement.outerHTML;
   }
   async function selectPage(cardId,file,title){
-    if(!GH.token||!GH.owner||!GH.repo){alert('Please set up GitHub first.');return;}
+    if(!GH.token||!GH.owner||!GH.repo){alert('Editing a page\'s HTML needs the GitHub connection — add it in GitHub Setup.');return;}
     document.querySelectorAll('.page-card').forEach(function(c){c.classList.remove('selected');});
     document.querySelectorAll('.page-card[onclick*="\''+cardId+'\'"]').forEach(function(c){c.classList.add('selected');});
     currentPageFile=file;
@@ -4117,7 +3985,7 @@
     }).join('')+'<div class="page-card page-card-new" onclick="openNewPageModal()"><i class="fas fa-plus-circle"></i><div><div class="page-card-name">Add Another</div></div></div>';
   }
   async function createNewPage(){
-    if(!GH.token||!GH.owner||!GH.repo){alert('Please set up GitHub first.');return;}
+    if(!GH.token||!GH.owner||!GH.repo){alert('Creating a page needs the GitHub connection — add it in GitHub Setup.');return;}
     var title=document.getElementById('new-page-title').value.trim();
     var file=document.getElementById('new-page-filename').value.trim();
     if(!title||!file){alert('Please fill in title and file name.');return;}

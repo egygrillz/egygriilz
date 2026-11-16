@@ -210,6 +210,7 @@
 </style>
   <link rel="canonical" href="https://egygrillz.com/grillz-gallery">
   <script src="/assets/set-visibility.js?v=2"></script>
+  <script src="/assets/catalog.js?v=1"></script>
   <script src="/assets/crops.js?v=1"></script>
 </head>
 <body>
@@ -491,8 +492,7 @@
     const OWN_PAGE = { sets:'sets', golds:'golds', silvers:'silvers',
                        diamonds:'diamonds', 'latest-designs':'latest-designs' };
 
-    fetch('assets/images/catalog.json?t='+Date.now())
-      .then(r=>r.json())
+    window.Catalog.load()
       .then(catalog=>{
         return (catalog||[])
           /* Public page assignment (legacy items fall back to their category) */
@@ -515,32 +515,5 @@
       .catch(e=>{ console.error(e); document.getElementById('no-results').style.display='block'; });
   </script>
 
-  <script>
-  /* Hero override from Firestore settings/pageMeta */
-  (function () {
-    var PAGE = 'grillz-gallery';
-    fetch('https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents/settings/pageMeta')
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (doc) {
-        var pf = doc && doc.fields && doc.fields[PAGE] && doc.fields[PAGE].mapValue && doc.fields[PAGE].mapValue.fields;
-        var hero = pf && pf.hero && pf.hero.stringValue;
-        if (!hero) return;
-        var sec = document.createElement('div');
-        sec.className = 'page-hero';
-        var img = document.createElement('img');
-        img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
-        img.setAttribute('data-crop', 'hero:grillz-gallery');
-        img.alt = 'EGYGRILLZ';
-        img.fetchPriority = 'high';
-        img.decoding = 'async';
-        sec.appendChild(img);
-        var head = document.querySelector('.page-header');
-        if (head && head.parentNode) {
-          head.parentNode.insertBefore(sec, head);
-          head.style.paddingTop = '44px';
-        }
-      }).catch(function () {});
-  })();
-  </script>
 </body>
 </html>

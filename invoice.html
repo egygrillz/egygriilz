@@ -14,6 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="/assets/calc-engine.js?v=2"></script>
 <script src="/assets/staff-calculator.js"></script>
+<script src="/assets/catalog.js?v=1"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
 window.addEventListener('load', function() {
@@ -1323,7 +1324,7 @@ function designPrice(item) {
 
 async function preloadCatalogDesigns() {
   try {
-    const all = await fetch('assets/images/catalog.json?t=' + Date.now()).then(r => r.json());
+    const all = await window.Catalog.load();
     catalogAll = Array.isArray(all) ? all : [];
     allDesigns = [];
     designCache = {};

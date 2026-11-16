@@ -146,11 +146,12 @@
   function buildPathIndex() {
     if (pathIndex) return Promise.resolve(pathIndex);
     pathIndex = {};
-    /* no cache-buster: the pages already fetch this file, so the browser
-       reuses it instead of downloading the catalogue twice */
-    var url = 'assets/images/catalog.json';
-    return fetch(url)
-      .then(function (r) { return r.ok ? r.json() : []; })
+    /* the live catalogue when /assets/catalog.js is on the page (so designs
+       saved in /editx get their crops too), otherwise the seed file */
+    var source = (window.Catalog && typeof window.Catalog.load === 'function')
+      ? window.Catalog.load()
+      : fetch('assets/images/catalog.json').then(function (r) { return r.ok ? r.json() : []; });
+    return source
       .then(function (all) {
         (Array.isArray(all) ? all : []).forEach(function (item) {
           var cat = item.category || item.page || 'sets';

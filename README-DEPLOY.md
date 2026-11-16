@@ -101,7 +101,6 @@ framed one way as a hero, another as a home banner and a third as a design card.
 
 | Placement | Key | Where to edit |
 |---|---|---|
-| Page hero (home, golds, silvers, diamonds, latest designs, gallery) | `hero:<page>` | /editx → Inventory → **Page Heroes** → *Adjust crop* |
 | Home section banner (golds / silvers / diamonds) | `banner:<tier>` | /editx → **Home Banners** → *Adjust crop* |
 | Design card | `card:<category>/<folder>` for the whole design, `card:<category>/<folder>::<file>` for one photo | /editx → Inventory → card → *Crop* |
 
@@ -109,7 +108,8 @@ framed one way as a hero, another as a home banner and a third as a design card.
 * `assets/crops.js` draws them with `object-position` (pan) plus a scaled box (zoom) — deliberately
   **no CSS transform**, so the card/hero hover animations keep working.
 * The editor and the pages share `Crops.applyStyles()`, so the preview is exactly what visitors get.
-* An element can claim a placement with `data-crop="hero:index"`, and opt out with `data-crop="off"`.
+* An element can claim a placement with `data-crop="hero:index"` (kept for the record — heroes are no
+  longer editable in the panel), and opt out with `data-crop="off"`.
 * The crop editor also previews the frame in the real aspect ratio (banner 16:7, hero 16:9,
   card 4:5) with wide/phone/square presets.
 
@@ -146,11 +146,41 @@ Keep `_headers`; `_redirects` works identically. Clean URLs are on by default (p
 
 ---
 
-## GitHub-first media workflow
+## Catalogue & media — what needs the database, what needs GitHub
 
-Catalog media lives in `assets/images/` and is indexed in `assets/images/catalog.json`
-(managed via `/editx`, compressed client-side by `assets/media-pipeline.js`).
-Use `/MTC` (Catalog &amp; Media Diagnostics) to audit asset references in `catalog.json`.
+Two halves, and only one of them needs a token:
+
+| What you change in /editx | Where it is saved | Live on its own? |
+|---|---|---|
+| Name, description, price / calculator spec | Firestore `settings/catalog` → `items` | ✔ seconds |
+| Which public page a design is on | same document | ✔ seconds |
+| Display order, visibility, tags | same document | ✔ seconds |
+| Home banners, site settings, schedule, crops | Firestore `settings/*` | ✔ seconds |
+| **New photo / video files** | committed to the repo by the GitHub connection | ✔ after the commit |
+| Page HTML (Pages Editor) | committed to the repo | ✔ after the commit |
+
+The seed file `assets/images/catalog.json` still ships with the site; `/editx` no longer edits it.
+`assets/catalog.js` merges the two on every public page:
+
+```html
+<script src="/assets/set-visibility.js?v=2"></script>
+<script src="/assets/catalog.js?v=1"></script>
+<script> const designs = await Catalog.load();   // seed + everything saved in /editx </script>
+```
+
+* `items` in `settings/catalog` overlay the seed — same `id` wins, new `id`s are appended.
+* `deleted` holds the ids removed in /editx, so a design that still exists in the seed file stays
+  deleted (`assets/catalog.js` and /editx both honour it).
+* A design hidden in /editx also stays hidden after the overlay (`settings/visibility` is applied to
+  the merged list).
+* One Firestore document is 1 MiB max — /editx refuses to write a catalogue over ~700 KB and says so.
+* If the database is unreachable the seed file is served untouched, so the shop never goes blank.
+
+**GitHub Setup is optional.** It is only needed for uploading new media files and for the Pages
+Editor; every other save works without it. Publishing without it still saves the name, price,
+description and page — only the new photos are skipped, after a confirmation.
+
+Use `/MTC` (Catalog & Media Diagnostics) to audit asset references in the seed `catalog.json`.
 
 ---
 
