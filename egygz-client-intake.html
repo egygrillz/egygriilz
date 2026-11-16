@@ -25,8 +25,8 @@
         --soft: #f6f6f7;
         --line: #e8e8ea;
         --text: #0a0a0a;
-        --sub: #6b7280;
-        --faint: #9ca3af;
+        --sub: #696969;
+        --faint: #949494;
         --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
     }
     html.dark {
@@ -36,8 +36,8 @@
         --soft: #1a1a1e;
         --line: #26262b;
         --text: #f4f4f5;
-        --sub: #a1a1aa;
-        --faint: #71717a;
+        --sub: #939393;
+        --faint: #696969;
         --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.45);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -82,8 +82,8 @@
         font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--sub);
         border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 11px;
     }
-    .badge i { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: block; }
-    .badge.expired i { background: #f59e0b; }
+    .badge i { width: 6px; height: 6px; border-radius: 50%; background: #9c9c9c; display: block; }
+    .badge.expired i { background: #a0a0a0; }
 
     /* ---------- progress ---------- */
     .progress { height: 5px; background: var(--soft); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
@@ -132,8 +132,8 @@
     .opt .check svg { width: 18px; height: 18px; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
     .chip { font-size:10.5px; color:var(--sub); background:var(--soft); border:1px solid var(--line); border-radius:999px; padding:3px 9px; }
-    .note { font-size: 12.5px; color:#8a6d1d; background:#fffbeb; border:1px solid #fde68a; border-radius: 14px; padding: 12px 13px; }
-    html.dark .note { color:#fcd34d; background:#2a2211; border-color:#7c5c11; }
+    .note { font-size: 12.5px; color:#696969; background:#f7f7f7; border:1px solid #f0f0f0; border-radius: 14px; padding: 12px 13px; }
+    html.dark .note { color:#ebebeb; background:#212121; border-color:#5b5b5b; }
     select {
         width:100%; padding: 14px 12px; border:1px solid var(--line); border-radius: 14px; font-size:16px;
         font-family: inherit; background: var(--soft); color: var(--text); outline:none; appearance: none;
@@ -160,7 +160,7 @@
     .btn.primary:hover { box-shadow: 0 14px 30px rgba(0,0,0,.22); }
     .btn.ghost { flex: 0 0 auto; }
     .btn.block { width: 100%; }
-    .btn.wa { background:#25D366; border-color:#25D366; color:#06331c; width:100%; }
+    .btn.wa { background:#a7a7a7; border-color:#a7a7a7; color:#252525; width:100%; }
     .btn[disabled] { opacity:.45; pointer-events:none; }
 
     /* ---------- done screen ---------- */
@@ -545,7 +545,7 @@ function currentSteps() {
 
 function renderExpired() {
     const L = I18N[state.lang];
-    $("#badgeRow").innerHTML = `<span class="badge expired"><i></i>${esc(L.badgeExpired)}</span>`;
+    $("#a1geRow").innerHTML = `<span class="badge expired"><i></i>${esc(L.badgeExpired)}</span>`;
     $("#bar").style.width = "100%";
     $("#stepMeta").textContent = "";
     $("#dots").innerHTML = "";
@@ -566,14 +566,14 @@ function render() {
     $("#heroSub").textContent = L.sub;
     $("#footNote").textContent = L.footer;
     $("#langBtn").textContent = state.lang === "en" ? "ع" : "EN";
-    $("#backBtn").textContent = L.back;
+    $("#a0kBtn").textContent = L.back;
     $("#nextBtn").textContent = L.next;
     $("#themeBtn").title = "Theme";
 
     const status = tokenStatus();
     // "unknown"/"unverified" = the link was created on the studio's device — let the client in.
     if (status === "used") { renderExpired(); return; }
-    $("#badgeRow").innerHTML = `<span class="badge"><i></i>${esc((status === "live" || status === "unverified") ? L.badgeLive : L.badgePlain)}</span>`;
+    $("#a1geRow").innerHTML = `<span class="badge"><i></i>${esc((status === "live" || status === "unverified") ? L.badgeLive : L.badgePlain)}</span>`;
 
     const steps = currentSteps();
     const key = steps[state.step];
@@ -584,7 +584,7 @@ function render() {
     $("#stepMeta").textContent = L.step.replace("{a}", state.step + 1).replace("{b}", steps.length);
     $("#dots").innerHTML = steps.map((_, i) => `<i class="${i === state.step ? "now" : i < state.step ? "done" : ""}"></i>`).join("");
     $("#nav").classList.toggle("hidden", key === "done");
-    $("#backBtn").disabled = state.step === 0;
+    $("#a0kBtn").disabled = state.step === 0;
 
     let html = "";
     if (key === "name") {
@@ -731,7 +731,7 @@ $("#nextBtn").onclick = () => {
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
 };
-$("#backBtn").onclick = () => {
+$("#a0kBtn").onclick = () => {
     state.step = Math.max(0, state.step - 1);
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });

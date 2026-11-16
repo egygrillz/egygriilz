@@ -30,6 +30,40 @@ Local test results: every nav link resolves (0 broken), 0 HTML nesting errors, 0
 
 ---
 
+## Mould kit orders — how the new pieces fit together
+
+| Piece | Where | What it does |
+|---|---|---|
+| `moulds.html` | `/moulds` | Teeth-chart order page. Saves to Firestore **`mould_orders`**, then pings the Worker (`/api/notify`, `type: "mould"`). |
+| `editx` → **Moulds** | `/editx` | Lists orders (`Pending` / `Approved & Email Sent` / `Delivered`), pastes a payment link, sends the email, edits the template (`settings/moulds_email`). |
+| `editx` → **Home Banners** | `/editx` | Uploads or picks the wide image for the Golds / Silvers / Diamonds home sections (`settings/banners`). |
+| Telegram bot | Worker | `/moulds`, `/mould`, `/pay`, `/deliver`, `/sets`, `/setvis`, `/status`, `/calc`, `/invoice` + inline buttons on each order. |
+| `assets/set-visibility.js` | public pages | Hides sets switched off from `/setvis` (`settings/visibility`). |
+
+### Secrets to add in Cloudflare (Worker → Settings → Variables and Secrets)
+
+**Gmail payment emails** (the “Approve & Send Payment” button and `/pay`):
+
+| Secret | Value |
+|---|---|
+| `GMAIL_CLIENT_ID` | Google Cloud → APIs & Services → Credentials → OAuth client |
+| `GMAIL_CLIENT_SECRET` | same client |
+| `GMAIL_REFRESH_TOKEN` | one-off consent for `https://www.googleapis.com/auth/gmail.send` (scope only — the Worker can send, never read) |
+| `GMAIL_SENDER` | e.g. `EGYGRILLZ <studio@egygrillz.com>` (must be the Gmail/Workspace account that owns the refresh token) |
+
+The Gmail API must be enabled in the Google Cloud project (`gmail.googleapis.com`).
+
+**Fallbacks** — if Gmail is not set up the same email goes out through `RESEND_KEY`, then
+`EMAILJS_PRIVATE_KEY` + `EMAILJS_MOULD_TEMPLATE`. If none is configured the editx panel says so and
+offers a “Compose in Gmail” draft, so a client is never left without an answer.
+
+**Optional:** `MOULDS_KEY` — when set, `/api/moulds/approve` and `/api/moulds/status` also require the
+`X-Moulds-Key` header (the pages call them from the studio domain, which is always allowed).
+
+Verify: `curl -s https://<worker>/api/health | grep -E "email_gmail|moulds_"`
+
+---
+
 ## Deploy — 3 paths, pick one
 
 ### A. Cloudflare Pages (recommended — required for `_headers`, `_redirects`, 301s and the CSP)

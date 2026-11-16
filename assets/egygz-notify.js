@@ -8,6 +8,7 @@
  *
  *   await EGYGZ.notify.booking({ name, phone, email, service, date, time, notes, ref });
  *   await EGYGZ.notify.message({ name, phone, email, message, ref });
+ *   await EGYGZ.notify.mould({ name, phone, email, arches, archCount, total, address, mapLink, ref });
  *
  * Nothing secret is exposed here — the Worker holds all keys.
  */
@@ -33,6 +34,8 @@
   window.EGYGZ = window.EGYGZ || {};
   window.EGYGZ.notify = {
     booking: function (d) { return send('booking', d); },
-    message: function (d) { return send('message', d); }
+    message: function (d) { return send('message', d); },
+    /* At-home mould kit order → Telegram alert with the map pin */
+    mould: function (d) { return send('mould', d); }
   };
 })();

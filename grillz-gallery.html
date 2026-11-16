@@ -70,7 +70,7 @@
     .ed-row.layout-c { grid-template-columns:1fr 1fr 1fr; }
 
     /* PANEL */
-    .ed-panel { position:relative; overflow:hidden; cursor:pointer; background:#e8e5e1; }
+    .ed-panel { position:relative; overflow:hidden; cursor:pointer; background:#f0f0f0; }
 
     /* Standard aspect ratios */
     .ed-row.layout-a .ed-panel:first-child  { aspect-ratio:4/3; }
@@ -101,7 +101,7 @@
     .ed-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.35); transition:background 0.3s; }
     .ed-dot.active { background:rgba(255,255,255,0.9); }
 
-    .ed-panel.loading { background:linear-gradient(90deg,#ede9e4 25%,#e4e0db 50%,#ede9e4 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
+    .ed-panel.loading { background:linear-gradient(90deg,#f1f1f1 25%,#eeeeee 50%,#f1f1f1 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
     /* ── MOBILE ── */
@@ -160,14 +160,14 @@
     .modal-bg.open { opacity:1; pointer-events:all; }
     .modal { background:var(--bg); width:100%; max-width:900px; max-height:90vh; display:flex; flex-direction:row; border-radius:3px; overflow:hidden; transform:translateY(28px); transition:transform 0.38s cubic-bezier(0.22,1,0.36,1); }
     .modal-bg.open .modal { transform:translateY(0); }
-    .modal-left { position:relative; flex:0 0 52%; overflow:hidden; background:#e8e4de; }
+    .modal-left { position:relative; flex:0 0 52%; overflow:hidden; background:#f0f0f0; }
     .modal-slides { position:relative; width:100%; height:100%; min-height:440px; }
     .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s;
-      background-size:cover; background-position:center; background-color:#e8e5e1; }
+      background-size:cover; background-position:center; background-color:#f0f0f0; }
     .modal-slide img { opacity:0; transition:opacity 0.35s ease; }
     .modal-slide.active { opacity:1; }
     .modal-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
-    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(240,237,232,0.85); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:var(--text); transition:background 0.2s; border-radius:50%; }
+    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgb(242,242,242,0.85); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:var(--text); transition:background 0.2s; border-radius:50%; }
     .modal-arrow:hover { background:var(--bg); }
     .modal-prev { left:14px; } .modal-next { right:14px; }
     .modal-dots { position:absolute; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:7px; }
@@ -209,6 +209,7 @@
     .page-hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.84; }
 </style>
   <link rel="canonical" href="https://egygrillz.com/grillz-gallery">
+  <script src="/assets/set-visibility.js"></script>
 </head>
 <body>
 

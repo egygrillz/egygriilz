@@ -36,7 +36,7 @@ function overlay() {
   el.id = 'egygz-auth-gate';
   el.innerHTML = `
   <div style="position:fixed;inset:0;z-index:99999;background:#faf9f7;display:flex;align-items:center;justify-content:center;font-family:Helvetica,Arial,sans-serif">
-    <form id="egygz-gate-form" style="width:320px;background:#fff;border:1px solid #e6e3df;padding:28px">
+    <form id="egygz-gate-form" style="width:320px;background:#fff;border:1px solid #efefef;padding:28px">
       <div style="font-size:10px;letter-spacing:2px;color:#9a9a9a;margin-bottom:6px">EGYGRILLZ — RESTRICTED</div>
       <div style="font-size:20px;font-weight:700;margin-bottom:18px">Staff sign-in</div>
       <label style="font-size:12px;color:#666">Email</label>
@@ -45,7 +45,7 @@ function overlay() {
       <label style="font-size:12px;color:#666">Password</label>
       <input id="egygz-gate-pass" type="password" required autocomplete="current-password"
              style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;margin:6px 0 12px;font-size:14px">
-      <div id="egygz-gate-err" style="color:#b03030;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+      <div id="egygz-gate-err" style="color:#5a5a5a;font-size:12px;min-height:16px;margin-bottom:8px"></div>
       <button id="egygz-gate-btn" type="submit"
               style="width:100%;padding:11px;background:#1a1a1a;color:#fff;border:0;font-size:13px;letter-spacing:1px;cursor:pointer">
         Sign in

@@ -761,8 +761,22 @@ function mapInvoice(doc) {
       }, 0)
     : 0;
   const total = parsePrice(fsVal(f.total)) || parsePrice(fsVal(f.amount)) || parsePrice(fsVal(f.subtotal)) || itemsSum;
+  const lines = (Array.isArray(itemVals) ? itemVals : []).map((entry) => {
+    const mf = (entry && entry.mapValue && entry.mapValue.fields) || {};
+    return {
+      name: String(fsVal(mf.name) || fsVal(mf.label) || ''),
+      spec: String(fsVal(mf.spec) || ''),
+      qty: Number(fsVal(mf.qty)) || 1,
+      price: parsePrice(fsVal(mf.price)) || parsePrice(fsVal(mf.subtotal)) || 0,
+      subtotal: parsePrice(fsVal(mf.total)) || 0,
+      materialTotal: parsePrice(fsVal(mf.materialTotal)) || 0,
+      level: String(fsVal(mf.level) || ''),
+      calc: (mf.calc && mf.calc.mapValue) ? mf.calc.mapValue.fields : null,
+    };
+  });
   return {
     id: (doc.name || '').split('/').pop(),
+    lines,
     clientName: String(fsVal(f.clientName) || fsVal(f.client) || fsVal(f.name) || ''),
     phone: String(fsVal(f.clientPhone) || fsVal(f.phone) || ''),
     email: String(fsVal(f.clientEmail) || fsVal(f.email) || ''),
@@ -1155,14 +1169,29 @@ const HELP_TEXT = [
   '  /services     most booked services',
   '  /slots        how full the next 7 days are',
   '',
+  'MOULD KIT ORDERS',
+  '  /moulds       pending orders (buttons on each)',
+  '  /moulds all   every order, any status',
+  '  /mould ABCD   one order in detail',
+  '  /pay ABCD https://link   send the payment email',
+  '  /deliver ABCD mark the kit as delivered',
+  '',
   'INVOICES & QUOTES',
   '  /invoices     every invoice you saved',
   '  /unpaid       who still owes money',
   '  /quote name   look up a quote',
   '  /pdf ahmed    send that quotation as a PDF file',
   '  /reportpdf    last month report as a PDF',
+  '  /invoice ahmed  lines with live calculator prices',
+  '  /calc         the calculator rates in use',
   '  /revenue      this month, invoices and quotes',
   '  /monthreport  full report for last month',
+  '',
+  'SETS & SITE',
+  '  /sets         what is visible on each page',
+  '  /setvis id off  hide a design on the site',
+  '  /setvis id on   show it again',
+  '  /status       one-line status of everything',
   '',
   'REMINDERS',
   '  /unsent       tomorrow, reminder not sent yet',
@@ -1217,6 +1246,9 @@ function parseIntent(raw) {
     noshow: '/noshow', clients: '/clients', services: '/services',
     slots: '/slots', unsent: '/unsent', digest: '/digest',
     quotes: '/quote', help: '/help', id: '/id',
+    moulds: '/moulds', mould: '/mould', orders: '/moulds', order: '/mould',
+    sets: '/sets', setvis: '/setvis', status: '/status', calc: '/calc', rates: '/calc',
+    invoice: '/invoice', pay: '/pay', deliver: '/deliver', delivered: '/deliver',
   };
   const first = t.split(/\s+/)[0].replace(/[^a-z\u0600-\u06FF]/g, '');
   if (aliases[first]) return { cmd: aliases[first], arg: t.slice(first.length).trim() };
@@ -1498,13 +1530,25 @@ async function runCommand(text, env, fetchImpl = fetch) {
       const err = need(r); if (err) return err;
       if (!r.rows.length) return 'INVOICES\n' + LINE + '\nNothing yet.';
       const list = r.rows.map(mapInvoice).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      const pricing = await loadPricingSettings(env, fetchImpl);
+      const driftOf = (inv) => (inv.lines || []).reduce((n, l) => {
+        const re = recalcInvoiceLine(l, pricing);
+        return re ? n + Math.abs(re.price - (l.price || 0)) : n;
+      }, 0);
       const lines = ['INVOICES', LINE, `${list.length} saved`, ''];
       list.slice(0, 20).forEach((inv, i) => {
-        lines.push(`${padL(i + 1, 2)}. ${shortDate(inv.date)}  ${pad(inv.clientName || '—', 18)} ${padL(num(inv.total), 7)} EGP  [${inv.status}]`);
+        const d = driftOf(inv);
+        lines.push(`${padL(i + 1, 2)}. ${shortDate(String(inv.date).slice(0, 10))}  ${pad(inv.clientName || '—', 18)} ${padL(num(inv.total), 7)} EGP  [${inv.status}]${d > 0.5 ? '  ⚠' : ''}`);
       });
       if (list.length > 20) lines.push(`... and ${list.length - 20} more`);
       const sum = list.reduce((n, i) => n + i.total, 0);
       lines.push(LINE, `Total value: ${num(sum)} EGP`);
+      const outOfDate = list.filter(inv => driftOf(inv) > 0.5).length;
+      if (outOfDate) {
+        lines.push('');
+        lines.push(`⚠ ${outOfDate} invoice(s) were priced with older calculator rates.`);
+        lines.push('Run /invoice <name> to see the live prices line by line.');
+      }
       return lines.join('\n');
     }
 
@@ -1675,6 +1719,205 @@ async function runCommand(text, env, fetchImpl = fetch) {
         '\n\n' + LINE + '\nOpen /editx to send the emails.';
     }
 
+    /* ═══════════ MOULD KIT ORDERS ═══════════ */
+    case '/moulds':
+    case '/orders': {
+      const filter = ['pending', 'approved', 'delivered', 'all'].includes((arg || '').toLowerCase())
+        ? (arg || '').toLowerCase() : 'pending';
+      const res = await fetchMouldOrders(env, { status: filter, limit: 60 }, fetchImpl);
+      if (!res.ok) return fsErrorText(res.error);
+      return { text: mouldListText(res.orders, filter), keyboard: mouldListKeyboard(res.orders, filter) };
+    }
+
+    case '/mould':
+    case '/order': {
+      if (!arg) return 'Usage: /mould ABCD1234\\nShows one mould kit order with its buttons.';
+      const found = await findMouldOrder(env, arg, fetchImpl);
+      if (!found.ok) return `No mould order found for "${arg}".`;
+      const o = found.order;
+      const body = [
+        formatMouldOrder(o),
+        '',
+        o.paymentLink ? `Payment link: ${o.paymentLink}` : '',
+        o.emailSentAt ? `Email sent: ${String(o.emailSentAt).slice(0, 16).replace('T', ' ')} via ${o.emailChannel || 'email'}` : '',
+        o.status === 'pending' ? `Approve with:\n/pay ${shortRef(o)} https://your-payment-link` : '',
+      ].filter(Boolean).join('\n');
+      return { text: body, keyboard: mouldKeyboard(o) };
+    }
+
+    case '/pay':
+    case '/approve': {
+      const parts = arg.split(/\s+/).filter(Boolean);
+      if (parts.length < 2) {
+        return 'Usage: /pay ABCD1234 https://payment-link\n'
+          + 'Sends the payment email to the client and marks the order approved.';
+      }
+      const ref = parts.shift();
+      const link = parts.join(' ');
+      if (!/^https?:\/\//i.test(link)) return 'The payment link must start with https://';
+      const found = await findMouldOrder(env, ref, fetchImpl);
+      if (!found.ok) return `No mould order found for "${ref}".`;
+      const r = await approveMouldOrder(env, found.order.id, link, fetchImpl);
+      if (!r.ok) {
+        return `Could not send the email (${r.error}).\n`
+          + (r.hint || 'Check the Gmail secrets in Cloudflare.');
+      }
+      return [
+        'PAYMENT EMAIL SENT',
+        LINE,
+        `Order:   ${shortRef(r.order)}`,
+        `Client:  ${r.order.name} <${r.order.email}>`,
+        `Channel: ${r.channel === 'gmail' ? 'Gmail' : r.channel}`,
+        `Subject: ${r.subject}`,
+        `Total:   ${num(r.order.total)} EGP`,
+        '',
+        'Status is now: Approved & Email Sent.',
+      ].join('\n');
+    }
+
+    case '/deliver':
+    case '/delivered': {
+      if (!arg) return 'Usage: /deliver ABCD1234';
+      const found = await findMouldOrder(env, arg, fetchImpl);
+      if (!found.ok) return `No mould order found for "${arg}".`;
+      const patch = await saveMouldOrder(env, found.order.id, {
+        status: 'delivered',
+        statusUpdatedAt: new Date().toISOString(),
+      }, fetchImpl);
+      if (!patch.ok) return fsErrorText(patch.error);
+      return [
+        'MARKED DELIVERED',
+        LINE,
+        `${shortRef(found.order)} · ${found.order.name}`,
+        `${archLabelOf(found.order)} · ${num(found.order.total)} EGP`,
+        found.order.status === 'approved' ? 'Payment email was already sent.' : 'Note: the payment email had not been sent yet.',
+      ].join('\n');
+    }
+
+    /* ═══════════ SETS / INVENTORY VISIBILITY ═══════════ */
+    case '/sets': {
+      const vis = await loadVisibility(env, fetchImpl);
+      const cat = await fetchPublicCatalogue(fetchImpl);
+      if (!cat.ok) return 'Could not load the catalogue. Reason: ' + (cat.error || 'unknown');
+      const pages = ['golds', 'silvers', 'diamonds', 'latest-designs', 'grillz-gallery'];
+      const lines = ['SETS & VISIBILITY', LINE, `${cat.items.length} designs in the catalogue`, ''];
+      pages.forEach((page) => {
+        const onPage = cat.items.filter(i => pageOfDesign(i) === page);
+        const shown = onPage.filter(i => !vis.hidden.includes(designKey(i)));
+        lines.push(`${pad(cap(page.replace('-', ' ')), 16)} ${padL(shown.length, 3)}/${padL(onPage.length, 3)} visible`);
+      });
+      const unassigned = cat.items.filter(i => !pageOfDesign(i));
+      if (unassigned.length) lines.push('', `Not on any page: ${unassigned.length}`);
+      const hidden = cat.items.filter(i => vis.hidden.includes(designKey(i)));
+      lines.push('', `Hidden by hand: ${hidden.length}`);
+      hidden.slice(0, 8).forEach(i => lines.push(`  ✕ ${designKey(i)}  ${i.name || ''}`));
+      lines.push('', 'Hide:  /setvis <id> off', 'Show:  /setvis <id> on');
+      return lines.join('\n');
+    }
+
+    case '/setvis':
+    case '/hide':
+    case '/show': {
+      const words = arg.split(/\s+/).filter(Boolean);
+      let mode = cmd === '/hide' ? 'off' : cmd === '/show' ? 'on' : '';
+      if (!mode) mode = (words[1] || '').toLowerCase();
+      const id = words[0] || '';
+      if (!id || !['on', 'off'].includes(mode)) {
+        return 'Usage: /setvis <design-id> on|off\nShortcuts: /hide <design-id>   /show <design-id>\nSee the ids with /sets';
+      }
+      const vis = await loadVisibility(env, fetchImpl);
+      const key = id.toLowerCase();
+      const next = new Set(vis.hidden);
+      if (mode === 'off') next.add(key); else next.delete(key);
+      const saved = await saveVisibility(env, Array.from(next), fetchImpl);
+      if (!saved.ok) return fsErrorText(saved.error);
+      return [
+        mode === 'off' ? 'HIDDEN ON THE SITE' : 'VISIBLE ON THE SITE',
+        LINE,
+        id,
+        '',
+        `${next.size} design(s) hidden. The public pages pick this up on the next load.`,
+      ].join('\n');
+    }
+
+    /* ═══════════ INVOICES & LIVE CALCULATOR PRICES ═══════════ */
+    case '/invoice': {
+      if (!arg) return 'Usage: /invoice <id or client name>';
+      const r = await fetchCollection(env, 'invoices', fetchImpl);
+      const err = need(r); if (err) return err;
+      const list = r.rows.map(mapInvoice);
+      const q = arg.toLowerCase();
+      const inv = list.find(i => i.id === arg) || list.find(i => (i.clientName || '').toLowerCase().includes(q));
+      if (!inv) return `No invoice found for "${arg}".`;
+      const pricing = await loadPricingSettings(env, fetchImpl);
+      const lines = [
+        `INVOICE ${inv.id.slice(0, 8).toUpperCase()}`,
+        LINE,
+        `Client: ${inv.clientName || '—'}`,
+        `Phone:  ${inv.phone || '—'}`,
+        `Date:   ${shortDate(String(inv.date).slice(0, 10))}`,
+        `Saved:  ${num(inv.total)} EGP  [${inv.status}]`,
+        '',
+        'LINES (saved → live calculator)',
+      ];
+      let drift = 0;
+      (inv.lines || []).forEach((l) => {
+        const re = recalcInvoiceLine(l, pricing);
+        const label = l.name || l.spec || 'line';
+        if (re && Math.abs(re.price - (l.price || 0)) > 0.5) {
+          drift += Math.abs(re.price - (l.price || 0));
+          lines.push(`  ⚠ ${pad(label, 20)} ${padL(num(l.price), 7)} → ${padL(num(re.price), 7)} EGP  (L${l.level || '?'} · ${re.designPct}%)`);
+        } else {
+          lines.push(`  ✓ ${pad(label, 20)} ${padL(num(l.price), 7)} EGP`);
+        }
+      });
+      lines.push(LINE);
+      if (drift) {
+        lines.push(`Live calculator rates would change this invoice by ${num(drift)} EGP.`);
+        lines.push('Re-open it in /invoice to re-price it with the current rates.');
+      } else {
+        lines.push('Every line matches the live calculator rates.');
+      }
+      return lines.join('\n');
+    }
+
+    case '/calc':
+    case '/rates': {
+      const p = await loadPricingSettings(env, fetchImpl);
+      const lines = ['CALCULATOR — LIVE RATES', LINE];
+      lines.push('Material base (per tooth):');
+      Object.entries(p.materialBase).forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
+      lines.push('', 'Design level add-on (% of material):');
+      Object.entries(p.designPct).forEach(([k, v]) => lines.push(`  level ${pad(k, 4)} ${padL(v + '%', 6)}`));
+      lines.push('', `Rounding:   ${p.roundTo} EGP`);
+      lines.push(`Deposit:    ${p.depositPct}%`);
+      if (p.updatedAt) lines.push(`Updated:    ${String(p.updatedAt).slice(0, 16).replace('T', ' ')}`);
+      lines.push('', 'Change them in /staff-panel-x7k2 → Settings.');
+      return lines.join('\n');
+    }
+
+    /* ═══════════ REAL-TIME STATUS ═══════════ */
+    case '/status': {
+      const moulds = await fetchMouldOrders(env, { status: 'all', limit: 100 }, fetchImpl);
+      const today = await fetchDay(env, todayIso, fetchImpl);
+      const invs = await fetchCollection(env, 'invoices', fetchImpl);
+      const vis = await loadVisibility(env, fetchImpl);
+      const lines = ['EGYGRILLZ — LIVE STATUS', LINE];
+      if (moulds.ok) {
+        const pending = moulds.orders.filter(o => o.status === 'pending').length;
+        const approved = moulds.orders.filter(o => o.status === 'approved').length;
+        const delivered = moulds.orders.filter(o => o.status === 'delivered').length;
+        lines.push(`Mould kits:  ${pending} pending · ${approved} paid · ${delivered} delivered`);
+      } else {
+        lines.push('Mould kits:  unavailable (' + moulds.error + ')');
+      }
+      if (today.ok) lines.push(`Today:       ${today.appts.length} appointment(s)`);
+      if (invs.ok) lines.push(`Invoices:    ${invs.rows.length} saved`);
+      lines.push(`Sets hidden: ${vis.hidden.length}`);
+      lines.push('', 'Type /moulds, /today or /sets for the details.');
+      return lines.join('\n');
+    }
+
     default:
       return `I do not know "${cmd}".\n\nType /help to see every command.`;
   }
@@ -1717,6 +1960,94 @@ async function sendPdf(bytes, filename, caption, env, chatId, fetchImpl = fetch)
     return { ok: r.ok && d.ok !== false, status: r.status, error: d.description };
   } catch (e) {
     return { ok: false, error: String(e) };
+  }
+}
+
+/* ─────────────── catalogue + set visibility ───────────────
+ * The public catalogue lives on GitHub (assets/images/catalog.json).
+ * The bot reads it to show which design is on which page, and keeps the
+ * "hidden on the site" list in Firestore settings/visibility so the same
+ * switch works from Telegram and from /editx.
+ * ───────────────────────────────────────────────────────── */
+
+const CATALOG_URL_DEFAULT = 'https://raw.githubusercontent.com/egygrillz/egygrillz/main/assets/images/catalog.json';
+const CATALOG_URL_FALLBACK = 'https://egygrillz.com/assets/images/catalog.json?t=';
+
+const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+
+/** the folder (or id) that identifies a design everywhere */
+function designKey(item) {
+  if (!item) return '';
+  return String(item.folder || item.id || '').trim();
+}
+
+/** which public page a design is assigned to (matches the site logic) */
+function pageOfDesign(item) {
+  if (!item) return '';
+  return Object.prototype.hasOwnProperty.call(item, 'page')
+    ? String(item.page || '')
+    : String(item.category || item.cat || '');
+}
+
+/** catalog.json from GitHub, falling back to the live site */
+async function fetchPublicCatalogue(fetchImpl = fetch, env = {}) {
+  const urls = [
+    env.CATALOG_URL || CATALOG_URL_DEFAULT,
+    CATALOG_URL_FALLBACK + Date.now(),
+  ];
+  for (const url of urls) {
+    try {
+      const r = await fetchImpl(url, { method: 'GET', headers: { Accept: 'application/json' } });
+      if (!r.ok) continue;
+      const j = await r.json().catch(() => null);
+      if (Array.isArray(j)) return { ok: true, items: j, url };
+    } catch (e) { /* try the next one */ }
+  }
+  return { ok: false, error: 'catalogue-unreachable', items: [] };
+}
+
+/** settings/visibility → { hidden: [...], updatedAt } */
+async function loadVisibility(env, fetchImpl = fetch) {
+  const empty = { hidden: [], updatedAt: '' };
+  if (!env.FIREBASE_API_KEY) return empty;
+  try {
+    const r = await fetchImpl(`${FS_BASE}/settings/visibility?key=${env.FIREBASE_API_KEY}`,
+      { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
+    if (!r.ok) return empty;
+    const doc = await r.json().catch(() => null);
+    const arr = ((doc && doc.fields && doc.fields.hidden && doc.fields.hidden.arrayValue
+      && doc.fields.hidden.arrayValue.values) || []).map((v) => String(fsVal(v) || '').toLowerCase()).filter(Boolean);
+    return { hidden: arr, updatedAt: String(fsVal(doc && doc.fields && doc.fields.updatedAt) || '') };
+  } catch (e) {
+    return empty;
+  }
+}
+
+/** write the hidden list back */
+async function saveVisibility(env, hidden, fetchImpl = fetch) {
+  if (!env.FIREBASE_API_KEY) return { ok: false, error: 'no-firebase-key' };
+  const list = Array.from(new Set((hidden || []).map(v => String(v).toLowerCase()).filter(Boolean)));
+  try {
+    const r = await fetchImpl(
+      `${FS_BASE}/settings/visibility?key=${env.FIREBASE_API_KEY}`
+      + '&updateMask.fieldPaths=hidden&updateMask.fieldPaths=updatedAt',
+      {
+        method: 'PATCH',
+        headers: await fsHeaders(env, fetchImpl),
+        body: JSON.stringify({
+          fields: {
+            hidden: { arrayValue: { values: list.map(v => ({ stringValue: v })) } },
+            updatedAt: { stringValue: new Date().toISOString() },
+          },
+        }),
+      });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      return { ok: false, error: fsCause(r.status), detail: t.slice(0, 140) };
+    }
+    return { ok: true, hidden: list };
+  } catch (e) {
+    return { ok: false, error: 'network' };
   }
 }
 
@@ -1788,6 +2119,454 @@ function recalcOrder(rawOrder, pricing) {
   });
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  MOULD KIT ORDERS  (Get Your Moulds)
+ *  ---------------------------------------------------------------------------
+ *  Orders live in Firestore  mould_orders/<id>  and go through three states:
+ *    pending   → waiting for the studio
+ *    approved  → payment link emailed to the client
+ *    delivered → kit handed to the courier
+ *
+ *  Payment emails go out through Gmail (Gmail API + OAuth refresh token):
+ *    wrangler secret put GMAIL_CLIENT_ID
+ *    wrangler secret put GMAIL_CLIENT_SECRET
+ *    wrangler secret put GMAIL_REFRESH_TOKEN
+ *    wrangler secret put GMAIL_SENDER      (e.g. studio@egygrillz.com)
+ *  When Gmail is not configured the same email falls back to Resend, then
+ *  EmailJS, so the client is never left without an answer.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+const MOULD_STATUS = {
+  pending: 'Pending',
+  approved: 'Approved & Email Sent',
+  delivered: 'Delivered',
+};
+
+const MOULD_TEMPLATE_DEFAULT = {
+  subject: 'Your EGYGRILLZ mould kit — payment link',
+  body: [
+    'Hi {client_name},',
+    '',
+    'Thank you for ordering your at-home mould kit.',
+    '',
+    'Arch:        {arch}',
+    'Total:       {total_price} (includes the delivery fee)',
+    'Delivered to: {address}',
+    '',
+    'Confirm your order with the payment link below:',
+    '{payment_link}',
+    '',
+    'Once the payment is in, we courier the kit and send you the impression guide.',
+    'Any question — just reply to this email.',
+    '',
+    'EGYGRILLZ',
+    'DR Mohamed Mahdy',
+  ].join('\n'),
+};
+
+/** JS value → Firestore REST value */
+function toFsValue(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'string') return { stringValue: v };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') {
+    return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  }
+  if (v instanceof Date) return { timestampValue: v.toISOString() };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(toFsValue) } };
+  if (typeof v === 'object') {
+    const fields = {};
+    for (const [k, val] of Object.entries(v)) fields[k] = toFsValue(val);
+    return { mapValue: { fields } };
+  }
+  return { nullValue: null };
+}
+
+/** calm numbers out of Firestore fields */
+function fsNum(v) {
+  const n = Number(fsVal(v));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** mould_orders doc → flat object */
+function mapMouldOrder(doc) {
+  const f = (doc && doc.fields) || {};
+  const id = String((doc && doc.name) || '').split('/').pop();
+  const arches = String(fsVal(f.arches) || '').toLowerCase();
+  const archCount = fsNum(f.archCount) || (arches === 'both' ? 2 : 1);
+  const total = fsNum(f.total);
+  const created = fsVal(f.createdAt);
+  return {
+    id,
+    name: String(fsVal(f.name) || '').trim(),
+    phone: String(fsVal(f.phone) || '').trim(),
+    email: String(fsVal(f.email) || '').trim(),
+    arches,
+    archCount,
+    total,
+    mouldPrice: fsNum(f.mouldPrice) || (arches === 'both' ? 900 : 450),
+    deliveryFee: fsNum(f.deliveryFee),
+    address: String(fsVal(f.address) || '').trim(),
+    mapLink: String(fsVal(f.mapLink) || '').trim(),
+    status: String(fsVal(f.status) || 'pending').toLowerCase(),
+    paymentLink: String(fsVal(f.paymentLink) || '').trim(),
+    emailSentAt: fsVal(f.emailSentAt),
+    emailChannel: String(fsVal(f.emailChannel) || ''),
+    createdAt: created && typeof created === 'object' && created._seconds !== undefined
+      ? new Date(created._seconds * 1000).toISOString()
+      : String(created || ''),
+  };
+}
+
+const archLabelOf = (o) => (o.arches === 'both' ? 'Both arches' : o.arches === 'lower' ? 'Lower arch' : 'Upper arch');
+
+/** newest first, optionally filtered by status */
+async function fetchMouldOrders(env, opts = {}, fetchImpl = fetch) {
+  if (!env.FIREBASE_API_KEY) return { ok: false, error: 'no-firebase-key', orders: [] };
+  const q = {
+    from: [{ collectionId: 'mould_orders' }],
+    orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }],
+    limit: Math.max(1, Math.min(200, opts.limit || 40)),
+  };
+  if (opts.status && opts.status !== 'all') {
+    q.where = { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: opts.status } } };
+    // a status filter needs the matching composite index; fall back to a client-side filter
+  }
+  let res = await fsQuery(env, q, fetchImpl);
+  if (!res.ok) {
+    delete q.where;
+    delete q.orderBy;
+    res = await fsQuery(env, q, fetchImpl);
+  }
+  if (!res.ok) return { ok: false, error: res.error, orders: [] };
+  let orders = res.rows.map(mapMouldOrder);
+  if (opts.status && opts.status !== 'all') orders = orders.filter(o => o.status === opts.status);
+  orders.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  return { ok: true, orders };
+}
+
+/** one order by id (accepts the full document name too) */
+async function fetchMouldOrder(env, id, fetchImpl = fetch) {
+  const cleanId = String(id || '').trim().split('/').pop();
+  if (!cleanId || !env.FIREBASE_API_KEY) return { ok: false, error: 'not-found' };
+  try {
+    const r = await fetchImpl(`${FS_BASE}/mould_orders/${encodeURIComponent(cleanId)}?key=${env.FIREBASE_API_KEY}`,
+      { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
+    if (r.status === 404) return { ok: false, error: 'not-found' };
+    if (!r.ok) return { ok: false, error: fsCause(r.status) };
+    const doc = await r.json().catch(() => null);
+    if (!doc || !doc.fields) return { ok: false, error: 'not-found' };
+    return { ok: true, order: mapMouldOrder(doc) };
+  } catch (e) {
+    return { ok: false, error: 'network' };
+  }
+}
+
+/** patch fields on a mould order */
+async function saveMouldOrder(env, id, fields, fetchImpl = fetch) {
+  const cleanId = String(id || '').trim().split('/').pop();
+  if (!cleanId || !env.FIREBASE_API_KEY) return { ok: false, error: 'not-found' };
+  const body = {};
+  for (const [k, v] of Object.entries(fields || {})) body[k] = toFsValue(v);
+  const mask = Object.keys(fields || {}).map(k => 'updateMask.fieldPaths=' + encodeURIComponent(k)).join('&');
+  try {
+    const r = await fetchImpl(`${FS_BASE}/mould_orders/${encodeURIComponent(cleanId)}?key=${env.FIREBASE_API_KEY}${mask ? '&' + mask : ''}`,
+      { method: 'PATCH', headers: await fsHeaders(env, fetchImpl), body: JSON.stringify({ fields: body }) });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      return { ok: false, error: fsCause(r.status), detail: t.slice(0, 160) };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: 'network' };
+  }
+}
+
+/** the studio's own payment-email template (settings/moulds_email) */
+async function loadMouldTemplate(env, fetchImpl = fetch) {
+  try {
+    if (!env.FIREBASE_API_KEY) return MOULD_TEMPLATE_DEFAULT;
+    const r = await fetchImpl(`${FS_BASE}/settings/moulds_email?key=${env.FIREBASE_API_KEY}`,
+      { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
+    if (!r.ok) return MOULD_TEMPLATE_DEFAULT;
+    const doc = await r.json().catch(() => null);
+    const f = (doc && doc.fields) || {};
+    const subject = String(fsVal(f.subject) || '').trim();
+    const body = String(fsVal(f.body) || '').trim();
+    return {
+      subject: subject || MOULD_TEMPLATE_DEFAULT.subject,
+      body: body || MOULD_TEMPLATE_DEFAULT.body,
+    };
+  } catch (e) {
+    return MOULD_TEMPLATE_DEFAULT;
+  }
+}
+
+/** {client_name} … placeholders → real values */
+function renderMouldTemplate(tpl, order, extra = {}) {
+  const values = {
+    client_name: order.name || 'there',
+    arch: archLabelOf(order),
+    total_price: num(order.total) + ' EGP',
+    payment_link: order.paymentLink || '',
+    address: order.address || 'your pinned location',
+    map_link: order.mapLink || '',
+    order_id: order.id || '',
+    ...extra,
+  };
+  const fill = (s) => String(s || '').replace(/\{(\w+)\}/g, (m, k) =>
+    Object.prototype.hasOwnProperty.call(values, k) ? String(values[k]) : m);
+  return { subject: fill(tpl.subject), body: fill(tpl.body) };
+}
+
+/* ── Gmail (OAuth refresh token) ─────────────────────────────────────── */
+
+let _gmail = { token: '', expires: 0 };
+
+async function gmailAccessToken(env, fetchImpl = fetch) {
+  if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) return '';
+  if (_gmail.token && Date.now() < _gmail.expires) return _gmail.token;
+  try {
+    const r = await fetchImpl('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: env.GMAIL_CLIENT_ID,
+        client_secret: env.GMAIL_CLIENT_SECRET,
+        refresh_token: env.GMAIL_REFRESH_TOKEN,
+        grant_type: 'refresh_token',
+      }).toString(),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.access_token) return '';
+    _gmail = { token: d.access_token, expires: Date.now() + (Number(d.expires_in) || 3600) * 1000 - 60000 };
+    return _gmail.token;
+  } catch (e) {
+    return '';
+  }
+}
+
+/** UTF-8 safe base64url (Gmail wants RFC 4648 §5) */
+function b64url(str) {
+  const bytes = new TextEncoder().encode(String(str || ''));
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** Send one email through Gmail. Returns {ok, channel} — never throws. */
+async function sendGmail(to, subject, text, env, fetchImpl = fetch) {
+  if (!to) return { channel: 'gmail', ok: false, error: 'no-recipient' };
+  const token = await gmailAccessToken(env, fetchImpl);
+  if (!token) return { channel: 'gmail', ok: false, skipped: true, error: 'gmail-not-configured' };
+  const sender = env.GMAIL_SENDER || 'me';
+  const from = env.GMAIL_SENDER || 'EGYGRILLZ <studio@egygrillz.com>';
+  const mime = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${String(subject || 'EGYGRILLZ').replace(/[\r\n]+/g, ' ')}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    String(text || ''),
+  ].join('\r\n');
+  try {
+    const r = await fetchImpl('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: b64url(mime) }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const msg = String((d && d.error && d.error.message) || '').slice(0, 160);
+      return { channel: 'gmail', ok: false, status: r.status, error: msg || 'gmail-error' };
+    }
+    return { channel: 'gmail', ok: true, id: (d && d.id) || '' };
+  } catch (e) {
+    return { channel: 'gmail', ok: false, error: String(e) };
+  }
+}
+
+/** Gmail → Resend → EmailJS, whichever is configured. */
+async function sendMouldPaymentEmail(order, env, fetchImpl = fetch, template) {
+  const tpl = template || await loadMouldTemplate(env, fetchImpl);
+  const { subject, body } = renderMouldTemplate(tpl, order);
+  const attempts = [];
+
+  const g = await sendGmail(order.email, subject, body, env, fetchImpl).catch(e => ({ channel: 'gmail', ok: false, error: String(e) }));
+  attempts.push(g);
+  if (g.ok) return { ok: true, channel: 'gmail', attempts, subject, body };
+
+  if (env.RESEND_KEY) {
+    const r = await sendEmail(subject, body, order.email, env, fetchImpl).catch(e => ({ channel: 'email', ok: false, error: String(e) }));
+    attempts.push({ channel: 'resend', ok: !!r.ok, error: r.error });
+    if (r.ok) return { ok: true, channel: 'resend', attempts, subject, body };
+  }
+
+  if (env.EMAILJS_PRIVATE_KEY && env.EMAILJS_MOULD_TEMPLATE) {
+    const e = await sendViaEmailJS(env.EMAILJS_MOULD_TEMPLATE, {
+      to_name: order.name || 'there',
+      to_email: order.email,
+      subject,
+      message: body,
+      arch: archLabelOf(order),
+      total_price: num(order.total) + ' EGP',
+      payment_link: order.paymentLink || '',
+    }, env, fetchImpl).catch(err => ({ ok: false, error: String(err) }));
+    attempts.push({ channel: 'emailjs', ok: !!e.ok, error: e.error });
+    if (e.ok) return { ok: true, channel: 'emailjs', attempts, subject, body };
+  }
+
+  return { ok: false, channel: '', attempts, subject, body };
+}
+
+/** Approve one order: store the payment link, email the client, flip the status. */
+async function approveMouldOrder(env, id, paymentLink, fetchImpl = fetch) {
+  const found = await fetchMouldOrder(env, id, fetchImpl);
+  if (!found.ok) return { ok: false, error: found.error || 'not-found' };
+  const order = found.order;
+  if (!order.email) return { ok: false, error: 'no-email', order };
+  const link = String(paymentLink || order.paymentLink || '').trim();
+  if (!link) return { ok: false, error: 'no-payment-link', order };
+
+  order.paymentLink = link;
+  const sent = await sendMouldPaymentEmail(order, env, fetchImpl);
+  if (!sent.ok) {
+    return {
+      ok: false,
+      error: 'email-failed',
+      order,
+      attempts: sent.attempts,
+      hint: 'Set GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN (or RESEND_KEY) in Cloudflare.',
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+  const patch = await saveMouldOrder(env, order.id, {
+    paymentLink: link,
+    status: 'approved',
+    emailSentAt: nowIso,
+    emailChannel: sent.channel,
+    emailSubject: sent.subject,
+  }, fetchImpl);
+
+  return {
+    ok: true,
+    channel: sent.channel,
+    subject: sent.subject,
+    order: Object.assign({}, order, { status: 'approved', paymentLink: link, emailSentAt: nowIso }),
+    patch: patch.ok,
+  };
+}
+
+/** mould order → Telegram alert (with the map link) */
+function formatMouldOrder(o) {
+  return [
+    'NEW MOULD KIT ORDER — EGYGRILLZ',
+    '',
+    `Name:    ${o.name || '—'}`,
+    `Phone:   ${o.phone || '—'}`,
+    `Email:   ${o.email || '—'}`,
+    `Arch:    ${archLabelOf(o)} (${o.archCount} kit${o.archCount > 1 ? 's' : ''})`,
+    `Total:   ${num(o.total)} EGP  (incl. ${num(o.deliveryFee)} EGP delivery)`,
+    `Address: ${o.address || 'location pinned'}`,
+    o.mapLink ? `Map:     ${o.mapLink}` : '',
+    '',
+    `Status:  ${MOULD_STATUS[o.status] || o.status}`,
+    o.id ? `Ref:     ${String(o.id).slice(0, 8).toUpperCase()}` : '',
+  ].filter(Boolean).join('\n');
+}
+
+/** inline buttons for one order */
+function mouldKeyboard(o) {
+  const rows = [];
+  if (o.status === 'pending') {
+    rows.push([{ text: '📧 Approve & send payment', callback_data: `mo:a:${o.id}` }]);
+  }
+  if (o.status === 'approved') {
+    rows.push([{ text: '📧 Resend payment email', callback_data: `mo:r:${o.id}` }]);
+  }
+  if (o.status !== 'delivered') {
+    rows.push([{ text: '🚚 Mark delivered', callback_data: `mo:d:${o.id}` }]);
+  }
+  rows.push([{ text: '↻ Refresh', callback_data: 'mo:list:pending' }]);
+  return { inline_keyboard: rows };
+}
+
+/** A short, human id for an order: ABCD1234 */
+const shortRef = (o) => String(o.id || '').slice(0, 8).toUpperCase();
+
+/** compact list of mould orders */
+function mouldListText(orders, filter) {
+  const title = filter === 'all' ? 'ALL MOULD ORDERS' : ('MOULD ORDERS — ' + (MOULD_STATUS[filter] || filter).toUpperCase());
+  if (!orders.length) return title + '\n' + LINE + '\nNothing here.';
+  const lines = [title, LINE, `${orders.length} order(s)`, ''];
+  orders.slice(0, 12).forEach((o, i) => {
+    const flag = o.status === 'pending' ? '●' : o.status === 'approved' ? '◐' : '○';
+    lines.push(`${padL(i + 1, 2)}. ${flag} ${pad(shortRef(o), 9)} ${pad(o.name || '—', 16)} ${padL(num(o.total), 6)} EGP`);
+    lines.push(`    ${archLabelOf(o)} · ${o.phone || 'no phone'} · ${MOULD_STATUS[o.status] || o.status}`);
+    if (o.mapLink) lines.push(`    map: ${o.mapLink}`);
+  });
+  if (orders.length > 12) lines.push('', `… and ${orders.length - 12} more. Use /moulds all`);
+  lines.push('', '● pending   ◐ paid & emailed   ○ delivered');
+  lines.push('Approve: /pay <ref> <payment-link>   Delivered: /deliver <ref>');
+  return lines.join('\n');
+}
+
+/** inline keyboard for a mould order list */
+function mouldListKeyboard(orders, filter) {
+  const rows = [];
+  orders.slice(0, 6).forEach((o) => {
+    const ref = shortRef(o);
+    if (o.status === 'pending') rows.push([{ text: `📧 Approve ${ref}`, callback_data: `mo:a:${o.id}` }]);
+    else if (o.status === 'approved') rows.push([{ text: `🚚 Delivered ${ref}`, callback_data: `mo:d:${o.id}` }]);
+    else rows.push([{ text: `👁 ${ref}`, callback_data: `mo:v:${o.id}` }]);
+  });
+  rows.push([{ text: '↻ Refresh', callback_data: `mo:list:${filter || 'pending'}` }]);
+  return { inline_keyboard: rows };
+}
+
+/** find one order by full id, short ref, or a name fragment */
+async function findMouldOrder(env, needle, fetchImpl = fetch) {
+  const q = String(needle || '').trim();
+  if (!q) return { ok: false, error: 'missing-id' };
+  const res = await fetchMouldOrders(env, { status: 'all', limit: 200 }, fetchImpl);
+  if (!res.ok) return { ok: false, error: res.error };
+  const up = q.toUpperCase();
+  const low = q.toLowerCase();
+  const exact = res.orders.find(o => o.id === q || shortRef(o) === up || shortRef(o).startsWith(up));
+  if (exact) return { ok: true, order: exact };
+  const byName = res.orders.find(o => (o.name || '').toLowerCase().includes(low));
+  if (byName) return { ok: true, order: byName };
+  return { ok: false, error: 'not-found' };
+}
+
+/** live calculator rates, in a shape the bot can print */
+async function loadPricingSettings(env, fetchImpl = fetch) {
+  const p = await loadPricing(env, fetchImpl);
+  return {
+    designPct: (p && p.designPct) || { '0.5': 0, '1': 0, '2': 10, '3': 15, '4': 25, '5': 40, '6': 60 },
+    materialBase: (p && p.materialBase) || { chrome: 1000, titanium: 2800, silver: 1600 },
+    roundTo: Number(p && p.roundTo) || 50,
+    depositPct: Number(p && p.depositPct) || 50,
+    updatedAt: String((p && p.updatedAt) || ''),
+  };
+}
+
+/** recalculate one invoice line with the live calculator rates */
+function recalcInvoiceLine(line, pricing) {
+  const materialTotal = Number(line.materialTotal) || 0;
+  if (!materialTotal) return null;
+  const level = String(line.level || '');
+  const pct = Number((pricing.designPct || {})[level] || 0);
+  const designCost = level === '0.5' ? 0 : Math.round(materialTotal * pct / 100);
+  return { materialTotal, level, designPct: pct, designCost, price: materialTotal + designCost };
+}
+
+/* ─────────────────────────── telegram plumbing ─────────────────────────── */
+
 async function tgCall(method, payload, env, fetchImpl = fetch) {
   if (!env.TELEGRAM_BOT_TOKEN) return { ok: false, error: 'no-token' };
   const r = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
@@ -1819,8 +2598,156 @@ async function sendReport(text, env, chatId, fetchImpl = fetch) {
   return { ok: allOk };
 }
 
+/** Send a report that carries inline buttons */
+async function sendReportWithButtons(text, keyboard, env, chatId, fetchImpl = fetch) {
+  const target = chatId || env.TELEGRAM_CHAT_ID;
+  if (!target) return { ok: false, error: 'no-chat-id' };
+  const chunks = chunkText(text);
+  let ok = true;
+  for (let i = 0; i < chunks.length; i++) {
+    const last = i === chunks.length - 1;
+    const r = await tgCall('sendMessage', {
+      chat_id: target,
+      text: monospace(chunks[i]),
+      disable_web_page_preview: true,
+      ...(last && keyboard ? { reply_markup: keyboard } : {}),
+    }, env, fetchImpl);
+    if (!r.ok) {
+      const r2 = await tgCall('sendMessage', {
+        chat_id: target,
+        text: chunks[i],
+        disable_web_page_preview: true,
+        ...(last && keyboard ? { reply_markup: keyboard } : {}),
+      }, env, fetchImpl);
+      if (!r2.ok) ok = false;
+    }
+  }
+  return { ok };
+}
+
+/**
+ * Inline buttons: mo:a:<id>  approve (asks for the link)
+ *                  mo:r:<id>  resend the payment email
+ *                  mo:d:<id>  mark delivered
+ *                  mo:v:<id>  show one order
+ *                  mo:list:<status>  refresh the list
+ */
+async function handleMouldCallback(data, env, chatId, callbackId, fetchImpl = fetch) {
+  const answer = (text) => tgCall('answerCallbackQuery', { callback_query_id: callbackId, text }, env, fetchImpl)
+    .catch(() => ({}));
+  const parts = String(data || '').split(':');
+  const action = parts[1] || 'list';
+  const arg = parts.slice(2).join(':');
+
+  if (action === 'list') {
+    const filter = ['pending', 'approved', 'delivered', 'all'].includes(arg) ? arg : 'pending';
+    const res = await fetchMouldOrders(env, { status: filter, limit: 60 }, fetchImpl);
+    await answer(filter + ' orders');
+    if (!res.ok) return { ok: false, error: res.error };
+    await tgCall('sendMessage', {
+      chat_id: chatId,
+      text: mouldListText(res.orders, filter),
+      disable_web_page_preview: true,
+      reply_markup: mouldListKeyboard(res.orders, filter),
+    }, env, fetchImpl);
+    return { ok: true, action: 'list' };
+  }
+
+  const found = await findMouldOrder(env, arg, fetchImpl);
+  if (!found.ok) {
+    await answer('Order not found');
+    return { ok: false, error: 'not-found' };
+  }
+  const o = found.order;
+
+  if (action === 'a') {
+    await answer('Send the payment link');
+    await tgCall('sendMessage', {
+      chat_id: chatId,
+      text: `Send the payment link for ${shortRef(o)} (${o.name} · ${num(o.total)} EGP) like this:
+
+`
+        + `/pay ${shortRef(o)} https://your-payment-link`,
+      disable_web_page_preview: true,
+    }, env, fetchImpl);
+    return { ok: true, action: 'approve-prompt' };
+  }
+
+  if (action === 'r') {
+    if (!o.paymentLink) {
+      await answer('No payment link saved');
+      await tgCall('sendMessage', {
+        chat_id: chatId,
+        text: `There is no payment link on ${shortRef(o)} yet. Use /pay ${shortRef(o)} <link> first.`,
+      }, env, fetchImpl);
+      return { ok: true, action: 'no-link' };
+    }
+    const r = await approveMouldOrder(env, o.id, o.paymentLink, fetchImpl);
+    await answer(r.ok ? 'Email sent' : 'Email failed');
+    await tgCall('sendMessage', {
+      chat_id: chatId,
+      text: r.ok
+        ? `Payment email re-sent to ${o.email} via ${r.channel}.`
+        : `Could not send the email (${r.error}). ${r.hint || ''}`,
+      disable_web_page_preview: true,
+    }, env, fetchImpl);
+    return { ok: r.ok, action: 'resend' };
+  }
+
+  if (action === 'd') {
+    const patch = await saveMouldOrder(env, o.id, {
+      status: 'delivered',
+      statusUpdatedAt: new Date().toISOString(),
+    }, fetchImpl);
+    await answer(patch.ok ? 'Marked delivered' : 'Could not update');
+    if (patch.ok) {
+      await tgCall('editMessageReplyMarkup', {
+        chat_id: chatId,
+        message_id: (parts[3] || undefined),
+        reply_markup: { inline_keyboard: [] },
+      }, env, fetchImpl).catch(() => ({}));
+      await tgCall('sendMessage', {
+        chat_id: chatId,
+        text: `MARKED DELIVERED\n\n${shortRef(o)} · ${o.name}\n${archLabelOf(o)} · ${num(o.total)} EGP`,
+        disable_web_page_preview: true,
+        reply_markup: mouldKeyboard(Object.assign({}, o, { status: 'delivered' })),
+      }, env, fetchImpl);
+    }
+    return { ok: patch.ok, action: 'delivered' };
+  }
+
+  if (action === 'v') {
+    await answer(shortRef(o));
+    await tgCall('sendMessage', {
+      chat_id: chatId,
+      text: formatMouldOrder(o),
+      disable_web_page_preview: false,
+      reply_markup: mouldKeyboard(o),
+    }, env, fetchImpl);
+    return { ok: true, action: 'view' };
+  }
+
+  await answer('Unknown action');
+  return { ok: false, error: 'unknown-action' };
+}
+
 /** Handle one incoming Telegram update */
 async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
+  /* ── inline buttons ── */
+  if (update && update.callback_query) {
+    const cb = update.callback_query;
+    const chatId = cb.message && cb.message.chat && cb.message.chat.id;
+    const allowed = String(env.TELEGRAM_CHAT_ID || '').trim();
+    if (allowed && String(chatId) !== allowed) {
+      await tgCall('answerCallbackQuery', { callback_query_id: cb.id, text: 'This bot is private.' }, env, fetchImpl)
+        .catch(() => ({}));
+      return { ok: true, denied: true };
+    }
+    const res = await handleMouldCallback(cb.data, env, chatId, cb.id, fetchImpl)
+      .catch(e => ({ ok: false, error: String(e) }));
+    return { ok: true, callback: cb.data, ...res };
+  }
+
   const msg = update && (update.message || update.edited_message);
   if (!msg || !msg.text) return { ok: true, skipped: true };
   const chatId = msg.chat && msg.chat.id;
@@ -1849,6 +2776,12 @@ async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
     return { ok: r.ok, command: text.split(/\s+/)[0], pdf: true };
   }
 
+  // …or text that carries inline buttons
+  if (out && typeof out === 'object' && typeof out.text === 'string') {
+    const r = await sendReportWithButtons(out.text, out.keyboard, env, chatId, fetchImpl);
+    return { ok: r.ok, command: text.split(/\s+/)[0], buttons: !!out.keyboard };
+  }
+
   await sendReport(String(out), env, chatId, fetchImpl);
   return { ok: true, command: text.split(/\s+/)[0] };
 }
@@ -1863,7 +2796,7 @@ async function pollTelegram(env, fetchImpl = fetch) {
     if (wh && wh.ok && wh.result && wh.result.url) return { ok: true, skipped: 'webhook-active' };
   } catch (e) { /* continue with polling */ }
   try {
-    const r = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUpdates?timeout=0&limit=50&allowed_updates=message`, { method: 'GET' });
+    const r = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUpdates?timeout=0&limit=50&allowed_updates=message,callback_query`, { method: 'GET' });
     const d = await r.json().catch(() => ({}));
     if (!d.ok) return { ok: false, error: d.description };
     const updates = d.result || [];
@@ -1941,6 +2874,29 @@ function cors(origin) {
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
+}
+
+/**
+ * Is this Origin allowed to call the studio endpoints?
+ * Studio domains, GitHub previews, *.pages.dev and localhost.
+ */
+function originAllowed(origin, env = {}) {
+  if (!origin) return true;                       // curl / Telegram / server-side
+  const configured = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  const BUILT_IN = [
+    'https://egygrillz.com', 'https://www.egygrillz.com',
+    'https://egygrillz.pages.dev', 'https://egygrillz-studio.web.app',
+    'https://egygrillz-studio.firebaseapp.com',
+  ];
+  const allowed = configured.length ? configured.concat(BUILT_IN) : BUILT_IN;
+  return allowed.includes(origin)
+    || /\.egygrillz\.com$/.test(origin)
+    || /\.pages\.dev$/.test(origin)
+    || /\.workers\.dev$/.test(origin)
+    || /\.web\.app$/.test(origin)
+    || /\.github\.io$/.test(origin)
+    || origin.startsWith('http://localhost')
+    || origin.startsWith('http://127.0.0.1');
 }
 
 /** strip control chars, collapse newlines, hard-truncate */
@@ -2513,6 +3469,7 @@ export default {
           whatsapp_staff: !!(env.WA_TOKEN && env.WA_PHONE_ID && env.WA_TO),
           whatsapp_client: !!(env.WA_TOKEN && env.WA_PHONE_ID && env.WA_BOOKING_TEMPLATE),
           email_resend: !!env.RESEND_KEY,
+          email_gmail: !!(env.GMAIL_CLIENT_ID && env.GMAIL_CLIENT_SECRET && env.GMAIL_REFRESH_TOKEN),
           emailjs: !!env.EMAILJS_PRIVATE_KEY,
           turnstile: !!env.TURNSTILE_SECRET,
           firebase: !!env.FIREBASE_API_KEY,
@@ -2523,6 +3480,8 @@ export default {
           telegram_digest: '/api/remind',
           telegram_bot: 'POST /api/telegram',
           pdf: 'POST /api/pdf',
+          moulds_approve: 'POST /api/moulds/approve',
+          moulds_status: 'POST /api/moulds/status',
           notify: 'POST /api/notify',
         },
       }, 200, { origin });
@@ -2537,7 +3496,7 @@ export default {
       if (req.method !== 'POST') return json({ ok: true, hint: 'POST here from Telegram' }, 200, { origin });
       let update;
       try { update = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
-      const r = await handleTelegramUpdate(update, env).catch(e => ({ ok: false, error: String(e) }));
+      const r = await handleTelegramUpdate(update, env, env.fetchImpl || fetch).catch(e => ({ ok: false, error: String(e) }));
       return json({ ok: true, ...r }, 200, { origin });
     }
 
@@ -2555,7 +3514,7 @@ export default {
         body: JSON.stringify({
           url: hook,
           secret_token: env.TELEGRAM_WEBHOOK_SECRET || undefined,
-          allowed_updates: ['message', 'edited_message'],
+          allowed_updates: ['message', 'edited_message', 'callback_query'],
         }),
       });
       const d = await r.json().catch(() => ({}));
@@ -2619,6 +3578,52 @@ export default {
       return json(r, r.ok ? 200 : 502, { origin });
     }
 
+    /* ── mould kit: approve + send the payment email ──
+     * Called by /editx (Moulds panel) and by the Telegram bot.
+     * The Gmail credentials never leave the Worker.
+     */
+    if (url.pathname === '/api/moulds/approve') {
+      if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
+      if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
+      const key = env.MOULDS_KEY || '';
+      const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
+      if (key && given !== key) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+
+      let body;
+      try { body = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
+      const id = clean(body.id, 120);
+      const paymentLink = clean(body.paymentLink, 500);
+      if (!id) return json({ ok: false, error: 'missing-id' }, 422, { origin });
+
+      const r = await approveMouldOrder(env, id, paymentLink, env.fetchImpl || fetch)
+        .catch(e => ({ ok: false, error: String(e) }));
+      if (!r.ok) {
+        const status = r.error === 'not-found' ? 404
+          : (r.error === 'no-email' || r.error === 'no-payment-link') ? 422 : 502;
+        return json(r, status, { origin });
+      }
+      return json({ ok: true, channel: r.channel, subject: r.subject, order: r.order }, 200, { origin });
+    }
+
+    /* ── mould kit: mark delivered / back to pending ── */
+    if (url.pathname === '/api/moulds/status') {
+      if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
+      if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
+      const key = env.MOULDS_KEY || '';
+      const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
+      if (key && given !== key) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+
+      let body;
+      try { body = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
+      const id = clean(body.id, 120);
+      const status = clean(body.status, 20).toLowerCase();
+      if (!id || !['pending', 'approved', 'delivered'].includes(status)) {
+        return json({ ok: false, error: 'bad-request' }, 422, { origin });
+      }
+      const patch = await saveMouldOrder(env, id, { status, statusUpdatedAt: new Date().toISOString() }, env.fetchImpl || fetch);
+      return json({ ok: patch.ok, status, error: patch.ok ? undefined : patch.error }, patch.ok ? 200 : 502, { origin });
+    }
+
     if (url.pathname !== '/api/notify' || req.method !== 'POST') {
       return json({ ok: false, error: 'not-found' }, 404, { origin });
     }
@@ -2627,24 +3632,7 @@ export default {
     // Accept the studio's own domains, GitHub previews and *.pages.dev.
     // A visitor's booking must never be dropped because the domain list
     // was not updated after a move.
-    const configured = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-    const BUILT_IN = [
-      'https://egygrillz.com', 'https://www.egygrillz.com',
-      'https://egygrillz.pages.dev', 'https://egygrillz-studio.web.app',
-      'https://egygrillz-studio.firebaseapp.com',
-    ];
-    const allowed = configured.length ? configured.concat(BUILT_IN) : BUILT_IN;
-    const sameSite = origin && (
-      allowed.includes(origin)
-      || /\.egygrillz\.com$/.test(origin)
-      || /\.pages\.dev$/.test(origin)
-      || /\.workers\.dev$/.test(origin)
-      || /\.web\.app$/.test(origin)
-      || /\.github\.io$/.test(origin)
-      || origin.startsWith('http://localhost')
-      || origin.startsWith('http://127.0.0.1')
-    );
-    if (origin && !sameSite) {
+    if (!originAllowed(origin, env)) {
       return json({ ok: false, error: 'bad-origin' }, 403, { origin });
     }
 
@@ -2655,6 +3643,55 @@ export default {
     const ip = req.headers.get('CF-Connecting-IP') || '';
     const limit = parseInt(env.RATE_LIMIT_PER_10MIN || '10', 10);
     if (rateLimited(ip, limit)) return json({ ok: false, error: 'rate-limited' }, 429, { origin });
+
+    /* ── mould kit order → instant Telegram alert with buttons ──
+     * The order itself is already saved in Firestore by the page, so this
+     * call is only the notification. It must never block the client. */
+    if (body.type === 'mould') {
+      const src = body.data || {};
+      if (src.website) return json({ ok: true, notified: true, channels: [] }, 200, { origin }); // honeypot
+      const f = env.fetchImpl || fetch;
+      const order = {
+        id: clean(src.ref, 60),
+        name: clean(src.name, 80),
+        phone: cleanPhone(src.phone),
+        email: clean(src.email, 120),
+        arches: clean(src.arches, 20).toLowerCase().includes('both') ? 'both'
+          : clean(src.arches, 20).toLowerCase().includes('lower') ? 'lower' : 'upper',
+        archCount: Math.max(1, Math.min(2, Number(src.archCount) || 1)),
+        total: Math.max(0, Number(src.total) || 0),
+        deliveryFee: Math.max(0, Number(src.deliveryFee) || 0),
+        address: clean(src.address, 300),
+        mapLink: clean(src.mapLink, 300),
+        status: 'pending',
+        paymentLink: '',
+      };
+      if (!order.name || !order.phone) {
+        return json({ ok: false, error: 'missing-fields' }, 422, { origin });
+      }
+      const text = formatMouldOrder(order);
+      const tg = env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID
+        ? await tgCall('sendMessage', {
+            chat_id: env.TELEGRAM_CHAT_ID,
+            text,
+            disable_web_page_preview: false,
+            reply_markup: mouldKeyboard(order),
+          }, env, f).catch(e => ({ ok: false, error: String(e) }))
+        : { ok: false, skipped: true };
+      const ntfy = await sendNtfy(text, 'New mould kit order', env, f)
+        .catch(e => ({ channel: 'ntfy', ok: false, error: String(e) }));
+      const staffMail = await sendEmail('New mould kit order — EGYGRILLZ', text, env.ALERT_EMAIL, env, f)
+        .catch(e => ({ channel: 'email', ok: false, error: String(e) }));
+      return json({
+        ok: true,
+        notified: !!(tg.ok || ntfy.ok || staffMail.ok),
+        channels: [
+          { c: 'telegram', ok: !!tg.ok },
+          { c: 'ntfy', ok: !!ntfy.ok },
+          { c: 'email-staff', ok: !!staffMail.ok },
+        ],
+      }, 200, { origin });
+    }
 
     const ts = await verifyTurnstile(body.turnstile, env.TURNSTILE_SECRET, ip, env.fetchImpl || fetch);
     if (!ts.ok) return json({ ok: false, error: 'turnstile-failed', detail: ts.reason }, 403, { origin });

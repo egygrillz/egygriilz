@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Get Your Moulds — At-Home Impression Kit – EGYGRILLZ</title>
-  <meta name="description" content="Order an at-home dental impression kit from EGYGRILLZ. Take your own teeth moulds at home and we courier the kit straight to your door — 450 EGP per arch.">
+  <meta name="description" content="Order an at-home dental impression kit from EGYGRILLZ. Pick your upper arch, lower arch or both on our teeth chart and we courier the kit straight to your door — 450 EGP per arch.">
   <link rel="canonical" href="https://egygrillz.com/moulds">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -18,21 +18,22 @@
   <script data-cfasync="false" src="/assets/egygz-notify.js"></script>
 
   <style>
-    :root { --bg:#FAFAF9; --text:#1a1a1a; --muted:#888; --border:rgba(0,0,0,0.08); --gold:#c8a96e; --green:#3f7a58; }
+    /* ── MONOCHROME ONLY: black, white, grey ── */
+    :root { --bg:#FBFBFA; --paper:#fff; --text:#111; --text2:#555; --muted:#8c8c8c; --line:rgba(17,17,17,0.12); --line-2:rgba(17,17,17,0.07); --ink:#111; }
     *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior:smooth; }
-    body { font-family:'Arimo',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
+    body { font-family:'Arimo',sans-serif; background:var(--bg); color:var(--text); line-height:1.65; -webkit-font-smoothing:antialiased; }
     body.menu-open { overflow:hidden; }
     a { text-decoration:none; color:inherit; }
-    ::selection { background:transparent; }
+    ::selection { background:#111; color:#fff; }
 
     /* HEADER */
-    header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--bg); border-bottom:1px solid var(--border); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform .4s cubic-bezier(.4,0,.2,1); }
+    header { position:fixed; top:0; left:0; right:0; height:60px; background:var(--bg); border-bottom:1px solid var(--line-2); z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 5%; transition:transform .4s cubic-bezier(.4,0,.2,1); }
     header.hidden { transform:translateY(-100%); }
     .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:2px; }
     .main-nav { display:flex; gap:20px; }
     .main-nav a { font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:color .3s; }
-    .main-nav a:hover { color:#666; }
+    .main-nav a:hover { color:#777; }
     .nav-active { font-weight:900; border-bottom:1px solid var(--text); }
     .menu-toggle { display:none; flex-direction:column; gap:6px; background:none; border:none; cursor:pointer; }
     .menu-toggle span { width:25px; height:1.5px; background:var(--text); display:block; }
@@ -40,105 +41,121 @@
       .menu-toggle { display:flex; }
       .main-nav { position:fixed; top:60px; right:-100%; width:100%; background:var(--bg); flex-direction:column; padding:10px 5%; transition:.4s cubic-bezier(.4,0,.2,1); box-shadow:0 5px 10px rgba(0,0,0,.05); z-index:1100; }
       .main-nav.active { right:0; }
-      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,.06); width:100%; }
+      .main-nav a { font-size:12px; padding:12px 0; border-bottom:1px solid var(--line-2); width:100%; }
     }
 
     /* PAGE */
-    .container { max-width:820px; margin:0 auto; padding:104px 5% 110px; }
-    .eyebrow { font-size:9px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:12px; }
-    h1 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(30px,7vw,52px); letter-spacing:2px; text-transform:uppercase; line-height:1.1; }
-    .lede { font-size:14px; color:#555; max-width:600px; margin-top:16px; }
+    .container { max-width:880px; margin:0 auto; padding:110px 5% 120px; }
+    .eyebrow { font-size:9px; letter-spacing:4.5px; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+    h1 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(32px,7vw,54px); letter-spacing:2px; text-transform:uppercase; line-height:1.05; }
+    .lede { font-size:14px; color:var(--text2); max-width:620px; margin-top:18px; }
 
-    /* EXPLANATION BANNER */
-    .banner { border:1px solid var(--border); border-radius:4px; background:#fff; padding:30px 28px; }
-    .banner .rule { width:32px; height:1px; background:#000; margin:18px 0 22px; }
-    .compare { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:6px; }
+    /* INTRO / DIFFERENCE */
+    .intro { padding-bottom:8px; }
+    .hairline { height:1px; background:var(--line); margin:34px 0 30px; }
+    .compare { display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line); }
     @media(max-width:680px) { .compare { grid-template-columns:1fr; } }
-    .cmp { border:1px solid var(--border); border-radius:4px; padding:18px 18px 20px; background:var(--bg); }
-    .cmp.now { border-color:#1a1a1a; background:#fff; }
-    .cmp .tag { font-size:8px; letter-spacing:3px; text-transform:uppercase; color:#999; }
-    .cmp.now .tag { color:var(--gold); }
-    .cmp h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:19px; letter-spacing:1px; margin:4px 0 8px; }
-    .cmp p { font-size:12.5px; color:#555; }
-    .cmp ul { list-style:none; margin-top:10px; }
-    .cmp li { font-size:11.5px; color:#555; padding-left:16px; position:relative; margin-top:4px; }
-    .cmp li::before { content:'—'; position:absolute; left:0; color:#bbb; }
-    .cmp a { display:inline-block; margin-top:12px; font-size:10px; letter-spacing:2px; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px; }
+    .cmp { padding:24px 24px 26px; }
+    .cmp + .cmp { border-left:1px solid var(--line); }
+    @media(max-width:680px) { .cmp + .cmp { border-left:none; border-top:1px solid var(--line); } }
+    .cmp .tag { font-size:8px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); }
+    .cmp h3 { font-family:'Playfair Display',serif; font-weight:400; font-size:20px; letter-spacing:1px; margin:6px 0 8px; }
+    .cmp p { font-size:12.5px; color:var(--text2); }
+    .cmp ul { list-style:none; margin-top:12px; }
+    .cmp li { font-size:11.5px; color:var(--text2); padding-left:16px; position:relative; margin-top:5px; }
+    .cmp li::before { content:''; position:absolute; left:0; top:9px; width:6px; height:1px; background:#111; }
+    .cmp a { display:inline-block; margin-top:14px; font-size:10px; letter-spacing:2px; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px; }
 
     /* STEPS */
-    .step-block { margin-top:56px; }
-    .step-head { display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
-    .step-num { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); }
-    .step-block h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:22px; letter-spacing:1px; }
-    .step-sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
+    .step-block { margin-top:64px; }
+    .step-head { display:flex; align-items:baseline; gap:14px; margin-bottom:6px; }
+    .step-num { font-size:9px; letter-spacing:3.5px; text-transform:uppercase; color:var(--muted); }
+    .step-block h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:23px; letter-spacing:1px; }
+    .step-sub { font-size:12px; color:var(--muted); margin-bottom:20px; max-width:560px; }
 
-    /* ARCH CARDS */
-    .arch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-    @media(max-width:680px) { .arch-grid { grid-template-columns:1fr; } }
-    .arch-card { position:relative; text-align:left; background:#fff; border:1px solid var(--border); border-radius:4px; padding:22px 20px; cursor:pointer; font-family:inherit; color:inherit; transition:border-color .2s, box-shadow .2s, transform .2s; }
-    .arch-card:hover { border-color:#bbb; transform:translateY(-2px); }
-    .arch-card.on { border-color:#1a1a1a; box-shadow:inset 0 0 0 1px #1a1a1a; }
-    .arch-ico { display:block; color:#cfcfcf; margin-bottom:10px; transition:color .2s; }
-    .arch-svg { width:64px; height:auto; display:block; }
-    .arch-card.on .arch-ico { color:var(--gold); }
-    .arch-name { display:block; font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
-    .arch-note { display:block; font-size:11px; color:var(--muted); margin-top:2px; }
-    .arch-price { display:block; font-family:'Playfair Display',serif; font-size:21px; margin-top:14px; }
-    .arch-check { float:right; font-size:11px; color:var(--gold); opacity:0; transition:opacity .2s; }
-    .arch-card.on .arch-check { opacity:1; }
+    /* ── TEETH CHART ── */
+    .chart-card { background:var(--paper); border:1px solid var(--line); padding:26px 22px 18px; }
+    @media(max-width:620px) { .chart-card { padding:18px 10px 12px; } }
+    .teeth-chart { display:block; width:100%; height:auto; color:#111; overflow:visible; }
+    .tooth { fill:transparent; stroke:#a9a9a9; stroke-width:1.45; stroke-linejoin:round; stroke-linecap:round; opacity:.9; transition:fill .18s ease, stroke .18s ease, fill-opacity .18s ease; }
+    .arch-row { cursor:pointer; outline:none; }
+    .arch-row:hover .tooth { fill:#111; fill-opacity:.09; stroke:#111; }
+    .arch-row:focus-visible .tooth { stroke:#111; stroke-width:2; }
+    .arch-row.on .tooth { fill:#111; fill-opacity:1; stroke:#111; }
+    .arch-row.on:hover .tooth { fill-opacity:.84; }
+    .tooth-label { font-family:'Arimo',sans-serif; font-size:7.5px; fill:#111; opacity:.3; text-anchor:middle; pointer-events:none; transition:fill .18s, opacity .18s; }
+    .arch-row.on .tooth-label { fill:#fff; opacity:.85; }
+    .arch-label { font-family:'Arimo',sans-serif; font-size:11px; letter-spacing:.3em; text-transform:uppercase; fill:#111; opacity:.32; transition:opacity .18s; }
+    .arch-hit { cursor:pointer; }
+    .arch-hit.on { opacity:1; }
+    .arch-hit:hover { opacity:.7; }
+    .gum-line { fill:none; stroke:#111; stroke-width:1; opacity:.07; }
+    .midline { stroke:#111; stroke-width:1; stroke-dasharray:2 6; opacity:.12; }
+
+    /* pills + select both */
+    .arch-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; align-items:center; }
+    .pill { display:inline-flex; align-items:center; gap:8px; background:var(--paper); border:1px solid var(--line); color:var(--text); font-family:inherit; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; padding:11px 16px; cursor:pointer; transition:background .18s, color .18s, border-color .18s; }
+    .pill em { font-style:normal; font-size:10px; letter-spacing:.5px; color:var(--muted); }
+    .pill .dot { width:6px; height:6px; border:1px solid #111; border-radius:50%; transition:background .18s; }
+    .pill:hover { border-color:#111; }
+    .pill.on { background:#111; border-color:#111; color:#fff; }
+    .pill.on em { color:rgba(255,255,255,.7); }
+    .pill.on .dot { background:#fff; border-color:#fff; }
+    .pill.both { margin-left:auto; border-style:dashed; }
+    .pill.both.on { border-style:solid; }
+    @media(max-width:620px) { .pill.both { margin-left:0; } }
+    .arch-state { margin-top:14px; font-size:11.5px; color:var(--muted); letter-spacing:.4px; }
+    .arch-state strong { color:#111; font-weight:700; }
 
     /* FIELDS */
-    .field { margin-bottom:16px; }
-    .field label { display:block; font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:#999; margin-bottom:6px; }
-    .field input, .field textarea { width:100%; font-family:inherit; font-size:13px; color:var(--text); background:#fff; border:1px solid var(--border); border-radius:3px; padding:12px 14px; outline:none; transition:border-color .2s; }
-    .field input:focus, .field textarea:focus { border-color:#1a1a1a; }
-    .field textarea { resize:vertical; min-height:76px; }
-    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    @media(max-width:600px) { .field-row { grid-template-columns:1fr; } }
-    .hint { font-size:11px; color:#aaa; margin-top:6px; }
+    .field { margin-bottom:22px; }
+    .field label { display:block; font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+    .field input, .field textarea { width:100%; font-family:inherit; font-size:13.5px; color:var(--text); background:transparent; border:none; border-bottom:1px solid var(--line); padding:10px 2px; outline:none; transition:border-color .2s; border-radius:0; }
+    .field input:focus, .field textarea:focus { border-bottom-color:#111; }
+    .field textarea { resize:vertical; min-height:64px; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:26px; }
+    @media(max-width:600px) { .field-row { grid-template-columns:1fr; gap:0; } }
+    .hint { font-size:11px; color:#a5a5a5; margin-top:7px; }
 
     /* LOCATION */
-    .geo-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .btn-geo { display:inline-flex; align-items:center; gap:8px; background:#fff; border:1px solid #1a1a1a; color:#1a1a1a; font-family:inherit; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:12px 18px; border-radius:3px; cursor:pointer; transition:background .2s,color .2s; }
-    .btn-geo:hover { background:#1a1a1a; color:#fff; }
-    .btn-geo[disabled] { opacity:.6; cursor:progress; }
+    .geo-row { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+    .btn-geo { display:inline-flex; align-items:center; gap:9px; background:#111; border:1px solid #111; color:#fff; font-family:inherit; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:13px 20px; cursor:pointer; transition:background .2s, color .2s; }
+    .btn-geo:hover { background:#fff; color:#111; }
+    .btn-geo[disabled] { opacity:.55; cursor:progress; }
     .geo-status { font-size:11.5px; color:var(--muted); }
-    .geo-status.ok { color:var(--green); }
-    .geo-status.err { color:#b04a3a; }
-    .geo-map { display:none; margin-top:12px; border:1px solid var(--border); border-radius:3px; overflow:hidden; background:#fff; }
+    .geo-status.ok { color:#111; font-weight:700; }
+    .geo-status.err { color:#111; text-decoration:underline; text-underline-offset:3px; }
+    .geo-map { display:none; margin-top:16px; border:1px solid var(--line); overflow:hidden; background:#fff; filter:grayscale(1) contrast(1.05); }
     .geo-map.show { display:block; }
-    .geo-map iframe { display:block; width:100%; height:180px; border:0; }
+    .geo-map iframe { display:block; width:100%; height:190px; border:0; }
 
     /* SUMMARY */
-    .summary { margin-top:44px; background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
-    .summary-in { padding:22px 24px; }
-    .sum-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; font-size:12.5px; color:#555; padding:6px 0; }
+    .summary { margin-top:58px; border-top:1px solid #111; padding-top:26px; }
+    .sum-row { display:flex; align-items:baseline; justify-content:space-between; gap:16px; font-size:12.5px; color:var(--text2); padding:5px 0; }
     .sum-row .v { font-variant-numeric:tabular-nums; }
-    .sum-row.total { border-top:1px solid var(--border); margin-top:10px; padding-top:14px; font-size:15px; color:var(--text); font-weight:700; letter-spacing:.4px; }
-    .sum-row.total .v { font-family:'Playfair Display',serif; font-size:26px; font-weight:400; letter-spacing:1px; }
-    .sum-note { font-size:11px; color:#aaa; margin-top:10px; }
-    .submit-wrap { margin-top:24px; }
-    .btn-main { width:100%; background:#1a1a1a; color:#fff; border:1px solid #1a1a1a; border-radius:3px; font-family:inherit; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; padding:18px 20px; cursor:pointer; transition:background .2s,letter-spacing .25s; }
-    .btn-main:hover { background:#000; letter-spacing:3px; }
-    .btn-main[disabled] { opacity:.6; cursor:progress; letter-spacing:2.5px; }
-    .form-error { display:none; margin-top:12px; font-size:12px; color:#b04a3a; }
+    .sum-row.total { border-top:1px solid var(--line); margin-top:14px; padding-top:18px; font-size:12px; letter-spacing:2.5px; text-transform:uppercase; color:#111; }
+    .sum-row.total .v { font-family:'Playfair Display',serif; font-size:34px; font-weight:400; letter-spacing:1px; text-transform:none; }
+    .sum-note { font-size:11px; color:#a5a5a5; margin-top:14px; max-width:520px; }
+    .submit-wrap { margin-top:26px; }
+    .btn-main { width:100%; background:#111; color:#fff; border:1px solid #111; font-family:inherit; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; padding:19px 20px; cursor:pointer; transition:background .2s, letter-spacing .25s; }
+    .btn-main:hover { background:#000; letter-spacing:3.2px; }
+    .btn-main[disabled] { opacity:.55; cursor:progress; letter-spacing:2.5px; }
+    .form-error { display:none; margin-top:14px; font-size:12px; color:#111; border-left:2px solid #111; padding-left:10px; }
     .form-error.show { display:block; }
 
     /* SUCCESS */
-    .success { display:none; text-align:center; background:#fff; border:1px solid var(--border); border-radius:4px; padding:56px 28px; margin-top:40px; }
+    .success { display:none; text-align:center; padding:70px 20px 30px; }
     .success.show { display:block; }
-    .success .tick { width:56px; height:56px; margin:0 auto 22px; border:1px solid #1a1a1a; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
-    .success h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,5vw,32px); letter-spacing:1px; line-height:1.25; }
-    .success p { font-size:13px; color:#666; margin-top:14px; }
-    .success .ref { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#aaa; margin-top:18px; }
-    .success .again { display:inline-block; margin-top:26px; font-size:10px; letter-spacing:2px; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px; }
+    .success .tick { width:58px; height:58px; margin:0 auto 26px; border:1px solid #111; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .success h2 { font-family:'Playfair Display',serif; font-weight:400; font-size:clamp(22px,5vw,34px); letter-spacing:1px; line-height:1.25; }
+    .success p { font-size:13px; color:var(--text2); margin-top:16px; }
+    .success .ref { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#a5a5a5; margin-top:20px; }
+    .success .again { display:inline-block; margin-top:30px; font-size:10px; letter-spacing:2px; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px; }
 
-    /* FOOTER */
-    footer { border-top:1px solid var(--border); padding:36px 5%; text-align:center; }
+    footer { border-top:1px solid var(--line-2); padding:36px 5%; text-align:center; }
     footer .footer-icons { display:flex; justify-content:center; gap:18px; margin-bottom:18px; }
-    footer .footer-icons a { font-size:15px; color:#1a1a1a; }
-    footer .legal-text { font-size:10px; letter-spacing:1.5px; color:#aaa; }
-    .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+    footer .footer-icons a { font-size:15px; color:#111; }
+    footer .legal-text { font-size:10px; letter-spacing:1.5px; color:#a5a5a5; }
   </style>
 </head>
 <body>
@@ -161,80 +178,141 @@
 
   <main class="container">
 
-    <!-- ══ WHAT IT IS / HOW IT DIFFERS ══ -->
-    <section class="banner">
+    <!-- WHAT IT IS / HOW IT DIFFERS -->
+    <section class="intro">
       <p class="eyebrow">At-Home Impression Kit</p>
       <h1>Get Your Moulds</h1>
       <p class="lede">
-        An at-home dental impression kit delivered straight to your door, so you can take your own teeth moulds easily — no studio visit needed.
-        We courier everything you need, you take the impressions at home, and we build your grillz from them.
+        A dental impression kit delivered straight to your door, so you can take your own moulds at home — no studio visit needed.
+        Choose your arch below, we courier the kit, and your grillz are built from the impressions you send back.
       </p>
-      <div class="rule"></div>
+      <div class="hairline"></div>
       <div class="compare">
-        <div class="cmp now">
+        <div class="cmp">
           <span class="tag">This page</span>
           <h3>Get Your Moulds</h3>
-          <p>We deliver a DIY impression kit to your address. Ideal if you're outside Cairo, busy, or simply prefer doing it from home.</p>
+          <p>A DIY impression kit sent to your address. Ideal if you are outside Cairo, busy, or simply prefer doing it from home.</p>
           <ul>
             <li>Kit couriered to your door</li>
-            <li>Take the impressions on your own schedule</li>
+            <li>Take the impressions on your own time</li>
             <li>Works anywhere in Egypt</li>
           </ul>
         </div>
         <div class="cmp">
-          <span class="tag">In-person</span>
+          <span class="tag">In person</span>
           <h3>Schedule Now</h3>
-          <p>Book an appointment at our Heliopolis studio and we take your impressions for you, then talk through the design in person.</p>
+          <p>Book an appointment at our Heliopolis studio and our team takes your impressions for you, then designs with you in person.</p>
           <ul>
             <li>Our team takes the impressions</li>
             <li>Design consultation on the spot</li>
-            <li>Best if you're in Cairo</li>
+            <li>Best if you are in Cairo</li>
           </ul>
           <a href="booking">Book an appointment →</a>
         </div>
       </div>
     </section>
 
-    <!-- ══ ORDER FORM ══ -->
     <form id="mouldForm" novalidate>
 
-      <!-- STEP 1 -->
+      <!-- STEP 1 — TEETH CHART -->
       <section class="step-block" id="stepArch">
-        <div class="step-head"><span class="step-num">Step 1</span><h2>Choose your arch</h2></div>
-        <p class="step-sub">One kit per arch. Most clients start with both.</p>
-        <div class="arch-grid" role="radiogroup" aria-label="Which arch">
-          <button type="button" class="arch-card" data-arch="upper" data-arches="1" aria-pressed="false">
-            <span class="arch-check"><i class="fas fa-check"></i></span>
-            <span class="arch-ico"><svg class="arch-svg" viewBox="0 0 72 44" aria-hidden="true"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.3"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></svg></span>
-            <span class="arch-name">Upper Arch</span>
-            <span class="arch-note">Top teeth</span>
-            <span class="arch-price" data-price="1">450 EGP</span>
-          </button>
-          <button type="button" class="arch-card" data-arch="lower" data-arches="1" aria-pressed="false">
-            <span class="arch-check"><i class="fas fa-check"></i></span>
-            <span class="arch-ico"><svg class="arch-svg" viewBox="0 0 72 44" aria-hidden="true"><g transform="translate(0,44) scale(1,-1)"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.3"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></g></svg></span>
-            <span class="arch-name">Lower Arch</span>
-            <span class="arch-note">Bottom teeth</span>
-            <span class="arch-price" data-price="1">450 EGP</span>
-          </button>
-          <button type="button" class="arch-card" data-arch="both" data-arches="2" aria-pressed="false">
-            <span class="arch-check"><i class="fas fa-check"></i></span>
-            <span class="arch-ico"><svg class="arch-svg" viewBox="0 0 72 56" aria-hidden="true"><g transform="translate(8,2) scale(.78)"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.5"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></g><g transform="translate(8,20) scale(.78) translate(0,44) scale(1,-1)"><path d="M6 38C6 20 19 8 36 8s30 12 30 30" fill="none" stroke="currentColor" stroke-width="1.5"/><g fill="currentColor"><rect x="9" y="27" width="6" height="9.5" rx="1.2"/><rect x="17.5" y="19" width="6" height="11.5" rx="1.2"/><rect x="26.5" y="14" width="6" height="12" rx="1.2"/><rect x="35.5" y="13" width="6" height="12.5" rx="1.2"/><rect x="44.5" y="16" width="6" height="11.5" rx="1.2"/><rect x="53" y="24" width="6" height="9.5" rx="1.2"/></g></g></svg></span>
-            <span class="arch-name">Both Arches</span>
-            <span class="arch-note">Top &amp; bottom · best value</span>
-            <span class="arch-price" data-price="2">900 EGP</span>
-          </button>
+        <div class="step-head"><span class="step-num">Step 1</span><h2>Select your arch</h2></div>
+        <p class="step-sub">Tap the upper row, the lower row, or both. Each arch is a separate impression kit.</p>
+
+        <div class="chart-card">
+          <svg class="teeth-chart" id="teeth-chart-root" viewBox="0 0 900 520" fill="none" color="currentColor" role="group" aria-label="Choose your arch">
+  <path class="gum-line" d="M40,139 Q250,119 450,115 Q650,119 860,139"/>
+  <path class="gum-line" d="M40,384 Q250,404 450,408 Q650,404 860,384"/>
+  <line class="midline" x1="450" y1="58" x2="450" y2="462"/>
+  <text class="arch-label arch-hit" data-arch="upper" x="450" y="40" text-anchor="middle">Upper</text>
+  <g class="arch-row" id="upper-arch" data-arch="upper" role="button" tabindex="0" aria-pressed="false" aria-label="Select the upper arch, 450 EGP">
+    <path class="tooth" id="tooth-18" data-tooth="18" d="M 82.904 202.43 C 85.223 197.361 85.223 191.443 84.063 184.995 C 82.904 178.835 79.426 172.675 74.788 168.057 C 70.141 164.973 65.503 163.438 62.025 163.438 C 58.547 163.438 53.899 164.973 49.262 168.057 C 44.624 172.675 41.136 178.835 39.977 184.995 C 38.818 191.443 38.818 197.361 41.136 202.43 C 42.932 203.808 46.113 204.832 49.967 205.5 C 53.787 206.163 57.94 203.132 62.385 203.096 C 66.598 203.062 71.107 206.057 74.662 205.396 C 78.251 204.727 81.202 203.738 82.904 202.43"/>
+    <path class="tooth" id="tooth-17" data-tooth="17" d="M 144.186 205.079 C 146.57 198.873 146.57 191.56 145.378 183.726 C 144.186 176.148 140.611 167.735 135.843 162.679 C 131.066 159.315 125.106 157.63 120.339 157.63 C 117.955 157.63 113.178 157.63 111.986 157.63 C 107.218 157.63 102.441 159.315 97.673 162.679 C 92.906 167.735 89.33 176.148 88.128 183.726 C 86.937 191.56 86.937 198.873 89.33 205.079 C 91.973 207 96.634 208.388 102.194 209.244 C 106.897 209.968 112.001 206.339 117.313 206.301 C 122.011 206.267 126.924 209.907 131.101 209.277 C 136.758 208.425 141.509 207.026 144.186 205.079"/>
+    <path class="tooth" id="tooth-16" data-tooth="16" d="M 209.691 205.388 C 212.082 199.171 212.082 191.732 210.886 182.902 C 209.691 174.319 206.095 165.737 200.117 160.59 C 195.335 157.161 189.348 155.443 184.566 155.443 C 182.175 155.443 177.383 155.443 174.992 155.443 C 170.21 155.443 164.232 157.161 159.44 160.59 C 153.463 165.737 149.876 174.319 148.681 182.902 C 147.475 191.732 147.475 199.171 149.876 205.388 C 152.333 207.544 156.844 209.146 162.353 210.194 C 167.443 211.163 174.623 206.694 180.587 206.716 C 187.143 206.742 192.485 211.16 197.984 210.042 C 203.142 208.993 207.348 207.442 209.691 205.388"/>
+    <path class="tooth" id="tooth-15" data-tooth="15" d="M 256.782 204.406 C 259.085 198.664 259.085 192.601 257.929 184.682 C 256.782 176.535 254.47 167.487 249.864 160.249 C 245.258 154.821 240.643 153.011 236.038 153.011 C 231.423 153.011 226.818 154.821 222.213 160.249 C 217.598 167.487 215.294 176.535 214.139 184.682 C 212.991 192.601 212.991 198.664 215.294 204.406 C 216.799 206.122 220.319 205.812 223.359 206.781 C 226.274 207.711 228.666 209.95 232.225 210.194 C 234.235 210.331 236.289 210.358 238.316 210.277 C 241.689 210.141 243.587 207.185 246.508 206.442 C 250.38 205.458 254.983 206.457 256.782 204.406"/>
+    <path class="tooth" id="tooth-14" data-tooth="14" d="M 303.983 204.425 C 306.289 198.702 306.289 191.644 305.131 183.859 C 303.983 174.841 301.667 165.823 297.055 158.609 C 293.592 155.001 288.98 153.198 285.516 153.198 C 284.358 153.198 282.052 153.198 280.904 153.198 C 277.44 153.198 272.819 155.001 269.365 158.609 C 264.743 165.823 262.437 174.841 261.279 183.859 C 260.131 191.644 260.131 198.702 262.437 204.425 C 264.647 206.934 270.457 206.42 275.546 207.328 C 278.529 207.86 280.29 210.339 283.527 210.321 C 286.38 210.305 290.887 207.854 293.541 207.41 C 298.836 206.526 301.703 207.012 303.983 204.425"/>
+    <path class="tooth" id="tooth-13" data-tooth="13" d="M 342.048 206.152 C 343.337 203.576 347.141 205.032 347.283 201.823 C 347.42 198.734 347.103 195.378 346.48 191.804 C 345.22 182.952 342.68 172.599 338.89 162.239 C 335.09 153.603 326.617 153.913 326.617 153.913 C 326.617 153.913 319.9 153.603 316.11 162.239 C 312.31 172.599 309.78 182.952 308.51 191.804 C 307.812 195.838 307.501 199.596 307.792 203.004 C 308.026 205.751 311.759 206.522 312.888 208.777 C 316.235 212.649 321.074 216.224 328.756 216.001 C 335.601 215.802 341.935 206.211 341.935 206.211"/>
+    <path class="tooth" id="tooth-12" data-tooth="12" d="M 384.596 205.384 C 386.693 202.255 386.693 198.416 385.644 193.038 C 384.596 185.894 382.51 177.718 379.365 170.91 C 376.231 165.456 372.048 162.733 367.866 162.733 C 363.683 162.733 359.501 165.456 356.356 170.91 C 353.222 177.718 351.125 185.894 350.088 193.038 C 349.04 198.416 349.04 202.255 351.125 205.384 C 357.405 209.423 378.329 209.423 384.596 205.384"/>
+    <path class="tooth" id="tooth-11" data-tooth="11" d="M 449.499 212.112 C 452.192 207.962 452.192 201.807 450.85 193.601 C 449.499 184.045 446.814 173.023 442.77 161.995 C 438.734 152.811 430.663 149.135 419.898 149.135 C 409.133 149.135 401.061 152.811 397.026 161.995 C 392.981 173.023 390.297 184.045 388.945 193.601 C 387.603 201.807 387.603 207.962 390.297 212.112 C 398.368 218.469 441.428 218.469 449.499 212.112"/>
+    <path class="tooth" id="tooth-21" data-tooth="21" d="M 452.001 212.112 C 449.308 207.962 449.308 201.807 450.65 193.601 C 452.001 184.045 454.686 173.023 458.73 161.995 C 462.766 152.811 470.837 149.135 481.602 149.135 C 492.367 149.135 500.439 152.811 504.474 161.995 C 508.519 173.023 511.203 184.045 512.555 193.601 C 513.897 201.807 513.897 207.962 511.203 212.112 C 503.132 218.469 460.072 218.469 452.001 212.112"/>
+    <path class="tooth" id="tooth-22" data-tooth="22" d="M 516.904 205.384 C 514.807 202.255 514.807 198.416 515.856 193.038 C 516.904 185.894 518.99 177.718 522.135 170.91 C 525.269 165.456 529.452 162.733 533.634 162.733 C 537.817 162.733 541.999 165.456 545.144 170.91 C 548.278 177.718 550.375 185.894 551.412 193.038 C 552.46 198.416 552.46 202.255 550.375 205.384 C 544.095 209.423 523.171 209.423 516.904 205.384"/>
+    <path class="tooth" id="tooth-23" data-tooth="23" d="M 559.452 206.152 C 558.163 203.576 554.359 205.032 554.217 201.823 C 554.08 198.734 554.397 195.378 555.02 191.804 C 556.28 182.952 558.82 172.599 562.61 162.239 C 566.41 153.603 574.883 153.913 574.883 153.913 C 574.883 153.913 581.6 153.603 585.39 162.239 C 589.19 172.599 591.72 182.952 592.99 191.804 C 593.688 195.838 593.999 199.596 593.708 203.004 C 593.474 205.751 589.741 206.522 588.612 208.777 C 585.265 212.649 580.426 216.224 572.744 216.001 C 565.899 215.802 559.565 206.211 559.565 206.211"/>
+    <path class="tooth" id="tooth-24" data-tooth="24" d="M 597.517 204.425 C 595.211 198.702 595.211 191.644 596.369 183.859 C 597.517 174.841 599.833 165.823 604.445 158.609 C 607.908 155.001 612.52 153.198 615.984 153.198 C 617.142 153.198 619.448 153.198 620.596 153.198 C 624.06 153.198 628.681 155.001 632.135 158.609 C 636.757 165.823 639.063 174.841 640.221 183.859 C 641.369 191.644 641.369 198.702 639.063 204.425 C 636.853 206.934 631.043 206.42 625.954 207.328 C 622.971 207.86 621.21 210.339 617.973 210.321 C 615.12 210.305 610.613 207.854 607.959 207.41 C 602.664 206.526 599.797 207.012 597.517 204.425"/>
+    <path class="tooth" id="tooth-25" data-tooth="25" d="M 644.718 204.406 C 642.415 198.664 642.415 192.601 643.571 184.682 C 644.718 176.535 647.03 167.487 651.636 160.249 C 656.242 154.821 660.857 153.011 665.462 153.011 C 670.077 153.011 674.682 154.821 679.287 160.249 C 683.902 167.487 686.206 176.535 687.361 184.682 C 688.509 192.601 688.509 198.664 686.206 204.406 C 684.701 206.122 681.181 205.812 678.141 206.781 C 675.226 207.711 672.834 209.95 669.275 210.194 C 667.265 210.331 665.211 210.358 663.184 210.277 C 659.811 210.141 657.913 207.185 654.992 206.442 C 651.12 205.458 646.517 206.457 644.718 204.406"/>
+    <path class="tooth" id="tooth-26" data-tooth="26" d="M 691.809 205.388 C 689.418 199.171 689.418 191.732 690.614 182.902 C 691.809 174.319 695.405 165.737 701.383 160.59 C 706.165 157.161 712.152 155.443 716.934 155.443 C 719.325 155.443 724.117 155.443 726.508 155.443 C 731.29 155.443 737.268 157.161 742.06 160.59 C 748.037 165.737 751.624 174.319 752.819 182.902 C 754.025 191.732 754.025 199.171 751.624 205.388 C 749.167 207.544 744.656 209.146 739.147 210.194 C 734.057 211.163 726.877 206.694 720.913 206.716 C 714.357 206.742 709.015 211.16 703.516 210.042 C 698.358 208.993 694.152 207.442 691.809 205.388"/>
+    <path class="tooth" id="tooth-27" data-tooth="27" d="M 757.314 205.079 C 754.93 198.873 754.93 191.56 756.122 183.726 C 757.314 176.148 760.889 167.735 765.657 162.679 C 770.434 159.315 776.394 157.63 781.161 157.63 C 783.545 157.63 788.322 157.63 789.514 157.63 C 794.282 157.63 799.059 159.315 803.827 162.679 C 808.594 167.735 812.17 176.148 813.372 183.726 C 814.563 191.56 814.563 198.873 812.17 205.079 C 809.527 207 804.866 208.388 799.306 209.244 C 794.603 209.968 789.499 206.339 784.187 206.301 C 779.489 206.267 774.576 209.907 770.399 209.277 C 764.742 208.425 759.991 207.026 757.314 205.079"/>
+    <path class="tooth" id="tooth-28" data-tooth="28" d="M 818.596 202.43 C 816.277 197.361 816.277 191.443 817.437 184.995 C 818.596 178.835 822.074 172.675 826.712 168.057 C 831.359 164.973 835.997 163.438 839.475 163.438 C 842.953 163.438 847.601 164.973 852.238 168.057 C 856.876 172.675 860.364 178.835 861.523 184.995 C 862.682 191.443 862.682 197.361 860.364 202.43 C 858.568 203.808 855.387 204.832 851.533 205.5 C 847.713 206.163 843.56 203.132 839.115 203.096 C 834.902 203.062 830.393 206.057 826.838 205.396 C 823.249 204.727 820.298 203.738 818.596 202.43"/>
+  </g>
+  <g class="arch-row" id="lower-arch" data-arch="lower" role="button" tabindex="0" aria-pressed="false" aria-label="Select the lower arch, 450 EGP">
+    <path class="tooth" id="tooth-48" data-tooth="48" d="M 82.255 322.948 C 84.587 327.637 84.587 332.391 83.416 337.717 C 82.255 343.464 78.77 349.212 74.115 353.518 C 69.468 356.392 64.813 357.832 60.167 357.832 C 55.512 357.832 50.866 356.392 46.21 353.518 C 41.555 349.212 38.07 343.464 36.908 337.717 C 35.747 332.391 35.747 327.637 38.07 322.948 C 39.052 322.21 39.361 319.497 41.374 318.872 C 46.629 317.241 51.53 320.86 59.478 321.14 C 64.076 321.301 72.172 317.699 75.529 318.166 C 79.95 318.782 81.605 321.743 82.255 322.948"/>
+    <path class="tooth" id="tooth-47" data-tooth="47" d="M 157.11 319.641 C 159.6 324.935 159.6 330.49 158.35 336.583 C 157.11 343.015 153.39 350.161 148.42 354.453 C 143.46 358.026 137.25 359.453 131.04 359.453 C 127.32 359.453 117.39 359.453 114.91 359.453 C 108.7 359.453 102.49 358.026 97.53 354.453 C 92.56 350.161 88.84 343.015 87.6 336.583 C 86.36 330.563 86.36 325.105 88.84 319.903 C 90.488 318.933 91.815 317.345 95.836 316.657 C 102.887 315.449 111.965 319.406 122.14 319.374 C 129.52 319.351 138.128 315.114 143.818 315.502 C 152.756 316.112 158.347 318.87 157.11 319.641"/>
+    <path class="tooth" id="tooth-46" data-tooth="46" d="M 231.394 319.725 C 233.809 324.98 233.809 330.507 232.602 336.599 C 231.394 343.863 227.763 351.126 221.727 355.489 C 216.888 359.12 210.843 360.577 204.807 360.577 C 201.175 360.577 192.715 360.577 190.301 360.577 C 184.255 360.577 178.219 359.12 173.381 355.489 C 167.335 351.126 163.713 343.863 162.506 336.599 C 161.299 330.507 161.299 324.98 163.713 319.725 C 165.717 318.328 166.807 315.555 171.946 314.644 C 177.839 313.6 184.122 318.577 192.321 318.709 C 199.835 318.831 209.258 314.045 215.146 314.528 C 224.262 315.274 231.394 318.344 231.394 319.725"/>
+    <path class="tooth" id="tooth-45" data-tooth="45" d="M 282.064 320.006 C 284.441 325.311 284.441 331.85 283.257 339.053 C 282.064 346.546 278.514 354.876 273.78 359.869 C 269.036 364.038 264.293 365.7 259.559 365.7 C 254.815 365.7 250.081 364.038 245.337 359.869 C 240.603 354.876 237.043 346.546 235.86 339.053 C 234.676 331.85 234.676 325.311 237.043 320.006 C 238.928 318.36 243.299 318.543 247.772 317.214 C 251.703 316.047 255.549 313.257 260.102 313.297 C 265.066 313.34 266.324 315.62 270.314 316.968 C 274.216 318.286 280.889 318.657 282.064 320.006"/>
+    <path class="tooth" id="tooth-44" data-tooth="44" d="M 328.362 319.173 C 330.484 324.439 330.484 330.915 329.423 338.102 C 328.362 346.364 325.179 354.634 320.926 359.589 C 316.682 363.72 312.43 365.377 308.185 365.377 C 303.933 365.377 299.688 363.72 295.436 359.589 C 291.183 354.634 288 346.364 286.939 338.102 C 285.878 330.915 285.878 324.439 288 319.173 C 289.51 317.716 295.292 317.73 298.905 316.254 C 302.484 314.79 303.881 311.83 308.136 311.848 C 312.514 311.867 313.866 314.203 317.424 315.541 C 321.653 317.13 327.754 317.851 328.362 319.173"/>
+    <path class="tooth" id="tooth-43" data-tooth="43" d="M 364.927 312.442 C 365.292 313.168 372.628 316.731 372.892 317.51 C 374.476 322.174 373.15 325.111 372.056 331.364 C 370.78 340.149 368.218 350.479 363.115 359.084 C 359.277 365.971 346.508 365.971 342.68 359.084 C 337.566 350.479 335.014 340.149 333.738 331.364 C 332.452 324.067 329.9 320.492 332.462 315.418 C 335.706 315.164 338.604 312.992 340.622 312.219 C 346.782 309.856 348.117 307.587 353.337 308.171 C 358.142 308.708 362.611 310.307 365.227 312.924"/>
+    <path class="tooth" id="tooth-42" data-tooth="42" d="M 411.702 317.945 C 413.996 322.256 413.996 327.371 412.844 334.181 C 411.702 341.74 409.416 349.992 404.837 355.992 C 401.408 360.489 397.98 363.49 394.543 363.49 C 391.115 363.49 387.678 360.489 384.25 355.992 C 379.67 349.992 377.385 341.74 376.242 334.181 C 375.099 327.371 375.099 322.256 377.385 317.945 C 383.107 314.348 405.988 314.348 411.702 317.945"/>
+    <path class="tooth" id="tooth-41" data-tooth="41" d="M 449.914 317.952 C 452.22 322.348 452.22 327.559 451.067 334.477 C 449.914 342.091 447.599 349.699 444.14 355.788 C 440.681 360.352 437.212 362.637 433.753 362.637 C 430.285 362.637 426.826 360.352 423.358 355.788 C 419.898 349.699 417.592 342.091 416.439 334.477 C 415.286 327.559 415.286 322.348 417.592 317.952 C 420.551 316.064 427.212 316.585 434.024 316.635 C 440.483 316.682 447.104 316.162 449.914 317.952"/>
+    <path class="tooth" id="tooth-31" data-tooth="31" d="M 451.586 317.952 C 449.28 322.348 449.28 327.559 450.433 334.477 C 451.586 342.091 453.901 349.699 457.36 355.788 C 460.819 360.352 464.288 362.637 467.747 362.637 C 471.215 362.637 474.674 360.352 478.142 355.788 C 481.602 349.699 483.908 342.091 485.061 334.477 C 486.214 327.559 486.214 322.348 483.908 317.952 C 480.949 316.064 474.288 316.585 467.476 316.635 C 461.017 316.682 454.396 316.162 451.586 317.952"/>
+    <path class="tooth" id="tooth-32" data-tooth="32" d="M 489.798 317.945 C 487.504 322.256 487.504 327.371 488.656 334.181 C 489.798 341.74 492.084 349.992 496.663 355.992 C 500.092 360.489 503.52 363.49 506.957 363.49 C 510.385 363.49 513.822 360.489 517.25 355.992 C 521.83 349.992 524.115 341.74 525.258 334.181 C 526.401 327.371 526.401 322.256 524.115 317.945 C 518.393 314.348 495.512 314.348 489.798 317.945"/>
+    <path class="tooth" id="tooth-33" data-tooth="33" d="M 536.573 312.442 C 536.208 313.168 528.872 316.731 528.608 317.51 C 527.024 322.174 528.35 325.111 529.444 331.364 C 530.72 340.149 533.282 350.479 538.385 359.084 C 542.223 365.971 554.992 365.971 558.82 359.084 C 563.934 350.479 566.486 340.149 567.762 331.364 C 569.048 324.067 571.6 320.492 569.038 315.418 C 565.794 315.164 562.896 312.992 560.878 312.219 C 554.718 309.856 553.383 307.587 548.163 308.171 C 543.358 308.708 538.889 310.307 536.273 312.924"/>
+    <path class="tooth" id="tooth-34" data-tooth="34" d="M 573.138 319.173 C 571.016 324.439 571.016 330.915 572.077 338.102 C 573.138 346.364 576.321 354.634 580.574 359.589 C 584.818 363.72 589.07 365.377 593.315 365.377 C 597.567 365.377 601.812 363.72 606.064 359.589 C 610.317 354.634 613.5 346.364 614.561 338.102 C 615.622 330.915 615.622 324.439 613.5 319.173 C 611.99 317.716 606.208 317.73 602.595 316.254 C 599.016 314.79 597.619 311.83 593.364 311.848 C 588.986 311.867 587.634 314.203 584.076 315.541 C 579.847 317.13 573.746 317.851 573.138 319.173"/>
+    <path class="tooth" id="tooth-35" data-tooth="35" d="M 619.436 320.006 C 617.059 325.311 617.059 331.85 618.243 339.053 C 619.436 346.546 622.986 354.876 627.72 359.869 C 632.464 364.038 637.207 365.7 641.941 365.7 C 646.685 365.7 651.419 364.038 656.163 359.869 C 660.897 354.876 664.457 346.546 665.64 339.053 C 666.824 331.85 666.824 325.311 664.457 320.006 C 662.572 318.36 658.201 318.543 653.728 317.214 C 649.797 316.047 645.951 313.257 641.398 313.297 C 636.434 313.34 635.176 315.62 631.186 316.968 C 627.284 318.286 620.611 318.657 619.436 320.006"/>
+    <path class="tooth" id="tooth-36" data-tooth="36" d="M 670.106 319.725 C 667.691 324.98 667.691 330.507 668.898 336.599 C 670.106 343.863 673.737 351.126 679.773 355.489 C 684.612 359.12 690.657 360.577 696.693 360.577 C 700.325 360.577 708.785 360.577 711.199 360.577 C 717.245 360.577 723.281 359.12 728.119 355.489 C 734.165 351.126 737.787 343.863 738.994 336.599 C 740.201 330.507 740.201 324.98 737.787 319.725 C 735.783 318.328 734.693 315.555 729.554 314.644 C 723.661 313.6 717.378 318.577 709.179 318.709 C 701.665 318.831 692.242 314.045 686.354 314.528 C 677.238 315.274 670.106 318.344 670.106 319.725"/>
+    <path class="tooth" id="tooth-37" data-tooth="37" d="M 744.39 319.641 C 741.9 324.935 741.9 330.49 743.15 336.583 C 744.39 343.015 748.11 350.161 753.08 354.453 C 758.04 358.026 764.25 359.453 770.46 359.453 C 774.18 359.453 784.11 359.453 786.59 359.453 C 792.8 359.453 799.01 358.026 803.97 354.453 C 808.94 350.161 812.66 343.015 813.9 336.583 C 815.14 330.563 815.14 325.105 812.66 319.903 C 811.012 318.933 809.685 317.345 805.664 316.657 C 798.613 315.449 789.535 319.406 779.36 319.374 C 771.98 319.351 763.372 315.114 757.682 315.502 C 748.744 316.112 743.153 318.87 744.39 319.641"/>
+    <path class="tooth" id="tooth-38" data-tooth="38" d="M 819.245 322.948 C 816.913 327.637 816.913 332.391 818.084 337.717 C 819.245 343.464 822.73 349.212 827.385 353.518 C 832.032 356.392 836.687 357.832 841.333 357.832 C 845.988 357.832 850.634 356.392 855.29 353.518 C 859.945 349.212 863.43 343.464 864.592 337.717 C 865.753 332.391 865.753 327.637 863.43 322.948 C 862.448 322.21 862.139 319.497 860.126 318.872 C 854.871 317.241 849.97 320.86 842.022 321.14 C 837.424 321.301 829.328 317.699 825.971 318.166 C 821.55 318.782 819.895 321.743 819.245 322.948"/>
+  </g>
+  <text class="tooth-label" x="25.871" y="229" text-anchor="middle">18</text>
+  <text class="tooth-label" x="80.171" y="229" text-anchor="middle">17</text>
+  <text class="tooth-label" x="143.271" y="229" text-anchor="middle">16</text>
+  <text class="tooth-label" x="199.571" y="229" text-anchor="middle">15</text>
+  <text class="tooth-label" x="246.671" y="229" text-anchor="middle">14</text>
+  <text class="tooth-label" x="289.771" y="229" text-anchor="middle">13</text>
+  <text class="tooth-label" x="325.971" y="229" text-anchor="middle">12</text>
+  <text class="tooth-label" x="378.171" y="229" text-anchor="middle">11</text>
+  <text class="tooth-label" x="523.329" y="229" text-anchor="middle">21</text>
+  <text class="tooth-label" x="575.529" y="229" text-anchor="middle">22</text>
+  <text class="tooth-label" x="611.729" y="229" text-anchor="middle">23</text>
+  <text class="tooth-label" x="654.829" y="229" text-anchor="middle">24</text>
+  <text class="tooth-label" x="701.929" y="229" text-anchor="middle">25</text>
+  <text class="tooth-label" x="758.229" y="229" text-anchor="middle">26</text>
+  <text class="tooth-label" x="821.329" y="229" text-anchor="middle">27</text>
+  <text class="tooth-label" x="875.629" y="229" text-anchor="middle">28</text>
+  <text class="tooth-label" x="24.071" y="300" text-anchor="middle">48</text>
+  <text class="tooth-label" x="85.871" y="300" text-anchor="middle">47</text>
+  <text class="tooth-label" x="158.871" y="300" text-anchor="middle">46</text>
+  <text class="tooth-label" x="220.671" y="300" text-anchor="middle">45</text>
+  <text class="tooth-label" x="271.271" y="300" text-anchor="middle">44</text>
+  <text class="tooth-label" x="315.771" y="300" text-anchor="middle">43</text>
+  <text class="tooth-label" x="355.171" y="300" text-anchor="middle">42</text>
+  <text class="tooth-label" x="394.671" y="300" text-anchor="middle">41</text>
+  <text class="tooth-label" x="506.829" y="300" text-anchor="middle">31</text>
+  <text class="tooth-label" x="546.329" y="300" text-anchor="middle">32</text>
+  <text class="tooth-label" x="585.729" y="300" text-anchor="middle">33</text>
+  <text class="tooth-label" x="630.229" y="300" text-anchor="middle">34</text>
+  <text class="tooth-label" x="680.829" y="300" text-anchor="middle">35</text>
+  <text class="tooth-label" x="742.629" y="300" text-anchor="middle">36</text>
+  <text class="tooth-label" x="815.629" y="300" text-anchor="middle">37</text>
+  <text class="tooth-label" x="877.429" y="300" text-anchor="middle">38</text>
+<text class="arch-label arch-hit" data-arch="lower" x="450" y="496" text-anchor="middle">Lower</text>
+</svg>
+
+          <div class="arch-pills">
+            <button type="button" class="pill" data-arch="upper" aria-pressed="false"><span class="dot"></span> Upper Arch <em data-price="1">450 EGP</em></button>
+            <button type="button" class="pill" data-arch="lower" aria-pressed="false"><span class="dot"></span> Lower Arch <em data-price="1">450 EGP</em></button>
+            <button type="button" class="pill both" id="selectBoth" data-arch="both" aria-pressed="false">Select Both <em data-price="2">900 EGP</em></button>
+          </div>
+          <p class="arch-state" id="archState">Nothing selected yet.</p>
         </div>
       </section>
 
       <!-- STEP 2 -->
       <section class="step-block" id="stepDetails">
         <div class="step-head"><span class="step-num">Step 2</span><h2>Your details</h2></div>
-        <p class="step-sub">Three quick fields — we use them to send your payment link.</p>
+        <p class="step-sub">Three fields — we use them to send your payment link.</p>
         <div class="field-row">
           <div class="field">
             <label for="mName">Full name *</label>
-            <input id="mName" name="name" type="text" autocomplete="name" placeholder="e.g. Ahmed Mostafa" required>
+            <input id="mName" name="name" type="text" autocomplete="name" placeholder="Ahmed Mostafa" required>
           </div>
           <div class="field">
             <label for="mPhone">Phone / WhatsApp *</label>
@@ -244,14 +322,14 @@
         <div class="field">
           <label for="mEmail">Email *</label>
           <input id="mEmail" name="email" type="email" autocomplete="email" placeholder="name@email.com" required>
-          <p class="hint">We send the payment link here — please double-check it.</p>
+          <p class="hint">The payment link goes here — please double-check it.</p>
         </div>
       </section>
 
       <!-- STEP 3 -->
       <section class="step-block" id="stepLocation">
         <div class="step-head"><span class="step-num">Step 3</span><h2>Where should we deliver?</h2></div>
-        <p class="step-sub">Tap the button to drop your exact pin, or just describe the area — no long address needed.</p>
+        <p class="step-sub">Pin your exact spot, or simply describe the area — no long address needed.</p>
         <div class="geo-row">
           <button type="button" class="btn-geo" id="geoBtn"><i class="fas fa-location-crosshairs"></i> Use My Current Location</button>
           <span class="geo-status" id="geoStatus">Not set yet.</span>
@@ -259,25 +337,23 @@
         <div class="geo-map" id="geoMap">
           <iframe id="geoFrame" title="Your delivery location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
-        <div class="field" style="margin-top:16px">
+        <div class="field" style="margin-top:24px">
           <label for="mAddress">Address or landmark</label>
-          <textarea id="mAddress" name="address" placeholder="e.g. Building 12, Street 9, Maadi — near the metro station, 3rd floor" autocomplete="street-address"></textarea>
-          <p class="hint">A short landmark is enough. You can also paste a Maps link.</p>
+          <textarea id="mAddress" name="address" placeholder="Building 12, Street 9, Maadi — near the metro station, 3rd floor" autocomplete="street-address"></textarea>
+          <p class="hint">A short landmark is enough. A Maps link works too.</p>
         </div>
       </section>
 
       <!-- LIVE PRICE -->
       <div class="summary">
-        <div class="summary-in">
-          <div class="sum-row"><span id="sumArchLabel">Moulds — choose an arch</span><span class="v" id="sumMoulds">0 EGP</span></div>
-          <div class="sum-row"><span>Delivery (flat)</span><span class="v" id="sumDelivery">100 EGP</span></div>
-          <div class="sum-row total"><span>Total</span><span class="v" id="sumTotal">0 EGP</span></div>
-          <p class="sum-note">450 EGP per arch · 100 EGP flat delivery. Payment link by email once we confirm your order.</p>
-          <div class="submit-wrap">
-            <button type="submit" class="btn-main" id="submitBtn">Confirm My Mould Kit</button>
-          </div>
-          <p class="form-error" id="formError"></p>
+        <div class="sum-row"><span id="sumArchLabel">Moulds — no arch selected</span><span class="v" id="sumMoulds">0 EGP</span></div>
+        <div class="sum-row" id="sumDeliveryRow"><span>Delivery (flat)</span><span class="v" id="sumDelivery">100 EGP</span></div>
+        <div class="sum-row total"><span>Total</span><span class="v" id="sumTotal">0 EGP</span></div>
+        <p class="sum-note">450 EGP per arch · 100 EGP flat delivery. We email the payment link once your order is confirmed.</p>
+        <div class="submit-wrap">
+          <button type="submit" class="btn-main" id="submitBtn">Confirm My Mould Kit</button>
         </div>
+        <p class="form-error" id="formError"></p>
       </div>
     </form>
 
@@ -308,6 +384,8 @@
        ═══════════════════════════════════════════════════ */
 
     var PRICES = { perArch: 450, delivery: 100 };
+    var ARCH = { upper: false, lower: false };
+    var GEO = null;
 
     // ── Firebase (same project as booking) ──
     var db = null;
@@ -331,6 +409,7 @@
       document.querySelector('.main-nav').classList.toggle('active');
       document.body.classList.toggle('menu-open');
     }
+
     // ── header hide on scroll ──
     (function () {
       var header = $('site-header'), lastY = window.scrollY;
@@ -347,60 +426,103 @@
         if (window.SiteConfig) {
           await window.SiteConfig.load(null);
           PRICES.perArch = Number(window.SiteConfig.num('mouldPerArch')) || 450;
-          PRICES.delivery = Number(window.SiteConfig.num('mouldDeliveryFee'));
-          if (!Number.isFinite(PRICES.delivery)) PRICES.delivery = 100;
+          var fee = Number(window.SiteConfig.num('mouldDeliveryFee'));
+          PRICES.delivery = Number.isFinite(fee) ? fee : 100;
         }
       } catch (e) { /* keep published rates */ }
       document.querySelectorAll('[data-price]').forEach(function (el) {
         var arches = Number(el.getAttribute('data-price')) || 1;
-        el.textContent = egp(archCount(arches) * PRICES.perArch);
+        el.textContent = egp(arches * PRICES.perArch);
       });
       renderTotal();
     }
-    // a "both" card counts as two arches
-    function archCount(n) { return n === 2 ? 2 : 1; }
 
-    /* ── Step 1: arch ── */
-    var ARCH = null;          // 'upper' | 'lower' | 'both'
-    var cardEls = Array.prototype.slice.call(document.querySelectorAll('.arch-card'));
+    /* ══ TEETH CHART — row selection ══ */
+    var rowEls = Array.prototype.slice.call(document.querySelectorAll('.arch-row'));
+    var hitEls = Array.prototype.slice.call(document.querySelectorAll('.arch-hit'));
+    var pillEls = Array.prototype.slice.call(document.querySelectorAll('.pill[data-arch]'));
 
-    cardEls.forEach(function (card) {
-      card.addEventListener('click', function () {
-        var key = card.getAttribute('data-arch');
-        ARCH = (ARCH === key) ? null : key;   // tap again to clear
-        cardEls.forEach(function (c) {
-          var on = c.getAttribute('data-arch') === ARCH;
-          c.classList.toggle('on', on);
-          c.setAttribute('aria-pressed', on ? 'true' : 'false');
-        });
-        renderTotal();
-      });
-    });
+    function archCount() { return (ARCH.upper ? 1 : 0) + (ARCH.lower ? 1 : 0); }
 
-    function archCount_() { return ARCH === null ? 0 : (ARCH === 'both' ? 2 : 1); }
+    function archKey() {
+      if (ARCH.upper && ARCH.lower) return 'both';
+      if (ARCH.upper) return 'upper';
+      if (ARCH.lower) return 'lower';
+      return null;
+    }
+
     function archLabel() {
-      if (ARCH === 'upper') return 'Upper arch';
-      if (ARCH === 'lower') return 'Lower arch';
-      if (ARCH === 'both') return 'Both arches';
+      var k = archKey();
+      if (k === 'both') return 'Both arches';
+      if (k === 'upper') return 'Upper arch';
+      if (k === 'lower') return 'Lower arch';
       return '';
     }
 
+    function paintArch() {
+      var k = archKey();
+      rowEls.forEach(function (row) {
+        var on = !!ARCH[row.getAttribute('data-arch')];
+        row.classList.toggle('on', on);
+        row.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      hitEls.forEach(function (t) {
+        t.classList.toggle('on', !!ARCH[t.getAttribute('data-arch')]);
+      });
+      pillEls.forEach(function (p) {
+        var key = p.getAttribute('data-arch');
+        var on = key === 'both' ? (ARCH.upper && ARCH.lower) : !!ARCH[key];
+        p.classList.toggle('on', on);
+        p.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      var n = archCount();
+      var state = $('archState');
+      if (state) {
+        state.innerHTML = n === 0
+          ? 'Nothing selected yet — tap the teeth, the pills, or Select Both.'
+          : '<strong>' + archLabel() + '</strong> selected · ' + n + ' kit' + (n > 1 ? 's' : '') + ' · ' + egp(n * PRICES.perArch);
+      }
+      renderTotal();
+    }
+
+    function toggleArch(which) {
+      if (which === 'both') {
+        var all = ARCH.upper && ARCH.lower;
+        ARCH.upper = !all;
+        ARCH.lower = !all;
+      } else if (which === 'upper' || which === 'lower') {
+        ARCH[which] = !ARCH[which];
+      }
+      paintArch();
+    }
+
+    rowEls.concat(hitEls).forEach(function (el) {
+      el.addEventListener('click', function () { toggleArch(el.getAttribute('data-arch')); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleArch(el.getAttribute('data-arch'));
+        }
+      });
+    });
+    pillEls.forEach(function (p) {
+      p.addEventListener('click', function () { toggleArch(p.getAttribute('data-arch')); });
+    });
+
     function renderTotal() {
-      var n = archCount_();
+      var n = archCount();
       var moulds = n * PRICES.perArch;
       var delivery = n > 0 ? PRICES.delivery : 0;
       $('sumArchLabel').textContent = n > 0
         ? 'Moulds — ' + archLabel() + ' (' + n + ' × ' + egp(PRICES.perArch) + ')'
-        : 'Moulds — choose an arch';
+        : 'Moulds — no arch selected';
       $('sumMoulds').textContent = egp(moulds);
       $('sumDelivery').textContent = egp(delivery);
       $('sumTotal').textContent = egp(moulds + delivery);
-      $('sumDelivery').parentElement.style.opacity = n > 0 ? '1' : '.45';
+      $('sumDeliveryRow').style.opacity = n > 0 ? '1' : '.45';
     }
 
     /* ── Step 3: location ── */
-    var GEO = null;
-
     function setGeoStatus(text, cls) {
       var el = $('geoStatus');
       el.textContent = text;
@@ -461,13 +583,13 @@
       var email = $('mEmail').value.trim();
       var address = $('mAddress').value.trim();
 
-      if (!ARCH) return showError('Choose an arch first — upper, lower, or both.');
+      if (!archKey()) return showError('Select an arch first — tap the upper row, the lower row, or both.');
       if (name.length < 2) return showError('Please type your full name.');
       if (!validPhone(phone)) return showError('Please type a phone or WhatsApp number we can reach you on.');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return showError('Please type a valid email — the payment link goes there.');
       if (!address && !GEO) return showError('Add your area or landmark, or tap “Use My Current Location”.');
 
-      var n = archCount_();
+      var n = archCount();
       var moulds = n * PRICES.perArch;
       var delivery = PRICES.delivery;
       var total = moulds + delivery;
@@ -477,7 +599,7 @@
       btn.textContent = 'Sending…';
 
       var order = {
-        arches: ARCH,
+        arches: archKey(),
         archCount: n,
         mouldPrice: moulds,
         perArch: PRICES.perArch,
@@ -489,8 +611,10 @@
         email: email,
         address: address,
         location: GEO,
-        status: 'pending_payment',
+        mapLink: GEO ? ('https://maps.google.com/?q=' + GEO.lat + ',' + GEO.lng) : '',
+        status: 'pending',
         source: 'moulds-page',
+        paymentLink: '',
         createdAt: new Date().toISOString()
       };
 
@@ -508,17 +632,17 @@
         return showError('We could not send your request — check your connection and try again, or message us on Instagram.');
       }
 
-      // ── tell the studio (non-blocking; the order is already saved) ──
+      // ── ping the studio (non-blocking; the order is already saved) ──
       try {
         if (window.EGYGZ && window.EGYGZ.notify) {
-          window.EGYGZ.notify.message({
-            name: name,
-            phone: phone,
-            email: email,
-            ref: savedId,
-            message: 'Mould kit order — ' + archLabel() + ' · ' + egp(total)
-              + ' (' + egp(moulds) + ' moulds + ' + egp(delivery) + ' delivery). '
-              + 'Address: ' + (address || 'location pin shared') + '.'
+          window.EGYGZ.notify.mould({
+            name: name, phone: phone, email: email,
+            arches: archLabel(),
+            archCount: n,
+            total: total,
+            address: address,
+            mapLink: order.mapLink,
+            ref: savedId
           });
         }
       } catch (e) { console.warn('notify skipped', e); }
@@ -532,7 +656,7 @@
     });
 
     /* ── boot ── */
-    renderTotal();
+    paintArch();
     loadPrices();
   </script>
 </body>
