@@ -748,10 +748,17 @@
       }
     }
 
+    /* Public page assignment — a design appears on the page it is assigned to.
+       Items saved before the field existed fall back to their category. */
+    function pageOf(x){
+      if(!x) return '';
+      return Object.prototype.hasOwnProperty.call(x,'page') ? x.page : (x.category || '');
+    }
+
     async function loadCategoryCard(cat, slidesId, nameId, descId){
       try {
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        const mine = (all||[]).filter(x => x.category === cat).sort((a,b)=>(a.order||999)-(b.order||999));
+        const mine = (all||[]).filter(x => pageOf(x) === cat).sort((a,b)=>(a.order||999)-(b.order||999));
         if (!mine.length) return;
         const d = mine[0];
         if (d.name) document.getElementById(nameId).textContent = d.name;
@@ -768,10 +775,10 @@
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
         const want = cat === 'latest' ? 'latest-designs' : cat;
         const results = (all||[])
-          .filter(x => (x.category || '') === want)
+          .filter(x => pageOf(x) === want)
           .sort((a,b) => (a.order||999) - (b.order||999))
           .slice(0, 8)
-          .map(x => ({ folder: x.folder || x.id, item: x, data: { name: x.name, desc: x.description, price: x.price, images: (x.images || []).filter(f=>!isVidName(f)) } }));
+          .map(x => ({ folder: x.folder || x.id, item: x, data: { name: x.name, desc: x.description, images: (x.images || []).filter(f=>!isVidName(f)) } }));
         const frag = document.createDocumentFragment();
         for (const r of results) {
           if (!r || !r.data.images[0]) continue;
@@ -794,7 +801,7 @@
           card.appendChild(imgWrap);
           const body = document.createElement('div');
           body.className = 'lv-prod-body';
-          body.innerHTML = `<div class="lv-prod-label">${catLabel}</div><div class="lv-prod-name">${d.name||folder}</div><div class="lv-prod-price">${d.price||''}</div>`;
+          body.innerHTML = `<div class="lv-prod-label">${catLabel}</div><div class="lv-prod-name">${d.name||folder}</div>`;
           card.appendChild(body);
           if (d.images.length > 1) {
             let c = 0;
@@ -819,7 +826,8 @@
       buildSkeleton(strip, 5);
       try {
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        const latestList = (all||[]).filter(x => (x.category || '') === 'latest-designs')
+        /* "Latest" strip = latest designs plus anything assigned to the Home page */
+        const latestList = (all||[]).filter(x => { const p = pageOf(x); return p === 'latest-designs' || p === 'index'; })
           .sort((a,b) => (a.order||999) - (b.order||999));
         const slice = (latestList.length ? latestList : (all||[])).slice(0, 8);
         const frag = document.createDocumentFragment();
@@ -827,12 +835,12 @@
           if (!r) continue;
           const folder = r.folder || r.id;
           const imgs = (r.images || []).filter(f => !isVidName(f));
-          const d = { name: r.name, price: r.price, images: imgs };
+          const d = { name: r.name, images: imgs };
           const src = imgs[0] ? mediaPath(r, imgs[0]) : '';
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-new-card';
-          card.innerHTML = `<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
+          card.innerHTML = `<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div>`;
           card.addEventListener('click', () => window.location = 'latest-designs?item=' + encodeURIComponent(folder));
           frag.appendChild(card);
         }
@@ -846,21 +854,21 @@
       const scrollEl = document.getElementById('lv-gallery-scroll');
       try {
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        const list = (all || []).filter(x => x.category === 'grillz-gallery')
+        const list = (all || []).filter(x => pageOf(x) === 'grillz-gallery')
           .sort((a,b) => (a.order||999) - (b.order||999));
         if (!list.length) return;
         const frag = document.createDocumentFragment();
         for (const r of list.slice(0, 8)) {
           const folder = r.folder || r.id;
           const imgs = (r.images || []).filter(f => !isVidName(f));
-          const d = { name: r.name, desc: r.description, price: r.price, images: imgs };
+          const d = { name: r.name, desc: r.description, images: imgs };
           const src = r.category === 'grillz-gallery'
             ? 'assets/images/grillz-gallery/' + imgs[0]
             : (imgs[0] ? mediaPath(r, imgs[0]) : '');
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-gal-card';
-          card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
+          card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div></div>`;
           card.addEventListener('click', () => window.location = 'grillz-gallery?item=' + encodeURIComponent(r.id));
           frag.appendChild(card);
         }

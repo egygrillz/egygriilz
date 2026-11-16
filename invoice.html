@@ -1446,7 +1446,7 @@ function renderItemSearchDropdown(matches, q) {
           <div class="item-search-option-name">${escHtml(d.name||d.folder)}</div>
           <div class="item-search-option-meta">${escHtml(d.cat)} · ${escHtml(d.folder)}</div>
         </div>
-        <div class="item-search-option-price">${escHtml(d.price||'Calc')}</div>
+        <div class="item-search-option-price">${d.priceNum ? fmt(d.priceNum) + ' EGP' : 'Calc'}</div>
       </div>
     `;
   }).join('');
@@ -1455,8 +1455,8 @@ function renderItemSearchDropdown(matches, q) {
     opt.addEventListener('click', () => {
       const d = allDesigns[+opt.dataset.idx];
       if (!d) return;
-      if (d.calc && (!d.priceNum || d.priceNum <= 0)) {
-        openCalcWithPreset(d.name || d.folder, d.calc);
+      if (!d.priceNum || d.priceNum <= 0) {
+        openCalcWithPreset(d.name || d.folder, d.calc || null);
       } else {
         addCustomItem({ name: d.name || d.folder, spec: d.calc ? E.lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0, line: d.calc || null });
         showToast('Added: ' + (d.name || d.folder), 'success');
@@ -1465,6 +1465,20 @@ function renderItemSearchDropdown(matches, q) {
       dropdown.classList.remove('open');
     });
   });
+}
+
+/* Prices come from the pricing calculator: a design with a `calc` spec is
+   priced live (so rate changes flow through), legacy designs fall back to
+   their stored price until they are given a spec in the dashboard. */
+function designPrice(item) {
+  if (item && item.calc && E) {
+    try {
+      const sub = E.calculateLine(item.calc).subtotal;
+      if (sub > 0) return { num: sub, priced: true };
+    } catch (e) { console.warn('[invoice] calc failed', e); }
+  }
+  const legacy = parseFloat(String((item && item.price) || '').replace(/[^0-9.]/g, '')) || 0;
+  return { num: legacy, priced: false };
 }
 
 async function preloadCatalogDesigns() {
@@ -1486,7 +1500,9 @@ async function preloadCatalogDesigns() {
         cat: item.category,
       };
       d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
-      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
+      const pr = designPrice(item);
+      d.priceNum = pr.num;
+      d.calcPriced = pr.priced;
       allDesigns.push(d);
     }
   } catch (e) { console.warn('[invoice] catalog preload failed', e); }
@@ -1703,7 +1719,9 @@ async function loadDesigns(cat) {
         cat: item.category || cat,
       };
       d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
-      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
+      const pr = designPrice(item);
+      d.priceNum = pr.num;
+      d.calcPriced = pr.priced;
       designs.push(d);
     }
     designCache[cat] = designs;
@@ -1724,11 +1742,11 @@ function renderDesignGrid(designs) {
     thumb.innerHTML = `
       ${imgSrc ? `<img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy" onerror="this.parentElement.querySelector('.design-thumb-name').textContent+=' (no img)'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
       <div class="design-thumb-name">${escHtml(d.name || d.folder)}</div>
-      <div class="design-thumb-price">${escHtml(d.price || '')}</div>
+      <div class="design-thumb-price">${d.priceNum ? fmt(d.priceNum) + ' EGP' : ''}</div>
     `;
     thumb.addEventListener('click', () => {
-      if (d.calc && (!d.priceNum || d.priceNum <= 0)) {
-        openCalcWithPreset(d.name || d.folder, d.calc);
+      if (!d.priceNum || d.priceNum <= 0) {
+        openCalcWithPreset(d.name || d.folder, d.calc || null);
         return;
       }
       addCustomItem({ name: d.name || d.folder, spec: d.calc ? E.lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0, line: d.calc || null });

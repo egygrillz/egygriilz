@@ -259,7 +259,6 @@
         <div class="modal-name" id="modal-name"></div>
         <div class="modal-rule"></div>
         <div class="modal-desc" id="modal-desc"></div>
-        <a class="modal-price modal-price-link" id="modal-price" href="contact"></a>
         <div class="modal-actions">
           <a href="booking" class="modal-cta-primary">Schedule an Appointment</a>
           <a href="contact" class="modal-cta-secondary">Contact Us</a>
@@ -306,13 +305,8 @@
     function parseInfo(text){ let name='',desc='',price='',images=[]; text.split('\n').forEach(line=>{ line=line.replace(/\r/g,'').trim(); const ci=line.indexOf(':'); if(ci===-1)return; const key=line.slice(0,ci).trim().toLowerCase(); const val=line.slice(ci+1).trim(); if(key==='name'||key==='title')name=val; else if(key==='description'||key==='desc')desc=val; else if(key==='price')price=val; else if(key==='images')images=val.split(',').map(i=>i.trim()).filter(Boolean); }); return{name,desc,price,images}; }
 
     /* ── Modal ── */
-    const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalPrice=document.getElementById('modal-price'),modalCtr=document.getElementById('modal-counter');
+    const modalBg=document.getElementById('modal-bg'),modalSlides=document.getElementById('modal-slides'),modalDots=document.getElementById('modal-dots'),modalName=document.getElementById('modal-name'),modalDesc=document.getElementById('modal-desc'),modalCtr=document.getElementById('modal-counter');
     let mCur=0,mTot=0;
-    function priceTarget(price){
-      var t = String(price||'').toLowerCase();
-      if(/schedule|book|appointment/.test(t)) return 'booking';
-      return 'contact';
-    }
     function thumbOf(src){ return src; }
     function imgFallback(el){
       if (el && el.dataset && el.dataset.full) { el.src = el.dataset.full; el.removeAttribute('data-full'); }
@@ -348,7 +342,7 @@
       });
     }
 
-    function openModal({name,desc,price,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalPrice.textContent=price; modalPrice.style.display=price?'inline-block':'none'; modalPrice.href=priceTarget(price); modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
+    function openModal({name,desc,images}){ if(Array.isArray(images)) warmModalImages(images); modalName.textContent=name; modalDesc.textContent=desc; modalSlides.innerHTML=''; modalDots.innerHTML=''; mCur=0; mTot=images.length; images.forEach((src,i)=>{ const s=document.createElement('div'); s.className='modal-slide'+(i===0?' active':'');
         s.style.backgroundImage='url("'+thumbOf(src)+'")';
         s.innerHTML='<img src="'+src+'" alt="Handcrafted custom grillz by EGYGRILLZ" loading="eager" decoding="async" onload="this.style.opacity=1">';
         modalSlides.appendChild(s); const d=document.createElement('button'); d.className='modal-dot'+(i===0?' active':''); d.addEventListener('click',()=>goTo(i)); modalDots.appendChild(d); }); updateCtr(); modalBg.classList.add('open'); document.body.classList.add('modal-open'); }
@@ -382,12 +376,10 @@
         +'<div class="ed-panel-info">'
         +'<div class="name"></div>'
         +'<div class="desc"></div>'
-        +'<a class="price" href="contact" onclick="event.stopPropagation()"></a>'
         +'</div>'
         +dotsHtml;
       panel.querySelector('.name').textContent=item.name||'';
       panel.querySelector('.desc').textContent=item.desc||'';
-      panel.querySelector('.price').textContent=item.price||'';
 
       /* First image stays visible immediately; others rotate automatically */
       const firstImg=panel.querySelector('img');
@@ -501,12 +493,12 @@
       .then(r=>r.json())
       .then(catalog=>{
         return (catalog||[])
-          .filter(d => d.category === 'grillz-gallery')
+          /* Public page assignment (legacy items fall back to their category) */
+          .filter(d => (Object.prototype.hasOwnProperty.call(d,'page') ? d.page : d.category) === 'grillz-gallery')
           .sort((a,b) => (a.order||999) - (b.order||999))
           .map(d=>({
             name: d.name || d.id,
             desc: d.description || '',
-            price: d.price || '',
             images: (d.images||[]).map(img=>`assets/images/grillz-gallery/${img}`),
             folder: d.id,
           }));
