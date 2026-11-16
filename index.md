@@ -76,7 +76,7 @@ VVS-grade iced-out grillz for those who demand only the finest. Hand-set stones 
 |Tooth Gem Application|30 min  |From 500 EGP  |
 |Pickup               |10 min  |Free          |
 
-Design complexity: Levels 0–6. Final price depends on complexity and current metal market rates.
+Design complexity: Levels 0.5–6. Final price depends on complexity and current metal market rates. Estimate live on <https://egygrillz.com/atelier>.
 
 -----
 

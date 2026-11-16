@@ -577,15 +577,9 @@
     }
 
     // ── LOAD TAKEN SLOTS ──
-    //
-    //  ⚠️ اقتصاد القراءات (2026-11-16)
-    //  قبل كده كنا بنقرا كل المواعيد كلها لكل زائر يفتح الصفحة.
-    //  ده اللي خلّى المشروع يوصل 103 ألف قراءة والقراءة تتوقف بـ 429.
-    //  دلوقتي: بنقرا مجموعة slots الصغيرة (سطرين لكل موعد مشغول)،
-    //  وبنحفظها في المتصفح لمدة قصيرة عشان الزائر ميكررهاش.
-    //
+    // Read lightweight `slots` collection with a short local cache to minimize Firestore reads.
     var SLOT_CACHE_KEY = 'egygz_taken_v1';
-    var SLOT_CACHE_MS  = 60 * 1000;   // دقيقة واحدة — كفاية وآمنة
+    var SLOT_CACHE_MS  = 60 * 1000;
 
     function readSlotCache() {
       try {
@@ -605,7 +599,7 @@
 
     async function loadTakenSlots() {
       if (!db) return;
-      /* من الكاش الأول — صفر قراءات */
+      /* Check short-lived cache first */
       var cached = readSlotCache();
       if (cached) { takenSlots = cached; return; }
 
@@ -623,8 +617,7 @@
         writeSlotCache(map);
       } catch (e) {
         console.warn('Could not load taken slots:', e);
-        /* فشلت القراءة — نستخدم آخر نسخة محفوظة، ولو مفيش، نمنع الحجز
-           بدل ما نسمح بحجز وقت ممكن يكون محجوز. */
+        /* On error, fall back to last cached snapshot rather than treating all slots as open */
         var old = null;
         try { var raw = localStorage.getItem(SLOT_CACHE_KEY + '_last'); old = raw ? JSON.parse(raw).map : null; } catch (_) {}
         takenSlots = old || readSlotCache() || {};
@@ -770,20 +763,9 @@
     }
 
     // ── SUBMIT ──
-    /* ══════════════════════════════════════════════════════════════════
-       قفل الموعد — يمنع حجز نفس الوقت مرتين
-
-       المشكلة اللي كانت موجودة: لو قراءة المواعيد فشلت (حصة خلصت / نت واقع)،
-       الصفحة كانت بتتعامل مع كل المواعيد إنها متاحة، فالعميل يحجز وقت
-       محجوز أصلاً والموعد يتكرر مرتين.
-
-       الحل: قبل الحجز بنحاول نقفل الموعد في مجموعة slots بمستند واحد.
-       لو المستند موجود، يعني في حد أخده → بنرفض الحجز. الحجز بيتم في
-       معاملة واحدة (transaction) عشان لو القفل فشل، الموعد مايتسجلش.
-       والقراءة والكتابة في slots مفتوحة للزوار في القواعد الحالية.
-       ══════════════════════════════════════════════════════════════════ */
+    /* Claim appointment slot atomically before saving appointment record */
     function slotDocId(dateStr, timeStr) {
-      return dateStr + '_' + String(timeStr || '').replace(/[^0-9]/g, '');
+      return dateStr + '_' + String(timeStr || '').replace(/[ :]/g, '');
     }
 
     async function claimSlot(dateStr, timeStr) {
@@ -815,7 +797,7 @@
       var notes = document.getElementById('f-notes').value.trim();
       var phoneId = phone.replace(/\D/g, '');
 
-      /* ── 1) اقفل الموعد قبل أي حاجة ── */
+      /* 1) Claim slot first */
       try {
         await claimSlot(selectedDate, selectedTime);
       } catch (lockErr) {
@@ -823,7 +805,7 @@
         btn.textContent = 'Confirm Appointment';
         if (lockErr && lockErr.code === 'slot-taken') {
           alert('Sorry — that time was just booked by someone else.\nPlease go back and pick another time.');
-          /* نحدّث القائمة عشان يبان اللي اتاخد */
+          /* Refresh slot availability */
           try { takenSlots = {}; localStorage.removeItem(SLOT_CACHE_KEY); await loadTakenSlots(); } catch (e) {}
           if (typeof renderTimeSlots === 'function') renderTimeSlots(selectedDate);
         } else {
@@ -897,7 +879,7 @@
 
       } catch(err) {
         console.error('Booking error:', err);
-        /* الحجز مااتسجلش — لازم نرجع الموعد متاح تاني */
+        /* Roll back slot claim if booking creation fails */
         await releaseSlot(selectedDate, selectedTime);
         alert('Oops! There was a problem. Please try again.');
         btn.disabled = false;
@@ -918,15 +900,15 @@
 <script src="/assets/egygz-notify.js" defer></script>
 <script src="assets/calc-engine.js"></script>
 <script data-cfasync="false">
-/* Site settings: reads settings/site and fills every [data-cfg] element.
-   If the network or Firestore is unavailable the values stay as they are.
-   This does not touch the EmailJS code in any way. */
+/* Site settings: reads settings/site and fills every [data-cfg] element. */
 (function () {
   try {
     if (!window.SiteConfig) return;
     window.SiteConfig.apply(document);
     if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-      window.SiteConfig.load(firebase.firestore()).catch(function () {});
+      window.SiteConfig.load(firebase.firestore()).then(function () {
+        window.SiteConfig.apply(document);
+      }).catch(function () {});
     }
   } catch (e) { /* never break the page */ }
 })();

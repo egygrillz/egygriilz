@@ -89,7 +89,7 @@
     .footer-icons a:hover { color:#000; }
     @media(max-width:768px) { .footer-main { grid-template-columns:1fr; text-align:center; gap:30px; } .footer-col { display:flex; flex-direction:column; align-items:center; } .footer-bottom { flex-direction:column; text-align:center; } .pricing-container { grid-template-columns:1fr; gap:30px; } }
 
-    /* ── Golden Rush: نفس الـ 3 خطوط الزمنية بتاعة الحاسبة ── */
+    /* Timeline percentages match CalcEngine & Studio Settings */
     .timeline-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
     .timeline-card { border:1px solid var(--rule,#e6e3df); background:#fff; padding:22px 20px; }
     .timeline-card.is-active { border-color:#1a1a1a; }
@@ -146,7 +146,7 @@
 
     <section>
       <h2>Materials &amp; Craftsmanship</h2>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:30px;">Our pricing is determined by the complexity of the design (Levels 0–6) and the current market value of the chosen precious metals.</p>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:30px;">Our pricing is determined by the complexity of the design (Levels 0.5–6) and the current market value of the chosen precious metals.</p>
       <div class="pricing-container">
         <div>
           <span class="table-head">Premium Metals</span>
@@ -261,12 +261,12 @@
     });
   </script>
   <script>
-    /* الأرقام بتيجي من نفس محرك الحاسبة — مفيش رقم مكتوب بالإيد */
+    /* Sync timeline percentages dynamically from CalcEngine / Firestore settings */
     (function(){
       var SRC = 'assets/calc-engine.js';
       var s = document.createElement('script');
       s.src = SRC;
-      s.onload = function(){
+      function paint(){
         try {
           var E = window.CalcEngine;
           if(!E || !E.get) return;
@@ -277,15 +277,16 @@
             var v = pct[k];
             if(v !== undefined && v !== null) el.textContent = String(v);
           });
-          /* لو الحاسبة بتقرا من قاعدة البيانات، نحدّث بعد التحميل */
-          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && E.load) {
-            E.load(firebase.firestore()).then(function(){
-              var c2 = E.get(); var p2 = c2.timelinePct || {};
-              document.querySelectorAll('[data-tl-pct]').forEach(function(el){
-                var v = p2[el.getAttribute('data-tl-pct')];
-                if(v !== undefined && v !== null) el.textContent = String(v);
-              });
-            }).catch(function(){});
+        } catch(e){}
+      }
+      s.onload = function(){
+        paint();
+        try {
+          var E = window.CalcEngine;
+          if (E && E.fetchSettingsRest) {
+            E.fetchSettingsRest().then(paint).catch(function(){});
+          } else if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && E && E.load) {
+            E.load(firebase.firestore()).then(paint).catch(function(){});
           }
         } catch(e){ console.warn('timeline numbers', e); }
       };

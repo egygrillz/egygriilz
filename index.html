@@ -60,7 +60,7 @@
         "alternateName": "EgyGrillz",
         "description": "Egypt's first and only custom dental jewelry studio. Handcrafted gold, silver, and VVS diamond grillz tailored to your smile.",
         "url": "https://egygrillz.com",
-        "logo": "https://egygrillz.com//assets/optimized/logo_black-600.png",
+        "logo": "https://egygrillz.com/assets/optimized/logo_black-600.png",
         "image": "https://egygrillz.com/assets/optimized/og-image.jpg",
         "foundingDate": "2021",
         "founder": { "@type": "Person", "name": "Dr. Mohamed Mahdy" },
@@ -127,7 +127,7 @@
 
   <!-- Font Awesome non-blocking -->
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript></noscript>
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -622,14 +622,14 @@
     const CACHE_VER = 'v1';
     const memCache = new Map();
 
-    /* ── مسار الوسائط: كل تصميم في مجلده داخل تصنيفه ── */
+    /* Media path inside each item's category folder */
     function mediaPath(item, file){
       return 'assets/images/' + (item.category || 'sets') + '/' + (item.folder || item.id) + '/' + file;
     }
     function isVidName(n){ return /\.(mp4|mov|webm|ogg)$/i.test(String(n||'')); }
 
-    /* ── النسخة الصغيرة للكروت ── */
-    function thumbOf(u){ return u; }   /* الصور على الريبو مش معاها نسخة صغيرة */
+    /* Return original URL directly (grid uses catalog paths) */
+    function thumbOf(u){ return u; }
 
     async function getJSON(url){
       if (memCache.has('json:'+url)) return memCache.get('json:'+url);
@@ -750,9 +750,8 @@
 
     async function loadCategoryCard(cat, slidesId, nameId, descId){
       try {
-        /* كتالوج واحد لكل التصنيفات */
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        const mine = (all||[]).filter(x => x.category === cat);
+        const mine = (all||[]).filter(x => x.category === cat).sort((a,b)=>(a.order||999)-(b.order||999));
         if (!mine.length) return;
         const d = mine[0];
         if (d.name) document.getElementById(nameId).textContent = d.name;
@@ -767,10 +766,10 @@
       buildSkeleton(strip, 5);
       try {
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        /* اسم التصنيف في الكتالوج ممكن يكون مختلف (latest ← latest-designs) */
         const want = cat === 'latest' ? 'latest-designs' : cat;
         const results = (all||[])
           .filter(x => (x.category || '') === want)
+          .sort((a,b) => (a.order||999) - (b.order||999))
           .slice(0, 8)
           .map(x => ({ folder: x.folder || x.id, item: x, data: { name: x.name, desc: x.description, price: x.price, images: (x.images || []).filter(f=>!isVidName(f)) } }));
         const frag = document.createDocumentFragment();
@@ -787,7 +786,7 @@
             el.src = mediaPath(r.item || { category: cat, folder: folder }, img);
             el.alt = d.name || folder;
             el.draggable = false;
-            el.loading = i === 0 ? 'eager' : 'lazy';   /* الغلاف يظهر فوراً */
+            el.loading = i === 0 ? 'eager' : 'lazy';
             el.decoding = 'async';
             if (i === 0) el.classList.add('active');
             imgWrap.appendChild(el);
@@ -819,13 +818,14 @@
       const strip = document.getElementById('lv-new-strip');
       buildSkeleton(strip, 5);
       try {
-        // one catalogue file — every design is stored once in sets/
-        const list = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        const slice = list.slice(0, 8);
+        const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
+        const latestList = (all||[]).filter(x => (x.category || '') === 'latest-designs')
+          .sort((a,b) => (a.order||999) - (b.order||999));
+        const slice = (latestList.length ? latestList : (all||[])).slice(0, 8);
         const frag = document.createDocumentFragment();
         for (const r of slice) {
           if (!r) continue;
-          const folder = r.id;
+          const folder = r.folder || r.id;
           const imgs = (r.images || []).filter(f => !isVidName(f));
           const d = { name: r.name, price: r.price, images: imgs };
           const src = imgs[0] ? mediaPath(r, imgs[0]) : '';
@@ -845,10 +845,9 @@
     async function loadGallery(){
       const scrollEl = document.getElementById('lv-gallery-scroll');
       try {
-        /* نفس الكتالوج الواحد — مفيش ملفات تانية */
         const all = await getJSON('assets/images/catalog.json?t=' + Date.now());
-        /* الجاليري: صور الجاليري بس */
-        const list = (all || []).filter(x => x.category === 'grillz-gallery');
+        const list = (all || []).filter(x => x.category === 'grillz-gallery')
+          .sort((a,b) => (a.order||999) - (b.order||999));
         if (!list.length) return;
         const frag = document.createDocumentFragment();
         for (const r of list.slice(0, 8)) {
@@ -862,7 +861,7 @@
           const card = document.createElement('div');
           card.className = 'lv-gal-card';
           card.innerHTML = `<div class="lv-gal-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-gal-card-info"><div class="gc-name">${d.name||''}</div><div class="gc-desc">${d.desc||''}</div><div class="gc-price">${d.price||''}</div></div>`;
-          card.addEventListener('click', () => window.location = 'grillz-gallery');
+          card.addEventListener('click', () => window.location = 'grillz-gallery?item=' + encodeURIComponent(r.id));
           frag.appendChild(card);
         }
         scrollEl.appendChild(frag);
@@ -924,31 +923,24 @@
   </script>
 
   <script>
-  /* صورة الهيرو في الرئيسية — بتتحكم فيها من /editx → Page Heroes */
+  /* Homepage hero override from Firestore settings/pageMeta */
   (function () {
-    function ready() {
-      return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length;
-    }
-    function apply() {
-      try {
-        firebase.firestore().collection('settings').doc('pageMeta').get().then(function (snap) {
-          if (!snap.exists) return;
-          var m = snap.data() || {};
-          var hero = (m['index'] || {}).hero;
-          if (!hero) return;
-          var pic = document.getElementById('home-hero-pic');
-          if (!pic) return;
-          /* بنستبدل الصورة الافتراضية بالصورة المختارة */
-          pic.innerHTML = '<img src="' + hero + '" alt="EGYGRILLZ" fetchpriority="high" decoding="async">';
-        }).catch(function () {});
-      } catch (e) {}
-    }
-    var tries = 0;
-    (function wait() {
-      if (ready()) { apply(); return; }
-      if (++tries > 40) return;
-      setTimeout(wait, 250);
-    })();
+    fetch('https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents/settings/pageMeta')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (doc) {
+        var idx = doc && doc.fields && doc.fields.index && doc.fields.index.mapValue && doc.fields.index.mapValue.fields;
+        var hero = idx && idx.hero && idx.hero.stringValue;
+        if (!hero) return;
+        var pic = document.getElementById('home-hero-pic');
+        if (!pic) return;
+        var img = document.createElement('img');
+        img.src = hero.charAt(0) === '/' ? hero : '/' + hero;
+        img.alt = 'EGYGRILLZ';
+        img.fetchPriority = 'high';
+        img.decoding = 'async';
+        pic.innerHTML = '';
+        pic.appendChild(img);
+      }).catch(function () {});
   })();
   </script>
 </body>

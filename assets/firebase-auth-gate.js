@@ -13,14 +13,14 @@ import { getAuth, setPersistence, browserLocalPersistence,
 
 export const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk',   // public by design
-  authDomain: 'egygillz-studio.firebaseapp.com',
+  authDomain: 'egygrillz-studio.firebaseapp.com',
   projectId: 'egygrillz-studio',
   storageBucket: 'egygrillz-studio.firebasestorage.app',
   messagingSenderId: '1022362401463',
   appId: '1:1022362401463:web:fec76b9c73e24d9cfeeb32',
 };
 
-/* نفس التطبيق ونفس الجلسة لكل الصفحات — مش نسخة جديدة كل مرة */
+/* Reuse a single Firebase app instance & auth session across internal pages */
 export function firebaseApp() {
   return getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
 }
@@ -56,18 +56,13 @@ function overlay() {
   return el;
 }
 
-/* أي حاجة بتحصل جوه requireAuth بتتسجل — عشان نعرف بالظبط هي واقفة فين */
 const LOG = (m, d) => { try { console.log('[gate]', m, d === undefined ? '' : d); } catch (e) {} };
 const WARN = (m, d) => { try { console.warn('[gate]', m, d === undefined ? '' : d); } catch (e) {} };
 
-
-/* ══ قراءة الجلسة المحفوظة من المتصفح ══
-   Firebase بيكتب المستخدم في localStorage تحت مفتاح فيه اسم المشروع.
-   لو onAuthStateChanged اتأخر (شبكة بطيئة أو حجب)، بنقرا المفتاح ده
-   مباشرة عشان الصفحة ماتعلّقش على شاشة الدخول. */
+/* Fallback: read persisted Firebase auth user directly from localStorage
+   if onAuthStateChanged takes too long to resolve (e.g., slow network). */
 function readStoredUser(auth) {
   try {
-    const project = (FIREBASE_CONFIG.projectId || '').replace(/-/g, '');
     const key = 'firebase:authUser:' + FIREBASE_CONFIG.apiKey + ':' + (auth && auth.name ? auth.name : '[DEFAULT]');
     const raw = localStorage.getItem(key);
     if (!raw) return null;
@@ -96,11 +91,7 @@ export async function requireAuth() {
   _auth = auth;
   LOG('auth ready');
 
-  /* ══ استرجاع الجلسة قبل أي حاجة ══
-     Firebase بيرجّع الجلسة المحفوظة بشكل غير متزامن، فلازم نستنى إشارة
-     onAuthStateChanged الأول. قبل كده كنا بنستدعي setPersistence(LOCAL)
-     على طول، وده كان بيلغي جلسة اتعملت في /editx بـ SESSION — فالنتيجة
-     إن الـ iframe جوه /editx كان بيطلب تسجيل دخول تاني. */
+  /* Wait for Firebase's async session restoration before prompting for login */
   const restored = await new Promise((resolve) => {
     LOG('waiting for restored session');
     let un = null;
@@ -117,8 +108,6 @@ export async function requireAuth() {
         finish(auth.currentUser || null);
       });
     } catch (e) { WARN('onAuthStateChanged threw', e && e.message); finish(null); return; }
-    /* الخطة البديلة: لو الحالة ماجتش في 3 ثواني، نقرا الجلسة المحفوظة
-       من المتصفح مباشرة (نفس المفتاح اللي Firebase بيكتبه). */
     setTimeout(() => {
       LOG('restore timeout — reading stored session directly');
       const stored = readStoredUser(auth);
@@ -129,7 +118,6 @@ export async function requireAuth() {
   LOG('restore result', restored ? 'signed in' : 'no session');
   if (restored) return restored;
 
-  /* مفيش جلسة — نخلي المرة الجاية تتشال من المتصفح مباشرة */
   await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
   const gate = overlay();

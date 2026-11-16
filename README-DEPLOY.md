@@ -43,12 +43,12 @@ Local test results: every nav link resolves (0 broken), 0 HTML nesting errors, 0
    ```
 2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → repo, framework *None*,
    build command empty, output directory **`/`**.
-3. Add custom domain `egygillz.com` (and `www`), keep the record **Proxied**.
+3. Add custom domain `egygrillz.com` (and `www`), keep the record **Proxied**.
 4. Verify:
    ```bash
-   curl -sI https://egygillz.com | grep -iE "strict-transport|content-security|x-frame"
-   curl -sI https://egygillz.com/booking.html | head -1     # → 301
-   curl -s  https://egygillz.com/booking | head -1          # → 200, no .html
+   curl -sI https://egygrillz.com | grep -iE "strict-transport|content-security|x-frame"
+   curl -sI https://egygrillz.com/booking.html | head -1     # → 301
+   curl -s  https://egygrillz.com/booking | head -1          # → 200, no .html
    ```
 
 ### B. GitHub Pages only (works, but no headers/301s)
@@ -61,19 +61,11 @@ Keep `_headers`; `_redirects` works identically. Clean URLs are on by default (p
 
 ---
 
-## Two folders intentionally NOT included
+## GitHub-first media workflow
 
-`assets/images/golds/` (138 MB), `assets/images/silvers/` (21 MB), `assets/images/latest-designs/` (48 MB).
-Those are the 1–22 MB originals that make the galleries slow. Serve them from Cloudinary instead:
-
-1. Finish the Cloudinary upload (your `MTC.html` already does bulk upload).
-2. In `golds.html` / `silvers.html` / `diamonds.html` / `latest-designs.html` the image URL is built from
-   `assets/images/<folder>/…`. Change the base once per page to:
-   ```js
-   const RAW = 'https://res.cloudinary.com/<your-cloud>/image/upload/f_auto,q_auto,w_900/';
-   ```
-   Cloudinary then serves WebP/AVIF at ~100–180 KB per image instead of megabytes, and your repo drops ~207 MB.
-3. Until that's done, keep the old `/assets/images/golds/…` files on the host (they'll still work), they're just heavy.
+Catalog media lives in `assets/images/` and is indexed in `assets/images/catalog.json`
+(managed via `/editx`, compressed client-side by `assets/media-pipeline.js`).
+Use `/MTC` (Catalog &amp; Media Diagnostics) to audit asset references in `catalog.json`.
 
 ---
 

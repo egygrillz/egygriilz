@@ -1,16 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════════════
- *  EGYGRILLZ — IMAGE PIPELINE  (browser side)
+ *  EGYGRILLZ — IMAGE PIPELINE (browser-side)
  *  ---------------------------------------------------------------------------
- *  مهمة واحدة: أي صورة تيجي من الموبايل (2-5 ميجا) تتصغّر وتتضغط **قبل**
- *  ما تطلع من الجهاز، فاللي بيوصل GitHub يبقى 80-120 كيلو بس.
+ *  Resizes and compresses uploaded images in the browser before committing
+ *  to GitHub (GitHub-only storage — no external image services).
  *
- *  مفيش أي خدمة برة — GitHub بس. مفيش R2، مفيش Cloudflare Storage.
- *
- *  قواعد الحجم:
- *    • الصورة الكبيرة: 1400 بكسل، 300 كيلو كحد أقصى
- *    • الكارت الصغير على الصفحة: نسخة مصغّرة 700 بكسل (~30-50 كيلو)
- *      ← دي اللي بتخلي التصميمات تظهر بسرعة، والمودال بياخد الأصلية
- *    • الصور الصغيرة أصلاً مابنلمسهاش — مفيش فقدان جودة بدون سبب
+ *  Size targets:
+ *    • Primary asset: max 1400 px side, <= 300 KB JPEG
+ *    • Thumbnail: max 700 px side (_thumb suffix)
+ *    • Already small high-quality JPEGs are passed through unchanged
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 const MEDIA = {
@@ -22,7 +19,6 @@ const MEDIA = {
   async compressImage(file) {
     const isJpg = /jpe?g$/i.test(file.type) || /\.jpe?g$/i.test(file.name);
 
-    // صغيرة وعالية الجودة أصلاً → نسيها
     if (file.size <= this.TARGET_BYTES && isJpg) {
       return { blob: file, name: this.cleanName(file.name), changed: false };
     }
@@ -71,9 +67,7 @@ const MEDIA = {
     }
   },
 
-  /* ── نسخة الكارت ────────────────────────────────────────────────
-     بتتصنع من نفس الصورة قبل الرفع، فمفيش أي شغل إضافي على المستخدم.
-     نفس المجلد، نفس الاسم، بس بـ _thumb قبل اللاحقة. */
+  /* Optional local thumbnail generator (700px max side) */
   THUMB_SIDE: 700,
   THUMB_QUALITY: 0.78,
 
@@ -87,7 +81,7 @@ const MEDIA = {
         i.src = url;
       });
       let { naturalWidth: w, naturalHeight: h } = img;
-      if (Math.max(w, h) <= this.THUMB_SIDE) return null;   // صغيرة أصلاً
+      if (Math.max(w, h) <= this.THUMB_SIDE) { URL.revokeObjectURL(url); return null; }
       const scale = this.THUMB_SIDE / Math.max(w, h);
       w = Math.round(w * scale);
       h = Math.round(h * scale);
@@ -126,7 +120,7 @@ const MEDIA = {
          : Math.round(bytes / 1024) + ' KB';
   },
 
-  /** Blob → base64 (GitHub contents API بياخد base64) */
+  /** Convert Blob to base64 payload for GitHub Contents API */
   toBase64(blob) {
     return new Promise((ok, no) => {
       const r = new FileReader();

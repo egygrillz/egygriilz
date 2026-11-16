@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/assets/calc-engine.js"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
 window.addEventListener('load', function() {
@@ -98,8 +98,21 @@ header.hidden { transform:translateY(-100%); }
 .tab-panel.active { display:block; }
 
 /* ══ INVOICE BUILDER ══ */
-.invoice-grid { display:grid; grid-template-columns:1fr 420px; gap:40px; align-items:start; }
-@media(max-width:900px){ .invoice-grid { grid-template-columns:1fr; } }
+.invoice-grid { display:grid; grid-template-columns:1fr minmax(430px,500px); gap:40px; align-items:start; }
+@media(max-width:960px){ .invoice-grid { grid-template-columns:1fr; } }
+.item-spec-input { font-size:11px; color:#888; border:none; border-bottom:1px dashed #eee; background:transparent; width:100%; outline:none; padding:2px 0; margin-top:2px; font-family:'Arimo',sans-serif; }
+.item-spec-input:focus { border-bottom-color:#1a1a1a; color:#333; }
+.svc-quick-bar { display:none; flex-wrap:wrap; gap:6px; padding:12px; background:#f8f8f8; border:1px solid #eee; margin-bottom:14px; }
+.svc-quick-bar.open { display:flex; }
+.svc-chip { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; border:1px solid #ddd; background:#fff; padding:6px 12px; cursor:pointer; font-family:'Arimo',sans-serif; transition:all .15s; }
+.svc-chip:hover { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
+.modal-box.wide { max-width:580px; }
+.calc-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.calc-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+@media(max-width:540px){ .calc-grid-2,.calc-grid-3 { grid-template-columns:1fr; } }
+.calc-total-bar { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#f8f8f8; border-left:2px solid #1a1a1a; margin-top:16px; }
+.quote-import-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #f0f0f0; }
+.quote-import-row:last-child { border-bottom:none; }
 
 /* Client selector */
 .field-group { margin-bottom:24px; }
@@ -628,10 +641,23 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
             </div>
 
             <div class="items-header">
-              <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-                <button class="add-btn" id="add-item-btn"><i class="fas fa-plus"></i> Custom Item</button>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <button class="add-btn" id="open-calc-btn"><i class="fas fa-calculator"></i> Custom Grillz</button>
+                <button class="add-btn" id="toggle-svc-btn"><i class="fas fa-concierge-bell"></i> Studio Service</button>
+                <button class="add-btn" id="add-item-btn"><i class="fas fa-plus"></i> Blank Line</button>
+                <button class="add-btn" id="open-import-quote-btn"><i class="fas fa-file-import"></i> Import Quote</button>
                 <button class="design-picker-toggle" id="toggle-picker-btn">+ Browse Designs</button>
               </div>
+            </div>
+
+            <!-- Quick Studio Services Bar -->
+            <div class="svc-quick-bar" id="svc-quick-bar">
+              <button type="button" class="svc-chip" data-svc="impression">+ Dental Impression</button>
+              <button type="button" class="svc-chip" data-svc="consultation">+ Consultation</button>
+              <button type="button" class="svc-chip" data-svc="toothgem">+ Toothgem</button>
+              <button type="button" class="svc-chip" data-svc="polishing">+ Clean &amp; Polish</button>
+              <button type="button" class="svc-chip" data-svc="fitting">+ Fitting</button>
+              <button type="button" class="svc-chip" data-svc="shipping">+ Shipping</button>
             </div>
 
             <!-- Design Picker -->
@@ -640,6 +666,7 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
                 <button class="dpick-tab active" data-cat="golds">Golds</button>
                 <button class="dpick-tab" data-cat="silvers">Silvers</button>
                 <button class="dpick-tab" data-cat="diamonds">Diamonds</button>
+                <button class="dpick-tab" data-cat="sets">Sets</button>
                 <button class="dpick-tab" data-cat="latest-designs">Latest</button>
               </div>
               <div class="design-grid" id="design-grid">
@@ -680,6 +707,7 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
                 <div class="payment-method-btns" id="pmeth-btns">
                   <button class="pmeth-btn active" data-method="Cash">Cash</button>
                   <button class="pmeth-btn" data-method="InstaPay">InstaPay</button>
+                  <button class="pmeth-btn" data-method="Vodafone Cash">Vodafone Cash</button>
                   <button class="pmeth-btn" data-method="Card">Card</button>
                   <button class="pmeth-btn" data-method="Bank Transfer">Bank</button>
                 </div>
@@ -847,6 +875,191 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 
 </div><!-- end #app -->
 
+<!-- ══ CUSTOM GRILLZ CALCULATOR MODAL ══ -->
+<div class="modal-overlay" id="calc-modal">
+  <div class="modal-box wide">
+    <button class="modal-close" id="close-calc-modal">&times;</button>
+    <div class="modal-title">Custom Grillz Calculator</div>
+    <div class="field-group">
+      <label class="field-label">Design Label (optional)</label>
+      <input type="text" class="field-input" id="cm-name" placeholder="e.g. Top 6 Silver · Bottom Bars">
+    </div>
+    <div class="calc-grid-2">
+      <div class="field-group">
+        <label class="field-label">Material</label>
+        <select class="field-select" id="cm-material">
+          <option value="chrome">Cobalt Chrome</option>
+          <option value="titanium">Titanium</option>
+          <option value="silver">Sterling Silver 925</option>
+          <option value="gold">Gold</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Teeth (1-16)</label>
+        <input type="number" class="field-input" id="cm-teeth" min="1" max="16" value="6">
+      </div>
+    </div>
+    <div class="calc-grid-2" id="cm-gold-wrap" style="display:none">
+      <div class="field-group">
+        <label class="field-label">Karat</label>
+        <select class="field-select" id="cm-karat">
+          <option value="10">10K</option>
+          <option value="14">14K</option>
+          <option value="18" selected>18K</option>
+          <option value="21">21K</option>
+          <option value="22">22K</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Today's 24K Gold (EGP/g)</label>
+        <input type="number" class="field-input" id="cm-gold-rate" min="0" step="any" placeholder="Enter EGP/g">
+      </div>
+    </div>
+    <div class="calc-grid-2">
+      <div class="field-group">
+        <label class="field-label">Design Level</label>
+        <select class="field-select" id="cm-level">
+          <option value="0.5">0.5 Bars (Half Base)</option>
+          <option value="1">1 Solid (+0%)</option>
+          <option value="2">2 Open Face (+10%)</option>
+          <option value="3">3 Mid Detail (+15%)</option>
+          <option value="4">4 Complex (+25%)</option>
+          <option value="5">5 Scorpion (+40%)</option>
+          <option value="6">6 Ultimate (+60%)</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Stones</label>
+        <select class="field-select" id="cm-stones">
+          <option value="none">No Stones</option>
+          <option value="accent">Accent Stones</option>
+          <option value="full">Full Iced</option>
+          <option value="bars">Full Iced on Bars</option>
+        </select>
+      </div>
+    </div>
+    <div class="calc-grid-3" id="cm-accent-wrap" style="display:none">
+      <div class="field-group">
+        <label class="field-label">Count</label>
+        <input type="number" class="field-input" id="cm-acount" min="1" value="1">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Type</label>
+        <select class="field-select" id="cm-atype">
+          <option value="cz">CZ</option>
+          <option value="moissanite">Moissanite</option>
+          <option value="labgrown">Lab-Grown</option>
+          <option value="natural">Natural</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Setting</label>
+        <select class="field-select" id="cm-asetting">
+          <option value="flush">Flush</option>
+          <option value="twoprong">2-Prong</option>
+          <option value="threeprong">3-Prong</option>
+          <option value="fourprong">4-Prong</option>
+          <option value="sixprong">6-Prong</option>
+          <option value="bezelfull">Bezel Full</option>
+          <option value="bezelhalf">Bezel Half</option>
+          <option value="bar">Bar</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group" id="cm-acustom-wrap" style="display:none">
+      <label class="field-label">Stone Price (EGP / stone)</label>
+      <input type="number" class="field-input" id="cm-acustom" min="0" step="any" placeholder="Enter today's rate">
+    </div>
+    <div class="calc-grid-2" id="cm-full-wrap" style="display:none">
+      <div class="field-group">
+        <label class="field-label">Stone Type</label>
+        <select class="field-select" id="cm-ftype">
+          <option value="cz">CZ</option>
+          <option value="moissanite">Moissanite</option>
+          <option value="labgrown">Lab-Grown</option>
+          <option value="natural">Natural</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Coverage</label>
+        <select class="field-select" id="cm-fcov">
+          <option value="standardpave">Standard Pave</option>
+          <option value="frenchpave">French Pave</option>
+          <option value="micropave">Micro-Pave</option>
+          <option value="channel">Channel</option>
+          <option value="invisible">Invisible</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group" id="cm-fcustom-wrap" style="display:none">
+      <label class="field-label">Full-Iced Price (EGP / tooth)</label>
+      <input type="number" class="field-input" id="cm-fcustom" min="0" step="any" placeholder="Enter today's rate">
+    </div>
+    <div class="calc-grid-3">
+      <div class="field-group">
+        <label class="field-label">Plating</label>
+        <select class="field-select" id="cm-plating">
+          <option value="none">None</option>
+          <option value="yellowgold">Yellow Gold</option>
+          <option value="blackgold">Black Gold</option>
+          <option value="whitegold">White Gold</option>
+          <option value="rosegold">Rose Gold</option>
+          <option value="silverplating">Silver Plating</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Enamel</label>
+        <select class="field-select" id="cm-enamel">
+          <option value="none">None</option>
+          <option value="single">Single</option>
+          <option value="multi">Multi</option>
+          <option value="master">Master</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Engraving</label>
+        <select class="field-select" id="cm-engraving">
+          <option value="none">None</option>
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group" id="cm-ano-wrap" style="display:none">
+      <label class="field-label">Titanium Anodizing</label>
+      <select class="field-select" id="cm-anodize">
+        <option value="none">None</option>
+        <option value="single">Single Color</option>
+        <option value="dual">Dual Color</option>
+        <option value="multi">Multi Color</option>
+      </select>
+    </div>
+    <div class="calc-total-bar">
+      <div>
+        <div class="field-label" style="margin:0">Calculated Line Total</div>
+        <div id="cm-spec-preview" style="font-size:11px;color:#666;margin-top:2px">—</div>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:24px" id="cm-total-preview">0 EGP</div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn outline" id="cancel-calc-modal">Cancel</button>
+      <button class="modal-btn" id="apply-calc-modal">Add to Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ IMPORT QUOTE MODAL ══ -->
+<div class="modal-overlay" id="import-quote-modal">
+  <div class="modal-box wide">
+    <button class="modal-close" id="close-import-quote">&times;</button>
+    <div class="modal-title">Import Saved Quote</div>
+    <div id="import-quote-list" style="max-height:360px;overflow-y:auto">
+      <div class="design-picker-loading">Loading quotes...</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ ADD CLIENT MODAL ══ -->
 <div class="modal-overlay" id="add-client-modal">
   <div class="modal-box">
@@ -930,68 +1143,15 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- تشخيص: أي حاجة بتفشل بتظهر هنا على الشاشة، مش في الكونسول بس -->
-<div id="diag" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:99998;
-     background:#1a1a1a;color:#fff;font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;
-     padding:12px 16px;max-height:38vh;overflow:auto;">
-  <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;">
-    <strong style="letter-spacing:1px">DIAGNOSTIC</strong>
-    <span>
-      <a href="#" id="diag-copy" style="color:#9ec9ff">copy</a>
-      &nbsp;·&nbsp;
-      <a href="#" id="diag-close" style="color:#9ec9ff">hide</a>
-    </span>
-  </div>
-  <div id="diag-body"></div>
-</div>
-<script>
-(function(){
-  var box = document.getElementById('diag'), body = document.getElementById('diag-body');
-  var lines = [];
-  function push(kind, msg){
-    lines.push('[' + kind + '] ' + msg);
-    if (!box) return;
-    box.style.display = 'block';
-    body.textContent = lines.slice(-14).join('\n');
-  }
-  window.diag = push;
-  window.addEventListener('error', function(e){
-    push('error', (e.message || 'error') + (e.filename ? '  @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''));
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    var r = e.reason || {};
-    push('promise', (r.code ? r.code + ' — ' : '') + (r.message || String(r)));
-  });
-  document.addEventListener('DOMContentLoaded', function(){
-    var c = document.getElementById('diag-close');
-    if (c) c.addEventListener('click', function(ev){ ev.preventDefault(); box.style.display='none'; });
-    var cp = document.getElementById('diag-copy');
-    if (cp) cp.addEventListener('click', function(ev){
-      ev.preventDefault();
-      try { navigator.clipboard.writeText(lines.join('\n')); cp.textContent = 'copied'; } catch(e){}
-    });
-  });
-})();
-</script>
-
 <!-- Firebase SDK -->
 <script type="module">
-import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp }
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { firebaseApp } from '/assets/firebase-auth-gate.js';
+import { firebaseApp, requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js';
 
-
-/* ══════════════════════════════════════════════════
-   AUTH — real Firebase Authentication (no password in this file)
-══════════════════════════════════════════════════ */
-import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js';
-
-/* ══════════════════════════════════════════════════
-   FIREBASE CONFIG
-══════════════════════════════════════════════════ */
-/* نفس التطبيق اللي الـ gate سجّل الدخول عليه */
 const fbApp = firebaseApp();
 const db = getFirestore(fbApp);
+const E = window.CalcEngine;
 
 
 /* ══════════════════════════════════════════════════
@@ -1047,6 +1207,8 @@ function confirm(title, msg) {
    STATE
 ══════════════════════════════════════════════════ */
 let clients = [];
+let remoteInvoices = [];
+let catalogAll = [];
 let lineItems = [];
 let selectedClient = null;
 let paymentMethod = 'Cash';
@@ -1054,16 +1216,28 @@ let currentCategory = 'golds';
 let designCache = {};
 let allDesigns = []; // flat list for item search
 let editingInvoiceId = null;
+let pendingQuoteId = '';
 let accStatusFilter = 'all';
+
+function mergeInvoices(localArr, remoteArr) {
+  const byKey = new Map();
+  (localArr || []).forEach(inv => {
+    const k = String(inv.id || inv.number || '');
+    if (k) byKey.set(k, inv);
+  });
+  (remoteArr || []).forEach(inv => {
+    const k = String(inv.id || inv.number || '');
+    if (k) byKey.set(k, inv);
+  });
+  return Array.from(byKey.values()).sort((a, b) =>
+    String(b.createdAt || b.date || '').localeCompare(String(a.createdAt || a.date || ''))
+  );
+}
 
 /* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
 async function initApp() {
-  window.diag && window.diag('boot', 'initApp started');
-  const appEl0 = document.getElementById('app');
-  if (appEl0) appEl0.style.display = 'block';   /* الصفحة تظهر فوراً */
-  /* #app مخفي في CSS لحد ما الجلسة تتأكد — من غير السطر ده الصفحة تفضل فاضية */
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'block';
   setupHeader();
@@ -1071,6 +1245,9 @@ async function initApp() {
   setupReveal();
   setupInvoiceForm();
   setupDesignPicker();
+  setupCalculatorModal();
+  setupServicesBar();
+  setupImportQuoteModal();
   setupPaymentMethods();
   setupSaveEmail();
   setupAddClientModal();
@@ -1079,39 +1256,36 @@ async function initApp() {
   setupResetBtn();
   setupClientSearchAutocomplete();
   setupItemSearchAutocomplete();
-  window.diag && window.diag('db', 'loading clients…');
-  try {
-    await loadClients();
-    window.diag && window.diag('db', 'clients OK');
-  } catch (dbErr) {
-    var code = String((dbErr && (dbErr.code || dbErr.message)) || '');
-    window.diag && window.diag('db', 'FAILED: ' + code);
-    if (/resource-exhausted|429|quota/i.test(code)) {
-      showToast('The daily database quota is used up. Saving still works.', 'error-toast');
-    }
-    /* الصفحة تفضل شغالة — الحفظ لسه بيشتغل */
-  }
-  loadAccountingTab();
+
+  await Promise.allSettled([
+    E ? E.load(null) : Promise.resolve(),
+    window.SiteConfig ? window.SiteConfig.load(null) : Promise.resolve(),
+    preloadCatalogDesigns(),
+    loadClients().catch(dbErr => {
+      const code = String((dbErr && (dbErr.code || dbErr.message)) || '');
+      if (/resource-exhausted|429|quota/i.test(code)) {
+        showToast('The daily database quota is used up. Saving still works.', 'error-toast');
+      }
+    }),
+    loadRemoteInvoices(),
+  ]);
+
   setDefaultDates();
+  consumePendingQuoteTransfer();
+  loadAccountingTab();
+  updateHeroStats();
   updatePreview();
 }
 
-/* ══════════════════════════════════════════════════
-   AUTH GATE — replaces the old hardcoded-password lock screen.
-   The page never renders content until a real Firebase session exists.
-══════════════════════════════════════════════════ */
 let EGYGZ_USER = null;
 try {
   EGYGZ_USER = await requireAuth();
 } catch (authErr) {
   console.error('[invoice] auth gate failed', authErr);
-  window.diag && window.diag('auth', 'FAILED: ' + (authErr && (authErr.code || authErr.message)));
   showToast('Sign-in could not load. Refresh the page.', 'error-toast');
   throw authErr;
 }
 
-// Wire the existing header "logout" affordance (if the page has one) and
-// expose it for console/debug use.
 window.egygzSignOut = fbSignOut;
 document.querySelectorAll('[data-logout],#logout-btn,#btn-logout').forEach(function (el) {
   el.addEventListener('click', function (e) { e.preventDefault(); fbSignOut(); });
@@ -1266,25 +1440,68 @@ function renderItemSearchDropdown(matches, q) {
   dropdown.innerHTML = matches.map(d => {
     const imgSrc = d.images && d.images[0] ? (d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0] : '';
     return `
-      <div class="item-search-option" data-name="${d.name||d.folder}" data-price="${d.priceNum||0}">
-        ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" onerror="this.style.display='none'" loading="lazy" decoding="async">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
+    <div class="item-search-option" data-idx="${allDesigns.indexOf(d)}">
+        ${imgSrc ? `<img src="${imgSrc}" alt="${escHtml(d.name)}" onerror="this.style.display='none'" loading="lazy" decoding="async">` : '<div style="width:40px;height:50px;background:#f0f0f0;flex-shrink:0"></div>'}
         <div class="item-search-option-info">
-          <div class="item-search-option-name">${d.name||d.folder}</div>
-          <div class="item-search-option-meta">${d.cat} · ${d.folder}</div>
+          <div class="item-search-option-name">${escHtml(d.name||d.folder)}</div>
+          <div class="item-search-option-meta">${escHtml(d.cat)} · ${escHtml(d.folder)}</div>
         </div>
-        <div class="item-search-option-price">${d.price||'—'}</div>
+        <div class="item-search-option-price">${escHtml(d.price||'Calc')}</div>
       </div>
     `;
   }).join('');
   dropdown.classList.add('open');
   dropdown.querySelectorAll('.item-search-option').forEach(opt => {
     opt.addEventListener('click', () => {
-      addCustomItem({ name: opt.dataset.name, qty: 1, price: +opt.dataset.price });
-      showToast('Added: ' + opt.dataset.name, 'success');
+      const d = allDesigns[+opt.dataset.idx];
+      if (!d) return;
+      if (d.calc && (!d.priceNum || d.priceNum <= 0)) {
+        openCalcWithPreset(d.name || d.folder, d.calc);
+      } else {
+        addCustomItem({ name: d.name || d.folder, spec: d.calc ? E.lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0, line: d.calc || null });
+        showToast('Added: ' + (d.name || d.folder), 'success');
+      }
       document.getElementById('item-search-input').value = '';
       dropdown.classList.remove('open');
     });
   });
+}
+
+async function preloadCatalogDesigns() {
+  try {
+    const all = await fetch('assets/images/catalog.json?t=' + Date.now()).then(r => r.json());
+    catalogAll = Array.isArray(all) ? all : [];
+    allDesigns = [];
+    designCache = {};
+    for (const item of catalogAll) {
+      if (item.category === 'grillz-gallery') continue;
+      const d = {
+        id: item.id,
+        name: item.name || item.id,
+        desc: item.description || '',
+        price: item.price || '',
+        calc: item.calc || null,
+        images: (item.images || []).concat(item.videos || []),
+        folder: item.folder || item.id,
+        cat: item.category,
+      };
+      d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
+      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
+      allDesigns.push(d);
+    }
+  } catch (e) { console.warn('[invoice] catalog preload failed', e); }
+}
+
+async function loadRemoteInvoices() {
+  try {
+    const q = query(collection(db, 'invoices'), orderBy('createdAt', 'desc'), limit(250));
+    const snap = await getDocs(q);
+    remoteInvoices = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    const merged = mergeInvoices(getInvoices(), remoteInvoices);
+    saveInvoices(merged);
+  } catch (e) {
+    console.warn('[invoice] Firestore invoices read skipped/failed', e);
+  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -1348,6 +1565,7 @@ function setupResetBtn() {
 
 function resetForm() {
   editingInvoiceId = null;
+  pendingQuoteId = '';
   selectedClient = null;
   lineItems = [];
   paymentMethod = 'Cash';
@@ -1375,10 +1593,12 @@ function resetForm() {
 ══════════════════════════════════════════════════ */
 function addCustomItem(prefill={}) {
   const item = {
-    id: Date.now() + Math.random(),
+    id: prefill.id || (Date.now() + Math.random()),
     name: prefill.name || '',
+    spec: prefill.spec || '',
     qty: prefill.qty || 1,
-    price: prefill.price || 0
+    price: prefill.price || 0,
+    line: prefill.line || null
   };
   lineItems.push(item);
   renderItems();
@@ -1386,7 +1606,7 @@ function addCustomItem(prefill={}) {
 }
 
 function removeItem(id) {
-  lineItems = lineItems.filter(i => i.id !== id);
+  lineItems = lineItems.filter(i => i.id != id);
   renderItems();
   updatePreview();
   showToast('Item removed');
@@ -1399,9 +1619,8 @@ function renderItems() {
     return;
   }
 
-  // Column headers
   let html = `<div class="item-cols-header">
-    <div class="item-col-head">Description</div>
+    <div class="item-col-head">Description &amp; Spec</div>
     <div class="item-col-head">Qty</div>
     <div class="item-col-head">Price EGP</div>
     <div class="item-col-head"></div>
@@ -1410,7 +1629,10 @@ function renderItems() {
   lineItems.forEach(item => {
     html += `
       <div class="item-row" data-item-id="${item.id}">
-        <input class="item-field" placeholder="Item name / description" value="${escHtml(item.name)}" data-id="${item.id}" data-field="name">
+        <div>
+          <input class="item-field" placeholder="Item name / description" value="${escHtml(item.name)}" data-id="${item.id}" data-field="name">
+          <input class="item-spec-input" placeholder="Material / teeth / finish spec (optional)" value="${escHtml(item.spec || '')}" data-id="${item.id}" data-field="spec">
+        </div>
         <input class="item-field" type="number" min="1" value="${item.qty}" data-id="${item.id}" data-field="qty" style="text-align:center">
         <input class="item-field" type="number" min="0" step="0.01" value="${item.price}" data-id="${item.id}" data-field="price">
         <button class="item-remove" data-remove="${item.id}" title="Remove item"><i class="fas fa-times"></i></button>
@@ -1420,19 +1642,19 @@ function renderItems() {
 
   wrap.innerHTML = html;
 
-  wrap.querySelectorAll('.item-field').forEach(inp => {
+  wrap.querySelectorAll('.item-field,.item-spec-input').forEach(inp => {
     inp.addEventListener('input', () => {
-      const id = +inp.dataset.id;
+      const id = inp.dataset.id;
       const field = inp.dataset.field;
-      const it = lineItems.find(i => i.id == id);
+      const it = lineItems.find(i => String(i.id) === String(id));
       if (!it) return;
-      it[field] = field === 'name' ? inp.value : Math.max(0, +inp.value || 0);
+      it[field] = (field === 'name' || field === 'spec') ? inp.value : Math.max(0, +inp.value || 0);
       updatePreview();
     });
   });
 
   wrap.querySelectorAll('[data-remove]').forEach(btn => {
-    btn.addEventListener('click', () => removeItem(+btn.dataset.remove));
+    btn.addEventListener('click', () => removeItem(btn.dataset.remove));
   });
 }
 
@@ -1463,29 +1685,28 @@ async function loadDesigns(cat) {
   if (designCache[cat]) { renderDesignGrid(designCache[cat]); return; }
   document.getElementById('design-grid').innerHTML = '<div class="design-picker-loading">Loading...</div>';
   try {
-    /* كتالوج واحد — نفس مصدر الموقع */
-    const all = await fetch('assets/images/catalog.json?t=' + Date.now()).then(r => r.json());
-    const want = (cat === 'latest-designs' || cat === 'latest') ? null : cat;
+    if (!catalogAll.length) await preloadCatalogDesigns();
+    const want = cat === 'latest' ? 'latest-designs' : cat;
     const designs = [];
-    for (const item of (all || [])) {
-      if (item.category === 'grillz-gallery') continue;   /* صور جاليري مش تصميمات */
+    for (const item of catalogAll) {
+      if (item.category === 'grillz-gallery') continue;
       if (want && item.category !== want) continue;
-      if (designs.length >= 20) break;
+      if (designs.length >= 24) break;
       const d = {
+        id: item.id,
         name: item.name || item.id,
         desc: item.description || '',
         price: item.price || '',
+        calc: item.calc || null,
         images: (item.images || []).concat(item.videos || []),
+        folder: item.folder || item.id,
+        cat: item.category || cat,
       };
-      d.folder = item.folder || item.id;
-      d.cat = item.category || cat;
       d.root = 'assets/images/' + d.cat + '/' + d.folder + '/';
-      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g,'')) || 0;
+      d.priceNum = parseFloat(String(d.price).replace(/[^0-9.]/g, '')) || 0;
       designs.push(d);
     }
     designCache[cat] = designs;
-    // add to flat list for item search
-    designs.forEach(d => { if (!allDesigns.find(x => x.folder===d.folder && x.cat===d.cat)) allDesigns.push(d); });
     renderDesignGrid(designs);
   } catch(e) {
     document.getElementById('design-grid').innerHTML = '<div class="design-picker-loading">No designs found</div>';
@@ -1499,18 +1720,298 @@ function renderDesignGrid(designs) {
   designs.forEach(d => {
     const thumb = document.createElement('div');
     thumb.className = 'design-thumb';
-    /* المسار من مجلد التصنيف الحقيقي — مش sets/ للكل */
     const imgSrc = d.images && d.images[0] ? (d.root || `assets/images/${d.cat}/${d.folder}/`) + d.images[0] : '';
     thumb.innerHTML = `
-      ${imgSrc ? `<img src="${imgSrc}" alt="${d.name}" loading="lazy" onerror="this.parentElement.querySelector('.design-thumb-name').textContent+=' (no img)'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
-      <div class="design-thumb-name">${d.name || d.folder}</div>
-      <div class="design-thumb-price">${d.price || ''}</div>
+      ${imgSrc ? `<img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy" onerror="this.parentElement.querySelector('.design-thumb-name').textContent+=' (no img)'">` : '<div style="aspect-ratio:3/4;background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#ccc;font-size:20px"></i></div>'}
+      <div class="design-thumb-name">${escHtml(d.name || d.folder)}</div>
+      <div class="design-thumb-price">${escHtml(d.price || '')}</div>
     `;
     thumb.addEventListener('click', () => {
-      addCustomItem({ name: d.name || d.folder, qty: 1, price: d.priceNum });
+      if (d.calc && (!d.priceNum || d.priceNum <= 0)) {
+        openCalcWithPreset(d.name || d.folder, d.calc);
+        return;
+      }
+      addCustomItem({ name: d.name || d.folder, spec: d.calc ? E.lineLabel(d.calc) : '', qty: 1, price: d.priceNum || 0, line: d.calc || null });
       showToast('Added: ' + (d.name || d.folder), 'success');
     });
     grid.appendChild(thumb);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   CALCULATOR MODAL + SERVICES BAR + QUOTE IMPORT
+══════════════════════════════════════════════════ */
+function syncCalcModal() {
+  if (!E) return;
+  const S = E.get();
+  const mat = document.getElementById('cm-material').value;
+  const isGold = mat === 'gold';
+  const isTi = mat === 'titanium';
+  const noStones = !E.allowsStones(mat);
+  document.getElementById('cm-gold-wrap').style.display = isGold ? '' : 'none';
+  document.getElementById('cm-ano-wrap').style.display = isTi ? '' : 'none';
+
+  const smEl = document.getElementById('cm-stones');
+  if (noStones) { smEl.value = 'none'; smEl.disabled = true; }
+  else { smEl.disabled = false; }
+  const mode = smEl.value;
+  document.getElementById('cm-accent-wrap').style.display = mode === 'accent' ? '' : 'none';
+  document.getElementById('cm-full-wrap').style.display = mode === 'full' ? '' : 'none';
+
+  const aType = document.getElementById('cm-atype').value;
+  const fType = document.getElementById('cm-ftype').value;
+  document.getElementById('cm-acustom-wrap').style.display = (mode === 'accent' && S.accentPrice[aType] === null) ? '' : 'none';
+  document.getElementById('cm-fcustom-wrap').style.display = (mode === 'full' && S.fullPrice[fType] === null) ? '' : 'none';
+
+  const line = readCalcModalLine();
+  const calc = E.calculateLine(line);
+  document.getElementById('cm-spec-preview').textContent = E.lineLabel(calc);
+  document.getElementById('cm-total-preview').textContent = fmt(calc.subtotal) + ' EGP';
+}
+
+function readCalcModalLine() {
+  const mat = document.getElementById('cm-material').value;
+  const noStones = !E.allowsStones(mat);
+  const mode = noStones ? 'none' : document.getElementById('cm-stones').value;
+  const gp = parseFloat(document.getElementById('cm-gold-rate').value) || 0;
+  const line = {
+    name: document.getElementById('cm-name').value.trim(),
+    material: mat,
+    karat: document.getElementById('cm-karat').value,
+    goldPrice: gp > 0 ? gp : undefined,
+    teeth: Math.max(1, Math.min(16, parseInt(document.getElementById('cm-teeth').value, 10) || 6)),
+    level: document.getElementById('cm-level').value,
+    plating: document.getElementById('cm-plating').value,
+    enamel: document.getElementById('cm-enamel').value,
+    engraving: document.getElementById('cm-engraving').value,
+    anodize: mat === 'titanium' ? document.getElementById('cm-anodize').value : 'none',
+  };
+  if (mode === 'accent') {
+    const cp = document.getElementById('cm-acustom').value;
+    line.accent = {
+      count: Math.max(1, parseInt(document.getElementById('cm-acount').value, 10) || 1),
+      type: document.getElementById('cm-atype').value,
+      setting: document.getElementById('cm-asetting').value,
+      customPrice: cp !== '' ? Number(cp) : undefined,
+    };
+  } else if (mode === 'full') {
+    const cp = document.getElementById('cm-fcustom').value;
+    line.full = {
+      type: document.getElementById('cm-ftype').value,
+      coverage: document.getElementById('cm-fcov').value,
+      customPrice: cp !== '' ? Number(cp) : undefined,
+    };
+  } else if (mode === 'bars') {
+    line.full = { bars: true };
+  }
+  return line;
+}
+
+function openCalcWithPreset(name, calc) {
+  const c = calc || {};
+  document.getElementById('cm-name').value = name || c.name || '';
+  document.getElementById('cm-material').value = c.material || 'chrome';
+  document.getElementById('cm-karat').value = c.karat || '18';
+  document.getElementById('cm-gold-rate').value = (E && E.get().goldPrice) || '';
+  document.getElementById('cm-teeth').value = c.teeth || 6;
+  document.getElementById('cm-level').value = String(c.level || '1');
+  document.getElementById('cm-plating').value = c.plating || 'none';
+  document.getElementById('cm-enamel').value = c.enamel || 'none';
+  document.getElementById('cm-engraving').value = c.engraving || 'none';
+  document.getElementById('cm-anodize').value = c.anodize || 'none';
+  const mode = c.accent ? 'accent' : (c.full && c.full.bars ? 'bars' : (c.full ? 'full' : 'none'));
+  document.getElementById('cm-stones').value = mode;
+  if (c.accent) {
+    document.getElementById('cm-acount').value = c.accent.count || 1;
+    document.getElementById('cm-atype').value = c.accent.type || 'cz';
+    document.getElementById('cm-asetting').value = c.accent.setting || 'flush';
+  }
+  if (c.full && !c.full.bars) {
+    document.getElementById('cm-ftype').value = c.full.type || 'moissanite';
+    document.getElementById('cm-fcov').value = c.full.coverage || 'standardpave';
+  }
+  syncCalcModal();
+  document.getElementById('calc-modal').classList.add('open');
+}
+
+function setupCalculatorModal() {
+  const modal = document.getElementById('calc-modal');
+  const close = () => modal.classList.remove('open');
+  document.getElementById('open-calc-btn').addEventListener('click', () => openCalcWithPreset('', null));
+  document.getElementById('close-calc-modal').addEventListener('click', close);
+  document.getElementById('cancel-calc-modal').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  ['cm-material','cm-karat','cm-gold-rate','cm-teeth','cm-level','cm-stones',
+   'cm-acount','cm-atype','cm-asetting','cm-acustom','cm-ftype','cm-fcov','cm-fcustom',
+   'cm-plating','cm-enamel','cm-engraving','cm-anodize','cm-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', syncCalcModal);
+      el.addEventListener('change', syncCalcModal);
+    }
+  });
+
+  document.getElementById('apply-calc-modal').addEventListener('click', () => {
+    const line = readCalcModalLine();
+    if (line.material === 'gold' && (!line.goldPrice || line.goldPrice <= 0)) {
+      showToast('Enter today\'s 24K gold rate (EGP/g)', 'error-toast');
+      return;
+    }
+    const calc = E.calculateLine(line);
+    const label = line.name || (E.LABELS.material[line.material] + ' Custom Grillz');
+    addCustomItem({ name: label, spec: E.lineLabel(calc), qty: 1, price: calc.subtotal, line: calc });
+    close();
+    showToast('Custom grillz line added: ' + fmt(calc.subtotal) + ' EGP', 'success');
+  });
+}
+
+function setupServicesBar() {
+  const bar = document.getElementById('svc-quick-bar');
+  document.getElementById('toggle-svc-btn').addEventListener('click', () => {
+    bar.classList.toggle('open');
+  });
+  bar.querySelectorAll('[data-svc]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.svc;
+      const S = E ? E.get() : { servicePrices: {} };
+      const L = E ? E.LABELS.service : {};
+      const price = Number((S.servicePrices && S.servicePrices[k]) || 0);
+      addCustomItem({
+        name: L[k] || btn.textContent.replace(/^\+\s*/, ''),
+        spec: 'Studio Service',
+        qty: 1,
+        price,
+      });
+      showToast('Service added', 'success');
+    });
+  });
+}
+
+function applyImportedQuote(transfer) {
+  if (!transfer || !Array.isArray(transfer.items)) return;
+  pendingQuoteId = transfer.quoteId || '';
+  if (transfer.clientName) {
+    const found = clients.find(c =>
+      (transfer.clientPhone && (c.phone === transfer.clientPhone || c.id === transfer.clientPhone)) ||
+      (c.name || '').toLowerCase() === transfer.clientName.toLowerCase()
+    );
+    if (found) {
+      selectClient(found);
+    } else {
+      selectedClient = {
+        id: transfer.clientPhone || transfer.clientName,
+        name: transfer.clientName,
+        phone: transfer.clientPhone || '',
+        email: transfer.clientEmail || '',
+      };
+      document.getElementById('client-search-input').value = transfer.clientName;
+      document.getElementById('client-card').classList.add('visible');
+      document.getElementById('cc-name').textContent = selectedClient.name;
+      document.getElementById('cc-info').textContent = [selectedClient.phone, selectedClient.email].filter(Boolean).join(' · ');
+      document.getElementById('cc-badge').textContent = 'From Quotation';
+    }
+  }
+  lineItems = transfer.items.map(it => ({
+    id: Date.now() + Math.random(),
+    name: it.name || '',
+    spec: it.spec || '',
+    qty: Number(it.qty) || 1,
+    price: Number(it.price) || 0,
+    line: it.line || null,
+  }));
+  if (transfer.notes) document.getElementById('inv-notes').value = transfer.notes;
+  if (transfer.discountAmount > 0) {
+    document.getElementById('discount-val').value = transfer.discountAmount;
+    document.getElementById('discount-type').value = 'egp';
+  }
+  if (transfer.depositAmount > 0) {
+    document.getElementById('deposit-val').value = transfer.depositAmount;
+    document.getElementById('inv-status').value = 'partial';
+  }
+  renderItems();
+  updatePreview();
+  showToast('Imported quote into Invoice Studio', 'success');
+}
+
+function consumePendingQuoteTransfer() {
+  try {
+    const raw = localStorage.getItem('egygz_pending_invoice_from_quote');
+    if (raw) {
+      localStorage.removeItem('egygz_pending_invoice_from_quote');
+      applyImportedQuote(JSON.parse(raw));
+    }
+  } catch (e) {}
+  window.addEventListener('message', (ev) => {
+    if (ev.origin !== window.location.origin) return;
+    if (ev.data && ev.data.type === 'egygz:applyQuoteTransfer' && ev.data.payload) {
+      applyImportedQuote(ev.data.payload);
+    }
+  });
+}
+
+function setupImportQuoteModal() {
+  const modal = document.getElementById('import-quote-modal');
+  const close = () => modal.classList.remove('open');
+  document.getElementById('close-import-quote').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  document.getElementById('open-import-quote-btn').addEventListener('click', async () => {
+    modal.classList.add('open');
+    const listEl = document.getElementById('import-quote-list');
+    listEl.innerHTML = '<div class="design-picker-loading">Loading quotes...</div>';
+    try {
+      const qSnap = await getDocs(query(collection(db, 'quotes'), orderBy('createdAt', 'desc'), limit(40)));
+      const rows = qSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      if (!rows.length) {
+        listEl.innerHTML = '<div class="design-picker-loading">No saved quotes found.</div>';
+        return;
+      }
+      listEl.innerHTML = rows.map(q => `
+        <div class="quote-import-row">
+          <div>
+            <div style="font-weight:700;font-size:13px">${escHtml(q.clientName || 'Client')}</div>
+            <div style="font-size:11px;color:#888">${escHtml((q.createdAt||'').slice(0,10))} · ${escHtml(q.designLabel || '')} · <strong>${fmt(q.total || (q.order&&q.order.total) || 0)} EGP</strong></div>
+          </div>
+          <button type="button" class="add-btn" data-use-q="${escHtml(q.id)}">Import</button>
+        </div>
+      `).join('');
+      listEl.querySelectorAll('[data-use-q]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const q = rows.find(x => x.id === btn.dataset.useQ);
+          if (!q) return;
+          const order = q.order || {};
+          const items = [];
+          (order.lines || []).forEach(l => {
+            items.push({
+              name: l.name || (E.LABELS.material[l.material] + ' Grillz'),
+              spec: E.lineLabel(l),
+              qty: 1,
+              price: Number(l.subtotal) || 0,
+              line: l,
+            });
+          });
+          (order.services || []).forEach(sv => {
+            items.push({ name: sv.name, spec: 'Studio Service', qty: Number(sv.qty)||1, price: Number(sv.unitPrice)||0 });
+          });
+          if (order.timelineAmount) items.push({ name: `${E.LABELS.timeline[order.timeline]||'Rush'} Timeline`, spec: `+${order.timelinePct||0}%`, qty: 1, price: Number(order.timelineAmount)||0 });
+          if (order.moldCost) items.push({ name: `Mold — ${E.LABELS.mold[order.mold]||order.mold}`, spec: 'Studio Mold Fee', qty: 1, price: Number(order.moldCost)||0 });
+          applyImportedQuote({
+            quoteId: q.id,
+            clientName: q.clientName || '',
+            clientPhone: q.clientPhone || '',
+            clientEmail: q.clientEmail || '',
+            notes: q.notes || '',
+            discountAmount: Number(order.discountAmount) || 0,
+            depositAmount: Number(order.deposit) || 0,
+            items,
+          });
+          close();
+        });
+      });
+    } catch (e) {
+      listEl.innerHTML = '<div class="design-picker-loading">Failed to load quotes.</div>';
+    }
   });
 }
 
@@ -1589,7 +2090,7 @@ function updatePreview() {
   } else {
     tbody.innerHTML = lineItems.map(i => `
       <tr>
-        <td>${escHtml(i.name) || '—'}</td>
+        <td>${escHtml(i.name) || '—'}${i.spec ? `<div style="font-size:10px;color:#888;margin-top:2px">${escHtml(i.spec)}</div>` : ''}</td>
         <td style="text-align:right">${i.qty}</td>
         <td style="text-align:right">${fmt(i.price)} EGP</td>
         <td style="text-align:right">${fmt(i.qty * i.price)} EGP</td>
@@ -1633,46 +2134,72 @@ function setupSaveEmail() {
 
 function buildInvoiceData() {
   const { subtotal, discount, total, deposit, remaining } = calcTotals();
+  const status = document.getElementById('inv-status').value;
+  const num = document.getElementById('inv-number').value.trim() || genInvNum();
+  const docId = editingInvoiceId ? String(editingInvoiceId) : (num.replace(/[^a-zA-Z0-9_-]/g, '') || String(Date.now()));
   return {
-    id: editingInvoiceId || Date.now(),
-    number: document.getElementById('inv-number').value,
+    id: docId,
+    number: num,
     date: document.getElementById('inv-date').value,
     due: document.getElementById('inv-due').value,
-    status: document.getElementById('inv-status').value,
+    status,
+    paid: status === 'paid',
     notes: document.getElementById('inv-notes').value,
     clientId: selectedClient?.id || null,
     clientName: selectedClient?.name || '—',
     clientEmail: selectedClient?.email || '',
     clientPhone: selectedClient?.phone || '',
-    items: lineItems.map(i => ({...i})),
+    quoteId: pendingQuoteId || '',
+    items: lineItems.map(i => ({ name: i.name || '', spec: i.spec || '', qty: Number(i.qty)||1, price: Number(i.price)||0 })),
     subtotal, discount, total, deposit, remaining,
     paymentMethod,
+    updatedAt: new Date().toISOString(),
     createdAt: new Date().toISOString()
   };
 }
 
-function saveInvoice() {
+async function saveInvoice() {
   if (!selectedClient) { showToast('Select a client first', 'error-toast'); return; }
   if (lineItems.length === 0) { showToast('Add at least one item', 'error-toast'); return; }
   const data = buildInvoiceData();
   const invs = getInvoices();
-  const idx = invs.findIndex(i => i.id === data.id);
-  if (idx >= 0) invs[idx] = data; else invs.push(data);
+  const idx = invs.findIndex(i => String(i.id) === String(data.id));
+  if (idx >= 0) {
+    data.createdAt = invs[idx].createdAt || data.createdAt;
+    invs[idx] = data;
+  } else {
+    invs.unshift(data);
+  }
   saveInvoices(invs);
+  editingInvoiceId = data.id;
   updateHeroStats();
-  showToast('Invoice saved · ' + data.number, 'success');
-  editingInvoiceId = data.id; // stay in edit mode
+
+  try {
+    await setDoc(doc(db, 'invoices', String(data.id)), data, { merge: true });
+    showToast('Invoice saved to studio database · ' + data.number, 'success');
+  } catch (e) {
+    console.warn('[invoice] Firestore save failed', e);
+    showToast('Saved locally only — check Firestore rules', 'error-toast');
+  }
+}
+
+const INV_PDF_MAP = { '\u2014':'-', '\u2013':'-', '\u00b7':'-', '\u00d7':'x', '\u2019':"'", '\u2018':"'", '\u201c':'"', '\u201d':'"', '\u2026':'...', '\u2022':'-', '\u060c':',', '\u061f':'?' };
+function invPdfSafe(str) {
+  let out = '';
+  for (const ch of String(str == null ? '' : str)) {
+    if (INV_PDF_MAP[ch] !== undefined) { out += INV_PDF_MAP[ch]; continue; }
+    const c = ch.codePointAt(0);
+    if ((c >= 0x20 && c <= 0x7e) || (c >= 0xa0 && c <= 0xff) || c === 0x0a) out += ch;
+  }
+  return out;
 }
 
 async function downloadPDF() {
   const overlay = document.getElementById('pdf-overlay');
   const btn = document.getElementById('download-pdf-btn');
 
-  // Check libraries loaded
-  if (typeof window.html2canvas === 'undefined') {
-    showToast('html2canvas not loaded — refresh page', 'error-toast'); return;
-  }
-  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+  const JsPDFConstructor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if (!JsPDFConstructor) {
     showToast('jsPDF not loaded — refresh page', 'error-toast'); return;
   }
 
@@ -1680,78 +2207,140 @@ async function downloadPDF() {
   btn.disabled = true;
 
   try {
-    await new Promise(r => setTimeout(r, 150));
+    const docPdf = new JsPDFConstructor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const W = docPdf.internal.pageSize.getWidth();
+    const H = docPdf.internal.pageSize.getHeight();
+    const M = 44;
+    const T = (s, x, yy, o) => docPdf.text(invPdfSafe(s), x, yy, o);
 
-    // Support both window.jspdf.jsPDF and window.jsPDF
-    const JsPDFConstructor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
-    if (!JsPDFConstructor) throw new Error('jsPDF constructor not found');
+    const num = document.getElementById('inv-number').value || 'EGY-001';
+    const date = document.getElementById('inv-date').value || todayStr();
+    const due = document.getElementById('inv-due').value || '';
+    const status = document.getElementById('inv-status').value;
+    const notes = document.getElementById('inv-notes').value.trim();
+    const { subtotal, discount, total, usd, deposit, remaining } = calcTotals();
 
-    const preview = document.getElementById('invoice-preview');
+    let y = 54;
+    docPdf.setFillColor(26, 26, 26);
+    docPdf.rect(0, 0, W, 6, 'F');
 
-    // Clone the preview into a clean off-screen container to avoid
-    // layout/sticky/shadow issues during capture
-    const clone = preview.cloneNode(true);
-    clone.style.cssText = `
-      position:fixed; left:-9999px; top:0;
-      width:${preview.offsetWidth}px;
-      background:#fff; padding:40px 36px;
-      font-family:Arimo,sans-serif;
-      box-shadow:none; border:none;
-    `;
-    document.body.appendChild(clone);
+    docPdf.setFont('times', 'bold'); docPdf.setFontSize(22); docPdf.setTextColor(26, 26, 26);
+    T('EGYGRILLZ', M, y);
+    docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8); docPdf.setTextColor(130, 130, 130);
+    T('CUSTOM DENTAL JEWELRY · CAIRO, EGYPT', M, y + 14);
+    T('Smart Smile Dental Clinic · 38 Abou Bakr El-Sdeek, Heliopolis', M, y + 26);
+    T('egygrillz.com · egygrillz@gmail.com', M, y + 37);
 
-    let canvas;
-    try {
-      canvas = await window.html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        allowTaint: true,
-        width: clone.offsetWidth,
-        height: clone.scrollHeight
-      });
-    } finally {
-      document.body.removeChild(clone);
+    docPdf.setFont('times', 'bold'); docPdf.setFontSize(14); docPdf.setTextColor(26, 26, 26);
+    T('INVOICE', W - M, y, { align: 'right' });
+    docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(9.5); docPdf.setTextColor(60, 60, 60);
+    T(num, W - M, y + 15, { align: 'right' });
+    docPdf.setFontSize(8.5); docPdf.setTextColor(120, 120, 120);
+    T(`Issued: ${date}${due ? '  |  Due: ' + due : ''}`, W - M, y + 27, { align: 'right' });
+    docPdf.setFont('helvetica', 'bold');
+    docPdf.setTextColor(status === 'paid' ? 39 : status === 'partial' ? 210 : 192, status === 'paid' ? 140 : status === 'partial' ? 120 : 57, status === 'paid' ? 96 : status === 'partial' ? 20 : 43);
+    T(status === 'paid' ? 'STATUS: PAID' : status === 'partial' ? 'STATUS: PARTIAL PAYMENT' : 'STATUS: PENDING', W - M, y + 40, { align: 'right' });
+
+    y += 60;
+    docPdf.setDrawColor(26, 26, 26); docPdf.setLineWidth(1.2);
+    docPdf.line(M, y, W - M, y);
+    y += 22;
+
+    docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(7.5); docPdf.setTextColor(150, 150, 150);
+    T('BILL TO', M, y);
+    y += 14;
+    docPdf.setFont('times', 'bold'); docPdf.setFontSize(12); docPdf.setTextColor(26, 26, 26);
+    T(selectedClient ? (selectedClient.name || selectedClient.id) : 'Client', M, y);
+    y += 14;
+    docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(9); docPdf.setTextColor(100, 100, 100);
+    if (selectedClient && (selectedClient.phone || selectedClient.email)) {
+      T([selectedClient.phone, selectedClient.email].filter(Boolean).join('  ·  '), M, y);
+      y += 14;
     }
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const pdf = new JsPDFConstructor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();   // 210mm
-    const pageH = pdf.internal.pageSize.getHeight();  // 297mm
+    y += 12;
+    docPdf.setFontSize(7.5); docPdf.setTextColor(150, 150, 150);
+    T('ITEM / DESCRIPTION', M, y);
+    T('QTY', W - M - 165, y, { align: 'right' });
+    T('PRICE', W - M - 90, y, { align: 'right' });
+    T('TOTAL', W - M, y, { align: 'right' });
+    y += 7;
+    docPdf.setDrawColor(225, 225, 225); docPdf.setLineWidth(0.75);
+    docPdf.line(M, y, W - M, y);
+    y += 16;
 
-    const pxPerMm = canvas.width / pageW;
-    const contentHeightMm = canvas.height / pxPerMm;
-
-    if (contentHeightMm <= pageH) {
-      // Fits on one page
-      pdf.addImage(imgData, 'JPEG', 0, 0, pageW, contentHeightMm);
-    } else {
-      // Slice into pages
-      const pageHeightPx = pageH * pxPerMm;
-      let offsetPx = 0;
-      let pageNum = 0;
-      while (offsetPx < canvas.height) {
-        if (pageNum > 0) pdf.addPage();
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = Math.min(pageHeightPx, canvas.height - offsetPx);
-        const ctx = sliceCanvas.getContext('2d');
-        ctx.drawImage(canvas, 0, offsetPx, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.95);
-        const sliceHeightMm = (sliceCanvas.height / pxPerMm);
-        pdf.addImage(sliceData, 'JPEG', 0, 0, pageW, sliceHeightMm);
-        offsetPx += pageHeightPx;
-        pageNum++;
+    lineItems.forEach(item => {
+      if (y > H - 150) { docPdf.addPage(); y = 56; }
+      const titleLines = docPdf.splitTextToSize(invPdfSafe(item.name || 'Item'), W - M * 2 - 200);
+      docPdf.setFont('helvetica', 'bold'); docPdf.setFontSize(9.5); docPdf.setTextColor(26, 26, 26);
+      T(titleLines[0] || 'Item', M, y);
+      docPdf.setFont('helvetica', 'normal');
+      T(String(item.qty), W - M - 165, y, { align: 'right' });
+      T(`${fmt(item.price)} EGP`, W - M - 90, y, { align: 'right' });
+      docPdf.setFont('helvetica', 'bold');
+      T(`${fmt(item.qty * item.price)} EGP`, W - M, y, { align: 'right' });
+      y += 13;
+      if (titleLines.length > 1) {
+        docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8.5); docPdf.setTextColor(90, 90, 90);
+        titleLines.slice(1).forEach(tl => { T(tl, M, y); y += 11; });
       }
+      if (item.spec) {
+        docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8); docPdf.setTextColor(125, 125, 125);
+        docPdf.splitTextToSize(invPdfSafe(item.spec), W - M * 2 - 190).forEach(sl => {
+          T(sl, M, y); y += 11;
+        });
+      }
+      docPdf.setDrawColor(244, 244, 244); docPdf.line(M, y, W - M, y);
+      y += 12;
+    });
+
+    y += 10;
+    const sumX = W - M - 210;
+    const kvRow = (lbl, val, opts = {}) => {
+      if (y > H - 90) { docPdf.addPage(); y = 56; }
+      docPdf.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+      docPdf.setFontSize(opts.size || 9.5);
+      docPdf.setTextColor(...(opts.color || [90, 90, 90]));
+      T(lbl, sumX, y);
+      docPdf.setTextColor(...(opts.valColor || [26, 26, 26]));
+      T(val, W - M, y, { align: 'right' });
+      y += opts.gap || 15;
+    };
+
+    kvRow('Subtotal', `${fmt(subtotal)} EGP`);
+    if (discount > 0) kvRow('Discount', `-${fmt(discount)} EGP`, { valColor: [180, 60, 50] });
+    docPdf.setDrawColor(26, 26, 26); docPdf.line(sumX, y - 5, W - M, y - 5);
+    y += 8;
+    kvRow('TOTAL', `${fmt(total)} EGP`, { bold: true, size: 12, color: [26, 26, 26], gap: 16 });
+    kvRow('USD Equivalent', `~ $${usd.toFixed(2)} USD`, { size: 8, color: [150, 150, 150], valColor: [150, 150, 150], gap: 14 });
+    kvRow('Tax', 'Tax Free · No VAT Applied', { size: 8, color: [150, 150, 150], valColor: [150, 150, 150], gap: 18 });
+
+    kvRow('Payment Method', paymentMethod, { color: [90, 90, 90] });
+    if (deposit > 0) {
+      kvRow('Deposit Paid', `${fmt(deposit)} EGP`, { valColor: [39, 140, 96] });
+      kvRow('Balance Due', `${fmt(remaining)} EGP`, { bold: true, valColor: [192, 57, 43] });
     }
 
-    const num = (document.getElementById('inv-number').value || 'invoice').replace(/[^a-zA-Z0-9\-]/g,'');
-    const clientName = (selectedClient?.name || 'client').replace(/\s+/g,'-').replace(/[^a-zA-Z0-9\-]/g,'');
-    pdf.save(`EGYGRILLZ-${num}-${clientName}.pdf`);
-    showToast('PDF downloaded!', 'success');
+    if (notes) {
+      y += 12;
+      docPdf.setFont('helvetica', 'bold'); docPdf.setFontSize(8); docPdf.setTextColor(140, 140, 140);
+      T('NOTES', M, y); y += 12;
+      docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(9); docPdf.setTextColor(80, 80, 80);
+      docPdf.splitTextToSize(invPdfSafe(notes), W - M * 2).forEach(line => {
+        if (y > H - 55) { docPdf.addPage(); y = 56; }
+        T(line, M, y); y += 12;
+      });
+    }
 
-  } catch(e) {
+    docPdf.setFont('helvetica', 'normal'); docPdf.setFontSize(8); docPdf.setTextColor(155, 155, 155);
+    T('DR Mohamed Mahdy · EGYGRILLZ Studio', M, H - 34);
+    T('egygrillz.com · @egygrillz', W - M, H - 34, { align: 'right' });
+
+    const safeNum = num.replace(/[^a-zA-Z0-9\-]/g, '');
+    const clientName = (selectedClient?.name || 'client').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-]/g, '');
+    docPdf.save(`EGYGRILLZ-${safeNum}-${clientName}.pdf`);
+    showToast('PDF downloaded!', 'success');
+  } catch (e) {
     console.error('PDF error:', e);
     showToast('PDF failed: ' + e.message, 'error-toast');
   } finally {
@@ -1768,7 +2357,7 @@ function emailInvoice() {
   const { total, deposit, remaining } = calcTotals();
   const status = document.getElementById('inv-status').value;
   const notes = document.getElementById('inv-notes').value;
-  const itemLines = lineItems.map(i => `  - ${i.name} (x${i.qty}): ${fmt(i.qty*i.price)} EGP`).join('\n');
+  const itemLines = lineItems.map(i => `  - ${i.name}${i.spec ? ' (' + i.spec + ')' : ''} (x${i.qty}): ${fmt(i.qty*i.price)} EGP`).join('\n');
 
   const subject = encodeURIComponent(`EGYGRILLZ Invoice ${num}`);
   const body = encodeURIComponent(
@@ -1869,10 +2458,12 @@ function renderInvoicesList() {
 
   wrap.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const ok = await confirm('Delete Invoice', `Delete invoice ${btn.dataset.del}? This cannot be undone.`);
+      const targetId = String(btn.dataset.del);
+      const ok = await confirm('Delete Invoice', `Delete invoice ${targetId}? This cannot be undone.`);
       if (!ok) return;
-      const arr = getInvoices().filter(i => i.id != btn.dataset.del);
+      const arr = getInvoices().filter(i => String(i.id) !== targetId);
       saveInvoices(arr);
+      try { await deleteDoc(doc(db, 'invoices', targetId)); } catch (e) {}
       loadAccountingTab();
       updateHeroStats();
       showToast('Invoice deleted');
@@ -1881,7 +2472,7 @@ function renderInvoicesList() {
 
   wrap.querySelectorAll('[data-edit]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const inv = getInvoices().find(i => i.id == btn.dataset.edit);
+      const inv = getInvoices().find(i => String(i.id) === String(btn.dataset.edit));
       if (!inv) return;
       loadInvoiceIntoBuilder(inv);
       document.querySelectorAll('.tab-btn')[0].click();
@@ -1891,7 +2482,7 @@ function renderInvoicesList() {
 
   wrap.querySelectorAll('[data-email]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const inv = getInvoices().find(i => i.id == btn.dataset.email);
+      const inv = getInvoices().find(i => String(i.id) === String(btn.dataset.email));
       if (!inv || !inv.clientEmail) { showToast('No email for this client', 'error-toast'); return; }
       const itemLines = (inv.items||[]).map(i=>`  - ${i.name} (x${i.qty}): ${fmt(i.qty*i.price)} EGP`).join('\n');
       const subject = encodeURIComponent(`EGYGRILLZ Invoice ${inv.number}`);
@@ -2039,9 +2630,8 @@ try {
   await initApp();
 } catch (bootErr) {
   console.error('[invoice] boot failed', bootErr);
-  window.diag && window.diag('boot', 'FAILED: ' + (bootErr && (bootErr.code || bootErr.message)));
   const a = document.getElementById('app');
-  if (a) a.style.display = 'block';   /* الصفحة تظهر حتى لو حاجة وقعت */
+  if (a) a.style.display = 'block';
   showToast('Some parts failed to load. Refresh to try again.', 'error-toast');
 }
 </script>

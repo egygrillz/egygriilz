@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Price Estimator — EGYGRILLZ</title>
+<meta name="description" content="Estimate custom grillz pricing by metal, tooth count, craftsmanship level, stones, and finishes with EGYGRILLZ Cairo.">
+<link rel="canonical" href="https://egygrillz.com/atelier">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Arimo:wght@400;500;700&family=Alex+Brush&display=swap" rel="stylesheet">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
@@ -513,6 +515,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 .pb-price.pop{animation:numPop .22s ease, priceGlow .6s ease;}
 </style>
   <link rel="canonical" href="https://egygrillz.com/atelier">
+  <script src="/assets/calc-engine.js"></script>
 </head>
 <body>
 
@@ -704,13 +707,13 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
     <p class="section-sub reveal reveal-delay-2">From clean and minimal to masterpiece-level sculpture. Complexity adds to the designer fee and final retail price.</p>
     <div class="info-panel" id="info-cplx">
       <div class="info-content">
-        <strong>Level 1 — The Bar (0%)</strong> Simple solid bar — no cuts or detail. Lowest complexity.<br>
-        <strong>Level 2 — Solid Cap (+5%)</strong> Seamless polished plain cap. Standard base design.<br>
-        <strong>Level 3 — Medium (+10%)</strong> Texture work or shaped framing (e.g. drip, flame).<br>
-        <strong>Level 4 — Hard (+15%)</strong> Intricate manual detail (e.g. flower).<br>
-        <strong>Level 5 — Complex (+25%)</strong> Advanced layering or multi-step design (e.g. snake, scorpion).<br>
-        <strong>Level 6 — Master (+40%)</strong> Full artistic sculpting, expert-level modeling (e.g. mermaid).<br>
-        <strong>Level 7 — Masterpiece (Special)</strong> Maximum complexity — one-of-a-kind commission. Price on consultation.
+        <strong>The Bar (0.5&times; base)</strong> Simple solid bar — clean horizontal bridge.<br>
+        <strong>Level 1 — Solid Cap (0%)</strong> Seamless polished plain cap. Standard base design.<br>
+        <strong>Level 2 — Medium (+10%)</strong> Texture work or shaped framing (e.g. drip, flame).<br>
+        <strong>Level 3 — Hard (+15%)</strong> Intricate manual detail (e.g. flower).<br>
+        <strong>Level 4 — Complex (+25%)</strong> Advanced layering or multi-step design (e.g. snake, scorpion).<br>
+        <strong>Level 5 — Master (+40%)</strong> Full artistic sculpting, expert-level modeling (e.g. mermaid).<br>
+        <strong>Level 6 — Masterpiece (+60%)</strong> Maximum complexity — museum-grade custom sculpture.
       </div>
     </div>
   </div>
@@ -736,12 +739,12 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
         <div class="ao-head">
           <div class="ao-left">
             <div class="ao-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg></div>
-            <div><div class="ao-title">Stones &amp; Diamonds</div><div class="ao-hint">CZ · Moissanite · Natural Diamond</div></div>
+            <div><div class="ao-title">Stones &amp; Diamonds</div><div class="ao-hint">CZ · Moissanite · Lab / Natural Diamond</div></div>
           </div>
           <span class="ao-chev"><i class="fas fa-chevron-down"></i></span>
         </div>
         <div class="ao-body" onclick="event.stopPropagation()">
-          <div class="ao-avail-note" id="stones-avail-note"><i class="fas fa-triangle-exclamation"></i> Diamond setting is only available for Silver 925 and Gold 18K.</div>
+          <div class="ao-avail-note" id="stones-avail-note"><i class="fas fa-triangle-exclamation"></i> Diamond &amp; stone setting is only available on Silver 925 and Solid Gold.</div>
           <div class="ao-sub-row">
             <div class="ao-sub" style="margin-top:0;">Stone Style</div>
             <span class="info-trigger" style="margin-left:6px;margin-bottom:10px;" onclick="toggleInfo('info-stones')">i</span>
@@ -749,29 +752,31 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
           <div class="info-panel" id="info-stones">
             <div class="info-content">
               <strong>Single Stone(s)</strong> — Individual gems set at specific spots.<br><br>
-              <strong>Iced Out</strong> — Full honeycomb coverage across the entire tooth surface.<br><br>
-              <strong>CZ</strong> — AAAAA cubic zirconia. Excellent sparkle, very affordable.<br>
-              <strong>Moissanite</strong> — VVS1 / D color / GRA certified. Near-diamond brilliance.<br>
-              <strong>Natural Diamond</strong> — SI or VS certified real diamonds.
+              <strong>Iced Out (Full Tooth)</strong> — Full honeycomb or heavy coverage across each tooth.<br><br>
+              <strong>Iced Bars</strong> — Classic bar setting covered in stones (400 EGP/tooth).<br><br>
+              <strong>CZ</strong> — AAAAA cubic zirconia. <strong>Moissanite</strong> — VVS1/D GRA-certified.<br>
+              <strong>Lab / Natural Diamond</strong> — Priced individually at studio consultation.
             </div>
           </div>
           <div class="pills" id="sg-pills">
             <button class="pill on" data-v="None"   onclick="pp(event,this,'sg')">None</button>
             <button class="pill"    data-v="Single" onclick="pp(event,this,'sg')">Single Stone(s)</button>
             <button class="pill"    data-v="Iced"   onclick="pp(event,this,'sg')">Iced Out</button>
+            <button class="pill"    data-v="Bars"   onclick="pp(event,this,'sg')">Iced Bars (+400/tooth)</button>
           </div>
           <div id="single-wrap" style="display:none;">
             <div class="ao-sub">Setting Type</div>
             <div class="pills" id="set-pills">
-              <button class="pill on" data-v="Flush" onclick="pp(event,this,'set')">Flush +150/stone</button>
-              <button class="pill"    data-v="Prong" onclick="pp(event,this,'set')">Prong +200/stone</button>
-              <button class="pill"    data-v="Bezel" onclick="pp(event,this,'set')">Bezel +250/stone</button>
+              <button class="pill on" data-v="flush" onclick="pp(event,this,'set')">Flush +150/stone</button>
+              <button class="pill"    data-v="prong" onclick="pp(event,this,'set')">Prong +200/stone</button>
+              <button class="pill"    data-v="bezel" onclick="pp(event,this,'set')">Bezel +250/stone</button>
             </div>
             <div class="ao-sub">Gem Type</div>
             <div class="pills" id="gem-pills">
-              <button class="pill on" data-v="CZ"         onclick="pp(event,this,'gem')">CZ +50/stone</button>
-              <button class="pill"    data-v="Moissanite" onclick="pp(event,this,'gem')">Moissanite +360/stone</button>
-              <button class="pill"    data-v="Natural"    onclick="pp(event,this,'gem')">Natural Diamond</button>
+              <button class="pill on" data-v="cz"         onclick="pp(event,this,'gem')">CZ +50/stone</button>
+              <button class="pill"    data-v="moissanite" onclick="pp(event,this,'gem')">Moissanite +360/stone</button>
+              <button class="pill"    data-v="lab"        onclick="pp(event,this,'gem')">Lab Diamond (Studio)</button>
+              <button class="pill"    data-v="natural"    onclick="pp(event,this,'gem')">Natural Diamond (Studio)</button>
             </div>
             <div class="ao-sub">Number of Stones</div>
             <div class="stepper">
@@ -782,24 +787,25 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
           </div>
           <div id="iced-wrap" style="display:none;">
             <div class="ao-sub-row">
-              <div class="ao-sub" style="margin-top:16px;">Iced Out Pattern</div>
+              <div class="ao-sub" style="margin-top:16px;">Iced Out Coverage</div>
               <span class="info-trigger" style="margin-left:6px;" onclick="toggleInfo('info-iced')">i</span>
             </div>
             <div class="info-panel" id="info-iced">
               <div class="info-content">
-                <strong>Pavé (Honeycomb)</strong> — Stones packed tightly. +1,000 EGP / tooth.<br><br>
-                <strong>Channel (Linear Rows)</strong> — Stones in rows. +1,500 EGP / tooth.
+                <strong>Standard Pavé</strong> — Precision honeycomb coverage. +600 EGP / tooth setting.<br><br>
+                <strong>Heavy / Full Flood</strong> — Maximum stone density across curved borders. +900 EGP / tooth setting.
               </div>
             </div>
             <div class="pills" id="ios-pills">
-              <button class="pill on" data-v="Pave"    onclick="pp(event,this,'ios')">Pavé +1,000/tooth</button>
-              <button class="pill"    data-v="Channel" onclick="pp(event,this,'ios')">Channel +1,500/tooth</button>
+              <button class="pill on" data-v="standardpave" onclick="pp(event,this,'ios')">Standard Pavé +600/tooth</button>
+              <button class="pill"    data-v="heavy"        onclick="pp(event,this,'ios')">Heavy +900/tooth</button>
             </div>
             <div class="ao-sub">Gem Type</div>
             <div class="pills" id="iog-pills">
-              <button class="pill on" data-v="CZ"         onclick="pp(event,this,'iog')">CZ (Included)</button>
-              <button class="pill"    data-v="Moissanite" onclick="pp(event,this,'iog')">Moissanite</button>
-              <button class="pill"    data-v="Natural"    onclick="pp(event,this,'iog')">Natural Diamond</button>
+              <button class="pill on" data-v="cz"         onclick="pp(event,this,'iog')">CZ +200/tooth</button>
+              <button class="pill"    data-v="moissanite" onclick="pp(event,this,'iog')">Moissanite +400/tooth</button>
+              <button class="pill"    data-v="lab"        onclick="pp(event,this,'iog')">Lab Diamond (Studio)</button>
+              <button class="pill"    data-v="natural"    onclick="pp(event,this,'iog')">Natural Diamond (Studio)</button>
             </div>
           </div>
         </div>
@@ -827,9 +833,9 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
             </div>
           </div>
           <div class="pills" id="en-pills">
-            <button class="pill on" data-v="Single Tone"   onclick="pp(event,this,'en')">Single Tone — 200 EGP</button>
-            <button class="pill"    data-v="Multi-Tone"    onclick="pp(event,this,'en')">Multi-Tone — 350 EGP</button>
-            <button class="pill"    data-v="Master Color"  onclick="pp(event,this,'en')">Master Color — 750 EGP</button>
+            <button class="pill on" data-v="single" onclick="pp(event,this,'en')">Single Tone — 200 EGP</button>
+            <button class="pill"    data-v="multi"  onclick="pp(event,this,'en')">Multi-Tone — 350 EGP</button>
+            <button class="pill"    data-v="master" onclick="pp(event,this,'en')">Master Color — 750 EGP</button>
           </div>
         </div>
       </div>
@@ -852,7 +858,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
             <div class="info-content">
               A thin layer of precious metal applied over the base.<br><br>
               <strong>Black Gold / White Gold</strong> — 400 EGP / tooth<br>
-              <strong>Rose Gold / Standard White</strong> — 300 EGP / tooth<br>
+              <strong>Yellow Gold / Rose Gold</strong> — 300 EGP / tooth<br>
               <strong>Silver Plating</strong> — 200 EGP / tooth
             </div>
           </div>
@@ -887,9 +893,9 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
             </div>
           </div>
           <div class="pills" id="ls-pills">
-            <button class="pill on" data-v="Small"  onclick="pp(event,this,'ls')">Small — 200 EGP</button>
-            <button class="pill"    data-v="Medium" onclick="pp(event,this,'ls')">Medium — 450 EGP</button>
-            <button class="pill"    data-v="Large"  onclick="pp(event,this,'ls')">Large — 700 EGP</button>
+            <button class="pill on" data-v="small"  onclick="pp(event,this,'ls')">Small — 200 EGP</button>
+            <button class="pill"    data-v="medium" onclick="pp(event,this,'ls')">Medium — 450 EGP</button>
+            <button class="pill"    data-v="large"  onclick="pp(event,this,'ls')">Large — 700 EGP</button>
           </div>
         </div>
       </div>
@@ -917,9 +923,9 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
             </div>
           </div>
           <div class="pills" id="an-pills">
-            <button class="pill on" data-v="Single"  onclick="pp(event,this,'an')">Single Color — 300 EGP</button>
-            <button class="pill"    data-v="Dual"    onclick="pp(event,this,'an')">Dual Tone — 350 EGP</button>
-            <button class="pill"    data-v="Multi"   onclick="pp(event,this,'an')">Multi-Color — 450 EGP</button>
+            <button class="pill on" data-v="single" onclick="pp(event,this,'an')">Single Color — 300 EGP</button>
+            <button class="pill"    data-v="dual"   onclick="pp(event,this,'an')">Dual Tone — 350 EGP</button>
+            <button class="pill"    data-v="multi"  onclick="pp(event,this,'an')">Multi-Color — 450 EGP</button>
           </div>
         </div>
       </div>
@@ -931,7 +937,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
       <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">Your Estimate Summary</div>
       <div class="share-summary" id="share-text"></div>
       <div class="share-btns">
-        <button class="share-btn" onclick="copyEstimate()"><i class="fas fa-copy"></i> Copy</button>
+        <button class="share-btn" onclick="copyEstimate(this)"><i class="fas fa-copy"></i> Copy</button>
         <button class="share-btn" onclick="shareWhatsApp()"><i class="fab fa-whatsapp"></i> Share via WhatsApp</button>
       </div>
     </div>
@@ -970,7 +976,7 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 <!-- WHY EGYGRILLZ -->
 <div class="why-section">
   <div class="why-inner">
-    <div class="section-label" style="text-align:center;" class="reveal">Why Choose Us</div>
+    <div class="section-label reveal" style="text-align:center;">Why Choose Us</div>
     <h2 class="section-title reveal">Why EGYGRILLZ</h2>
     <p class="section-sub reveal reveal-delay-1">Egypt's most trusted custom dental jewelry studio.</p>
     <div class="why-grid">
@@ -1051,101 +1057,81 @@ body.cursor-hover .cursor-dot{transform:scale(0);}
 
 <script>
 /* ════════════════════════════════════════
-   DATA
+   DATA & ENGINE SYNC
 ════════════════════════════════════════ */
-const _BASE = 'https://raw.githubusercontent.com/egygrillz/egygriilz/main/';
+const E = window.CalcEngine;
 
-/* ── CURRENCY CONFIG ── */
-// Rates are multiplied against the EGP total to get the display currency
-// These are approximate rates — the app fetches live EGP/USD from the gold API
-// and derives the others from stable cross-rates
 const CURRENCIES = {
-  EGP: { symbol: 'EGP', sign: '',    rate: 1,       decimals: 0  },
-  USD: { symbol: 'USD', sign: '$',   rate: 0.021,   decimals: 0  },
-  EUR: { symbol: 'EUR', sign: '€',   rate: 0.019,   decimals: 0  },
-  SAR: { symbol: 'SAR', sign: '.', rate: 0.079,   decimals: 0  },
-  AED: { symbol: 'AED', sign: '.', rate: 0.077,   decimals: 0  },
+  EGP: { symbol: 'EGP', rate: 1 },
+  USD: { symbol: 'USD', rate: 0.020 },
+  EUR: { symbol: 'EUR', rate: 0.0185 },
+  SAR: { symbol: 'SAR', rate: 0.075 },
+  AED: { symbol: 'AED', rate: 0.0735 },
 };
 let activeCurrency = 'EGP';
-// EGP/USD rate updated after live gold fetch
-let EGP_TO_USD = 0.021;
+let EGP_TO_USD = 0.020;
 
-/* Silver: 125 EGP/g default */
-let SILVER_PER_GRAM = 125;
-let GOLD18K_PER_GRAM = 6250; /* fallback, overridden by live fetch */
+let GOLD18K_PER_GRAM = 6300;
 let goldFetchedAt = 0;
-const GOLD_REFRESH_MS = 60 * 60 * 1000; /* 1 hour */
+const GOLD_REFRESH_MS = 60 * 60 * 1000;
 
-/* ── MATERIALS ── */
+/* ── MATERIALS (synced to CalcEngine) ── */
 const MATS = [
   {
-    id:'Silver 925', nm:'Silver 925', sub:'Sterling Silver · Lost-Wax Cast',
+    id:'silver', nm:'Silver 925', sub:'Sterling Silver · Lost-Wax Cast',
     desc:'The brilliant, affordable classic. Perfect for intricate cutwork and iced-out designs. Hypoallergenic and easy to polish.',
     precious:true,
-    img:_BASE+'materials/SILVER.png',
-    calcBase: ()=> Math.round((200 + 37.5 + 46 + 2.3 * SILVER_PER_GRAM) * 2.8)
+    img:'/materials/SILVER.png',
   },
   {
-    id:'Gold 18K', nm:'Gold 18K', sub:'Solid 18K Gold · Lost-Wax Cast',
-    desc:'The pinnacle of grillz. Hypoallergenic, tarnish-free, holds its value. Karat purity certified at point of sale.',
+    id:'gold', nm:'Solid Gold', sub:'18K / 21K / 24K · Lost-Wax Cast',
+    desc:'The pinnacle of grillz. Hypoallergenic, tarnish-free, holds its value. Select your karat purity below.',
     precious:true,
-    img:_BASE+'materials/GOLD.png',
-    calcBase: ()=> Math.round((200 + 60 + 50 + 1.15 * GOLD18K_PER_GRAM) * 2.8)
+    img:'/materials/GOLD.png',
   },
   {
-    id:'Cobalt Chrome', nm:'Cobalt Chrome', sub:'Gunmetal Alloy · 3D Printed (DMLS)',
+    id:'chrome', nm:'Cobalt Chrome', sub:'Gunmetal Alloy · 3D Printed (DMLS)',
     desc:'Ultra-durable, scratch-resistant. Distinctive dark silver appearance. Fixed production cost — no metal market fluctuation.',
     precious:false,
-    img:_BASE+'materials/CHROME.png',
-    calcBase: ()=> 1000
+    img:'/materials/CHROME.png',
   },
   {
-    id:'Titanium', nm:'Titanium', sub:'Aerospace Grade · 3D Printed (DMLS)',
+    id:'titanium', nm:'Titanium', sub:'Aerospace Grade · 3D Printed (DMLS)',
     desc:'Lightest material, fully biocompatible (used in dental implants). Stronger than steel. Anodize-ready for permanent vivid colors.',
     precious:false,
-    img:_BASE+'materials/TITANUM.png',
-    calcBase: ()=> 2000
+    img:'/materials/TITANUM.png',
   }
 ];
 
-/* ── LEVELS ── */
+/* ── LEVELS (exact match to /levels/ and CalcEngine) ── */
 const CPLX = [
-  {id:'L1', nm:'Level 1 — The Bar',      sub:'Simple solid bar — no cuts, no detail.',             mult:1.00, img:_BASE+'levels/LEVEL 1.png'},
-  {id:'L2', nm:'Level 2 — Solid Cap',    sub:'Seamless polished plain cap. Standard base.',        mult:1.05, img:_BASE+'levels/LEVEL 2.png'},
-  {id:'L3', nm:'Level 3 — Medium',       sub:'Texture work or shaped framing (drip / flame).',     mult:1.10, img:_BASE+'levels/LEVEL 3.png'},
-  {id:'L4', nm:'Level 4 — Hard',         sub:'Intricate manual detail (e.g. flower).',             mult:1.15, img:_BASE+'levels/LEVEL 4.png'},
-  {id:'L5', nm:'Level 5 — Complex',      sub:'Advanced layering, multi-step (snake / scorpion).',  mult:1.25, img:_BASE+'levels/LEVEL 5.png'},
-  {id:'L6', nm:'Level 6 — Master',       sub:'Full artistic sculpting, expert modeling (mermaid).',mult:1.40, img:_BASE+'levels/LEVEL 6.png'},
-  {id:'L7', nm:'Level 7 — Masterpiece',  sub:'Maximum complexity. One-of-a-kind commission.',      mult:1.60, img:_BASE+'levels/LEVEL 7.png'}
+  {id:'0.5', nm:'The Bar',                  sub:'Simple solid bar — 0.5x base metal.',                img:'/levels/LEVEL 0.5.png'},
+  {id:'1',   nm:'Level 1 — Solid Cap',      sub:'Seamless polished plain cap. Standard base.',       img:'/levels/LEVEL 1.png'},
+  {id:'2',   nm:'Level 2 — Medium',         sub:'Texture work or shaped framing (+10%).',            img:'/levels/LEVEL 2.png'},
+  {id:'3',   nm:'Level 3 — Hard',           sub:'Intricate manual detail (+15%).',                   img:'/levels/LEVEL 3.png'},
+  {id:'4',   nm:'Level 4 — Complex',        sub:'Advanced layering, multi-step (+25%).',             img:'/levels/LEVEL 4.png'},
+  {id:'5',   nm:'Level 5 — Master',         sub:'Full artistic sculpting (+40%).',                   img:'/levels/LEVEL 5.png'},
+  {id:'6',   nm:'Level 6 — Masterpiece',    sub:'Museum-grade custom sculpture (+60%).',             img:'/levels/LEVEL 6.png'}
 ];
 
 /* ── PLATES ── */
 const PLATES = [
-  {id:'Yellow Gold', nm:'Yellow Gold Plating', sub:'Classic warm gold tone',    price:300, img:_BASE+'plating/YELLOW GOLD PLATING.png'},
-  {id:'Rose Gold',   nm:'Rose Gold Plating',   sub:'Romantic pink-gold tone',   price:300, img:_BASE+'plating/ROSE GOLD PLATING.png'},
-  {id:'White Gold',  nm:'White Gold Plating',  sub:'Cool bright silver-white',  price:400, img:_BASE+'plating/WHITE GOLD PLATING.png'},
-  {id:'Black Gold',  nm:'Black Gold Plating',  sub:'Dark edgy gunmetal finish',  price:400, img:_BASE+'plating/BLACK GOLD PLATING.png'},
-  {id:'Silver',      nm:'Silver Plating',       sub:'Bright mirror silver coat',  price:200, img:_BASE+'plating/SILVER PLATING.png'}
+  {id:'yellowgold', nm:'Yellow Gold Plating', sub:'Classic warm gold tone',   img:'/plating/YELLOW GOLD PLATING.png'},
+  {id:'rosegold',   nm:'Rose Gold Plating',   sub:'Romantic pink-gold tone',  img:'/plating/ROSE GOLD PLATING.png'},
+  {id:'whitegold',  nm:'White Gold Plating',  sub:'Cool bright silver-white', img:'/plating/WHITE GOLD PLATING.png'},
+  {id:'blackgold',  nm:'Black Gold Plating',  sub:'Dark edgy gunmetal finish', img:'/plating/BLACK GOLD PLATING.png'},
+  {id:'silver',     nm:'Silver Plating',      sub:'Bright mirror silver coat', img:'/plating/SILVER PLATING.png'}
 ];
-
-/* ── PRICING TABLES ── */
-const ENAMEL_PRICES  = {'Single Tone':200,'Multi-Tone':350,'Master Color':750};
-const LASER_PRICES   = {'Small':200,'Medium':450,'Large':700};
-const ANOD_PRICES    = {'Single':300,'Dual':350,'Multi':450};
-const SETTING_PRICE  = {Flush:150,Prong:200,Bezel:250};
-const GEM_SINGLE     = {CZ:50,Moissanite:360,Natural:0};
-const ICED_SETTING   = {Pave:1000,Channel:1500};
-const ICED_GEM_EXTRA = {CZ:0,Moissanite:1800,Natural:5000};
 
 /* ── FAQ ── */
 const FAQ_DATA = [
-  {q:'How much does it cost?',a:'Prices depend on material, number of teeth, and design level. Cobalt Chrome starts at 1,000 EGP per tooth and Titanium at 2,000 EGP at Level 1. Silver 925 and Gold 18K are calculated from live metal rates. Use the builder above to get your exact estimate — the price updates in real time as you configure your set.'},
+  {q:'How much does it cost?',a:'Prices depend on material, number of teeth, and design level. Cobalt Chrome starts at 1,000 EGP per tooth (500 EGP as Bar) and Titanium at 2,800 EGP per tooth. Silver 925 is 1,600 EGP per tooth, and Solid Gold updates from live market rates. Use the builder above to see your live estimate.'},
   {q:'How does payment work?',a:'A 50% deposit is required to confirm your order and begin production. No changes can be made after the deposit is received. The remaining 50% is due in full before the finished piece is released or shipped. We accept cash, bank transfer, and Vodafone Cash. All deposits are 100% non-refundable.'},
-  {q:'Is my price locked after I get a quote?',a:'Price quotations are valid for 7 calendar days from the date of issue. Gold 18K prices in particular fluctuate with the live gold market. Your quoted price is only locked once you pay the deposit — not before. A fresh quote will be issued if the 7-day window expires.'},
+  {q:'Is my price locked after I get a quote?',a:'Price quotations are valid for 7 calendar days from the date of issue. Gold prices in particular fluctuate with the live gold market. Your quoted price is only locked once you pay the deposit — not before. A fresh quote will be issued if the 7-day window expires.'},
   {q:'What is your refund and return policy?',a:'All products are custom-made to your exact dental measurements and are strictly non-refundable and non-exchangeable under any circumstance. Used dental jewelry cannot be returned for hygiene reasons. The only exception is if EGYGRILLZ cancels your order — in that case a full deposit refund is issued.'},
-  {q:'What are the design levels?',a:'We offer 7 design levels. Level 1 is a simple solid bar. Level 2 is a seamless polished solid cap. Levels 3 through 6 increase in complexity from texture work up to full artistic sculpting. Level 7 is a one-of-a-kind masterpiece commission priced individually on consultation.'},
-  {q:'What materials do you work with?',a:'We work with four materials: Sterling Silver 925 and Gold 18K (both made by lost-wax casting), and Cobalt Chrome and Titanium (both 3D printed using DMLS). Diamond setting is only available on Silver 925 and Gold 18K — not on Chrome or Titanium.'},
-  {q:'Are diamonds available on all materials?',a:'No. Diamond setting is only available for precious metals — Silver 925 and Gold 18K. We offer CZ (AAAAA cubic zirconia), Moissanite (GRA-certified VVS1 / D color), and Natural Diamonds (SI or VS grade).'},
+  {q:'What are the design levels?',a:'We offer The Bar (0.5x base) plus 6 sculptural design levels. Level 1 is a seamless polished solid cap (0% premium). Levels 2 through 6 scale from +10% up to +60% for museum-grade sculptural pieces.'},
+  {q:'What materials do you work with?',a:'We work with four materials: Sterling Silver 925 and Solid Gold 18K/21K/24K (lost-wax casting), and Cobalt Chrome and Aerospace Titanium (3D printed using DMLS). Diamond setting is only available on Silver 925 and Solid Gold — not on Chrome or Titanium.'},
+  {q:'Are diamonds available on all materials?',a:'No. Diamond & stone setting is only available for precious metals — Silver 925 and Solid Gold. We offer CZ (AAAAA cubic zirconia), Moissanite (GRA-certified VVS1 / D color), Lab Diamonds, and Natural Diamonds (SI or VS grade).'},
   {q:'How do I care for my grillz?',a:'Rinse with cold water immediately after every wear. Use a soft-bristle toothbrush only. Do not use whitening or abrasive toothpaste on plated pieces. Pat dry with a microfiber cloth and store in the provided EGYGRILLZ case. Avoid all chemicals including bleach, chlorine, perfume, and hairspray.'},
   {q:'Can I eat, drink, or sleep wearing my grillz?',a:'No. Remove your grillz before eating, drinking anything other than plain water, smoking, or sleeping. Food trapped under the piece causes hygiene issues. Sleeping with grillz in can cause dental shifting.'},
   {q:'Does it hurt to get grillz or wear them?',a:'Not at all. The impression process takes 3–5 minutes using dental-grade impression material. There is no discomfort. When properly fitted, grillz rest snugly over your teeth with no adhesive, no drilling, and no permanent alteration.'},
@@ -1161,19 +1147,18 @@ const FAQ_DATA = [
 ════════════════════════════════════════ */
 const S = {
   teeth: new Set(),
-  matIdx:0, cplxIdx:0, plateIdx:0,
+  matIdx:0, karat:'18', cplxIdx:1, plateIdx:0,
   enamel:false, plate:false, laser:false, anod:false, stones:false,
-  en:'Single Tone', ls:'Small', an:'Single',
-  sg:'None', set:'Flush', gem:'CZ', stoneN:1,
-  ios:'Pave', iog:'CZ'
+  en:'single', ls:'small', an:'single',
+  sg:'None', set:'flush', gem:'cz', stoneN:1,
+  ios:'standardpave', iog:'cz'
 };
 
 /* ════════════════════════════════════════
    CURRENCY FUNCTIONS
 ════════════════════════════════════════ */
-function setCurrency(cur, btn) {
+function setCurrency(cur) {
   activeCurrency = cur;
-  // Sync all currency switchers
   document.querySelectorAll('.cur-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.cur === cur);
   });
@@ -1182,55 +1167,51 @@ function setCurrency(cur, btn) {
 
 function convertEGP(egpAmount) {
   const cfg = CURRENCIES[activeCurrency];
-  if (!cfg) return { amount: egpAmount, symbol: 'EGP', sign: '' };
+  if (!cfg) return { amount: egpAmount, symbol: 'EGP' };
   let rate = cfg.rate;
-  // If currency is USD, use the live-fetched rate
   if (activeCurrency === 'USD') rate = EGP_TO_USD;
-  // Derive other currencies from USD cross-rates
   if (activeCurrency === 'EUR') rate = EGP_TO_USD * 0.92;
   if (activeCurrency === 'SAR') rate = EGP_TO_USD * 3.75;
   if (activeCurrency === 'AED') rate = EGP_TO_USD * 3.67;
   return {
     amount: Math.round(egpAmount * rate),
     symbol: cfg.symbol,
-    sign: cfg.sign
   };
 }
 
 function formatCurrency(egpAmount) {
   if (!egpAmount) return '0';
-  const { amount, symbol, sign } = convertEGP(egpAmount);
+  const { amount, symbol } = convertEGP(egpAmount);
   return `${amount.toLocaleString()} <span class="curr">${symbol}</span>`;
 }
 
 function formatSecondary(egpAmount) {
   if (!egpAmount || activeCurrency === 'EGP') return '';
-  // Always show EGP equivalent when displaying non-EGP
   return `≈ ${egpAmount.toLocaleString()} EGP`;
 }
 
 /* ════════════════════════════════════════
-   LIVE GOLD PRICE — Multiple fallback APIs
+   LIVE GOLD + SETTINGS SYNC
 ════════════════════════════════════════ */
 async function fetchGoldPrice() {
-  const apis = [
-    tryGoldPriceOrg,
-    tryMetalsPriceAPI,
-  ];
+  const apis = [tryGoldPriceOrg, tryMetalsPriceAPI];
   for (const fn of apis) {
     try {
       const result = await fn();
-      if (result) {
-        GOLD18K_PER_GRAM = result;
+      if (result && result.gold24k) {
+        if (E && !E.get().goldPrice) {
+          E.override({ goldPrice: result.gold24k });
+        }
+        GOLD18K_PER_GRAM = Math.round(((E && E.get().goldPrice) || result.gold24k) * 0.75);
         goldFetchedAt = Date.now();
         updateGoldUI();
         updatePrice();
         return;
       }
-    } catch(e) { /* try next */ }
+    } catch(e) {}
   }
-  /* All APIs failed — use fallback */
-  GOLD18K_PER_GRAM = 6250;
+  const gp = (E && E.get().goldPrice) || 8400;
+  GOLD18K_PER_GRAM = Math.round(gp * 0.75);
   goldFetchedAt = Date.now();
   updateGoldUI();
   updatePrice();
@@ -1245,24 +1226,15 @@ async function tryGoldPriceOrg() {
   const data = await res.json();
   if (data && data.items && data.items[0] && data.items[0].xauPrice) {
     const perOzEGP = data.items[0].xauPrice;
-    const perGram24K = perOzEGP / 31.1035;
-    const gold18k = Math.round(perGram24K * 0.75);
-    // Also extract USD rate for currency conversion
-    if (data.items[0].xauPrice && data.items[0].chgVnit) {
-      // Derive EGP/USD rate: if we know gold oz in EGP and oz in USD (~3300 USD/oz)
-      // Use a conservative estimate
-      const goldUSDoz = 3300;
-      EGP_TO_USD = goldUSDoz / perOzEGP;
-      // Clamp to reasonable range
-      EGP_TO_USD = Math.max(0.015, Math.min(0.03, EGP_TO_USD));
-    }
-    return gold18k;
+    const perGram24K = Math.round(perOzEGP / 31.1035);
+    const goldUSDoz = 3300;
+    EGP_TO_USD = Math.max(0.015, Math.min(0.03, goldUSDoz / perOzEGP));
+    return { gold24k: perGram24K };
   }
   return null;
 }
 
 async function tryMetalsPriceAPI() {
-  /* Backup: metals-api free tier or similar CORS endpoint */
   const res = await fetch('https://api.gold-api.com/price/XAU', {
     cache: 'no-store',
     signal: AbortSignal.timeout(6000)
@@ -1270,25 +1242,23 @@ async function tryMetalsPriceAPI() {
   if (!res.ok) return null;
   const data = await res.json();
   if (data && data.price) {
-    // data.price is in USD per troy oz
-    const goldUSDoz = data.price;
-    // Convert to EGP using our current rate
-    const perOzEGP = goldUSDoz / EGP_TO_USD;
-    const perGram24K = perOzEGP / 31.1035;
-    return Math.round(perGram24K * 0.75);
+    const perOzEGP = data.price / EGP_TO_USD;
+    return { gold24k: Math.round(perOzEGP / 31.1035) };
   }
   return null;
 }
 
 function updateGoldUI() {
-  const txt = `${GOLD18K_PER_GRAM.toLocaleString()} EGP/g`;
+  const gp = (E && E.get().goldPrice) || 8400;
+  GOLD18K_PER_GRAM = Math.round(gp * (S.karat === '21' ? 0.875 : S.karat === '24' ? 1 : 0.75));
+  const txt = `${GOLD18K_PER_GRAM.toLocaleString()} EGP/g (${S.karat}K)`;
   const el1 = document.getElementById('hero-gold-price');
   const el2 = document.getElementById('gold-badge-text');
   const t   = document.getElementById('hero-gold-time');
   const badge = document.getElementById('gold-badge');
   if(el1) el1.textContent = txt;
-  if(el2) el2.textContent = `18K: ${txt}`;
-  if(badge) badge.style.display = MATS[S.matIdx].id === 'Gold 18K' ? 'flex' : 'none';
+  if(el2) el2.textContent = txt;
+  if(badge) badge.style.display = MATS[S.matIdx].id === 'gold' ? 'flex' : 'none';
   if(t) {
     const d = new Date();
     t.textContent = `(${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')})`;
@@ -1314,15 +1284,19 @@ const TT = {mat:'mat-track', cplx:'cplx-track', plate:'plate-track'};
 /* ════════════════════════════════════════
    INIT
 ════════════════════════════════════════ */
-function init() {
-  buildDiagram();
-  buildTeeth();
+async function init() {
+  buildOdontogram();
   buildCarousel('mat-track','mat-dots',MATS);
   buildCarousel('cplx-track','cplx-dots',CPLX);
   buildCarousel('plate-track','plate-dots',PLATES);
   buildFAQ();
   centerAll();
+  if (E) await E.load(null).catch(() => {});
+  if (window.SiteConfig) await window.SiteConfig.load(null).catch(() => {});
+  if (E && E.get().goldPrice) GOLD18K_PER_GRAM = Math.round(E.get().goldPrice * 0.75);
+  syncAddOnLabelsFromEngine();
   updateMatDesc();
+  onMatChange();
   updatePrice();
   initScrollBehavior();
   initReveal();
@@ -1331,75 +1305,107 @@ function init() {
   fetchGoldPrice();
 }
 
-/* ── DIAGRAM ── */
-function buildDiagram() {
-  ['diag-upper','diag-lower'].forEach((id,isL) => {
-    const row = document.getElementById(id);
-    row.innerHTML = '';
-    const pre = isL ? 'L' : 'U';
-    for(let i=8;i>=1;i--) {
-      if(i===4){ const s=document.createElement('div');s.className='diagram-sep';row.appendChild(s); }
-      const d=document.createElement('div');
-      d.className='diagram-tooth';d.textContent=i;
-      d.title=`${pre}${i} — ${isL?'Lower':'Upper'} tooth ${i} from center`;
-      row.appendChild(d);
+/* ── INTERACTIVE SVG ODONTOGRAM ── */
+function buildOdontogram() {
+  const svg = document.getElementById('odontogram-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+
+  const mk = (tag, attrs) => {
+    const el = document.createElementNS(ns, tag);
+    Object.entries(attrs || {}).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+  };
+
+  // Midline & jaw labels
+  svg.appendChild(mk('line', { x1: 370, y1: 18, x2: 370, y2: 282, class: 'midline' }));
+  const uLbl = mk('text', { x: 370, y: 14, class: 'jaw-label' });
+  uLbl.textContent = 'UPPER ARCH (R8 – L8)';
+  svg.appendChild(uLbl);
+  const lLbl = mk('text', { x: 370, y: 294, class: 'jaw-label' });
+  lLbl.textContent = 'LOWER ARCH (R8 – L8)';
+  svg.appendChild(lLbl);
+
+  const widths = [32, 34, 36, 36, 34, 34, 30, 32]; // index 0 = central(1), 7 = third molar(8)
+  const drawJaw = (prefix, cy, isLower) => {
+    const leftSide = [];
+    let rx = 362;
+    for (let i = 1; i <= 8; i++) {
+      const w = widths[i - 1];
+      rx -= (w + 4);
+      leftSide.push({ id: `${prefix}R${i}`, lbl: `R${i}`, x: rx, w });
     }
+    let lx = 378;
+    for (let i = 1; i <= 8; i++) {
+      const w = widths[i - 1];
+      leftSide.push({ id: `${prefix}L${i}`, lbl: `L${i}`, x: lx, w });
+      lx += (w + 4);
+    }
+
+    leftSide.forEach(t => {
+      const num = parseInt(t.lbl.slice(1), 10);
+      const h = num <= 3 ? 62 : num <= 5 ? 54 : 50;
+      const archCurve = num * num * 0.42;
+      const y = isLower ? (cy - archCurve) : (cy + archCurve);
+      const g = mk('g', { class: 'tooth-group' + (S.teeth.has(t.id) ? ' selected' : ''), 'data-tid': t.id });
+      const rTop = isLower ? 6 : 11;
+      const rBot = isLower ? 11 : 6;
+      const x0 = t.x, y0 = y - h / 2, w = t.w;
+      const d = `M ${x0 + rTop} ${y0}
+        L ${x0 + w - rTop} ${y0}
+        Q ${x0 + w} ${y0} ${x0 + w} ${y0 + rTop}
+        L ${x0 + w} ${y0 + h - rBot}
+        Q ${x0 + w} ${y0 + h} ${x0 + w - rBot} ${y0 + h}
+        L ${x0 + rBot} ${y0 + h}
+        Q ${x0} ${y0 + h} ${x0} ${y0 + h - rBot}
+        L ${x0} ${y0 + rTop}
+        Q ${x0} ${y0} ${x0 + rTop} ${y0} Z`;
+      const path = mk('path', { d, class: 'tooth-path' + (S.teeth.has(t.id) ? ' selected' : '') });
+      const text = mk('text', { x: x0 + w / 2, y: y0 + h / 2, class: 'tooth-label' });
+      text.textContent = t.lbl;
+      g.appendChild(path);
+      g.appendChild(text);
+      g.addEventListener('click', () => toggleTooth(t.id));
+      svg.appendChild(g);
+    });
+  };
+
+  drawJaw('U', 74, false);
+  drawJaw('L', 224, true);
+}
+
+function toggleTooth(id) {
+  if (S.teeth.has(id)) S.teeth.delete(id);
+  else S.teeth.add(id);
+  syncOdontogramUI();
+}
+
+function selectCombo(type) {
+  const allU = Array.from({ length: 8 }, (_, i) => [`UR${i + 1}`, `UL${i + 1}`]).flat();
+  const allL = Array.from({ length: 8 }, (_, i) => [`LR${i + 1}`, `LL${i + 1}`]).flat();
+  const top6 = ['UR3','UR2','UR1','UL1','UL2','UL3'];
+  const top8 = [...top6,'UR4','UL4'];
+  const bot6 = ['LR3','LR2','LR1','LL1','LL2','LL3'];
+  const bot8 = [...bot6,'LR4','LL4'];
+  const fangs = ['UR3','UL3','LR3','LL3'];
+  const combos = { top6, top8, bot6, bot8, fangs, full: [...allU, ...allL], none: [] };
+  S.teeth = new Set(combos[type] || []);
+  document.querySelectorAll('.combo-btn').forEach(b => {
+    const onclick = b.getAttribute('onclick') || '';
+    b.classList.toggle('active', onclick.includes(`'${type}'`) && type !== 'none');
   });
+  syncOdontogramUI();
 }
 
-/* ── TEETH ── */
-function buildTeeth() {
-  buildJawRow('upper-row', 'U');
-  buildJawRow('lower-row', 'L');
-}
-
-function buildJawRow(containerId, prefix) {
-  const row = document.getElementById(containerId);
-  row.innerHTML = '';
-  const n = 8;
-  for(let i=n;i>=1;i--) {
-    const id = `${prefix}R${i}`;
-    row.appendChild(makeToothBtn(id, i, prefix, i));
-  }
-  const sep = document.createElement('div');
-  sep.className='jaw-sep';
-  sep.innerHTML='<div class="jaw-sep-line"></div>';
-  row.appendChild(sep);
-  for(let i=1;i<=n;i++) {
-    const id = `${prefix}L${i}`;
-    row.appendChild(makeToothBtn(id, i, prefix, i));
-  }
-}
-
-function makeToothBtn(id, num, prefix, pos) {
-  const btn = document.createElement('button');
-  btn.className = 'tooth-btn' + (S.teeth.has(id) ? ' on' : '');
-  btn.type = 'button';
-  btn.innerHTML = `${num}<span class="tn">${prefix}${num}</span>`;
-  let lastTouch = 0;
-  btn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    const now = Date.now();
-    if(now - lastTouch < 300) return;
-    lastTouch = now;
-    toggleTooth(id, btn);
-  }, {passive:false});
-  btn.addEventListener('click', (e) => {
-    const now = Date.now();
-    if(now - lastTouch < 400) return;
-    toggleTooth(id, btn);
+function syncOdontogramUI() {
+  document.querySelectorAll('#odontogram-svg .tooth-group').forEach(g => {
+    const tid = g.getAttribute('data-tid');
+    const on = S.teeth.has(tid);
+    g.classList.toggle('selected', on);
+    const p = g.querySelector('.tooth-path');
+    if (p) p.classList.toggle('selected', on);
   });
-  return btn;
-}
-
-function toggleTooth(id, btn) {
-  if(S.teeth.has(id)) {
-    S.teeth.delete(id);
-    btn.classList.remove('on');
-  } else {
-    S.teeth.add(id);
-    btn.classList.add('on');
-  }
   document.getElementById('tooth-cnt').textContent = S.teeth.size;
   updateProgress();
   updatePrice();
@@ -1464,22 +1470,64 @@ function centerAll() {
   updateCarouselUI('plate-track','plate-dots',S.plateIdx);
 }
 
-/* ── MATERIAL DESC ── */
+/* ── MATERIAL DESC + KARAT SELECTOR ── */
+function setKarat(k) {
+  S.karat = String(k);
+  updateGoldUI();
+  updatePrice();
+}
+
+function syncAddOnLabelsFromEngine() {
+  if (!E) return;
+  const cfg = E.get();
+  document.querySelectorAll('#set-pills .pill').forEach(p => {
+    const v = p.dataset.v;
+    if (v === 'flush') p.textContent = `Flush +${cfg.settingPrice.flush}/stone`;
+    if (v === 'prong') p.textContent = `Prong +${cfg.settingPrice.prong}/stone`;
+    if (v === 'bezel') p.textContent = `Bezel +${cfg.settingPrice.bezel}/stone`;
+  });
+  document.querySelectorAll('#gem-pills .pill').forEach(p => {
+    const v = p.dataset.v;
+    if (v === 'cz') p.textContent = `CZ +${cfg.accentPrice.cz}/stone`;
+    if (v === 'moissanite') p.textContent = `Moissanite +${cfg.accentPrice.moissanite}/stone`;
+  });
+  document.querySelectorAll('#ios-pills .pill').forEach(p => {
+    const v = p.dataset.v;
+    if (v === 'standardpave') p.textContent = `Standard Pavé +${cfg.coveragePrice.standardpave}/tooth`;
+    if (v === 'heavy') p.textContent = `Heavy +${cfg.coveragePrice.heavy}/tooth`;
+  });
+  document.querySelectorAll('#iog-pills .pill').forEach(p => {
+    const v = p.dataset.v;
+    if (v === 'cz') p.textContent = `CZ +${cfg.fullPrice.cz}/tooth`;
+    if (v === 'moissanite') p.textContent = `Moissanite +${cfg.fullPrice.moissanite}/tooth`;
+  });
+}
+
 function updateMatDesc() {
   const m = MATS[S.matIdx];
   const box = document.getElementById('mat-single-desc');
   if(!box) return;
   let extraLine = '';
-  if(m.id === 'Gold 18K') {
-    extraLine = `<div class="mg"><span class="gold-dot" style="display:inline-block;margin-right:4px;"></span>Live 18K rate: ${GOLD18K_PER_GRAM.toLocaleString()} EGP/g</div>`;
+  if(m.id === 'gold') {
+    const gp = (E && E.get().goldPrice) || 8400;
+    const rate = Math.round(gp * (S.karat === '21' ? 0.875 : S.karat === '24' ? 1 : 0.75));
+    extraLine = `<div style="display:flex;justify-content:center;gap:6px;margin-top:12px;">
+      ${['18','21','24'].map(k => `<button type="button" class="pill${S.karat===k?' on':''}" onclick="setKarat('${k}')">${k}K</button>`).join('')}
+    </div>
+    <div class="mg"><span class="gold-dot" style="display:inline-block;margin-right:4px;"></span>Live ${S.karat}K rate: ${rate.toLocaleString()} EGP/g</div>`;
   }
   box.innerHTML = `<div class="mn">${m.nm}</div><div class="md">${m.desc}</div>${extraLine}`;
   const badge = document.getElementById('gold-badge');
-  if(badge) badge.style.display = m.id === 'Gold 18K' ? 'flex' : 'none';
+  if(badge) badge.style.display = m.id === 'gold' ? 'flex' : 'none';
 }
 
 function onMatChange() {
-  document.getElementById('ao-anod').style.display = MATS[S.matIdx].id === 'Titanium' ? '' : 'none';
+  const isTi = MATS[S.matIdx].id === 'titanium';
+  document.getElementById('ao-anod').style.display = isTi ? '' : 'none';
+  if (!isTi && S.anod) {
+    S.anod = false;
+    document.getElementById('ao-anod').classList.remove('open');
+  }
   const isPrecious = MATS[S.matIdx].precious;
   document.getElementById('stones-avail-note').classList.toggle('show', !isPrecious);
 }
@@ -1528,7 +1576,7 @@ function updateProgress() {
     S.teeth.size > 0,
     true,
     true,
-    S.enamel || S.plate || S.laser || S.anod || S.stones
+    S.enamel || S.plate || S.laser || S.anod || (S.stones && S.sg !== 'None')
   ];
   done.forEach((d,i) => {
     const el = document.getElementById(`ps${i+1}`);
@@ -1537,64 +1585,72 @@ function updateProgress() {
 }
 
 /* ════════════════════════════════════════
-   PRICE CALCULATION
+   PRICE CALCULATION (via CalcEngine)
 ════════════════════════════════════════ */
-function calcBreakdown() {
+function buildEngineLine() {
   const n = S.teeth.size;
-  if(!n) return {rows:[], total:0};
-  const rows = [];
-  let total = 0;
-  const mat   = MATS[S.matIdx];
-  const cplx  = CPLX[S.cplxIdx];
-
-  const basePer = mat.calcBase();
-  const baseTotal = Math.round(basePer * cplx.mult * n);
-  rows.push({label:`${mat.nm} × ${n} piece${n>1?'s':''} (${cplx.nm})`, val:baseTotal});
-  total += baseTotal;
-
-  if(S.plate) {
-    const pv = PLATES[S.plateIdx].price * n;
-    rows.push({label:`${PLATES[S.plateIdx].nm} × ${n}`, val:pv});
-    total += pv;
-  }
-  if(S.enamel) {
-    const ev = (ENAMEL_PRICES[S.en] || 200) * n;
-    rows.push({label:`Enamel (${S.en}) × ${n}`, val:ev});
-    total += ev;
-  }
-  if(S.laser) {
-    const lv = (LASER_PRICES[S.ls] || 200) * n;
-    rows.push({label:`Laser Engraving (${S.ls}) × ${n}`, val:lv});
-    total += lv;
-  }
-  if(S.anod) {
-    const av = (ANOD_PRICES[S.an] || 300) * n;
-    rows.push({label:`Anodize (${S.an}) × ${n}`, val:av});
-    total += av;
-  }
-  if(S.stones && S.sg !== 'None') {
-    const isPrecious = mat.precious;
-    if(!isPrecious) {
-      rows.push({label:'<i class="fas fa-triangle-exclamation"></i> Stones (not available for this material)', val:0});
-    } else if(S.sg === 'Single') {
-      const settingFee = (SETTING_PRICE[S.set] || 150) * S.stoneN;
-      const gemFee     = S.gem === 'Natural' ? 0 : (GEM_SINGLE[S.gem] || 0) * S.stoneN;
-      const sv = settingFee + gemFee;
-      const label = S.gem === 'Natural'
-        ? `${S.stoneN}× Natural Diamond (${S.set}) — contact for stone price`
-        : `${S.stoneN}× ${S.gem} (${S.set} setting)`;
-      rows.push({label, val:sv});
-      total += sv;
-    } else if(S.sg === 'Iced') {
-      const settingFlat = (ICED_SETTING[S.ios] || 1000) * n;
-      const gemExtra    = S.iog === 'CZ' ? 0 : (ICED_GEM_EXTRA[S.iog] || 0) * n;
-      const iv = settingFlat + gemExtra;
-      rows.push({label:`Iced Out — ${S.ios} (${S.iog}) × ${n}`, val:iv});
-      total += iv;
+  const mat = MATS[S.matIdx];
+  const cplx = CPLX[S.cplxIdx];
+  const line = {
+    material: mat.id,
+    karat: mat.id === 'gold' ? S.karat : '18',
+    teeth: n,
+    level: cplx.id,
+    plating: S.plate ? PLATES[S.plateIdx].id : 'none',
+    enamel: S.enamel ? S.en : 'none',
+    engraving: S.laser ? S.ls : 'none',
+    anodize: (S.anod && mat.id === 'titanium') ? S.an : 'none',
+  };
+  if (S.stones && S.sg !== 'None' && mat.precious) {
+    if (S.sg === 'Single') {
+      line.accent = { count: S.stoneN, type: S.gem, setting: S.set };
+    } else if (S.sg === 'Iced') {
+      line.full = { type: S.iog, coverage: S.ios };
+    } else if (S.sg === 'Bars') {
+      line.full = { bars: true };
     }
   }
+  return line;
+}
 
-  return {rows, total: Math.round(total)};
+function calcBreakdown() {
+  const n = S.teeth.size;
+  if(!n || !E) return {rows:[], total:0, quoteAtStudio:false};
+  const mat = MATS[S.matIdx];
+  const cplx = CPLX[S.cplxIdx];
+  const c = E.calculateLine(buildEngineLine());
+  const rows = [];
+
+  rows.push({
+    label: `${mat.id === 'gold' ? 'Gold ' + S.karat + 'K' : mat.nm} × ${n} piece${n>1?'s':''} (${cplx.nm})`,
+    val: c.baseCost + c.designCost
+  });
+  if (c.platingCost) rows.push({label: `${PLATES[S.plateIdx].nm} × ${n}`, val: c.platingCost});
+  if (c.enamelCost)  rows.push({label: `Enamel (${S.en}) × ${n}`, val: c.enamelCost});
+  if (c.engraveCost) rows.push({label: `Laser Engraving (${S.ls}) × ${n}`, val: c.engraveCost});
+  if (c.anodizeCost) {
+    const note = (S.an === 'dual' && n < 2) ? ' (min 2 teeth)' : (S.an === 'multi' && n < 3) ? ' (min 3 teeth)' : '';
+    rows.push({label: `Anodize (${S.an}) × ${n}${note}`, val: c.anodizeCost});
+  }
+  if (S.stones && S.sg !== 'None') {
+    if (!mat.precious) {
+      rows.push({label:'Stones unavailable on Chrome/Titanium', val:0});
+    } else if (S.sg === 'Single') {
+      const lbl = c.stoneCustom
+        ? `${S.stoneN}× ${E.LABELS.stoneType[S.gem]||S.gem} (${S.set} setting — stone quoted at studio)`
+        : `${S.stoneN}× ${E.LABELS.stoneType[S.gem]||S.gem} (${S.set} setting)`;
+      rows.push({label: lbl, val: c.stoneCost});
+    } else if (S.sg === 'Iced') {
+      const lbl = c.stoneCustom
+        ? `Iced Out — ${E.LABELS.coverage[S.ios]} (${E.LABELS.stoneType[S.iog]} — stones quoted at studio)`
+        : `Iced Out — ${E.LABELS.coverage[S.ios]} (${E.LABELS.stoneType[S.iog]}) × ${n}`;
+      rows.push({label: lbl, val: c.stoneCost});
+    } else if (S.sg === 'Bars') {
+      rows.push({label: `Iced Bars × ${n}`, val: c.stoneCost});
+    }
+  }
+  const rounded = E.roundUp50(c.subtotal);
+  return {rows, total: rounded, quoteAtStudio: c.stoneCustom};
 }
 
 /* ════════════════════════════════════════
@@ -1619,21 +1675,19 @@ function animateNum(fromEGP, toEGP, el) {
    UPDATE UI
 ════════════════════════════════════════ */
 function updatePrice() {
-  const {rows, total} = calcBreakdown();
+  const {total, quoteAtStudio} = calcBreakdown();
 
-  /* price bar main */
   const priceEl = document.getElementById('pb-price');
   animateNum(_lastTotalEGP, total, priceEl);
   priceEl.classList.remove('pop'); void priceEl.offsetWidth; priceEl.classList.add('pop');
 
-  /* price bar secondary (shows EGP if non-EGP selected) */
   const pbSec = document.getElementById('pb-secondary');
-  if(pbSec) pbSec.textContent = total > 0 ? formatSecondary(total) : '';
+  if(pbSec) pbSec.textContent = quoteAtStudio
+    ? '+ Custom Diamond quote at studio'
+    : (total > 0 ? formatSecondary(total) : '');
 
-  /* mini bar */
   document.getElementById('pb-mini-price').innerHTML = formatCurrency(total);
 
-  /* footer big price */
   const sfEl = document.getElementById('sf-price');
   if(activeCurrency === 'EGP') {
     sfEl.innerHTML = `<sup>EGP</sup>${total.toLocaleString()}`;
@@ -1642,24 +1696,20 @@ function updatePrice() {
     sfEl.innerHTML = `<sup>${symbol}</sup>${amount.toLocaleString()}`;
   }
   const sfSec = document.getElementById('sf-secondary');
-  if(sfSec) sfSec.textContent = total > 0 ? formatSecondary(total) : '';
+  if(sfSec) sfSec.textContent = quoteAtStudio
+    ? 'Base + setting shown · Natural/Lab diamond stones quoted at studio'
+    : (total > 0 ? formatSecondary(total) : '');
 
   _lastTotalEGP = total;
-
-  /* breakdown btn */
   document.getElementById('breakdown-btn').style.display = total > 0 ? '' : 'none';
 
-  /* config tags */
-  const tags = [
-    `${S.teeth.size} teeth`,
-    MATS[S.matIdx].nm,
-    CPLX[S.cplxIdx].nm
-  ];
+  const matName = MATS[S.matIdx].id === 'gold' ? `Gold ${S.karat}K` : MATS[S.matIdx].nm;
+  const tags = [`${S.teeth.size} teeth`, matName, CPLX[S.cplxIdx].nm];
   if(S.plate)  tags.push(PLATES[S.plateIdx].nm);
   if(S.enamel) tags.push(`Enamel (${S.en})`);
   if(S.laser)  tags.push(`Laser (${S.ls})`);
-  if(S.anod)   tags.push(`Anodize (${S.an})`);
-  if(S.stones && S.sg !== 'None') tags.push(`Stones: ${S.sg}`);
+  if(S.anod && MATS[S.matIdx].id === 'titanium') tags.push(`Anodize (${S.an})`);
+  if(S.stones && S.sg !== 'None' && MATS[S.matIdx].precious) tags.push(`Stones: ${S.sg}`);
 
   document.getElementById('sf-config').innerHTML = tags.map(t => `<span class="sf-tag">${t}</span>`).join('');
   updateShareText(tags, total);
@@ -1743,7 +1793,7 @@ function initCursor() {
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
-  document.querySelectorAll('button,a,.tooth-btn,.addon-tile,.c-item').forEach(el => {
+  document.querySelectorAll('button,a,.tooth-group,.addon-tile,.c-item').forEach(el => {
     el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
     el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
   });
@@ -1753,14 +1803,15 @@ function initCursor() {
    MODAL
 ════════════════════════════════════════ */
 function openModal() {
-  const {rows, total} = calcBreakdown();
+  const {rows, total, quoteAtStudio} = calcBreakdown();
   if(!total) return;
   const { amount: convAmount, symbol } = convertEGP(total);
   const convStr = activeCurrency !== 'EGP' ? `<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">≈ ${convAmount.toLocaleString()} ${symbol}</div>` : '';
+  const extraStr = quoteAtStudio ? `<div style="font-size:11px;color:#b8860b;text-align:center;margin-top:6px;">Natural/Lab Diamond stone prices confirmed at studio consultation.</div>` : '';
   document.getElementById('modal-body').innerHTML =
-    rows.map(r => `<div class="breakdown-row"><span class="br-label">${r.label}</span><span class="br-val">${r.val > 0 ? r.val.toLocaleString()+' EGP' : '—'}</span></div>`).join('') +
+    rows.map(r => `<div class="breakdown-row"><span class="br-label">${r.label}</span><span class="br-val">${r.val > 0 ? r.val.toLocaleString()+' EGP' : 'Studio quote'}</span></div>`).join('') +
     `<div class="breakdown-total"><span>Total Estimate</span><span>${total.toLocaleString()} EGP</span></div>` +
-    convStr;
+    convStr + extraStr;
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -1790,9 +1841,9 @@ function toggleShare() {
   document.getElementById('share-panel').classList.toggle('show');
 }
 
-function copyEstimate() {
+function copyEstimate(btn) {
   navigator.clipboard.writeText(document.getElementById('share-text').textContent).then(() => {
-    const btn = event.target.closest('.share-btn');
+    if (!btn) return;
     const orig = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
     setTimeout(() => btn.innerHTML = orig, 2000);
@@ -1800,7 +1851,7 @@ function copyEstimate() {
 }
 
 function shareWhatsApp() {
-  window.open(`https://wa.me/?text=${encodeURIComponent(document.getElementById('share-text').textContent)}`, '_blank');
+  window.open(`https://wa.me/?text=${encodeURIComponent(document.getElementById('share-text').textContent)}`, '_blank', 'noopener');
 }
 
 /* ════════════════════════════════════════

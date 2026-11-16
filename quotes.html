@@ -11,7 +11,7 @@
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 
-<!-- Firebase بيتحمّل جوه الموديول بنفس نسخة الـ gate (10.12.0) — ممنوع نسخة تانية هنا -->
+<!-- Firebase loaded inside the module at matching SDK version (10.12.0) -->
 <script data-cfasync="false" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
@@ -173,6 +173,27 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 .b-sent{background:var(--sky-l);color:var(--sky)}
 .b-accepted{background:var(--sage-l);color:var(--sage)}
 .b-declined{background:var(--rose-l);color:var(--rose)}
+.status-sel{
+  padding:4px 8px;border-radius:16px;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;
+  font-weight:700;border:1px solid var(--line);cursor:pointer;outline:none;
+}
+.svc-row{
+  display:grid;grid-template-columns:160px 1fr 70px 100px auto;gap:8px;align-items:end;
+  padding:12px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid var(--line);
+}
+@media(max-width:720px){.svc-row{grid-template-columns:1fr 1fr}}
+.svc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.gold-bar{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;
+  background:rgba(255,255,255,.75);border:1px solid var(--line);font-size:11px;
+}
+.gold-bar span{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);white-space:nowrap}
+.gold-bar input{width:86px;padding:4px 7px;border:1px solid var(--line);border-radius:7px;background:#fff;text-align:right;font-weight:700}
+.quote-pill{
+  display:inline-block;margin-bottom:8px;padding:3px 10px;border-radius:20px;font-size:8px;
+  letter-spacing:2px;text-transform:uppercase;font-weight:700;background:rgba(255,255,255,.75);color:var(--ink2);
+  border:1px solid var(--line);
+}
 
 /* ── toast ── */
 .toast{
@@ -284,6 +305,10 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
           <h2>Design lines</h2>
           <span class="hint">one line per design</span>
           <div class="spacer"></div>
+          <div class="gold-bar" title="Today's 24K gold rate (EGP/g)">
+            <span>Gold 24K</span>
+            <input id="quickGoldRate" type="number" min="0" step="any" placeholder="EGP/g">
+          </div>
           <button class="btn btn-dark btn-sm" id="addLineBtn"><i class="fas fa-plus"></i> Add line</button>
         </div>
         <div class="card-b">
@@ -294,8 +319,28 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 
       <div class="card">
         <div class="card-h">
+          <h2>Studio services</h2>
+          <span class="hint">optional non-grillz items</span>
+          <div class="spacer"></div>
+          <button class="btn btn-dark btn-sm" id="addSvcBtn"><i class="fas fa-plus"></i> Add service</button>
+        </div>
+        <div class="card-b">
+          <div class="svc-chips">
+            <button type="button" class="btn btn-ghost btn-sm" data-add-svc="impression">+ Impression</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-add-svc="consultation">+ Consultation</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-add-svc="toothgem">+ Toothgem</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-add-svc="polishing">+ Clean &amp; Polish</button>
+          </div>
+          <div class="lines" id="svcsWrap"></div>
+          <div id="svcsEmpty" class="empty">No extra services added.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
           <h2>Order</h2>
           <div class="spacer"></div>
+          <button class="btn btn-ghost btn-sm" id="newQuoteBtn"><i class="fas fa-rotate-left"></i> New quote</button>
           <button class="btn btn-ghost btn-sm" id="calcBtn"><i class="fas fa-calculator"></i> Calculate</button>
         </div>
         <div class="card-b">
@@ -311,6 +356,19 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
             <label class="f">
               <span>Deposit %</span>
               <input class="inp" id="depositPct" type="number" min="0" max="100">
+            </label>
+          </div>
+          <div class="grid g2" style="margin-top:12px">
+            <label class="f">
+              <span>Discount value</span>
+              <input class="inp" id="discountVal" type="number" min="0" step="any" placeholder="0">
+            </label>
+            <label class="f">
+              <span>Discount type</span>
+              <select class="inp" id="discountType">
+                <option value="egp">EGP (flat)</option>
+                <option value="pct">% (percentage)</option>
+              </select>
             </label>
           </div>
           <label class="f" style="margin-top:14px">
@@ -346,6 +404,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
       <div class="card">
         <div class="card-b">
           <div class="total-hero">
+            <div class="quote-pill">Pre-Approval Quotation · Valid 14 Days</div>
             <div class="lbl">Quote total</div>
             <div class="val" id="totalVal">0 <small>EGP</small></div>
             <div class="sub" id="totalSub">nothing calculated yet</div>
@@ -356,6 +415,9 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:18px">
             <button class="btn btn-primary" id="saveBtn" style="justify-content:center">
               <i class="fas fa-floppy-disk"></i> Save quote
+            </button>
+            <button class="btn btn-dark" id="toInvoiceBtn" style="justify-content:center">
+              <i class="fas fa-file-invoice-dollar"></i> Convert to Invoice
             </button>
             <div style="display:flex;gap:8px">
               <button class="btn btn-dark" id="pdfBtn" style="flex:1;justify-content:center">
@@ -412,9 +474,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
    ══════════════════════════════════════════════════════════════════ */
 import { requireAuth, signOut as fbSignOut, firebaseApp } from '/assets/firebase-auth-gate.js';
 
-/* نفس نسخة Firebase اللي الـ gate بيستخدمها (10.12.0) — مش نسخة تانية.
-   قبل كده كانت الصفحة بتحمّل 9.23.0 منفصلة، فالجلسة ماكانتش بتتشاف
-   و Firestore كان بيرفض القراءة: Missing or insufficient permissions. */
+/* Same Firebase SDK version as firebase-auth-gate.js (10.12.0) so auth state shares cleanly. */
 await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js');
 const firebase = window.firebase;
@@ -456,11 +516,26 @@ const E = window.CalcEngine;
 
 const settingsLoad = await E.load(db);
 if (!settingsLoad.ok) console.warn('[quotes] settings fallback:', settingsLoad.error);
+if (window.SiteConfig) {
+  await window.SiteConfig.load(db);
+  const pill = document.querySelector('.quote-pill');
+  if (pill) pill.textContent = `Pre-Approval Quotation · Valid ${window.SiteConfig.num('quoteValidDays') || 14} Days`;
+}
 
 /* ── helpers ── */
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => E.fmt(n);
+
+let CATALOG_PRESETS = [];
+fetch('/assets/images/catalog.json')
+  .then(r => r.ok ? r.json() : [])
+  .then(list => {
+    if (Array.isArray(list)) {
+      CATALOG_PRESETS = list.filter(x => x && x.calc && x.calc.material);
+      if (LINES.length) renderLines();
+    }
+  }).catch(() => {});
 
 function toast(msg, isErr){
   const t = $('toast');
@@ -513,7 +588,7 @@ $('clientPick').addEventListener('change', function(){
 });
 
 /* ══════════════════════════════════════════════════════════════════
-   4. SELECTS — filled from the engine settings
+   4. SELECTS & QUICK GOLD RATE
    ══════════════════════════════════════════════════════════════════ */
 function fillSelects(){
   const S = E.get();
@@ -524,13 +599,23 @@ function fillSelects(){
   $('mold').innerHTML = Object.keys(S.moldFlat).map(k =>
     `<option value="${k}">${L.mold[k] || k}${S.moldFlat[k] ? ' (+' + S.moldFlat[k] + ')' : ''}</option>`).join('');
   $('depositPct').value = S.depositPct;
+  if ($('quickGoldRate')) $('quickGoldRate').value = S.goldPrice || '';
 }
 fillSelects();
 
+$('quickGoldRate').addEventListener('input', function () {
+  const S = E.get();
+  S.goldPrice = Math.max(0, Number(this.value) || 0);
+  E.set(S);
+  recalc();
+});
+
 /* ══════════════════════════════════════════════════════════════════
-   5. LINE EDITOR
+   5. LINE EDITOR & STUDIO SERVICES
    ══════════════════════════════════════════════════════════════════ */
 let LINES = [];
+let SERVICES = [];
+let CURRENT_QUOTE_ID = null;
 
 function lineSkeleton(i){
   const S = E.get(), L = E.LABELS;
@@ -539,6 +624,7 @@ function lineSkeleton(i){
   const platings = Object.keys(S.plating);
   const enamels = Object.keys(S.enamel);
   const engravings = Object.keys(S.engraving);
+  const anodizes = Object.keys(S.anodize || { none: 0 });
   const accents = Object.keys(S.accentPrice);
   const settings = Object.keys(S.settingPrice);
   const coverages = Object.keys(S.coveragePrice);
@@ -547,11 +633,17 @@ function lineSkeleton(i){
   const sel = (field, opts, labels) => `<select class="inp" data-f="${field}">` +
     opts.map(k => `<option value="${k}">${esc(labels[k] || k)}</option>`).join('') + '</select>';
 
+  const presetOpts = CATALOG_PRESETS.length
+    ? `<label class="f" style="max-width:210px"><span>Load catalog design</span><select class="inp" data-preset><option value="">— custom —</option>` +
+      CATALOG_PRESETS.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('') + `</select></label>`
+    : '';
+
   return `
     <div class="line-row" data-i="${i}">
-      <div class="name">
-        <label class="f"><span>Design name (optional)</span>
+      <div class="name" style="display:flex;gap:8px;flex-wrap:wrap">
+        <label class="f" style="flex:1;min-width:180px"><span>Design name (optional)</span>
           <input class="inp" data-f="name" placeholder="e.g. Top grillz — Ahmed"></label>
+        ${presetOpts}
       </div>
       <div class="line-grid">
         <label class="f"><span>Material</span>${sel('material', materials, L.material)}</label>
@@ -561,6 +653,7 @@ function lineSkeleton(i){
         <label class="f"><span>Plating</span>${sel('plating', platings, L.plating)}</label>
         <label class="f"><span>Enamel</span>${sel('enamel', enamels, L.enamel)}</label>
         <label class="f"><span>Engraving</span>${sel('engraving', engravings, L.engraving)}</label>
+        <label class="f" data-anowrap style="display:none"><span>Anodizing</span>${sel('anodize', anodizes, L.anodize || {})}</label>
       </div>
       <div class="line-grid">
         <label class="f"><span>Stone type</span>
@@ -573,8 +666,10 @@ function lineSkeleton(i){
         <label class="f" data-accentonly style="display:none"><span>Stone</span>${sel('accentType', accents, L.accentType)}</label>
         <label class="f" data-accentonly style="display:none"><span>Setting</span>${sel('accentSetting', settings, L.setting)}</label>
         <label class="f" data-accentonly style="display:none"><span>Count</span><input class="inp" data-f="accentCount" type="number" min="0" value="0"></label>
+        <label class="f" data-accentcustom style="display:none"><span>Rate / stone (EGP)</span><input class="inp" data-f="accentCustomPrice" type="number" min="0" step="any" placeholder="Today's rate"></label>
         <label class="f" data-fullonly style="display:none"><span>Full stone</span>${sel('fullType', accents, L.accentType)}</label>
         <label class="f" data-fullonly style="display:none"><span>Coverage</span>${sel('fullCoverage', coverages, L.coverage)}</label>
+        <label class="f" data-fullcustom style="display:none"><span>Rate / tooth (EGP)</span><input class="inp" data-f="fullCustomPrice" type="number" min="0" step="any" placeholder="Today's rate"></label>
       </div>
       <div class="actions">
         <span style="flex:1;font-size:11px;color:var(--ink2);font-variant-numeric:tabular-nums" data-out>—</span>
@@ -587,18 +682,19 @@ function renderLines(){
   const wrap = $('linesWrap');
   wrap.innerHTML = LINES.map((_, i) => lineSkeleton(i)).join('');
   $('linesEmpty').style.display = LINES.length ? 'none' : 'block';
-  // restore values
   wrap.querySelectorAll('.line-row').forEach((row, i) => {
     const l = LINES[i] || {};
     row.querySelectorAll('[data-f]').forEach(el => {
       const f = el.dataset.f;
       if (f === 'stoneMode') {
-        el.value = l.mode || 'none';
+        el.value = l.mode || (l.accent ? 'accent' : (l.full && l.full.bars ? 'bars' : (l.full ? 'full' : 'none')));
       } else if (f === 'accentCount') {
         el.value = (l.accent && l.accent.count) || 0;
-      } else if (l[f] !== undefined && el.tagName !== 'SELECT') {
-        el.value = l[f];
-      } else if (l[f] !== undefined && el.tagName === 'SELECT') {
+      } else if (f === 'accentCustomPrice') {
+        el.value = (l.accent && l.accent.customPrice !== undefined ? l.accent.customPrice : '') || '';
+      } else if (f === 'fullCustomPrice') {
+        el.value = (l.full && l.full.customPrice !== undefined ? l.full.customPrice : '') || '';
+      } else if (l[f] !== undefined) {
         el.value = l[f];
       }
     });
@@ -606,7 +702,7 @@ function renderLines(){
       row.querySelector('[data-f="accentType"]').value = l.accent.type || 'cz';
       row.querySelector('[data-f="accentSetting"]').value = l.accent.setting || 'flush';
     }
-    if (l.full) {
+    if (l.full && !l.full.bars) {
       row.querySelector('[data-f="fullType"]').value = l.full.type || 'moissanite';
       row.querySelector('[data-f="fullCoverage"]').value = l.full.coverage || 'standardpave';
     }
@@ -617,38 +713,61 @@ function renderLines(){
 
 function readRow(row){
   const g = f => row.querySelector(`[data-f="${f}"]`);
+  const material = g('material').value;
+  const noStones = !E.allowsStones(material);
+  const mode = noStones ? 'none' : g('stoneMode').value;
   const l = {
     name: g('name') ? g('name').value.trim() : '',
-    material: g('material').value,
+    material,
     karat: g('karat') ? g('karat').value : '18',
     teeth: Number(g('teeth').value) || 6,
     level: g('level').value,
     plating: g('plating').value,
     enamel: g('enamel').value,
     engraving: g('engraving').value,
-    mode: g('stoneMode').value,
+    anodize: material === 'titanium' && g('anodize') ? g('anodize').value : 'none',
+    mode,
   };
-  if (l.mode === 'accent') {
+  if (mode === 'accent') {
+    const customPrice = g('accentCustomPrice') && g('accentCustomPrice').value !== '' ? Number(g('accentCustomPrice').value) : undefined;
     l.accent = {
       type: g('accentType').value,
       setting: g('accentSetting').value,
       count: Number(g('accentCount').value) || 0,
+      customPrice,
     };
-  } else if (l.mode === 'full') {
-    l.full = { type: g('fullType').value, coverage: g('fullCoverage').value };
-  } else if (l.mode === 'bars') {
+  } else if (mode === 'full') {
+    const customPrice = g('fullCustomPrice') && g('fullCustomPrice').value !== '' ? Number(g('fullCustomPrice').value) : undefined;
+    l.full = { type: g('fullType').value, coverage: g('fullCoverage').value, customPrice };
+  } else if (mode === 'bars') {
     l.full = { bars: true };
   }
   return l;
 }
 
 function syncRow(row){
-  const mode = row.querySelector('[data-f="stoneMode"]').value;
-  const isGold = row.querySelector('[data-f="material"]').value === 'gold';
+  const S = E.get();
+  const mat = row.querySelector('[data-f="material"]').value;
+  const noStones = !E.allowsStones(mat);
+  const sm = row.querySelector('[data-f="stoneMode"]');
+  if (noStones) { sm.value = 'none'; sm.disabled = true; }
+  else { sm.disabled = false; }
+  const mode = sm.value;
+  const isGold = mat === 'gold';
+  const isTi = mat === 'titanium';
   row.querySelectorAll('[data-accentonly]').forEach(e => e.style.display = mode === 'accent' ? '' : 'none');
   row.querySelectorAll('[data-fullonly]').forEach(e => e.style.display = mode === 'full' ? '' : 'none');
   const gw = row.querySelector('[data-goldwrap]');
   if (gw) gw.style.display = isGold ? '' : 'none';
+  const aw = row.querySelector('[data-anowrap]');
+  if (aw) aw.style.display = isTi ? '' : 'none';
+
+  const aType = row.querySelector('[data-f="accentType"]')?.value || 'cz';
+  const fType = row.querySelector('[data-f="fullType"]')?.value || 'moissanite';
+  const ac = row.querySelector('[data-accentcustom]');
+  if (ac) ac.style.display = (mode === 'accent' && S.accentPrice[aType] === null) ? '' : 'none';
+  const fc = row.querySelector('[data-fullcustom]');
+  if (fc) fc.style.display = (mode === 'full' && S.fullPrice[fType] === null) ? '' : 'none';
 }
 
 $('linesWrap').addEventListener('input', onLineChange);
@@ -657,8 +776,24 @@ $('linesWrap').addEventListener('change', onLineChange);
 function onLineChange(e){
   const row = e.target.closest('.line-row');
   if (!row) return;
-  if (e.target.matches('[data-f="material"],[data-f="stoneMode"]')) syncRow(row);
   const i = +row.dataset.i;
+  if (e.target.matches('[data-preset]')) {
+    const item = CATALOG_PRESETS.find(p => p.id === e.target.value);
+    if (item && item.calc) {
+      const c = item.calc;
+      LINES[i] = Object.assign({
+        name: item.name || '',
+        material: 'chrome', karat: '18', teeth: 6, level: '1',
+        plating: 'none', enamel: 'none', engraving: 'none', anodize: 'none', mode: 'none'
+      }, c, {
+        mode: c.accent ? 'accent' : (c.full && c.full.bars ? 'bars' : (c.full ? 'full' : 'none'))
+      });
+      renderLines();
+      toast('Loaded catalog design: ' + item.name);
+      return;
+    }
+  }
+  if (e.target.matches('[data-f="material"],[data-f="stoneMode"],[data-f="accentType"],[data-f="fullType"]')) syncRow(row);
   LINES[i] = readRow(row);
   recalc();
 }
@@ -673,8 +808,82 @@ $('linesWrap').addEventListener('click', e => {
 
 $('addLineBtn').addEventListener('click', () => {
   LINES.push({ material: 'chrome', karat: '18', teeth: 6, level: '1', plating: 'none',
-    enamel: 'none', engraving: 'none', mode: 'none' });
+    enamel: 'none', engraving: 'none', anodize: 'none', mode: 'none' });
   renderLines();
+});
+
+/* ── Studio services UI ── */
+function renderServices(){
+  const S = E.get(), L = E.LABELS;
+  const wrap = $('svcsWrap');
+  const types = Object.keys(S.servicePrices || { custom: 0 });
+  $('svcsEmpty').style.display = SERVICES.length ? 'none' : 'block';
+  wrap.innerHTML = SERVICES.map((sv, i) => `
+    <div class="svc-row" data-si="${i}">
+      <label class="f"><span>Service</span>
+        <select class="inp" data-sf="type">
+          ${types.map(k => `<option value="${k}" ${sv.type === k ? 'selected' : ''}>${esc(L.service[k] || k)}</option>`).join('')}
+        </select>
+      </label>
+      <label class="f"><span>Label</span>
+        <input class="inp" data-sf="name" value="${esc(sv.name || '')}" placeholder="Description">
+      </label>
+      <label class="f"><span>Qty</span>
+        <input class="inp" data-sf="qty" type="number" min="1" value="${Number(sv.qty) || 1}">
+      </label>
+      <label class="f"><span>Unit (EGP)</span>
+        <input class="inp" data-sf="unitPrice" type="number" min="0" step="any" value="${Number(sv.unitPrice) || 0}">
+      </label>
+      <button class="btn btn-rose btn-sm" data-sdel><i class="fas fa-trash"></i></button>
+    </div>
+  `).join('');
+  recalc();
+}
+
+function addService(type){
+  const S = E.get(), L = E.LABELS;
+  const k = type || 'custom';
+  SERVICES.push({
+    type: k,
+    name: L.service[k] || 'Studio Service',
+    qty: 1,
+    unitPrice: Number((S.servicePrices && S.servicePrices[k]) || 0),
+  });
+  renderServices();
+}
+
+$('addSvcBtn').addEventListener('click', () => addService('custom'));
+document.querySelectorAll('[data-add-svc]').forEach(btn => {
+  btn.addEventListener('click', () => addService(btn.dataset.addSvc));
+});
+$('svcsWrap').addEventListener('input', e => {
+  const row = e.target.closest('.svc-row');
+  if (!row) return;
+  const i = +row.dataset.si;
+  const f = e.target.dataset.sf;
+  if (f === 'qty') SERVICES[i].qty = Math.max(1, parseInt(e.target.value, 10) || 1);
+  else if (f === 'unitPrice') SERVICES[i].unitPrice = Math.max(0, Number(e.target.value) || 0);
+  else if (f === 'name') SERVICES[i].name = e.target.value;
+  recalc();
+});
+$('svcsWrap').addEventListener('change', e => {
+  const row = e.target.closest('.svc-row');
+  if (!row) return;
+  const i = +row.dataset.si;
+  if (e.target.dataset.sf === 'type') {
+    const t = e.target.value;
+    const S = E.get(), L = E.LABELS;
+    SERVICES[i].type = t;
+    SERVICES[i].name = L.service[t] || 'Studio Service';
+    SERVICES[i].unitPrice = Number((S.servicePrices && S.servicePrices[t]) || 0);
+    renderServices();
+  }
+});
+$('svcsWrap').addEventListener('click', e => {
+  const del = e.target.closest('[data-sdel]');
+  if (!del) return;
+  SERVICES.splice(+del.closest('.svc-row').dataset.si, 1);
+  renderServices();
 });
 
 /* ══════════════════════════════════════════════════════════════════
@@ -683,18 +892,23 @@ $('addLineBtn').addEventListener('click', () => {
 let LAST = null;
 
 function recalc(){
+  const S = E.get();
   $('linesWrap').querySelectorAll('.line-row').forEach(row => {
     const i = +row.dataset.i;
-    const line = E.calculateLine(LINES[i] || {});
+    const src = LINES[i] || {};
+    const line = E.calculateLine(src);
     const out = row.querySelector('[data-out]');
     if (out) {
-      const needsGold = (LINES[i] || {}).material === 'gold' && !Number(E.get().goldPrice);
-      out.textContent = needsGold ? 'Set the gold rate first' : `${fmt(line.subtotal)} EGP`;
-      out.style.color = needsGold ? 'var(--rose)' : '';
+      const needsGold = src.material === 'gold' && !Number(S.goldPrice);
+      const needsStone = (src.mode === 'accent' && S.accentPrice[(src.accent||{}).type] === null && !Number((src.accent||{}).customPrice))
+        || (src.mode === 'full' && S.fullPrice[(src.full||{}).type] === null && !Number((src.full||{}).customPrice));
+      if (needsGold) { out.textContent = 'Set Gold 24K rate above'; out.style.color = 'var(--rose)'; }
+      else if (needsStone) { out.textContent = 'Enter stone rate'; out.style.color = 'var(--rose)'; }
+      else { out.textContent = `${fmt(line.subtotal)} EGP`; out.style.color = ''; }
     }
   });
 
-  if (!LINES.length) {
+  if (!LINES.length && !SERVICES.length) {
     LAST = null;
     $('totalVal').innerHTML = `0 <small>EGP</small>`;
     $('totalSub').textContent = 'nothing calculated yet';
@@ -702,23 +916,29 @@ function recalc(){
     return;
   }
 
+  const dVal = Number($('discountVal').value) || 0;
+  const discount = dVal > 0 ? { value: dVal, type: $('discountType').value } : null;
+
   LAST = E.calculateOrder(LINES, {
     timeline: $('timeline').value,
     mold: $('mold').value,
     depositPct: Number($('depositPct').value) || 0,
+    services: SERVICES,
+    discount,
   });
 
   $('totalVal').innerHTML = `${fmt(LAST.total)} <small>${esc(LAST.currency)}</small>`;
-  const goldMissing = LINES.some(l => l.material === 'gold') && !Number(E.get().goldPrice);
+  const goldMissing = LINES.some(l => l.material === 'gold') && !Number(S.goldPrice);
   $('totalSub').innerHTML = goldMissing
-    ? '<span style="color:var(--rose)"><i class="fas fa-triangle-exclamation"></i> Set today\'s gold rate in Settings</span>'
-    : `${LAST.lineCount} design(s) · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}`;
+    ? '<span style="color:var(--rose)"><i class="fas fa-triangle-exclamation"></i> Set today\'s 24K gold rate above</span>'
+    : `${LAST.lineCount} design(s)${LAST.services.length ? ` · ${LAST.services.length} service(s)` : ''} · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}`;
 
-  const rows = [
-    ['Lines subtotal', `${fmt(LAST.linesSubtotal)} EGP`],
-  ];
+  const rows = [];
+  if (LAST.lines.length) rows.push(['Designs subtotal', `${fmt(LAST.linesSubtotal)} EGP`]);
+  if (LAST.servicesSubtotal) rows.push(['Services subtotal', `${fmt(LAST.servicesSubtotal)} EGP`]);
   if (LAST.timelineAmount) rows.push([`Timeline (${E.LABELS.timeline[LAST.timeline]} +${LAST.timelinePct}%)`, `${fmt(LAST.timelineAmount)} EGP`]);
   if (LAST.moldCost) rows.push([`Mold (${E.LABELS.mold[LAST.mold]})`, `${fmt(LAST.moldCost)} EGP`]);
+  if (LAST.discountAmount) rows.push(['Discount', `-${fmt(LAST.discountAmount)} EGP`]);
   rows.push(['<strong>Total</strong>', `<strong>${fmt(LAST.total)} EGP</strong>`]);
   if (LAST.depositPct) {
     rows.push([`Deposit (${LAST.depositPct}%)`, `${fmt(LAST.deposit)} EGP`]);
@@ -729,8 +949,26 @@ function recalc(){
   ).join('');
 }
 
-['timeline','mold','depositPct'].forEach(id => $(id).addEventListener('change', recalc));
-['timeline','mold','depositPct'].forEach(id => $(id).addEventListener('input', recalc));
+['timeline','mold','depositPct','discountVal','discountType'].forEach(id => {
+  $(id).addEventListener('change', recalc);
+  $(id).addEventListener('input', recalc);
+});
+
+$('newQuoteBtn').addEventListener('click', () => {
+  CURRENT_QUOTE_ID = null;
+  LINES = []; SERVICES = [];
+  $('clientPick').value = '';
+  $('clientName').value = '';
+  $('clientPhone').value = '';
+  $('clientEmail').value = '';
+  $('quoteNotes').value = '';
+  $('discountVal').value = '';
+  $('discountType').value = 'egp';
+  $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Save quote';
+  renderLines();
+  renderServices();
+  toast('Started a fresh quote');
+});
 
 $('calcBtn').addEventListener('click', () => { recalc(); toast('Calculated'); });
 
@@ -753,6 +991,17 @@ async function loadQuotes(){
 
 function quoteTotal(q){ return q.total || (q.order && q.order.total) || 0; }
 
+function quoteDesignLabel(q){
+  if (q.designLabel) return q.designLabel;
+  if (q.order) {
+    const bits = [];
+    if (q.order.lineCount) bits.push(`${q.order.lineCount} design(s)`);
+    if (q.order.services && q.order.services.length) bits.push(`${q.order.services.length} service(s)`);
+    return bits.join(' + ') || '—';
+  }
+  return '—';
+}
+
 function renderQuotes(){
   const q = ($('searchQuotes').value || '').trim().toLowerCase();
   const list = q
@@ -760,19 +1009,25 @@ function renderQuotes(){
     : QUOTES;
 
   $('quotesEmpty').style.display = list.length ? 'none' : 'block';
+  const statuses = ['draft', 'sent', 'accepted', 'declined'];
   $('quotesBody').innerHTML = list.map(x => {
     const st = x.status || 'draft';
     const badge = { draft:'b-draft', sent:'b-sent', accepted:'b-accepted', declined:'b-declined' }[st] || 'b-draft';
     const date = (x.createdAt || '').slice(0,10);
-    const design = x.designLabel || (x.order ? `${x.order.lineCount} design(s)` : '—');
+    const design = quoteDesignLabel(x);
     return `<tr data-q="${esc(x.id)}">
       <td>${esc(date)}</td>
       <td><strong>${esc(x.clientName || '—')}</strong><br><span style="color:var(--ink3);font-size:11px">${esc(x.clientPhone || '')}</span></td>
       <td style="color:var(--ink2)">${esc(design)}</td>
       <td class="num">${fmt(quoteTotal(x))}</td>
-      <td><span class="badge ${badge}">${esc(st)}</span></td>
+      <td>
+        <select class="status-sel ${badge}" data-status="${esc(x.id)}">
+          ${statuses.map(s => `<option value="${s}" ${st === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </td>
       <td style="text-align:right;white-space:nowrap">
         <button class="btn btn-ghost btn-sm" data-open="${esc(x.id)}" title="Open"><i class="fas fa-folder-open"></i></button>
+        <button class="btn btn-ghost btn-sm" data-inv="${esc(x.id)}" title="Convert to Invoice"><i class="fas fa-file-invoice-dollar"></i></button>
         <button class="btn btn-ghost btn-sm" data-pdf="${esc(x.id)}" title="PDF"><i class="fas fa-file-pdf"></i></button>
         <button class="btn btn-rose btn-sm" data-rm="${esc(x.id)}" title="Delete"><i class="fas fa-trash"></i></button>
       </td>
@@ -782,25 +1037,141 @@ function renderQuotes(){
 
 $('searchQuotes').addEventListener('input', renderQuotes);
 
+$('quotesBody').addEventListener('change', async (e) => {
+  const sel = e.target.closest('[data-status]');
+  if (!sel) return;
+  const id = sel.dataset.status;
+  const nextStatus = sel.value;
+  try {
+    await db.collection('quotes').doc(id).update({
+      status: nextStatus,
+      updatedAt: new Date().toISOString(),
+    });
+    const q = QUOTES.find(x => x.id === id);
+    if (q) q.status = nextStatus;
+    renderQuotes(); renderMonth();
+    toast('Status updated: ' + nextStatus);
+  } catch (err) {
+    toast('Could not update status', true);
+  }
+});
+
+function buildInvoiceTransferFromQuote(q){
+  const order = q.order || {};
+  const items = [];
+  (order.lines || []).forEach(l => {
+    const label = l.name ? `${l.name} (${E.lineLabel(l)})` : E.lineLabel(l);
+    items.push({
+      id: 'q_' + Math.random().toString(36).slice(2, 8),
+      name: l.name || (E.LABELS.material[l.material] + ' Grillz'),
+      spec: E.lineLabel(l),
+      qty: 1,
+      price: Number(l.subtotal) || 0,
+      line: l,
+    });
+  });
+  (order.services || []).forEach(sv => {
+    items.push({
+      id: 'sv_' + Math.random().toString(36).slice(2, 8),
+      name: sv.name,
+      spec: 'Studio Service',
+      qty: Number(sv.qty) || 1,
+      price: Number(sv.unitPrice) || 0,
+    });
+  });
+  if (order.timelineAmount) {
+    items.push({
+      id: 'tl_' + Math.random().toString(36).slice(2, 8),
+      name: `${E.LABELS.timeline[order.timeline] || 'Rush'} Timeline (+${order.timelinePct || 0}%)`,
+      spec: 'Order Timeline Surcharge',
+      qty: 1,
+      price: Number(order.timelineAmount) || 0,
+    });
+  }
+  if (order.moldCost) {
+    items.push({
+      id: 'md_' + Math.random().toString(36).slice(2, 8),
+      name: `Mold — ${E.LABELS.mold[order.mold] || order.mold}`,
+      spec: 'Studio Mold Fee',
+      qty: 1,
+      price: Number(order.moldCost) || 0,
+    });
+  }
+  const transfer = {
+    quoteId: q.id || '',
+    clientName: q.clientName || '',
+    clientPhone: q.clientPhone || '',
+    clientEmail: q.clientEmail || '',
+    notes: q.notes || '',
+    discountAmount: Number(order.discountAmount) || 0,
+    depositAmount: Number(order.deposit) || 0,
+    items,
+    total: Number(order.total || q.total) || 0,
+    createdAt: new Date().toISOString(),
+  };
+  return transfer;
+}
+
+function convertQuoteToInvoice(q){
+  if (!q || (!((q.order && q.order.lines && q.order.lines.length) || (q.order && q.order.services && q.order.services.length)))) {
+    return toast('Add at least one design or service first', true);
+  }
+  const transfer = buildInvoiceTransferFromQuote(q);
+  try { localStorage.setItem('egygz_pending_invoice_from_quote', JSON.stringify(transfer)); } catch (e) {}
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'egygz:openInvoiceFromQuote', payload: transfer }, window.location.origin);
+    toast('Opening Invoice Studio with quote...');
+    return;
+  }
+  window.location.href = 'invoice';
+}
+
+$('toInvoiceBtn').addEventListener('click', () => {
+  recalc();
+  if (!LAST) return toast('Add at least one design or service first', true);
+  convertQuoteToInvoice({
+    id: CURRENT_QUOTE_ID || '',
+    clientName: $('clientName').value.trim(),
+    clientPhone: $('clientPhone').value.trim(),
+    clientEmail: $('clientEmail').value.trim(),
+    order: LAST,
+    notes: $('quoteNotes').value.trim(),
+    total: LAST.total,
+  });
+});
+
 $('quotesBody').addEventListener('click', async (e) => {
   const open = e.target.closest('[data-open]');
+  const inv = e.target.closest('[data-inv]');
   const pdf = e.target.closest('[data-pdf]');
   const rm = e.target.closest('[data-rm]');
 
   if (open) {
     const q = QUOTES.find(x => x.id === open.dataset.open);
     if (!q) return;
+    CURRENT_QUOTE_ID = q.id;
     $('clientName').value = q.clientName || '';
     $('clientPhone').value = q.clientPhone || '';
     $('clientEmail').value = q.clientEmail || '';
-    LINES = (q.lines || []).map(l => Object.assign({ mode: 'none' }, l));
+    LINES = (q.lines || []).map(l => Object.assign({ mode: 'none', anodize: 'none' }, l));
+    SERVICES = Array.isArray(q.services) ? q.services.map(s => Object.assign({}, s)) :
+      (q.order && Array.isArray(q.order.services) ? q.order.services.map(s => Object.assign({}, s)) : []);
     $('timeline').value = (q.order && q.order.timeline) || 'standard';
     $('mold').value = (q.order && q.order.mold) || 'none';
     $('depositPct').value = (q.order && q.order.depositPct) ?? E.get().depositPct;
+    $('discountVal').value = (q.discount && q.discount.value) || '';
+    $('discountType').value = (q.discount && q.discount.type) || 'egp';
     $('quoteNotes').value = q.notes || '';
+    $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Update quote';
     renderLines();
+    renderServices();
     toast('Quote opened');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (inv) {
+    const q = QUOTES.find(x => x.id === inv.dataset.inv);
+    if (q) convertQuoteToInvoice(q);
   }
 
   if (pdf) {
@@ -813,6 +1184,7 @@ $('quotesBody').addEventListener('click', async (e) => {
     try {
       await db.collection('quotes').doc(rm.dataset.rm).delete();
       QUOTES = QUOTES.filter(x => x.id !== rm.dataset.rm);
+      if (CURRENT_QUOTE_ID === rm.dataset.rm) CURRENT_QUOTE_ID = null;
       renderQuotes(); renderMonth();
       toast('Deleted');
     } catch (err) { toast('Could not delete', true); }
@@ -820,32 +1192,48 @@ $('quotesBody').addEventListener('click', async (e) => {
 });
 
 $('saveBtn').addEventListener('click', async () => {
-  if (!LINES.length) return toast('Add at least one design line', true);
+  if (!LINES.length && !SERVICES.length) return toast('Add at least one design line or service', true);
   recalc();
   const name = $('clientName').value.trim();
   const phone = $('clientPhone').value.trim();
   if (!name) return toast('Client name is required', true);
 
+  const dVal = Number($('discountVal').value) || 0;
+  const existing = CURRENT_QUOTE_ID ? QUOTES.find(x => x.id === CURRENT_QUOTE_ID) : null;
   const payload = {
     clientName: name,
     clientPhone: phone,
     clientEmail: $('clientEmail').value.trim(),
     lines: LINES,
+    services: SERVICES,
+    discount: dVal > 0 ? { value: dVal, type: $('discountType').value } : null,
     order: LAST,
     total: LAST.total,
     notes: $('quoteNotes').value.trim(),
-    designLabel: LAST.lineCount + ' design(s) / ' + LAST.teethTotal + ' teeth',
-    status: 'draft',
-    createdAt: LAST && LAST.createdAt ? LAST.createdAt : new Date().toISOString(),
+    designLabel: [
+      LAST.lineCount ? `${LAST.lineCount} design(s) / ${LAST.teethTotal} teeth` : '',
+      LAST.services.length ? `${LAST.services.length} service(s)` : ''
+    ].filter(Boolean).join(' + '),
+    status: existing ? (existing.status || 'draft') : 'draft',
+    createdAt: existing && existing.createdAt ? existing.createdAt : new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     createdBy: USER ? USER.email : '',
   };
 
   try {
-    const ref = await db.collection('quotes').add(payload);
-    QUOTES.unshift(Object.assign({ id: ref.id }, payload));
+    if (CURRENT_QUOTE_ID) {
+      await db.collection('quotes').doc(CURRENT_QUOTE_ID).set(payload, { merge: true });
+      const idx = QUOTES.findIndex(x => x.id === CURRENT_QUOTE_ID);
+      if (idx > -1) QUOTES[idx] = Object.assign({ id: CURRENT_QUOTE_ID }, payload);
+      toast('Quote updated');
+    } else {
+      const ref = await db.collection('quotes').add(payload);
+      CURRENT_QUOTE_ID = ref.id;
+      QUOTES.unshift(Object.assign({ id: ref.id }, payload));
+      $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Update quote';
+      toast('Quote saved');
+    }
     renderQuotes(); renderMonth();
-    toast('Quote saved');
   } catch (e) {
     console.warn(e);
     toast('Could not save — check Firestore rules', true);
@@ -872,7 +1260,7 @@ function renderMonth(){
 /* ══════════════════════════════════════════════════════════════════
    8. PDF
    ══════════════════════════════════════════════════════════════════ */
-const PDF_MAP = { '—':'-', '–':'-', '·':'-', '×':'x', '’':"'", '‘':"'", '“':'"', '”':'"', '…':'...', '•':'-', '':',', '?':'?' };
+const PDF_MAP = { '\u2014':'-', '\u2013':'-', '\u00b7':'-', '\u00d7':'x', '\u2019':"'", '\u2018':"'", '\u201c':'"', '\u201d':'"', '\u2026':'...', '\u2022':'-', '\u060c':',', '\u061f':'?' };
 function pdfSafe(str){
   let out = '';
   for (const ch of String(str == null ? '' : str)) {
@@ -959,10 +1347,24 @@ function makePdf(q){
       (l.stoneCost ? ` - stones ${fmt(l.stoneCost)}` : '') +
       (l.platingCost ? ` - plating ${fmt(l.platingCost)}` : '') +
       (l.enamelCost ? ` - enamel ${fmt(l.enamelCost)}` : '') +
-      (l.engravingCost ? ` - engraving ${fmt(l.engravingCost)}` : '');
+      (l.engravingCost ? ` - engraving ${fmt(l.engravingCost)}` : '') +
+      (l.anodizeCost ? ` - anodize ${fmt(l.anodizeCost)}` : '');
     text(detail, M + 78, y);
     y += 16;
   });
+
+  if ((order.services || []).length) {
+    order.services.forEach((sv, i) => {
+      if (y > H - 170) { doc.addPage(); y = 60; }
+      doc.setFontSize(9); doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
+      text('Service ' + (i+1), M, y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
+      text(`${sv.name}${sv.qty > 1 ? ' x' + sv.qty : ''}`, M + 78, y);
+      doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
+      text(fmt(sv.subtotal) + ' ' + order.currency, W - M, y, { align: 'right' });
+      y += 16;
+    });
+  }
 
   /* totals */
   y += 6;
@@ -981,9 +1383,11 @@ function makePdf(q){
     y += bold ? 18 : 14;
   };
 
-  kv('Lines subtotal', fmt(order.linesSubtotal) + ' ' + order.currency);
+  if (order.linesSubtotal) kv('Designs subtotal', fmt(order.linesSubtotal) + ' ' + order.currency);
+  if (order.servicesSubtotal) kv('Services subtotal', fmt(order.servicesSubtotal) + ' ' + order.currency);
   if (order.timelineAmount) kv('Timeline ' + (E.LABELS.timeline[order.timeline]||'') + ' (+' + order.timelinePct + '%)', fmt(order.timelineAmount) + ' ' + order.currency);
   if (order.moldCost) kv('Mold ' + (E.LABELS.mold[order.mold]||''), fmt(order.moldCost) + ' ' + order.currency);
+  if (order.discountAmount) kv('Discount', '-' + fmt(order.discountAmount) + ' ' + order.currency);
 
   doc.setFillColor(251, 248, 240);
   doc.rect(left - 10, y - 13, right - left + 10 + M - M, 26, 'F');
@@ -1120,9 +1524,9 @@ mask.addEventListener('click', closeDrawer);
 
 function renderSettings(){
   const S = E.get(), L = E.LABELS;
-  const num = (path, label, val) =>
+  const num = (path, label, val, nullable) =>
     `<div class="row"><span class="k">${esc(label)}</span>
-      <input class="inp" data-set="${path}" type="number" step="any" value="${val}"></div>`;
+      <input class="inp" data-set="${path}" ${nullable ? 'data-nullable="1" placeholder="custom"' : ''} type="number" step="any" value="${val === null || val === undefined ? '' : val}"></div>`;
   const group = (title, body) => `<div class="sec"><h4>${esc(title)}</h4>${body}</div>`;
 
   let html = '';
@@ -1130,30 +1534,31 @@ function renderSettings(){
   html += group('Materials — price per tooth',
     Object.keys(S.materialBase).map(k => num('materialBase.'+k, L.material[k]||k, S.materialBase[k])).join(''));
 
-  html += group('Gold — today\'s rate',
+  html += group('Gold — today\'s rate & formula',
     num('goldPrice', 'Price per gram (EGP)', S.goldPrice) +
+    num('goldCastFee', 'Cast fee per tooth (EGP)', S.goldCastFee) +
+    num('goldWeightFactor', 'Weight factor (g)', S.goldWeightFactor) +
     Object.keys(S.goldKarat).map(k =>
       num('goldKarat.'+k+'.purity', k+'K purity', S.goldKarat[k].purity) +
-      num('goldKarat.'+k+'.margin', k+'K margin', S.goldKarat[k].margin) +
-      num('goldGramsPerTooth.'+k, k+'K grams/tooth', S.goldGramsPerTooth[k] || 0.34)
+      num('goldKarat.'+k+'.margin', k+'K margin', S.goldKarat[k].margin)
     ).join(''));
 
   html += group('Design levels — surcharge %',
     Object.keys(S.designPct).map(k => num('designPct.'+k, L.level[k]||k, S.designPct[k])).join(''));
 
-  html += group('Stone price per stone',
+  html += group('Stone price per stone (blank = custom daily rate)',
     Object.keys(S.accentPrice).map(k => {
       const v = S.accentPrice[k];
-      return num('accentPrice.'+k, L.accentType[k]||k, v === null ? 0 : v);
+      return num('accentPrice.'+k, L.accentType[k]||k, v, k === 'labgrown' || k === 'natural');
     }).join(''));
 
   html += group('Setting price',
     Object.keys(S.settingPrice).map(k => num('settingPrice.'+k, L.setting[k]||k, S.settingPrice[k])).join(''));
 
-  html += group('Full iced — price per tooth',
+  html += group('Full iced — price per tooth (blank = custom daily rate)',
     Object.keys(S.fullPrice).map(k => {
       const v = S.fullPrice[k];
-      return num('fullPrice.'+k, L.accentType[k]||k, v === null ? 0 : v);
+      return num('fullPrice.'+k, L.accentType[k]||k, v, k === 'labgrown' || k === 'natural');
     }).join('') + num('barsStonesPerTooth', 'Full iced on bars / tooth', S.barsStonesPerTooth));
 
   html += group('Coverage',
@@ -1167,6 +1572,12 @@ function renderSettings(){
 
   html += group('Engraving',
     Object.keys(S.engraving).map(k => num('engraving.'+k, L.engraving[k]||k, S.engraving[k])).join(''));
+
+  html += group('Titanium Anodizing',
+    Object.keys(S.anodize || {}).map(k => num('anodize.'+k, (L.anodize && L.anodize[k])||k, S.anodize[k])).join(''));
+
+  html += group('Studio services (default EGP)',
+    Object.keys(S.servicePrices || {}).map(k => num('servicePrices.'+k, (L.service && L.service[k])||k, S.servicePrices[k])).join(''));
 
   html += group('Order level',
     Object.keys(S.timelinePct).map(k => num('timelinePct.'+k, L.timeline[k]+' %', S.timelinePct[k])).join('') +
@@ -1183,7 +1594,12 @@ function readSettings(){
     const path = el.dataset.set.split('.');
     let o = S;
     for (let i = 0; i < path.length - 1; i++) o = o[path[i]] = o[path[i]] || {};
-    o[path[path.length - 1]] = Number(el.value);
+    const raw = el.value.trim();
+    if (el.dataset.nullable === '1' && raw === '') {
+      o[path[path.length - 1]] = null;
+    } else {
+      o[path[path.length - 1]] = Number(raw);
+    }
   });
   return S;
 }
@@ -1194,6 +1610,8 @@ $('saveSettings').addEventListener('click', async () => {
   try {
     await E.save(db);
     fillSelects();
+    renderLines();
+    renderServices();
     recalc();
     renderSettings();
     toast('Settings saved — everything follows');
@@ -1206,6 +1624,9 @@ $('saveSettings').addEventListener('click', async () => {
 $('resetBtn').addEventListener('click', () => {
   if (!confirm('Reset every price to the built-in defaults?')) return;
   E.reset();
+  fillSelects();
+  renderLines();
+  renderServices();
   renderSettings();
   recalc();
   toast('Reset to defaults — press Save to keep');
@@ -1222,6 +1643,7 @@ window.sendPdfToTelegram = sendPdfToTelegram;
 await loadClients();
 await loadQuotes();
 renderLines();
+renderServices();
 recalc();
 </script>
 </body>
