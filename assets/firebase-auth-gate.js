@@ -56,11 +56,45 @@ function overlay() {
   return el;
 }
 
+/* أي حاجة بتحصل جوه requireAuth بتتسجل — عشان نعرف بالظبط هي واقفة فين */
+const LOG = (m, d) => { try { console.log('[gate]', m, d === undefined ? '' : d); } catch (e) {} };
+const WARN = (m, d) => { try { console.warn('[gate]', m, d === undefined ? '' : d); } catch (e) {} };
+
+
+/* ══ قراءة الجلسة المحفوظة من المتصفح ══
+   Firebase بيكتب المستخدم في localStorage تحت مفتاح فيه اسم المشروع.
+   لو onAuthStateChanged اتأخر (شبكة بطيئة أو حجب)، بنقرا المفتاح ده
+   مباشرة عشان الصفحة ماتعلّقش على شاشة الدخول. */
+function readStoredUser(auth) {
+  try {
+    const project = (FIREBASE_CONFIG.projectId || '').replace(/-/g, '');
+    const key = 'firebase:authUser:' + FIREBASE_CONFIG.apiKey + ':' + (auth && auth.name ? auth.name : '[DEFAULT]');
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const u = JSON.parse(raw);
+    if (!u || !u.uid) return null;
+    LOG('stored session found', u.email || u.uid);
+    return u;
+  } catch (e) {
+    WARN('readStoredUser failed', e && e.message);
+    return null;
+  }
+}
+
 export async function requireAuth() {
+  LOG('requireAuth start');
+  try { window.__gateLoaded = true; } catch (e) {}
   if (_auth && _auth.currentUser) return _auth.currentUser;
 
-  const auth = firebaseAuth();
+  let auth;
+  try {
+    auth = firebaseAuth();
+  } catch (e) {
+    WARN('firebaseAuth failed', e && e.message);
+    throw e;
+  }
   _auth = auth;
+  LOG('auth ready');
 
   /* ══ استرجاع الجلسة قبل أي حاجة ══
      Firebase بيرجّع الجلسة المحفوظة بشكل غير متزامن، فلازم نستنى إشارة
@@ -68,22 +102,38 @@ export async function requireAuth() {
      على طول، وده كان بيلغي جلسة اتعملت في /editx بـ SESSION — فالنتيجة
      إن الـ iframe جوه /editx كان بيطلب تسجيل دخول تاني. */
   const restored = await new Promise((resolve) => {
+    LOG('waiting for restored session');
     let un = null;
     let settled = false;
-    const finish = (u) => { if (settled) return; settled = true; if (un) un(); resolve(u || null); };
+    const finish = (u) => {
+      if (settled) return;
+      settled = true;
+      try { if (un) un(); } catch (e) {}
+      resolve(u || null);
+    };
     try {
-      un = onAuthStateChanged(auth, (u) => finish(u));
-    } catch (e) { finish(null); return; }
-    /* لو الـ SDK مارجّعش حاجة خلال 4 ثواني، نكمل عادي */
-    setTimeout(() => finish(auth.currentUser || null), 4000);
+      un = onAuthStateChanged(auth, (u) => finish(u), (err) => {
+        WARN('onAuthStateChanged error', err && err.code);
+        finish(auth.currentUser || null);
+      });
+    } catch (e) { WARN('onAuthStateChanged threw', e && e.message); finish(null); return; }
+    /* الخطة البديلة: لو الحالة ماجتش في 3 ثواني، نقرا الجلسة المحفوظة
+       من المتصفح مباشرة (نفس المفتاح اللي Firebase بيكتبه). */
+    setTimeout(() => {
+      LOG('restore timeout — reading stored session directly');
+      const stored = readStoredUser(auth);
+      finish(stored || auth.currentUser || null);
+    }, 3000);
   });
 
+  LOG('restore result', restored ? 'signed in' : 'no session');
   if (restored) return restored;
 
   /* مفيش جلسة — نخلي المرة الجاية تتشال من المتصفح مباشرة */
   await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
   const gate = overlay();
+  LOG('showing sign-in');
   return new Promise((resolve) => {
     let settled = false;
     const done = (user) => {

@@ -428,7 +428,13 @@ const FIREBASE_CFG = {
 };
 
 // Stops here until the admin signs in — requireAuth() shows its own overlay.
-const USER = await requireAuth();
+let USER = null;
+try {
+  USER = await requireAuth();
+} catch (authErr) {
+  console.error('[quotes] auth gate failed', authErr);
+  throw authErr;
+}
 document.getElementById('who').textContent = USER && USER.email ? USER.email : '';
 document.querySelectorAll('[data-logout]').forEach(function (el) {
   el.addEventListener('click', function (e) { e.preventDefault(); fbSignOut(); });

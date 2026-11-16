@@ -1042,7 +1042,14 @@ async function initApp() {
    AUTH GATE — replaces the old hardcoded-password lock screen.
    The page never renders content until a real Firebase session exists.
 ══════════════════════════════════════════════════ */
-const EGYGZ_USER = await requireAuth();
+let EGYGZ_USER = null;
+try {
+  EGYGZ_USER = await requireAuth();
+} catch (authErr) {
+  console.error('[invoice] auth gate failed', authErr);
+  showToast('Sign-in could not load. Refresh the page.', 'error-toast');
+  throw authErr;
+}
 
 // Wire the existing header "logout" affordance (if the page has one) and
 // expose it for console/debug use.
@@ -1969,7 +1976,14 @@ function setupAddClientModal() {
 
 
 /* boot only after a real session exists */
-await initApp();
+try {
+  await initApp();
+} catch (bootErr) {
+  console.error('[invoice] boot failed', bootErr);
+  const a = document.getElementById('app');
+  if (a) a.style.display = 'block';   /* الصفحة تظهر حتى لو حاجة وقعت */
+  showToast('Some parts failed to load. Refresh to try again.', 'error-toast');
+}
 </script>
 </body>
 </html>

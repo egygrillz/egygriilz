@@ -641,157 +641,121 @@
  {
   "id": "gallery1",
   "folder": "000001",
-  "name": "Black Snake",
+  "name": "Black Gold Snake",
   "price": "",
-  "description": "Black snake in dark metal with emerald eyes, worked across the front six on the cast.",
+  "description": "Working cast: His exclusive black snake grillz set is masterfully crafted in 925 sterling silver with sleek black gold plating for a dark, menacing…",
   "category": "grillz-gallery",
   "images": [
    "000001.jpg"
   ],
   "videos": [],
-  "order": 1
+  "order": 1,
+  "desc_from": "sets/set6",
+  "link": "sets"
  },
  {
   "id": "gallery2",
   "folder": "000002",
-  "name": "Do You Love Me",
+  "name": "FARES SOKAR's Set",
   "price": "",
-  "description": "Gold script lettering set across the front teeth on a white working cast.",
+  "description": "Working cast: Custom silver grillz set, crafted exclusively for singer Fares Sokar, featured in his video clip Do you love me? with Saint Levant .Show…",
   "category": "grillz-gallery",
   "images": [
    "000002.jpg"
   ],
   "videos": [],
-  "order": 2
+  "order": 2,
+  "desc_from": "sets/set7",
+  "link": "sets"
  },
  {
   "id": "gallery3",
   "folder": "000003",
-  "name": "Twin Stone Wings",
+  "name": "Diamond Boy Set",
   "price": "",
-  "description": "Pave side wings closing on a green and a magenta stone, with polished front caps.",
+  "description": "Working cast: Premium custom grillz set, crafted in 925 sterling silver with platinum plating, features sharp, mirror-polished fang caps on the bottom…",
   "category": "grillz-gallery",
   "images": [
    "000003.jpg"
   ],
   "videos": [],
-  "order": 3
- },
- {
-  "id": "gallery4",
-  "folder": "000004",
-  "name": "Grey Halo",
-  "price": "",
-  "description": "Pave wings with a grey centre stone and a ruby accent, on the working cast.",
-  "category": "grillz-gallery",
-  "images": [
-   "000004.jpg"
-  ],
-  "videos": [],
-  "order": 4
+  "order": 3,
+  "desc_from": "sets/set1",
+  "link": "sets"
  },
  {
   "id": "gallery5",
   "folder": "000005",
-  "name": "Butterfly Flex",
+  "name": "FLEX Set",
   "price": "",
-  "description": "Gold butterfly and a black enamelled Flex bar, one of the most requested builds.",
+  "description": "Working cast: Custom Chrome grillz set, crafted exclusively for the rapper FLEX , featured in his video clip FL EX FT. NAFEA [ELMAHATA EL OLA] - (…",
   "category": "grillz-gallery",
   "images": [
    "000005.jpg"
   ],
   "videos": [],
-  "order": 5
- },
- {
-  "id": "gallery6",
-  "folder": "000006",
-  "name": "Emerald Edge",
-  "price": "",
-  "description": "Silver front caps with emerald ends and pave shoulders.",
-  "category": "grillz-gallery",
-  "images": [
-   "000006.jpg"
-  ],
-  "videos": [],
-  "order": 6
- },
- {
-  "id": "gallery7",
-  "folder": "000007",
-  "name": "Golden Butterfly",
-  "price": "",
-  "description": "Solid gold butterfly paired with a slim gold bar across the arch.",
-  "category": "grillz-gallery",
-  "images": [
-   "000007.jpg"
-  ],
-  "videos": [],
-  "order": 7
- },
- {
-  "id": "gallery8",
-  "folder": "000008",
-  "name": "Flex Script",
-  "price": "",
-  "description": "Gold bar carrying the Flex signature in script, with a smaller butterfly.",
-  "category": "grillz-gallery",
-  "images": [
-   "000008.jpg"
-  ],
-  "videos": [],
-  "order": 8
+  "order": 5,
+  "desc_from": "sets/set2",
+  "link": "sets"
  },
  {
   "id": "gallery9",
   "folder": "000009",
-  "name": "Emerald Nugget",
+  "name": "Ancient Scorpion",
   "price": "",
-  "description": "Hand-built gold nugget cluster holding a single emerald.",
+  "description": "Working cast: Exclusive scorpion grillz set features premium silver construction with rich gold plating for a bold two-tone glow. A fierce…",
   "category": "grillz-gallery",
   "images": [
    "000009.jpg"
   ],
   "videos": [],
-  "order": 9
+  "order": 9,
+  "desc_from": "sets/set8",
+  "link": "sets"
  },
  {
   "id": "gallery10",
   "folder": "000010",
-  "name": "Nugget Single",
+  "name": "Golden Tiger",
   "price": "",
-  "description": "One rounded gold nugget piece on a single tooth, textured by hand.",
+  "description": "Working cast: Striking custom grillz featuring a fierce tiger engraving across two Chrome teeth with rich gold plating. Crafted for maximum contrast…",
   "category": "grillz-gallery",
   "images": [
    "000010.jpg"
   ],
   "videos": [],
-  "order": 10
+  "order": 10,
+  "desc_from": "sets/set3",
+  "link": "sets"
  },
  {
   "id": "gallery11",
   "folder": "000011",
-  "name": "Blue Ice Row",
+  "name": "Selene Bloom",
   "price": "",
-  "description": "Blue and cyan stones running beside white metal work along the front.",
+  "description": "Working cast: Bespoke sterling silver grillz set featuring delicate enamel work, precise laser engraving, natural “Fayrouz” stone accents, and…",
   "category": "grillz-gallery",
   "images": [
    "000011.jpg"
   ],
   "videos": [],
-  "order": 11
+  "order": 11,
+  "desc_from": "sets/set4",
+  "link": "sets"
  },
  {
   "id": "gallery12",
   "folder": "000012",
-  "name": "Silver Crown",
+  "name": "LELLA FADA's Set",
   "price": "",
-  "description": "Silver piece with a diamond cluster set above a sculpted crown motif.",
+  "description": "Working cast: Custom Silver grillz set, crafted exclusively for rapper Lella Fada , to complement her latest album MAGNUN.",
   "category": "grillz-gallery",
   "images": [
    "000012.jpg"
   ],
   "videos": [],
-  "order": 12
+  "order": 12,
+  "desc_from": "sets/set5",
+  "link": "sets"
  }
 ]

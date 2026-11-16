@@ -64,7 +64,7 @@
     ══════════════════════════════════════ */
     .gallery-wrap { padding:8px 0 0; }
 
-    .ed-row { display:grid; gap:3px; margin-bottom:3px; }
+    .ed-row { display:grid; gap:24px; margin-bottom:24px; padding:0 24px; }
     .ed-row.layout-a { grid-template-columns:2fr 1fr; }
     .ed-row.layout-b { grid-template-columns:1fr 2fr; }
     .ed-row.layout-c { grid-template-columns:1fr 1fr 1fr; }
@@ -80,13 +80,13 @@
     .ed-row.layout-c .ed-panel             { aspect-ratio:1/1; }
 
     /* Last row in the current batch gets 100vh */
-    .ed-row.is-last-row .ed-panel { aspect-ratio:unset !important; height:100vh; }
+    .ed-row.is-last-row .ed-panel { aspect-ratio:3/2; max-height:78vh; }
 
     /* Single leftover panels also get 100vh */
-    .ed-row.layout-single .ed-panel { aspect-ratio:unset !important; height:100vh; }
+    .ed-row.layout-single .ed-panel { aspect-ratio:3/2 !important; height:auto; max-height:78vh; }
     .ed-row.layout-single { grid-template-columns:1fr; }
 
-    .ed-panel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:1; transition:opacity 0.9s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
+    .ed-panel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; opacity:1; transition:opacity 0.9s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
     .ed-panel img { opacity:0.001; }
     .ed-panel img:first-child, .ed-panel img.active { opacity:1; }
     .ed-panel:hover img.active { transform:scale(1.04); }
@@ -118,7 +118,7 @@
       .ed-row.layout-c .ed-panel:nth-child(3) { grid-column:1/-1; aspect-ratio:16/7; }
       /* last-row and single on mobile: use 60vw height instead */
       .ed-row.is-last-row .ed-panel,
-      .ed-row.layout-single .ed-panel { height:60vw !important; aspect-ratio:unset !important; }
+      .ed-row.layout-single .ed-panel { aspect-ratio:3/2 !important; height:auto !important; max-height:none; }
       .ed-panel-info .name { font-size:12px; }
       .ed-panel-info .desc { max-height:40px; opacity:1; font-size:10px; }
     }
@@ -388,7 +388,7 @@
         +'<div class="ed-panel-info">'
         +'<div class="name">'+item.name+'</div>'
         +'<div class="desc">'+item.desc+'</div>'
-        +'<a class="price" href="contact" onclick="event.stopPropagation()">'+item.price+'</a>'
+        +(item.link ? '<a class="price" href="'+item.link+'" onclick="event.stopPropagation()">View design</a>' : '')
         +'</div>'
         +dotsHtml;
 
@@ -508,6 +508,7 @@
             images: (d.images||[]).map(f => 'assets/images/grillz-gallery/' + f),
             folder: d.folder || d.id,
             cat: 'grillz-gallery',
+            link: d.link || '',
           }));
       })
       .then(items=>{
