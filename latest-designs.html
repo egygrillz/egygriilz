@@ -498,7 +498,7 @@
     function buildA(d, folder) {
       const row = document.createElement('div');
       row.className = 'la';
-      const hero = makeMedia(`assets/images/latest-designs/${folder}/${d.images[0]}`, d.name, true);
+      const hero = makeMedia(`assets/images/sets/${folder}/${d.images[0]}`, d.name, true);
       hero.classList.add('la-hero');
       row.appendChild(hero);
       const right = document.createElement('div');
@@ -514,7 +514,7 @@
         const g = document.createElement('div');
         g.className = 'la-grid';
         d.images.slice(1,7).forEach(f => {
-          g.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
+          g.appendChild(makeMedia(`assets/images/sets/${folder}/${f}`, d.name, true));
         });
         right.appendChild(g);
       }
@@ -527,7 +527,7 @@
       outer.className = 'lb-outer';
       const bg = document.createElement('div');
       bg.className = 'lb-bg';
-      const heroSrc = `assets/images/latest-designs/${folder}/${d.images[0]}`;
+      const heroSrc = `assets/images/sets/${folder}/${d.images[0]}`;
       if(isVid(heroSrc)) {
         const wrap = document.createElement('div');
         wrap.className = 'vid-wrap';
@@ -561,7 +561,7 @@
         const strip = document.createElement('div');
         strip.className = 'lb-strip';
         d.images.slice(1,6).forEach(f => {
-          strip.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
+          strip.appendChild(makeMedia(`assets/images/sets/${folder}/${f}`, d.name, true));
         });
         content.appendChild(strip);
       }
@@ -583,7 +583,7 @@
       const right = document.createElement('div');
       right.className = 'lc-right';
       d.images.slice(0,3).forEach(f => {
-        right.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
+        right.appendChild(makeMedia(`assets/images/sets/${folder}/${f}`, d.name, true));
       });
       row.appendChild(right);
       return row;
@@ -611,7 +611,7 @@
       const grid = document.createElement('div');
       grid.className = 'ld-grid';
       d.images.slice(0,6).forEach(f => {
-        grid.appendChild(makeMedia(`assets/images/latest-designs/${folder}/${f}`, d.name, true));
+        grid.appendChild(makeMedia(`assets/images/sets/${folder}/${f}`, d.name, true));
       });
       wrap.appendChild(grid);
       return wrap;
@@ -626,19 +626,19 @@
     /* ── ?item=<folder> — عرض تصميم واحد في صفحته ── */
     const WANTED = new URLSearchParams(location.search).get('item') || '';
 
-    fetch('assets/images/latest-designs/designs.json')
+    fetch('assets/images/catalog.json?t=' + Date.now())
       .then(r => r.json())
-      .then(async names => {
-        if(!Array.isArray(names)||!names.length) throw new Error('empty');
+      .then(async designs => {
+        if(!Array.isArray(designs)||!designs.length) throw new Error('empty');
         loadEl.style.display = 'none';
         container.style.display = 'block';
-        const list = WANTED ? names.filter(n => n === WANTED) : names;
+        const list = WANTED ? designs.filter(d => d.id === WANTED) : designs;
         if (WANTED && !list.length) { loadEl.style.display='none'; errEl.style.display='block'; return; }
         for(let i=0; i<list.length; i++) {
-          const folder = list[i];
+          const src = list[i];
+          const folder = src.id;
           try {
-            const txt = await fetch(`assets/images/latest-designs/${folder}/info.txt`).then(r=>r.text());
-            const d = parseInfo(txt);
+            const d = { name: src.name, price: src.price, desc: src.description, images: src.images || [] };
             if(!d.images.length) continue;
             if(i > 0) {
               const rule = document.createElement('div');

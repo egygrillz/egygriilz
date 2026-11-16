@@ -464,6 +464,7 @@
     .img-preview-wrap.drag-over{outline:2px dashed #000;}
     .img-preview-wrap img,.img-preview-wrap video{width:100%;height:100%;object-fit:cover;display:block;}
     .remove-img{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(255,255,255,0.92);color:#c0392b;border:1px solid #ddd;cursor:pointer;font-size:14px;line-height:20px;text-align:center;border-radius:2px;}
+    .size-saved{position:absolute;bottom:4px;right:4px;background:rgba(31,31,31,.82);color:#fff;font-size:8px;font-weight:700;letter-spacing:.3px;padding:2px 5px;border-radius:2px;}
     .img-order{position:absolute;bottom:0;left:0;background:rgba(0,0,0,0.55);font-size:9px;color:#fff;padding:2px 6px;text-transform:uppercase;letter-spacing:1px;}
     .media-type-badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.65);color:#fff;font-size:8px;padding:2px 6px;text-transform:uppercase;letter-spacing:1px;}
     .video-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:9px;padding:3px 8px;text-transform:uppercase;letter-spacing:1px;border-radius:2px;}
@@ -1029,7 +1030,7 @@
       <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-desc" placeholder="Describe this piece…"></textarea></div>
       <div class="form-group">
         <label class="form-label" id="media-label">Images — first image is the cover</label>
-        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)"><input type="file" id="file-input" multiple accept="image/*,video/*" onchange="handleFiles(this.files)"><i class="fas fa-camera" id="upload-icon"></i><p id="upload-hint"><strong>Click or drag images here</strong><br>JPG, PNG, WEBP</p></div>
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)"><input type="file" id="file-input" multiple accept="image/*,video/*" onchange="handleFiles(this.files)"><i class="fas fa-camera" id="upload-icon"></i><p id="upload-hint"><strong>Click or drag photos or video here</strong><br>Photos are resized and compressed automatically.<br><span id="storage-mode" style="font-size:10px;letter-spacing:1px;color:#8a8a8a;"></span></p></div>
         <div class="image-previews" id="image-previews"></div>
       </div>
       <div class="form-group"><label class="form-label">Tags</label><div class="tag-selector"><button type="button" class="tag-toggle" data-tag="new" onclick="toggleTag(this)"><i class="fas fa-plus"></i> New</button><button type="button" class="tag-toggle" data-tag="featured" onclick="toggleTag(this)"><i class="fas fa-star"></i> Featured</button><button type="button" class="tag-toggle" data-tag="sold" onclick="toggleTag(this)"><i class="fas fa-circle" style="color:#b0736b;font-size:6px;"></i> Sold</button><button type="button" class="tag-toggle" data-tag="sale" onclick="toggleTag(this)"><i class="fas fa-circle" style="color:#6f8f7a;font-size:6px;"></i> Sale</button></div></div>
@@ -2031,6 +2032,14 @@
     return data;
   }
   async function getFileSHA(path){ try{return (await ghFetch('contents/'+path+'?ref='+GH.branch)).sha;}catch{return null;} }
+  async function deleteFile(path,message){
+    try{
+      var sha=await getFileSHA(path);
+      if(!sha) return false;
+      await ghFetch('contents/'+path,'DELETE',{message:message,branch:GH.branch,sha:sha});
+      return true;
+    }catch(e){ console.warn('delete skipped', path, e.message); return false; }
+  }
   async function putFile(path,content,message){
     var sha=await getFileSHA(path);
     var body={message:message,content:content,branch:GH.branch};
@@ -2061,13 +2070,38 @@
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
   // INVENTORY CATEGORIES
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
+  /* كل تصميم بيتخزن مرة واحدة في sets/ — التصنيفات ملفات JSON بتشاور عليه */
+  /* ONE catalogue. Every image lives in assets/images/sets/<id>/.
+     Images are never duplicated — a design belongs to exactly one folder
+     and the catalogue records which collection it shows in. */
   var CAT = {
-    sets:     {folder:'sets',           json:'assets/images/sets/sets.json',               prefix:'set'},
-    golds:    {folder:'golds',          json:'assets/images/golds/golds.json',             prefix:'golds'},
-    silvers:  {folder:'silvers',        json:'assets/images/silvers/silvers.json',         prefix:'silvers'},
-    diamonds: {folder:'diamonds',       json:'assets/images/diamonds/diamonds.json',       prefix:'diamonds'},
-    latest:   {folder:'latest-designs', json:'assets/images/latest-designs/designs.json', prefix:'design'},
+    sets:     {folder:'sets', label:'Set'},
+    golds:    {folder:'sets', label:'Gold Design'},
+    silvers:  {folder:'sets', label:'Silver Design'},
+    diamonds: {folder:'sets', label:'Diamond Design'},
+    latest:   {folder:'sets', label:'Design'},
   };
+  var CATALOG = 'assets/images/catalog.json';
+  var IMG_ROOT = 'assets/images/sets/';
+
+  /* ── الكتالوج: المكان الوحيد اللي فيه بيانات كل التصميمات ── */
+  async function readCatalog(){
+    var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
+    try{ var d=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); return Array.isArray(d)?d:[]; }
+    catch(e){ return []; }
+  }
+  async function writeCatalog(list, message){
+    var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(list, null, 2))));
+    await putFile(CATALOG, b64, message || 'Update catalogue');
+    /* نحدّث الكاش عشان الشاشة تتحدث فوراً */
+    Object.keys(cache).forEach(function(k){
+      if(cache[k] && cache[k].catalog) cache[k].catalog = list;
+    });
+  }
+  function catalogEntry(list, id){
+    return list.find(function(x){ return x.id === id; });
+  }
+
   var cache = {};
   function getTags(cat,id){ return JSON.parse(localStorage.getItem('tags_'+cat+'_'+id)||'[]'); }
   function setTags(cat,id,tags){ localStorage.setItem('tags_'+cat+'_'+id,JSON.stringify(tags)); }
@@ -2092,18 +2126,14 @@
 
   async function loadCategory(cat){
     if(!GH.owner||!GH.repo){renderEmptyInv(cat,'Go to GitHub Setup first.');return;}
-    var info=CAT[cat];var folder=info.folder;var json=info.json;
     var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
-    var list=[];
-    try{list=await (await fetch(raw+json+'?t='+Date.now())).json();}catch{}
-    var items=[];
-    for(var id of list){
-      try{
-        var txt=await (await fetch(raw+'assets/images/'+folder+'/'+id+'/info.txt?t='+Date.now())).text();
-        var item=parseInfo(txt);item.id=id;items.push(item);
-      } catch{}
-    }
-    cache[cat]={list:list,items:items,folder:folder};
+    var all=[];
+    try{ all=await (await fetch(raw+CATALOG+'?t='+Date.now())).json(); }catch(e){ all=[]; }
+    all=Array.isArray(all)?all:[];
+    /* التصنيف بيختار من الكتالوج — مفيش ملف منفصل لكل تصنيف */
+    var mine = all.filter(function(x){ return x.category===cat || cat==='sets' || cat==='latest'; });
+    mine.forEach(function(x){ x.id=x.id||x.folder; });
+    cache[cat]={list:mine.map(function(x){return x.id;}), items:mine, folder:'sets', catalog:all};
     renderGrid(cat);
   }
 
@@ -2135,9 +2165,9 @@
     if(!confirm('Delete '+ids.length+' item(s)?')) return;
     showToast('Deleting…','');
     try{
-      var catInfo=CAT[cat];var json=catInfo.json;
-      var newList=(cache[cat]&&cache[cat].list||[]).filter(function(i){return !ids.includes(i);});
-      await putFile(json,btoa(JSON.stringify(newList,null,2)),'Bulk remove from '+cat);
+      var list=await readCatalog();
+      var keep=list.filter(function(x){return !ids.includes(x.id);});
+      await writeCatalog(keep,'Bulk remove '+ids.length+' design(s)');
       if(cache[cat]){cache[cat].list=newList;cache[cat].items=cache[cat].items.filter(function(i){return !ids.includes(i.id);});}
       bulkSelected[cat].clear();updateBulkBar(cat);renderGrid(cat);
       showToast(' '+ids.length+' deleted','success');
@@ -2214,8 +2244,13 @@
     var cards=document.querySelectorAll('#grid-'+cat+' .set-card');
     var newOrder=Array.from(cards).map(function(c){return c.getAttribute('data-id');}).filter(Boolean);
     try{
-      var catInfo=CAT[cat];
-      await putFile(catInfo.json,btoa(JSON.stringify(newOrder,null,2)),'Reorder '+cat+' items');
+      var list=await readCatalog();
+      newOrder.forEach(function(id,i){
+        var e=catalogEntry(list,id);
+        if(e) e.order=i+1;
+      });
+      /* التصنيف بيتحكم في الظهور، والترتيب رقم واحد لكل تصميم */
+      await writeCatalog(list,'Reorder '+cat);
       if(cache[cat]){
         cache[cat].list=newOrder;
         cache[cat].items.sort(function(a,b){return newOrder.indexOf(a.id)-newOrder.indexOf(b.id);});
@@ -2253,8 +2288,8 @@
       var tags=getTags(cat,item.id);
       var tagHtml=tags.length?'<div class="tag-row">'+tags.map(function(t){return '<span class="tag '+(TAGS_MAP[t]&&TAGS_MAP[t].cls||'')+'">'+( TAGS_MAP[t]&&TAGS_MAP[t].label||t)+'</span>';}).join('')+'</div>':'';
       var mediaHtml=item.images.map(function(file,i){
-        if(isVideoFile(file)) return '<video src="'+raw+'assets/images/'+folder+'/'+item.id+'/'+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
-        return '<img src="'+raw+'assets/images/'+folder+'/'+item.id+'/'+file+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
+        if(isVideoFile(file)) return '<video src="'+raw+IMG_ROOT+item.id+'/'+file+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
+        return '<img src="'+raw+IMG_ROOT+item.id+'/'+file+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
       }).join('');
       var hasVideo=item.images.some(function(f){return isVideoFile(f);});
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
@@ -2336,11 +2371,11 @@
     for(var i=0;i<pending.length;i++){
       var u = pending[i];
       try{
-        var folder = CAT[cat].folder;
-        var infoStr = 'name: ' + u.name + '\nprice: ' + u.price + '\ndescription: ' + u.desc + '\nimages: ' + (u.item.images||[]).join(',');
-        await putFile('assets/images/' + folder + '/' + u.id + '/info.txt',
-                      btoa(unescape(encodeURIComponent(infoStr))),
-                      'Update ' + u.id + ' price/name/desc');
+        var list = await readCatalog();
+        var entry = catalogEntry(list, u.id);
+        if(!entry) throw new Error('not in catalogue');
+        entry.name = u.name; entry.price = u.price; entry.description = u.desc;
+        await writeCatalog(list, 'Update ' + u.id + ' name/price/desc');
         u.item.name = u.name; u.item.desc = u.desc; u.item.price = u.price;
         var card = document.querySelector(cardSel + '[data-id="' + u.id + '"]');
         if(card){
@@ -2394,7 +2429,9 @@
       var item=cache[cat]&&cache[cat].items.find(function(i){return i.id===id;});
       var images=item&&item.images||[];
       var infoStr='name: '+nameVal+'\nprice: '+priceVal+'\ndescription: '+descVal+'\nimages: '+images.join(',');
-      await putFile('assets/images/'+folder+'/'+id+'/info.txt',btoa(unescape(encodeURIComponent(infoStr))),'Update '+id+' text');
+      var _l = await readCatalog(); var _e = catalogEntry(_l, id);
+      if(_e){ _e.name = item.name; _e.price = item.price; _e.description = item.desc;
+              await writeCatalog(_l, 'Update '+id+' text'); }
       if(item){item.name=nameVal;item.desc=descVal;item.price=priceVal;}
       card.querySelector('.editable-field.name .field-val').textContent=nameVal;
       card.querySelector('.editable-field.desc .field-val').textContent=descVal;
@@ -2430,7 +2467,7 @@
     var raw='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
     var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
     var html=drawerImages.map(function(file,i){
-      var src=raw+'assets/images/'+folder+'/'+drawerId+'/'+file+'?t='+Date.now();
+      var src=raw+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now();
       var isVid=isVideoFile(file);
       var media=isVid?'<video src="'+src+'" muted playsinline></video>':'<img src="'+src+'" alt="" loading="lazy" decoding="async">';
       return '<div class="reorder-item" draggable="true" data-idx="'+i+'" ondragstart="drawerDragStart('+i+')" ondragover="drawerDragOver(event,this,'+i+')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="drawerDrop(event,'+i+')" ondragend="drawerDragEnd()">'+
@@ -2449,7 +2486,7 @@
     showToast('Uploading…','');
     var btn=document.getElementById('drawer-save-btn');btn.disabled=true;btn.textContent='Uploading…';
     var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
-    var basePath='assets/images/'+folder+'/'+drawerId;
+    var basePath=IMG_ROOT+drawerId;
     var existing=drawerImages.map(function(n){return parseInt(n.replace(/\D/g,''),10);}).filter(function(n){return !isNaN(n);});
     var counter=existing.length>0?Math.max.apply(null,existing)+1:drawerImages.length;
     var fileArr=Array.from(files);var done=0;
@@ -2476,15 +2513,17 @@
       var folder=CAT[drawerCat]&&CAT[drawerCat].folder||drawerCat;
       var item=cache[drawerCat]&&cache[drawerCat].items.find(function(i){return i.id===drawerId;});
       var infoStr='name: '+(item&&item.name||'')+'\nprice: '+(item&&item.price||'')+'\ndescription: '+(item&&item.desc||'')+'\nimages: '+drawerImages.join(',');
-      await putFile('assets/images/'+folder+'/'+drawerId+'/info.txt',btoa(unescape(encodeURIComponent(infoStr))),'Reorder images for '+drawerId);
+      var _l2 = await readCatalog(); var _e2 = catalogEntry(_l2, drawerId);
+      if(_e2){ _e2.images = drawerImages.slice();
+               await writeCatalog(_l2, 'Reorder images for '+drawerId); }
       if(item) item.images=[...drawerImages];
       var card=document.querySelector('.set-card[data-id="'+drawerId+'"][data-cat="'+drawerCat+'"]');
       if(card){
         var raw2='https://raw.githubusercontent.com/'+GH.owner+'/'+GH.repo+'/'+GH.branch+'/';
         var slider=card.querySelector('.mini-slider');
         slider.innerHTML=drawerImages.map(function(file,i){
-          if(isVideoFile(file)) return '<video src="'+raw2+'assets/images/'+folder+'/'+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
-          return '<img src="'+raw2+'assets/images/'+folder+'/'+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
+          if(isVideoFile(file)) return '<video src="'+raw2+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" muted playsinline loop></video>';
+          return '<img src="'+raw2+IMG_ROOT+drawerId+'/'+file+'?t='+Date.now()+'" class="'+(i===0?'active':'')+'" alt="" loading="lazy">';
         }).join('');
       }
       showToast(' Order saved!','success');closeDrawer();
@@ -2510,19 +2549,23 @@
     if(cat==='latest'){
       document.getElementById('media-label').textContent='Images & Videos — first file is the cover';
       document.getElementById('upload-icon').className='fas fa-photo-video';
-      document.getElementById('upload-hint').innerHTML='<strong>Click or drag images or videos here</strong><br>JPG, PNG, WEBP, MP4, MOV';
+      document.getElementById('upload-hint').innerHTML='<strong>Click or drag photos or video here</strong><br>Photos are resized and compressed automatically.<br><span id="storage-mode" style="font-size:10px;letter-spacing:1px;color:#8a8a8a;"></span>';
+      paintStorageMode();
       document.getElementById('file-input').accept='image/*,video/*';
     } else {
       document.getElementById('media-label').textContent='Images — first image is the cover';
       document.getElementById('upload-icon').className='fas fa-camera';
-      document.getElementById('upload-hint').innerHTML='<strong>Click or drag images here</strong><br>JPG, PNG, WEBP';
+      document.getElementById('upload-hint').innerHTML='<strong>Click or drag photos here</strong><br>Photos are resized and compressed automatically.<br><span id="storage-mode" style="font-size:10px;letter-spacing:1px;color:#8a8a8a;"></span>';
+      paintStorageMode();
       document.getElementById('file-input').accept='image/*';
     }
   }
   function openModal(cat){
     currentMode='add';resetModal();currentEditCat=cat;
     document.getElementById('edit-category').value=cat;
-    document.getElementById('modal-title').textContent='Add '+cap(cat);
+    /* العنوان بياخد الاسم الحقيقي للتصنيف، مش الـ id */
+    document.getElementById('modal-title').textContent=
+      'Add ' + ((CAT[cat] && CAT[cat].label) || cap(cat));
     document.getElementById('publish-btn').textContent='Publish to Site';
     setUploadHint(cat);
     document.getElementById('modal-overlay').classList.add('open');
@@ -2569,14 +2612,18 @@
       existingImages.forEach(function(img,i){
         var isVid=isVideoFile(img);
         html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'existing\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'existing\')">'+
-          (isVid?'<video src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge"><i class="fas fa-play"></i> Video</span>':'<img src="'+raw+'assets/images/'+folder+'/'+id+'/'+img+'?t='+Date.now()+'" alt="" loading="lazy" decoding="async">')+
+          (isVid?'<video src="'+raw+IMG_ROOT+id+'/'+img+'?t='+Date.now()+'" muted playsinline></video><span class="media-type-badge"><i class="fas fa-play"></i> Video</span>':'<img src="'+raw+IMG_ROOT+id+'/'+img+'?t='+Date.now()+'" alt="" loading="lazy" decoding="async">')+
           '<button class="remove-img" onclick="removeExisting('+i+')">×</button><span class="img-order">#'+(i+1)+'</span></div>';
       });
     }
     pendingImages.forEach(function(p,i){
-      var isVid=p.file.type.startsWith('video/');
+      var isVid=p.isVideo;
+      var shrink = (p.originalSize && p.newSize && p.newSize < p.originalSize)
+        ? '<span class="size-saved">' + MEDIA.human(p.originalSize) + ' &rarr; ' + MEDIA.human(p.newSize) + '</span>'
+        : '';
       html+='<div class="img-preview-wrap" draggable="true" ondragstart="onDragStart(event,'+i+',\'pending\')" ondragover="onDragOver(event,this)" ondragleave="onDragLeave(this)" ondrop="onDrop(event,'+i+',\'pending\')">'+
         (isVid?'<video src="'+p.dataUrl+'" muted playsinline></video><span class="media-type-badge"><i class="fas fa-play"></i> Video</span>':'<img src="'+p.dataUrl+'" alt="" loading="lazy" decoding="async">')+
+        shrink +
         '<button class="remove-img" onclick="removePending('+i+')">×</button><span class="img-order">New '+(i+1)+'</span></div>';
     });
     document.getElementById('image-previews').innerHTML=html;
@@ -2585,13 +2632,51 @@
   function removePending(i){pendingImages.splice(i,1);renderPreviews();}
   function closeModal(){document.getElementById('modal-overlay').classList.remove('open');resetModal();}
   function closeModalOnBg(e){if(e.target===document.getElementById('modal-overlay')) closeModal();}
-  function handleFiles(files){
-    Array.from(files).forEach(function(file){
-      if(!file.type.startsWith('image/')&&!file.type.startsWith('video/')) return;
-      var r=new FileReader();
-      r.onload=function(e){pendingImages.push({file:file,dataUrl:e.target.result});renderPreviews();};
-      r.readAsDataURL(file);
+  /* كل حاجة بتتحفظ في GitHub — مفيش أي خدمة برة */
+  function paintStorageMode(){
+    var el = document.getElementById('storage-mode');
+    if (!el) return;
+    el.textContent = 'Saved in your GitHub repo';
+    el.style.color = '#6f8f7a';
+  }
+
+  async function handleFiles(files){
+    var list = Array.from(files).filter(function(f){
+      return f.type.startsWith('image/') || f.type.startsWith('video/');
     });
+    if(!list.length) return;
+
+    for (var idx = 0; idx < list.length; idx++) {
+      var file = list[idx];
+      var isVid = file.type.startsWith('video/');
+
+      /* فيديو: مايتصغّرش في المتصفح — بنتحقق من حجمه بس */
+      if (isVid) {
+        if (file.size > MEDIA.MAX_VIDEO_BYTES) {
+          showToast('Video is ' + MEDIA.human(file.size) +
+                    ' — the limit is ' + MEDIA.human(MEDIA.MAX_VIDEO_BYTES) +
+                    '. Trim it or upload to YouTube.', 'error');
+          continue;
+        }
+        var vurl = URL.createObjectURL(file);
+        pendingImages.push({ file: file, dataUrl: vurl, isVideo: true, blob: file,
+                             name: MEDIA.cleanName(file.name), originalSize: file.size });
+        renderPreviews();
+        continue;
+      }
+
+      /* صورة: تصغير + ضغط قبل ما تطلع من الجهاز */
+      showToast('Preparing ' + (idx + 1) + ' / ' + list.length + '…', '');
+      var res = await MEDIA.compressImage(file);
+      var url = URL.createObjectURL(res.blob);
+      pendingImages.push({
+        file: file, dataUrl: url, blob: res.blob, name: res.name,
+        originalSize: file.size, newSize: res.blob.size,
+        dims: res.size, compressed: res.changed,
+      });
+      renderPreviews();
+    }
+    showToast('Ready to publish', 'success');
   }
   function handleDrop(e){e.preventDefault();document.getElementById('upload-zone').classList.remove('drag');handleFiles(e.dataTransfer.files);}
 
@@ -2604,48 +2689,88 @@
     var editId=document.getElementById('edit-id').value.trim();
     if(!name){showToast('Please enter a name.','error');return;}
     if(!editId&&existingImages.length===0&&pendingImages.length===0){showToast('Please add at least one image.','error');return;}
-    var btn=document.getElementById('publish-btn');btn.disabled=true;btn.textContent='Publishing…';showToast('Publishing…','');
+
+    var btn=document.getElementById('publish-btn');
+    btn.disabled=true;btn.textContent='Publishing…';showToast('Publishing…','');
+
     try{
-      var catInfo=CAT[cat];var folder=catInfo.folder;var json=catInfo.json;var prefix=catInfo.prefix;
-      var itemId=editId;
+      /* ── 1) رقم التصميم ──
+         كل تصميم بياخد مجلد واحد ثابت: assets/images/sets/setN/ */
+      var catalog = await readCatalog();
+      var itemId = editId;
       if(!itemId){
-        var list=cache[cat]&&cache[cat].list||[];var num=list.length+1;
-        while(list.includes(prefix+num)) num++;
-        itemId=prefix+num;
+        var maxN = 0;
+        catalog.forEach(function(x){
+          var m = /^set(\d+)$/.exec(x.id || '');
+          if(m) maxN = Math.max(maxN, parseInt(m[1], 10));
+        });
+        itemId = 'set' + (maxN + 1);
       }
-      var basePath='assets/images/'+folder+'/'+itemId;
-      var allExistingNums=existingImages.map(function(n){return parseInt(n.replace(/\D/g,''),10);}).filter(function(n){return !isNaN(n);});
-      var imgCounter=allExistingNums.length>0?Math.max.apply(null,allExistingNums)+1:0;
-      var newNames=[];
+      var basePath = IMG_ROOT + itemId;
+
+      /* ── 2) الصور: تتصغّر في المتصفح، وبعدين تتحفظ على GitHub ── */
+      var allExistingNums = existingImages
+        .map(function(n){ return parseInt(String(n).replace(/\D/g,''), 10); })
+        .filter(function(n){ return !isNaN(n); });
+      var imgCounter = allExistingNums.length ? Math.max.apply(null, allExistingNums) + 1 : 0;
+
+      var newNames = [];
       for(var i=0;i<pendingImages.length;i++){
-        var img=pendingImages[i];
-        var ext=(img.file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
-        var fname=String(imgCounter).padStart(6,'0')+'.'+ext;
-        await putFile(basePath+'/'+fname,img.dataUrl.split(',')[1],'Upload '+fname+' for '+itemId);
-        newNames.push(fname);imgCounter++;
-        btn.textContent='Uploading '+(i+1)+' / '+pendingImages.length+'…';
+        var img = pendingImages[i];
+        btn.textContent = 'Uploading ' + (i+1) + ' / ' + pendingImages.length + '…';
+
+        var blob = img.blob || img.file;
+        var ext = (img.name || 'x.jpg').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+        var fname = String(imgCounter).padStart(6,'0') + '.' + ext;
+
+        var b64 = await MEDIA.toBase64(blob);
+        await putFile(basePath + '/' + fname, b64,
+                      'Add ' + fname + ' to ' + itemId + ' (' + MEDIA.human(blob.size) + ')');
+
+        newNames.push(fname);
+        imgCounter++;
       }
-      var allImages=[...existingImages,...newNames];
-      var infoStr='name: '+name+'\nprice: '+price+'\ndescription: '+desc+'\nimages: '+allImages.join(',');
-      await putFile(basePath+'/info.txt',btoa(unescape(encodeURIComponent(infoStr))),(currentMode==='edit'?'Update':'Add')+' '+itemId);
-      var currentList=cache[cat]&&cache[cat].list||[];
-      var newList=currentList.includes(itemId)?currentList:[...currentList,itemId];
-      await putFile(json,btoa(JSON.stringify(newList,null,2)),'Update '+cat+' index');
-      setTags(cat,itemId,getActiveTags());
-      if(!cache[cat]) cache[cat]={list:newList,items:[],folder:folder};
-      cache[cat].list=newList;
-      var existingEntry=cache[cat].items.find(function(i){return i.id===itemId;});
-      var updatedEntry={id:itemId,name:name,price:price,desc:desc,images:allImages};
-      if(existingEntry) Object.assign(existingEntry,updatedEntry);else cache[cat].items.push(updatedEntry);
-      renderGrid(cat);
-      showToast(' '+(currentMode==='edit'?'Changes saved!':'Published!'),'success');
+
+      /* ── 3) الكتالوج: سطر واحد لكل تصميم ──
+         هنا بس بيتحفظ الاسم والسعر والوصف والصور والتصنيف. */
+      var allImages = existingImages.concat(newNames);
+      var entry = catalogEntry(catalog, itemId);
+
+      if(entry){
+        entry.name = name;
+        entry.price = price;
+        entry.description = desc;
+        entry.images = allImages;
+        if(!entry.category) entry.category = (cat === 'sets' || cat === 'latest') ? 'golds' : cat;
+      } else {
+        catalog.push({
+          id: itemId,
+          name: name,
+          price: price,
+          description: desc,
+          category: (cat === 'sets' || cat === 'latest') ? 'golds' : cat,
+          images: allImages,
+          order: catalog.length + 1,
+        });
+      }
+
+      btn.textContent = 'Saving catalogue…';
+      await writeCatalog(catalog, (currentMode === 'edit' ? 'Update ' : 'Add ') + itemId);
+
+      setTags(cat, itemId, getActiveTags());
+
+      showToast(' ' + (currentMode === 'edit' ? 'Changes saved!' : 'Published!'), 'success');
       closeModal();
-      setTimeout(function(){loadCategory(cat);},3000);
+      setTimeout(function(){ loadCategory(cat); }, 1200);
+
     } catch(err){
-      console.error(err);showToast('Error: '+err.message,'error');
-      btn.disabled=false;btn.textContent=currentMode==='edit'?'Save Changes':'Publish to Site';
+      console.error(err);
+      showToast('Error: ' + err.message, 'error');
+      btn.disabled=false;
+      btn.textContent = currentMode === 'edit' ? 'Save Changes' : 'Publish to Site';
     }
   }
+
 
   // ‑‑ DELETE ITEM ‑‑
   var _dCat,_dId;
@@ -2658,9 +2783,9 @@
   async function doDelete(){
     closeConfirm();showToast('Removing…','');
     try{
-      var catInfo=CAT[_dCat];var json=catInfo.json;
-      var newList=(cache[_dCat]&&cache[_dCat].list||[]).filter(function(i){return i!==_dId;});
-      await putFile(json,btoa(JSON.stringify(newList,null,2)),'Remove '+_dId);
+      var list=await readCatalog();
+      var keep=list.filter(function(x){return x.id!==_dId;});
+      await writeCatalog(keep,'Remove '+_dId);
       if(cache[_dCat]){cache[_dCat].list=newList;cache[_dCat].items=cache[_dCat].items.filter(function(i){return i.id!==_dId;});renderGrid(_dCat);}
       showToast(' Item removed','success');
       setTimeout(function(){loadCategory(_dCat);},2000);
@@ -2703,12 +2828,27 @@
     if(!confirm('This will overwrite your current index files. Continue?')) return;
     var btn=document.getElementById('restore-btn');btn.disabled=true;btn.textContent='Restoring…';showToast('Restoring…','');
     try{
+      var list=await readCatalog();
+      var map={}; list.forEach(function(x){map[x.id]=x;});
       for(var cat in restoreData.categories||{}){
-        var catInfo=CAT[cat];if(!catInfo) continue;
+        if(!CAT[cat]) continue;
         var data=restoreData.categories[cat];
-        await putFile(catInfo.json,btoa(JSON.stringify(data.list||[],null,2)),'Restore '+cat+' from backup');
-        (data.items||[]).forEach(function(item){if(item.tags&&item.tags.length) setTags(cat,item.id,item.tags);});
+        (data.items||[]).forEach(function(item){
+          if(!item||!item.id) return;
+          var e=map[item.id];
+          if(!e){
+            e={id:item.id,name:item.name||item.id,price:item.price||'',description:item.desc||item.description||'',category:cat==='sets'||cat==='latest'?(item.category||'golds'):cat,images:item.images||[],order:list.length+1};
+            list.push(e); map[item.id]=e;
+          } else {
+            if(item.name) e.name=item.name;
+            if(item.price!==undefined) e.price=item.price;
+            if(item.desc||item.description) e.description=item.desc||item.description;
+            if(item.images) e.images=item.images;
+          }
+          if(item.tags&&item.tags.length) setTags(cat,item.id,item.tags);
+        });
       }
+      await writeCatalog(list,'Restore backup');
       showToast(' Backup restored!','success');loadAllPanels();
     } catch(err){showToast('Error: '+err.message,'error');}
     btn.disabled=false;btn.textContent='<i class="fas fa-arrow-up"></i> Restore to GitHub';
@@ -2822,6 +2962,7 @@
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script data-cfasync="false" src="assets/calc-engine.js"></script>
+<script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
 <script data-cfasync="false">
 /* EGYGRILLZ – secure admin (drop-in override for editx.html) */

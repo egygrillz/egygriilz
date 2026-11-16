@@ -445,16 +445,21 @@
       },200);
     });
 
-    /* ── Load ── */
+    /* ── Load: مصدر واحد للصور والمعلومات ── */
     const BASE='assets/images/sets';
-    fetch(`${BASE}/sets.json`)
+    fetch('assets/images/catalog.json?t='+Date.now())
       .then(r=>r.json())
-      .then(folders=>{
-        const promises=folders.map(folder=>fetch(`${BASE}/${folder}/info.txt`).then(r=>{ if(!r.ok)throw 0; return r.text(); }).then(text=>{ const{name,desc,price,images}=parseInfo(text); return{name,desc,price,images:images.map(img=>`${BASE}/${folder}/${img}`),folder}; }).catch(()=>null));
-        return Promise.all(promises);
+      .then(catalog=>{
+        return (catalog||[]).map(d=>({
+          name: d.name || d.id,
+          desc: d.description || '',
+          price: d.price || '',
+          images: (d.images||[]).map(img=>`${BASE}/${d.id}/${img}`),
+          folder: d.id,
+        }));
       })
       .then(items=>{
-        allItems=items.filter(Boolean);
+        allItems=items.filter(x=>x.images.length);
         if(!allItems.length){ document.getElementById('no-results').style.display='block'; return; }
         renderBatch(allItems);
         document.getElementById('see-more-btn').addEventListener('click',()=>renderBatch(allItems));

@@ -809,23 +809,20 @@
       const strip = document.getElementById('lv-new-strip');
       buildSkeleton(strip, 5);
       try {
-        const list = await getJSON('assets/images/latest-designs/designs.json');
+        // one catalogue file — every design is stored once in sets/
+        const list = await getJSON('assets/images/catalog.json?t=' + Date.now());
         const slice = list.slice(0, 10);
-        const results = await Promise.all(slice.map(folder =>
-          getText(`assets/images/latest-designs/${folder}/info.txt`)
-            .then(txt => ({ folder, data: parseInfo(txt) }))
-            .catch(() => null)
-        ));
         const frag = document.createDocumentFragment();
-        for (const r of results) {
+        for (const r of slice) {
           if (!r) continue;
-          const { folder, data: d } = r;
-          const src = d.images[0] ? `assets/images/latest-designs/${folder}/${d.images[0]}` : '';
+          const folder = r.id;
+          const d = { name: r.name, price: r.price, images: r.images || [] };
+          const src = d.images[0] ? `assets/images/sets/${folder}/${d.images[0]}` : '';
           if (!src) continue;
           const card = document.createElement('div');
           card.className = 'lv-new-card';
           card.innerHTML = `<div class="lv-new-card-img"><img src="${src}" alt="${d.name}" loading="lazy" decoding="async"></div><div class="lv-new-card-label">Latest</div><div class="lv-new-card-name">${d.name}</div><div class="lv-new-card-price">${d.price}</div>`;
-          card.addEventListener('click', () => window.location = 'latest-designs');
+          card.addEventListener('click', () => window.location = 'latest-designs?item=' + encodeURIComponent(folder));
           frag.appendChild(card);
         }
         strip.innerHTML = '';
