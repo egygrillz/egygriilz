@@ -40,7 +40,7 @@
       if(name==='appointments') loadAppointments();
       if(name==='clients') loadClients();
       if(name==='messages') loadMessages();
-      if(name==='moulds') loadMouldOrders();
+      if(name==='moulds'){ loadMouldPricesPanel(); loadMouldOrders(); }
       if(name==='banners') loadBanners();
       if(name==='schedule') loadScheduleSettings();
       if(name==='settings') loadSiteSettings();
@@ -1420,17 +1420,39 @@
           <div class="page-header-row">
             <div>
               <p class="ph-title">Mould Orders</p>
-              <p class="ph-sub">At-home impression kits — approve, email the payment link, mark delivered</p>
+              <p class="ph-sub">At-home impression kits — approve, send the payment link from your own Gmail, mark delivered</p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn-muted2" onclick="loadMouldOrders(true)"><i class="fas fa-rotate"></i> Refresh</button>
-              <button class="btn-muted2" onclick="openMouldTemplate()"><i class="fas fa-pen"></i> Email template</button>
+              <button class="btn-muted2" onclick="openMouldTemplate()"><i class="fas fa-pen"></i> Gmail template</button>
+            </div>
+          </div>
+
+          <!-- KIT PRICES — the two numbers /moulds charges -->
+          <div class="section-card" style="margin-bottom:22px;">
+            <div class="mould-tpl-head">
+              <div>
+                <p class="ph-title" style="font-size:15px;">Mould kit prices</p>
+                <p class="ph-sub">The price per arch and the flat delivery fee that /moulds adds to every order. These are the same two numbers as Site Settings → Mould kit.</p>
+              </div>
+            </div>
+            <div style="padding:20px 26px 24px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="form-group" style="margin:0;">
+                <label class="mould-label">Price per arch (EGP)</label>
+                <input class="form-input" id="mould-price-per-arch" type="number" step="any" min="0" style="max-width:180px;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="mould-label">Flat delivery fee (EGP)</label>
+                <input class="form-input" id="mould-price-delivery" type="number" step="any" min="0" style="max-width:180px;">
+              </div>
+              <button class="btn-black" onclick="saveMouldPrices()">Save prices</button>
+              <span class="mould-hint" id="mould-prices-note" style="padding-bottom:12px;"></span>
             </div>
           </div>
 
           <div class="mould-tabs" id="mould-tabs">
             <button class="mould-tab active" data-status="pending" onclick="setMouldFilter('pending')">Pending <span id="mt-pending">0</span></button>
-            <button class="mould-tab" data-status="approved" onclick="setMouldFilter('approved')">Approved &amp; Sent <span id="mt-approved">0</span></button>
+            <button class="mould-tab" data-status="approved" onclick="setMouldFilter('approved')">Approved <span id="mt-approved">0</span></button>
             <button class="mould-tab" data-status="delivered" onclick="setMouldFilter('delivered')">Delivered <span id="mt-delivered">0</span></button>
             <button class="mould-tab" data-status="all" onclick="setMouldFilter('all')">All <span id="mt-all">0</span></button>
           </div>
@@ -1441,8 +1463,8 @@
           <div class="section-card" id="mould-template-card" style="margin-top:26px;display:none;">
             <div class="mould-tpl-head">
               <div>
-                <p class="ph-title" style="font-size:15px;">Payment email template</p>
-                <p class="ph-sub">Used by the bot and by every “Approve &amp; Send Payment” button. Placeholders are filled per order.</p>
+                <p class="ph-title" style="font-size:15px;">Gmail message template</p>
+                <p class="ph-sub">Filled in and opened in Gmail by every “Approve &amp; open Gmail” button and by the bot — you press Send.</p>
               </div>
               <button class="btn-muted2" onclick="closeMouldTemplate()">Close</button>
             </div>
@@ -4117,7 +4139,7 @@
 
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script data-cfasync="false" src="assets/calc-engine.js"></script>
+<script data-cfasync="false" src="assets/calc-engine.js?v=2"></script>
 <script data-cfasync="false" src="assets/staff-calculator.js"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
@@ -5520,7 +5542,7 @@
      ════════════════════════════════════════════════════════════════════ */
 
   var WORKER_BASE = localStorage.getItem('egygz_worker') || 'https://egygillz-api.egygrillz.workers.dev';
-  var MOULD_STATUS_LABEL = { pending: 'Pending', approved: 'Approved & Email Sent', delivered: 'Delivered' };
+  var MOULD_STATUS_LABEL = { pending: 'Pending', approved: 'Approved', delivered: 'Delivered' };
   var MOULD_TEMPLATE_DEFAULT = {
     subject: 'Your EGYGRILLZ mould kit — payment link',
     body: [
@@ -5546,6 +5568,41 @@
   var mouldOrders = [];
   var mouldFilter = 'pending';
   var mouldTemplate = null;
+
+  /* ── kit prices (settings/site) ── */
+  async function loadMouldPricesPanel() {
+    if (!window.SiteConfig) return;
+    var a = document.getElementById('mould-price-per-arch');
+    var d = document.getElementById('mould-price-delivery');
+    if (!a || !d) return;
+    try {
+      await SiteConfig.load(db);
+    } catch (e) { /* keep the defaults on screen */ }
+    a.value = SiteConfig.num('mouldPerArch');
+    d.value = SiteConfig.num('mouldDeliveryFee');
+    var note = document.getElementById('mould-prices-note');
+    if (note) note.textContent = 'Total for one arch = ' + fmtEGP(SiteConfig.num('mouldPerArch') + SiteConfig.num('mouldDeliveryFee'));
+  }
+
+  async function saveMouldPrices() {
+    var aEl = document.getElementById('mould-price-per-arch');
+    var dEl = document.getElementById('mould-price-delivery');
+    var perArch = Number(aEl && aEl.value);
+    var delivery = Number(dEl && dEl.value);
+    if (!isFinite(perArch) || perArch <= 0) { showToast('Enter the price per arch', 'error'); return; }
+    if (!isFinite(delivery) || delivery < 0) { showToast('Enter the delivery fee — 0 is allowed', 'error'); return; }
+    if (!window.SiteConfig) { showToast('Settings module did not load — reload the page', 'error'); return; }
+    try {
+      SiteConfig.set('mouldPerArch', perArch);
+      SiteConfig.set('mouldDeliveryFee', delivery);
+      await SiteConfig.save(db);
+      var note = document.getElementById('mould-prices-note');
+      if (note) note.textContent = 'Total for one arch = ' + fmtEGP(perArch + delivery);
+      showToast('Kit prices saved — /moulds uses them on the next order', 'success');
+    } catch (e) {
+      showToast('Could not save the prices: ' + (e.message || e), 'error');
+    }
+  }
 
   function mouldArchLabel(o) {
     var a = String((o && o.arches) || '').toLowerCase();
@@ -5641,12 +5698,14 @@
 
     box.innerHTML = list.map(function (o) {
       var status = (o.status || 'pending');
-      var total = Number(o.total) || 0;
       var delivery = Number(o.deliveryFee) || 0;
+      var mouldsFromOrder = Number(o.mouldPrice) || 0;
+      /* never show a total that dropped the delivery fee */
+      var total = Number(o.total) || (mouldsFromOrder + delivery);
       var map = String(o.mapLink || '');
       var address = String(o.address || '');
       var link = String(o.paymentLink || '');
-      var sent = o.emailSentAt ? String(o.emailSentAt) : '';
+      var approved = o.approvedAt ? String(o.approvedAt) : (o.emailSentAt ? String(o.emailSentAt) : '');
       var phone = String(o.phone || '');
       var digits = phone.replace(/[^0-9]/g, '');
 
@@ -5659,22 +5718,20 @@
       if (status === 'pending') {
         actions = '<div class="mould-actions">' +
           '<input type="url" id="pay-' + escAttr(o.id) + '" placeholder="Paste the payment link (https://…)" value="' + escAttr(link) + '">' +
-          '<button class="mould-btn" id="approve-' + escAttr(o.id) + '" onclick="approveMouldOrder(\'' + escAttr(o.id) + '\')">Approve &amp; Send Payment</button>' +
-          '<button class="mould-btn ghost" onclick="composeMouldMail(\'' + escAttr(o.id) + '\')"><i class="fas fa-envelope"></i> Compose in Gmail</button>' +
-          '</div>';
+          '<button class="mould-btn" id="approve-' + escAttr(o.id) + '" onclick="approveMouldOrder(\'' + escAttr(o.id) + '\')"><i class="fas fa-check"></i> Approve &amp; open Gmail</button>' +
+          '</div>' +
+          '<p class="mould-hint" style="margin-top:8px;">Saves the link, marks the order approved and opens Gmail with the message ready — you press Send.</p>';
       } else if (status === 'approved') {
         actions = '<div class="mould-actions">' +
           '<input type="url" id="pay-' + escAttr(o.id) + '" placeholder="Payment link" value="' + escAttr(link) + '">' +
-          '<button class="mould-btn" id="approve-' + escAttr(o.id) + '" onclick="approveMouldOrder(\'' + escAttr(o.id) + '\')">Resend payment email</button>' +
+          '<button class="mould-btn" id="approve-' + escAttr(o.id) + '" onclick="approveMouldOrder(\'' + escAttr(o.id) + '\')">Save link &amp; open Gmail</button>' +
           '<button class="mould-btn ghost" onclick="markMouldDelivered(\'' + escAttr(o.id) + '\')">Mark delivered</button>' +
-          '<button class="mould-btn ghost" onclick="composeMouldMail(\'' + escAttr(o.id) + '\')"><i class="fas fa-envelope"></i> Compose in Gmail</button>' +
           '</div>' +
-          (sent ? '<p class="mould-sent"><i class="fas fa-check"></i> Email sent ' + escHtml(sent.slice(0, 16).replace('T', ' ')) +
-            (o.emailChannel ? ' via ' + escHtml(o.emailChannel) : '') + '</p>' : '');
+          (approved ? '<p class="mould-sent"><i class="fas fa-check"></i> Approved ' + escHtml(approved.slice(0, 10)) + ' — message opened in Gmail</p>' : '');
       } else {
         actions = '<div class="mould-actions">' +
           '<button class="mould-btn ghost" onclick="reopenMouldOrder(\'' + escAttr(o.id) + '\')">Move back to pending</button>' +
-          (link ? '<button class="mould-btn ghost" onclick="composeMouldMail(\'' + escAttr(o.id) + '\')"><i class="fas fa-envelope"></i> Compose in Gmail</button>' : '') +
+          (link ? '<button class="mould-btn ghost" onclick="composeMouldMail(\'' + escAttr(o.id) + '\')"><i class="fas fa-envelope"></i> Open in Gmail</button>' : '') +
           '</div>';
       }
 
@@ -5691,7 +5748,7 @@
           '<div><b>Email</b>' + (o.email ? '<a href="mailto:' + escAttr(String(o.email)) + '">' + escHtml(String(o.email)) + '</a>' : '—') + '</div>' +
           '<div><b>Arch</b><span class="mould-arch">' + escHtml(mouldArchLabel(o)) + ' · ' + (Number(o.archCount) || (mouldArchLabel(o) === 'Both arches' ? 2 : 1)) + ' kit' + ((Number(o.archCount) || (mouldArchLabel(o) === 'Both arches' ? 2 : 1)) > 1 ? 's' : '') + '</span></div>' +
           '<div><b>Total (incl. delivery)</b><span class="mould-total">' + fmtEGP(total) +
-            '<small>= moulds ' + fmtEGP(total - delivery) + ' + delivery ' + fmtEGP(delivery) + '</small></span></div>' +
+            '<small>= moulds ' + fmtEGP(Math.max(0, total - delivery)) + (delivery ? ' + delivery ' + fmtEGP(delivery) : ' · delivery free') + '</small></span></div>' +
         '</div>' +
         location +
         actions +
@@ -5768,7 +5825,7 @@
         updatedAt: new Date().toISOString()
       }, { merge: true });
       mouldTemplate = { subject: subject || MOULD_TEMPLATE_DEFAULT.subject, body: body };
-      showToast('Email template saved — the bot uses it too', 'success');
+      showToast('Template saved — the Approve button and the bot use it', 'success');
     } catch (e) {
       showToast('Could not save the template: ' + e.message, 'error');
     }
@@ -5793,21 +5850,38 @@
   }
 
   /* ── approve / deliver ── */
+  /* Gmail's compose URL — the message is written for you, you press Send. */
+  function gmailComposeUrl(to, subject, body) {
+    var parts = ['view=cm', 'fs=1'];
+    if (to) parts.push('to=' + encodeURIComponent(String(to)));
+    if (subject) parts.push('su=' + encodeURIComponent(String(subject)));
+    if (body) parts.push('body=' + encodeURIComponent(String(body)));
+    return 'https://mail.google.com/mail/?' + parts.join('&');
+  }
+
+  function openGmailDraft(o, tpl, link) {
+    var out = mouldTemplateFill(tpl, Object.assign({}, o, { paymentLink: link || o.paymentLink || '' }));
+    var url = gmailComposeUrl(o.email, out.subject, out.body);
+    var win = window.open(url, '_blank', 'noopener');
+    if (!win) showToast('Allow pop-ups for this page, then press the button again', 'error');
+    return url;
+  }
+
   function composeMouldMail(id) {
     var o = mouldOrders.filter(function (x) { return x.id === id; })[0];
     if (!o) return;
     getMouldTemplate().then(function (tpl) {
       var input = document.getElementById('pay-' + id);
-      var link = (input && input.value.trim()) || o.paymentLink || 'https://your-payment-link';
-      var out = mouldTemplateFill(tpl, Object.assign({}, o, { paymentLink: link }));
-      var url = 'https://mail.google.com/mail/?view=cm&fs=1'
-        + '&to=' + encodeURIComponent(String(o.email || ''))
-        + '&su=' + encodeURIComponent(out.subject)
-        + '&body=' + encodeURIComponent(out.body);
-      window.open(url, '_blank', 'noopener');
+      var link = (input && input.value.trim()) || o.paymentLink || '';
+      openGmailDraft(o, tpl, link);
     });
   }
 
+  /**
+   * Approve = save the pasted link + status `approved`, then hand the message
+   * to Gmail with the client's address, the subject and the template already
+   * filled in. Nothing is sent from here — the studio presses Send.
+   */
   async function approveMouldOrder(id) {
     var o = mouldOrders.filter(function (x) { return x.id === id; })[0];
     if (!o) return;
@@ -5818,49 +5892,53 @@
       if (input) input.focus();
       return;
     }
-    var btn = document.getElementById('approve-' + id);
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-
-    var res = null;
-    try {
-      var r = await fetch(WORKER_BASE + '/api/moulds/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, paymentLink: link })
-      });
-      res = await r.json().catch(function () { return null; });
-    } catch (e) {
-      res = { ok: false, error: 'network' };
-    }
-
-    if (res && res.ok) {
-      showToast('Payment email sent via ' + (res.channel === 'gmail' ? 'Gmail' : res.channel), 'success');
-      await loadMouldOrders(true);
+    if (!o.email) {
+      showToast('This order has no email — add one before approving', 'error');
       return;
     }
 
-    if (btn) { btn.disabled = false; btn.textContent = 'Approve & Send Payment'; }
+    var btn = document.getElementById('approve-' + id);
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
-    var reason = (res && (res.hint || res.error)) || 'the mail worker did not answer';
-    showToast('Email not sent — ' + reason, 'error');
-
-    /* Nothing is lost: save the link + status, then offer the Gmail draft. */
+    var now = new Date().toISOString();
+    var saved = false;
     try {
       await db.collection('mould_orders').doc(id).update({
         paymentLink: link,
         status: 'approved',
-        emailSentAt: new Date().toISOString(),
-        emailChannel: 'manual-gmail',
-        statusUpdatedAt: new Date().toISOString()
+        approvedAt: now,
+        statusUpdatedAt: now
       });
-      await loadMouldOrders(true);
+      saved = true;
     } catch (e) {
-      showToast('Could not update the order: ' + e.message, 'error');
-      return;
+      console.warn('[editx] direct save failed, trying the Worker', e);
     }
-    if (window.confirm('The automatic email is not configured yet.\n\nOpen Gmail with the message already written?')) {
-      composeMouldMail(id);
+
+    if (!saved) {
+      /* the Worker writes with the studio's own credentials, so it works even
+         when the browser's write is refused */
+      try {
+        var r = await fetch(WORKER_BASE + '/api/moulds/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, paymentLink: link })
+        });
+        var res = await r.json().catch(function () { return null; });
+        saved = !!(res && res.ok);
+      } catch (e) { saved = false; }
     }
+
+    if (!saved) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Approve & open Gmail'; }
+      showToast('Could not save the approval — the Gmail draft still opens so nothing is lost', 'error');
+    } else {
+      showToast('Approved — Gmail is open, press Send', 'success');
+    }
+
+    /* the compose window opens either way: the message is never lost */
+    var tpl = await getMouldTemplate();
+    openGmailDraft(o, tpl, link);
+    if (saved) await loadMouldOrders(true);
   }
 
   async function markMouldDelivered(id) {

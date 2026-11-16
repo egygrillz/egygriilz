@@ -12,6 +12,10 @@
   'use strict';
 
   const FIRESTORE_PROJECT = 'egygrillz-studio';
+  /* The public web key of the project — the same one every page already
+     ships. Firestore's REST API rejects keyless reads, which is why the
+     settings used to fall back to the defaults on the public pages. */
+  const FIRESTORE_KEY = 'AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk';
 
   /* ─────────────────────────── defaults ─────────────────────────── */
 
@@ -422,7 +426,7 @@
   }
 
   async function fetchSettingsRest(docId) {
-    const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/settings/${encodeURIComponent(docId)}`;
+    const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/settings/${encodeURIComponent(docId)}?key=${FIRESTORE_KEY}`;
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) return null;
     const doc = await r.json().catch(() => null);

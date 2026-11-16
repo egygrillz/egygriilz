@@ -1173,7 +1173,7 @@ const HELP_TEXT = [
   '  /moulds       pending orders (buttons on each)',
   '  /moulds all   every order, any status',
   '  /mould ABCD   one order in detail',
-  '  /pay ABCD https://link   send the payment email',
+  '  /pay ABCD https://link   approve + Gmail draft',
   '  /deliver ABCD mark the kit as delivered',
   '',
   'INVOICES & QUOTES',
@@ -1735,14 +1735,18 @@ async function runCommand(text, env, fetchImpl = fetch) {
       const found = await findMouldOrder(env, arg, fetchImpl);
       if (!found.ok) return `No mould order found for "${arg}".`;
       const o = found.order;
+      const tpl = await loadMouldTemplate(env, fetchImpl);
+      const draft = o.paymentLink ? mouldGmailUrl(o, tpl) : '';
       const body = [
         formatMouldOrder(o),
         '',
         o.paymentLink ? `Payment link: ${o.paymentLink}` : '',
-        o.emailSentAt ? `Email sent: ${String(o.emailSentAt).slice(0, 16).replace('T', ' ')} via ${o.emailChannel || 'email'}` : '',
         o.status === 'pending' ? `Approve with:\n/pay ${shortRef(o)} https://your-payment-link` : '',
+        draft ? `Gmail draft:\n${draft}` : '',
       ].filter(Boolean).join('\n');
-      return { text: body, keyboard: mouldKeyboard(o) };
+      const kb = mouldKeyboard(o);
+      if (draft) kb.inline_keyboard.unshift([{ text: `📧 Open Gmail draft ${shortRef(o)}`, url: draft }]);
+      return { text: body, keyboard: kb };
     }
 
     case '/pay':
@@ -1750,7 +1754,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
       const parts = arg.split(/\s+/).filter(Boolean);
       if (parts.length < 2) {
         return 'Usage: /pay ABCD1234 https://payment-link\n'
-          + 'Sends the payment email to the client and marks the order approved.';
+          + 'Saves the link, marks the order approved and hands you a Gmail draft to send.';
       }
       const ref = parts.shift();
       const link = parts.join(' ');
@@ -1758,21 +1762,24 @@ async function runCommand(text, env, fetchImpl = fetch) {
       const found = await findMouldOrder(env, ref, fetchImpl);
       if (!found.ok) return `No mould order found for "${ref}".`;
       const r = await approveMouldOrder(env, found.order.id, link, fetchImpl);
-      if (!r.ok) {
-        return `Could not send the email (${r.error}).\n`
-          + (r.hint || 'Check the Gmail secrets in Cloudflare.');
-      }
-      return [
-        'PAYMENT EMAIL SENT',
-        LINE,
-        `Order:   ${shortRef(r.order)}`,
-        `Client:  ${r.order.name} <${r.order.email}>`,
-        `Channel: ${r.channel === 'gmail' ? 'Gmail' : r.channel}`,
-        `Subject: ${r.subject}`,
-        `Total:   ${num(r.order.total)} EGP`,
-        '',
-        'Status is now: Approved & Email Sent.',
-      ].join('\n');
+      if (!r.ok) return `Could not approve the order (${r.error}).`;
+      return {
+        text: [
+          'ORDER APPROVED — PRESS SEND IN GMAIL',
+          LINE,
+          `Order:   ${shortRef(r.order)}`,
+          `Client:  ${r.order.name}${r.order.email ? ' <' + r.order.email + '>' : ' — no email on file'}`,
+          `Moulds:  ${num(r.order.mouldPrice)} EGP`,
+          `Delivery: ${num(r.order.deliveryFee)} EGP`,
+          `Total:   ${num(r.order.total)} EGP`,
+          `Subject: ${r.subject}`,
+          '',
+          'The message is already written — tap the button, check it, press Send.',
+          '',
+          r.gmailUrl,
+        ].join('\n'),
+        keyboard: gmailKeyboard(r.gmailUrl, `📧 Open Gmail draft ${shortRef(r.order)}`),
+      };
     }
 
     case '/deliver':
@@ -1790,7 +1797,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
         LINE,
         `${shortRef(found.order)} · ${found.order.name}`,
         `${archLabelOf(found.order)} · ${num(found.order.total)} EGP`,
-        found.order.status === 'approved' ? 'Payment email was already sent.' : 'Note: the payment email had not been sent yet.',
+        found.order.status === 'approved' ? 'It was already approved.' : 'Note: the payment link had not been sent yet.',
       ].join('\n');
     }
 
@@ -2125,21 +2132,18 @@ function recalcOrder(rawOrder, pricing) {
  *  ---------------------------------------------------------------------------
  *  Orders live in Firestore  mould_orders/<id>  and go through three states:
  *    pending   → waiting for the studio
- *    approved  → payment link emailed to the client
+ *    approved  → payment link saved, client written to from the studio's Gmail
  *    delivered → kit handed to the courier
  *
- *  Payment emails go out through Gmail (Gmail API + OAuth refresh token):
- *    wrangler secret put GMAIL_CLIENT_ID
- *    wrangler secret put GMAIL_CLIENT_SECRET
- *    wrangler secret put GMAIL_REFRESH_TOKEN
- *    wrangler secret put GMAIL_SENDER      (e.g. studio@egygrillz.com)
- *  When Gmail is not configured the same email falls back to Resend, then
- *  EmailJS, so the client is never left without an answer.
+ *  NOTHING is emailed by the Worker. Approving an order only stores the link
+ *  and flips the status; the message itself is written in Gmail (the panel
+ *  opens the compose window, Telegram replies with a tap-to-open draft link)
+ *  and a human presses Send. So there are no mail secrets to configure.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 const MOULD_STATUS = {
   pending: 'Pending',
-  approved: 'Approved & Email Sent',
+  approved: 'Approved',
   delivered: 'Delivered',
 };
 
@@ -2195,7 +2199,11 @@ function mapMouldOrder(doc) {
   const id = String((doc && doc.name) || '').split('/').pop();
   const arches = String(fsVal(f.arches) || '').toLowerCase();
   const archCount = fsNum(f.archCount) || (arches === 'both' ? 2 : 1);
-  const total = fsNum(f.total);
+  const mouldPrice = fsNum(f.mouldPrice) || fsNum(f.perArch) * archCount;
+  const deliveryFee = fsNum(f.deliveryFee);
+  /* orders written before the delivery fee existed have no total split —
+     never print a total that silently dropped the delivery */
+  const total = fsNum(f.total) || (mouldPrice + deliveryFee);
   const created = fsVal(f.createdAt);
   return {
     id,
@@ -2205,8 +2213,8 @@ function mapMouldOrder(doc) {
     arches,
     archCount,
     total,
-    mouldPrice: fsNum(f.mouldPrice) || (arches === 'both' ? 900 : 450),
-    deliveryFee: fsNum(f.deliveryFee),
+    mouldPrice,
+    deliveryFee,
     address: String(fsVal(f.address) || '').trim(),
     mapLink: String(fsVal(f.mapLink) || '').trim(),
     status: String(fsVal(f.status) || 'pending').toLowerCase(),
@@ -2320,144 +2328,77 @@ function renderMouldTemplate(tpl, order, extra = {}) {
   return { subject: fill(tpl.subject), body: fill(tpl.body) };
 }
 
-/* ── Gmail (OAuth refresh token) ─────────────────────────────────────── */
+/* ── Gmail compose link (the Worker writes the draft, never sends) ─────
+ * The message is composed from the studio's own template and handed to
+ * Gmail as a pre-filled compose window. The studio presses Send, so the
+ * mail comes from their real address and nothing needs a mail secret here.
+ * ────────────────────────────────────────────────────────────────────── */
 
-let _gmail = { token: '', expires: 0 };
-
-async function gmailAccessToken(env, fetchImpl = fetch) {
-  if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) return '';
-  if (_gmail.token && Date.now() < _gmail.expires) return _gmail.token;
+/** settings/site → { perArch, delivery } (the mould kit prices) */
+async function loadMouldPrices(env, fetchImpl = fetch) {
+  const fallback = { perArch: 450, delivery: 100 };
   try {
-    const r = await fetchImpl('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: env.GMAIL_CLIENT_ID,
-        client_secret: env.GMAIL_CLIENT_SECRET,
-        refresh_token: env.GMAIL_REFRESH_TOKEN,
-        grant_type: 'refresh_token',
-      }).toString(),
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.access_token) return '';
-    _gmail = { token: d.access_token, expires: Date.now() + (Number(d.expires_in) || 3600) * 1000 - 60000 };
-    return _gmail.token;
+    if (!env.FIREBASE_API_KEY) return fallback;
+    const r = await fetchImpl(`${FS_BASE}/settings/site?key=${env.FIREBASE_API_KEY}`,
+      { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
+    if (!r.ok) return fallback;
+    const doc = await r.json().catch(() => null);
+    const f = (doc && doc.fields) || {};
+    const perArch = fsNum(f.mouldPerArch);
+    const delivery = fsNum(f.mouldDeliveryFee);
+    return {
+      perArch: perArch > 0 ? perArch : fallback.perArch,
+      delivery: delivery >= 0 ? delivery : fallback.delivery,
+    };
   } catch (e) {
-    return '';
+    return fallback;
   }
 }
 
-/** UTF-8 safe base64url (Gmail wants RFC 4648 §5) */
-function b64url(str) {
-  const bytes = new TextEncoder().encode(String(str || ''));
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-/** Send one email through Gmail. Returns {ok, channel} — never throws. */
-async function sendGmail(to, subject, text, env, fetchImpl = fetch) {
-  if (!to) return { channel: 'gmail', ok: false, error: 'no-recipient' };
-  const token = await gmailAccessToken(env, fetchImpl);
-  if (!token) return { channel: 'gmail', ok: false, skipped: true, error: 'gmail-not-configured' };
-  const sender = env.GMAIL_SENDER || 'me';
-  const from = env.GMAIL_SENDER || 'EGYGRILLZ <studio@egygrillz.com>';
-  const mime = [
-    `From: ${from}`,
-    `To: ${to}`,
-    `Subject: ${String(subject || 'EGYGRILLZ').replace(/[\r\n]+/g, ' ')}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset="UTF-8"',
-    'Content-Transfer-Encoding: 8bit',
-    '',
-    String(text || ''),
-  ].join('\r\n');
-  try {
-    const r = await fetchImpl('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw: b64url(mime) }),
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      const msg = String((d && d.error && d.error.message) || '').slice(0, 160);
-      return { channel: 'gmail', ok: false, status: r.status, error: msg || 'gmail-error' };
-    }
-    return { channel: 'gmail', ok: true, id: (d && d.id) || '' };
-  } catch (e) {
-    return { channel: 'gmail', ok: false, error: String(e) };
-  }
-}
-
-/** Gmail → Resend → EmailJS, whichever is configured. */
-async function sendMouldPaymentEmail(order, env, fetchImpl = fetch, template) {
-  const tpl = template || await loadMouldTemplate(env, fetchImpl);
+/** Gmail's "new message" URL with the template already filled in */
+function mouldGmailUrl(order, template) {
+  const tpl = template || MOULD_TEMPLATE_DEFAULT;
   const { subject, body } = renderMouldTemplate(tpl, order);
-  const attempts = [];
-
-  const g = await sendGmail(order.email, subject, body, env, fetchImpl).catch(e => ({ channel: 'gmail', ok: false, error: String(e) }));
-  attempts.push(g);
-  if (g.ok) return { ok: true, channel: 'gmail', attempts, subject, body };
-
-  if (env.RESEND_KEY) {
-    const r = await sendEmail(subject, body, order.email, env, fetchImpl).catch(e => ({ channel: 'email', ok: false, error: String(e) }));
-    attempts.push({ channel: 'resend', ok: !!r.ok, error: r.error });
-    if (r.ok) return { ok: true, channel: 'resend', attempts, subject, body };
-  }
-
-  if (env.EMAILJS_PRIVATE_KEY && env.EMAILJS_MOULD_TEMPLATE) {
-    const e = await sendViaEmailJS(env.EMAILJS_MOULD_TEMPLATE, {
-      to_name: order.name || 'there',
-      to_email: order.email,
-      subject,
-      message: body,
-      arch: archLabelOf(order),
-      total_price: num(order.total) + ' EGP',
-      payment_link: order.paymentLink || '',
-    }, env, fetchImpl).catch(err => ({ ok: false, error: String(err) }));
-    attempts.push({ channel: 'emailjs', ok: !!e.ok, error: e.error });
-    if (e.ok) return { ok: true, channel: 'emailjs', attempts, subject, body };
-  }
-
-  return { ok: false, channel: '', attempts, subject, body };
+  const to = String(order.email || '').trim();
+  const parts = [
+    'view=cm',
+    'fs=1',
+    to ? 'to=' + encodeURIComponent(to) : '',
+    subject ? 'su=' + encodeURIComponent(subject) : '',
+    body ? 'body=' + encodeURIComponent(body) : '',
+  ].filter(Boolean);
+  return 'https://mail.google.com/mail/?' + parts.join('&');
 }
 
-/** Approve one order: store the payment link, email the client, flip the status. */
+/** Approve one order: store the payment link and flip the status. No email. */
 async function approveMouldOrder(env, id, paymentLink, fetchImpl = fetch) {
   const found = await fetchMouldOrder(env, id, fetchImpl);
   if (!found.ok) return { ok: false, error: found.error || 'not-found' };
   const order = found.order;
-  if (!order.email) return { ok: false, error: 'no-email', order };
   const link = String(paymentLink || order.paymentLink || '').trim();
   if (!link) return { ok: false, error: 'no-payment-link', order };
-
-  order.paymentLink = link;
-  const sent = await sendMouldPaymentEmail(order, env, fetchImpl);
-  if (!sent.ok) {
-    return {
-      ok: false,
-      error: 'email-failed',
-      order,
-      attempts: sent.attempts,
-      hint: 'Set GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN (or RESEND_KEY) in Cloudflare.',
-    };
-  }
+  if (!/^https?:\/\//i.test(link)) return { ok: false, error: 'bad-payment-link', order };
 
   const nowIso = new Date().toISOString();
   const patch = await saveMouldOrder(env, order.id, {
     paymentLink: link,
     status: 'approved',
-    emailSentAt: nowIso,
-    emailChannel: sent.channel,
-    emailSubject: sent.subject,
+    approvedAt: nowIso,
+    statusUpdatedAt: nowIso,
   }, fetchImpl);
 
+  if (!patch.ok) return { ok: false, error: patch.error || 'save-failed', order };
+
+  const approved = Object.assign({}, order, { status: 'approved', paymentLink: link, approvedAt: nowIso });
+  const tpl = await loadMouldTemplate(env, fetchImpl);
+  const rendered = renderMouldTemplate(tpl, approved);
   return {
     ok: true,
-    channel: sent.channel,
-    subject: sent.subject,
-    order: Object.assign({}, order, { status: 'approved', paymentLink: link, emailSentAt: nowIso }),
-    patch: patch.ok,
+    order: approved,
+    subject: rendered.subject,
+    body: rendered.body,
+    gmailUrl: mouldGmailUrl(approved, tpl),
+    hasEmail: !!order.email,
   };
 }
 
@@ -2470,7 +2411,9 @@ function formatMouldOrder(o) {
     `Phone:   ${o.phone || '—'}`,
     `Email:   ${o.email || '—'}`,
     `Arch:    ${archLabelOf(o)} (${o.archCount} kit${o.archCount > 1 ? 's' : ''})`,
-    `Total:   ${num(o.total)} EGP  (incl. ${num(o.deliveryFee)} EGP delivery)`,
+    `Moulds:  ${num(o.mouldPrice)} EGP`,
+    `Delivery: ${num(o.deliveryFee)} EGP`,
+    `Total:   ${num(o.total)} EGP`,
     `Address: ${o.address || 'location pinned'}`,
     o.mapLink ? `Map:     ${o.mapLink}` : '',
     '',
@@ -2483,16 +2426,21 @@ function formatMouldOrder(o) {
 function mouldKeyboard(o) {
   const rows = [];
   if (o.status === 'pending') {
-    rows.push([{ text: '📧 Approve & send payment', callback_data: `mo:a:${o.id}` }]);
+    rows.push([{ text: '✅ Approve', callback_data: `mo:a:${o.id}` }]);
   }
   if (o.status === 'approved') {
-    rows.push([{ text: '📧 Resend payment email', callback_data: `mo:r:${o.id}` }]);
+    rows.push([{ text: '📧 Open Gmail draft', callback_data: `mo:r:${o.id}` }]);
   }
   if (o.status !== 'delivered') {
     rows.push([{ text: '🚚 Mark delivered', callback_data: `mo:d:${o.id}` }]);
   }
   rows.push([{ text: '↻ Refresh', callback_data: 'mo:list:pending' }]);
   return { inline_keyboard: rows };
+}
+
+/** a single button that opens the pre-filled Gmail compose window */
+function gmailKeyboard(url, label) {
+  return { inline_keyboard: [[{ text: label || '📧 Open Gmail draft', url }]] };
 }
 
 /** A short, human id for an order: ABCD1234 */
@@ -2510,7 +2458,7 @@ function mouldListText(orders, filter) {
     if (o.mapLink) lines.push(`    map: ${o.mapLink}`);
   });
   if (orders.length > 12) lines.push('', `… and ${orders.length - 12} more. Use /moulds all`);
-  lines.push('', '● pending   ◐ paid & emailed   ○ delivered');
+  lines.push('', '● pending   ◐ approved   ○ delivered');
   lines.push('Approve: /pay <ref> <payment-link>   Delivered: /deliver <ref>');
   return lines.join('\n');
 }
@@ -2627,7 +2575,7 @@ async function sendReportWithButtons(text, keyboard, env, chatId, fetchImpl = fe
 
 /**
  * Inline buttons: mo:a:<id>  approve (asks for the link)
- *                  mo:r:<id>  resend the payment email
+ *                  mo:r:<id>  open the Gmail draft again
  *                  mo:d:<id>  mark delivered
  *                  mo:v:<id>  show one order
  *                  mo:list:<status>  refresh the list
@@ -2664,10 +2612,13 @@ async function handleMouldCallback(data, env, chatId, callbackId, fetchImpl = fe
     await answer('Send the payment link');
     await tgCall('sendMessage', {
       chat_id: chatId,
-      text: `Send the payment link for ${shortRef(o)} (${o.name} · ${num(o.total)} EGP) like this:
+      text: `Approve ${shortRef(o)} (${o.name} · ${num(o.total)} EGP) by replying with the payment link:
 
 `
-        + `/pay ${shortRef(o)} https://your-payment-link`,
+        + `/pay ${shortRef(o)} https://your-payment-link
+
+`
+        + 'I save the link, mark the order approved and hand you a Gmail draft to send.',
       disable_web_page_preview: true,
     }, env, fetchImpl);
     return { ok: true, action: 'approve-prompt' };
@@ -2682,16 +2633,23 @@ async function handleMouldCallback(data, env, chatId, callbackId, fetchImpl = fe
       }, env, fetchImpl);
       return { ok: true, action: 'no-link' };
     }
-    const r = await approveMouldOrder(env, o.id, o.paymentLink, fetchImpl);
-    await answer(r.ok ? 'Email sent' : 'Email failed');
+    const tpl = await loadMouldTemplate(env, fetchImpl);
+    const url = mouldGmailUrl(o, tpl);
+    await answer('Gmail draft ready');
     await tgCall('sendMessage', {
       chat_id: chatId,
-      text: r.ok
-        ? `Payment email re-sent to ${o.email} via ${r.channel}.`
-        : `Could not send the email (${r.error}). ${r.hint || ''}`,
+      text: [
+        `GMAIL DRAFT — ${shortRef(o)} · ${o.name}`,
+        o.email ? `To: ${o.email}` : 'No email on file — add one in /editx first.',
+        '',
+        'The message is already written. Tap the button, check it, press Send.',
+        '',
+        url,
+      ].join('\n'),
       disable_web_page_preview: true,
+      reply_markup: gmailKeyboard(url, `📧 Open Gmail draft ${shortRef(o)}`),
     }, env, fetchImpl);
-    return { ok: r.ok, action: 'resend' };
+    return { ok: true, action: 'draft' };
   }
 
   if (action === 'd') {
@@ -2861,11 +2819,19 @@ const json = (data, status = 200, extra = {}) =>
   });
 
 function cors(origin) {
+  /* mirror originAllowed() below, so every host we accept in the body is
+     also accepted by the browser (a mismatch here silently blocked the
+     /moulds request on GitHub-Pages previews) */
   const allow = (origin && (
     origin.startsWith('https://egygrillz.com')
     || origin.startsWith('https://www.egygrillz.com')
+    || /\.egygrillz\.com$/.test(origin)
     || /\.pages\.dev$/.test(origin)
+    || /\.workers\.dev$/.test(origin)
+    || /\.web\.app$/.test(origin)
+    || /\.github\.io$/.test(origin)
     || origin.startsWith('http://localhost')
+    || origin.startsWith('http://127.0.0.1')
   )) ? origin : 'https://egygrillz.com';
   return {
     'Access-Control-Allow-Origin': allow,
@@ -3468,9 +3434,6 @@ export default {
           ntfy: !!env.NTFY_TOPIC,
           whatsapp_staff: !!(env.WA_TOKEN && env.WA_PHONE_ID && env.WA_TO),
           whatsapp_client: !!(env.WA_TOKEN && env.WA_PHONE_ID && env.WA_BOOKING_TEMPLATE),
-          email_resend: !!env.RESEND_KEY,
-          email_gmail: !!(env.GMAIL_CLIENT_ID && env.GMAIL_CLIENT_SECRET && env.GMAIL_REFRESH_TOKEN),
-          emailjs: !!env.EMAILJS_PRIVATE_KEY,
           turnstile: !!env.TURNSTILE_SECRET,
           firebase: !!env.FIREBASE_API_KEY,
           staff_login: !!(env.STAFF_EMAIL && env.STAFF_PASSWORD),
@@ -3480,6 +3443,7 @@ export default {
           telegram_digest: '/api/remind',
           telegram_bot: 'POST /api/telegram',
           pdf: 'POST /api/pdf',
+          moulds_order: 'POST /api/moulds/order',
           moulds_approve: 'POST /api/moulds/approve',
           moulds_status: 'POST /api/moulds/status',
           notify: 'POST /api/notify',
@@ -3578,9 +3542,130 @@ export default {
       return json(r, r.ok ? 200 : 502, { origin });
     }
 
-    /* ── mould kit: approve + send the payment email ──
-     * Called by /editx (Moulds panel) and by the Telegram bot.
-     * The Gmail credentials never leave the Worker.
+    /* ── mould kit: a new order from /moulds ──
+     * The page posts here first. The Worker signs in as the studio account
+     * (STAFF_EMAIL / STAFF_PASSWORD) before writing, so the create passes
+     * Firestore's rules — a visitor's browser is anonymous and is refused.
+     * The delivery fee is added here too, from settings/site, so the total
+     * on the order can never be missing it.
+     */
+    if (url.pathname === '/api/moulds/order') {
+      if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
+      if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
+
+      let body;
+      try { body = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
+      const ip = req.headers.get('CF-Connecting-IP') || '';
+      const limit = parseInt(env.RATE_LIMIT_PER_10MIN || '10', 10);
+      if (rateLimited('mould:' + ip, limit)) return json({ ok: false, error: 'rate-limited' }, 429, { origin });
+
+      const src = body.data || body || {};
+      const name = clean(src.name, 80);
+      const phone = cleanPhone(src.phone);
+      const email = clean(src.email, 120);
+      if (!name || !phone) return json({ ok: false, error: 'missing-fields' }, 422, { origin });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        return json({ ok: false, error: 'bad-email' }, 422, { origin });
+      }
+
+      const archesRaw = clean(src.arches, 20).toLowerCase();
+      const arches = archesRaw.includes('both') ? 'both' : archesRaw.includes('lower') ? 'lower' : 'upper';
+      const archCount = arches === 'both' ? 2 : 1;
+      /* the price always comes from settings/site — never from the browser,
+         so the delivery fee can neither be dropped nor edited away */
+      const prices = await loadMouldPrices(env, env.fetchImpl || fetch);
+      const mouldPrice = prices.perArch * archCount;
+      const deliveryFee = Math.max(0, prices.delivery);
+      const total = mouldPrice + deliveryFee;
+
+      const nowIso = new Date().toISOString();
+      const order = {
+        name,
+        phone,
+        email,
+        arches,
+        archCount,
+        perArch: prices.perArch,
+        mouldPrice,
+        deliveryFee,
+        total,
+        currency: 'EGP',
+        address: clean(src.address, 300),
+        mapLink: clean(src.mapLink, 300),
+        location: (src.location && typeof src.location === 'object') ? src.location : null,
+        status: 'pending',
+        source: 'moulds-page',
+        paymentLink: '',
+        createdAt: nowIso,
+      };
+
+      const f = env.fetchImpl || fetch;
+      let id = '';
+      let stored = false;
+      try {
+        const fields = {};
+        for (const [k, v] of Object.entries(order)) fields[k] = toFsValue(v);
+        const r = await f(`${FS_BASE}/mould_orders?key=${env.FIREBASE_API_KEY}`, {
+          method: 'POST',
+          headers: await fsHeaders(env, f),
+          body: JSON.stringify({ fields }),
+        });
+        if (r.ok) {
+          const doc = await r.json().catch(() => null);
+          id = String((doc && doc.name) || '').split('/').pop();
+          stored = !!id;
+        } else {
+          const t = await r.text().catch(() => '');
+          console.log('[moulds] create refused', r.status, t.slice(0, 200));
+        }
+      } catch (e) {
+        console.log('[moulds] create failed', String(e));
+      }
+
+      /* the studio still hears about the order even if the database refused
+         it — an order in Telegram can be typed in by hand, a lost one cannot */
+      const saved = Object.assign({}, order, { id });
+      const text = formatMouldOrder(saved) + (stored
+        ? ''
+        : '\n\n⚠ Not saved to the database — type this order into /editx by hand.');
+      const tg = env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID
+        ? await tgCall('sendMessage', {
+            chat_id: env.TELEGRAM_CHAT_ID,
+            text,
+            disable_web_page_preview: false,
+            ...(stored ? { reply_markup: mouldKeyboard(saved) } : {}),
+          }, env, f).catch(e => ({ ok: false, error: String(e) }))
+        : { ok: false, skipped: true };
+      const ntfy = await sendNtfy(text, 'New mould kit order', env, f)
+        .catch(e => ({ channel: 'ntfy', ok: false, error: String(e) }));
+      const staffMail = await sendEmail('New mould kit order — EGYGRILLZ', text, env.ALERT_EMAIL, env, f)
+        .catch(e => ({ channel: 'email', ok: false, error: String(e) }));
+
+      /* nothing was written and nobody was told — let the page use its own
+         browser write instead of pretending the order went through */
+      if (!stored && !(tg.ok || ntfy.ok || staffMail.ok)) {
+        return json({ ok: false, error: 'not-saved' }, 502, { origin });
+      }
+
+      return json({
+        ok: true,
+        stored,
+        id,
+        ref: id ? id.slice(0, 8).toUpperCase() : '',
+        name,
+        arches,
+        archCount,
+        perArch: prices.perArch,
+        mouldPrice,
+        deliveryFee,
+        total,
+        notified: !!(tg.ok || ntfy.ok || staffMail.ok),
+      }, 200, { origin });
+    }
+
+    /* ── mould kit: approve — save the link + status only ──
+     * Nothing is emailed here. The response carries the Gmail draft URL so
+     * /editx and the bot can open the compose window; a human presses Send.
      */
     if (url.pathname === '/api/moulds/approve') {
       if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
@@ -3599,10 +3684,16 @@ export default {
         .catch(e => ({ ok: false, error: String(e) }));
       if (!r.ok) {
         const status = r.error === 'not-found' ? 404
-          : (r.error === 'no-email' || r.error === 'no-payment-link') ? 422 : 502;
+          : (r.error === 'no-payment-link' || r.error === 'bad-payment-link') ? 422 : 502;
         return json(r, status, { origin });
       }
-      return json({ ok: true, channel: r.channel, subject: r.subject, order: r.order }, 200, { origin });
+      return json({
+        ok: true,
+        order: r.order,
+        subject: r.subject,
+        body: r.body,
+        gmailUrl: r.gmailUrl,
+      }, 200, { origin });
     }
 
     /* ── mould kit: mark delivered / back to pending ── */
@@ -3659,8 +3750,9 @@ export default {
         arches: clean(src.arches, 20).toLowerCase().includes('both') ? 'both'
           : clean(src.arches, 20).toLowerCase().includes('lower') ? 'lower' : 'upper',
         archCount: Math.max(1, Math.min(2, Number(src.archCount) || 1)),
-        total: Math.max(0, Number(src.total) || 0),
+        mouldPrice: Math.max(0, Number(src.mouldPrice) || 0),
         deliveryFee: Math.max(0, Number(src.deliveryFee) || 0),
+        total: Math.max(0, Number(src.total) || 0),
         address: clean(src.address, 300),
         mapLink: clean(src.mapLink, 300),
         status: 'pending',

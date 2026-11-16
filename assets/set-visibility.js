@@ -18,8 +18,10 @@
   'use strict';
 
   var PROJECT = 'egygrillz-studio';
+  /* Public web key — Firestore REST rejects keyless reads. */
+  var API_KEY = 'AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk';
   var DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
-    '/databases/(default)/documents/settings/visibility';
+    '/databases/(default)/documents/settings/visibility?key=' + API_KEY;
   var CACHE_KEY = 'egygz_visibility_v1';
   var CACHE_TTL = 5 * 60 * 1000;   // 5 minutes, so a toggle shows up quickly
 
