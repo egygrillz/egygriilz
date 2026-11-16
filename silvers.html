@@ -54,12 +54,12 @@
     .set-card { cursor:pointer; background:transparent; display:flex; flex-direction:column; }
     .set-card:hover .card-btn { opacity:1; transform:scale(1); }
     .set-card:hover .card-img img.active { transform:scale(1.03); }
-    .card-img { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#e8e5e1; border-radius:2px; }
+    .card-img { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#f0f0f0; border-radius:2px; }
     .row-2 .card-img { aspect-ratio:4/5; }
     .card-img img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.45s ease,transform 0.7s ease; pointer-events:none; -webkit-user-drag:none; }
     /* First image stays visible immediately without awaiting rotation */
     .card-img img.active { opacity:1; }
-    .modal-slide { background-size:cover; background-position:center; background-color:#e8e5e1; }
+    .modal-slide { background-size:cover; background-position:center; background-color:#f0f0f0; }
     .modal-slide img { opacity:1; }
     .page-hero { position:relative; width:100%; height:52vh; min-height:320px; overflow:hidden; background:#1f1f1f; margin-top:60px; }
     .page-hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.84; }
@@ -92,12 +92,12 @@
     .modal-bg.open { opacity:1; pointer-events:all; }
     .modal { background:var(--bg); width:100%; max-width:900px; max-height:90vh; display:flex; flex-direction:row; transform:translateY(28px); transition:transform 0.38s cubic-bezier(0.22,1,0.36,1); overflow:hidden; border-radius:3px; }
     .modal-bg.open .modal { transform:translateY(0); }
-    .modal-left { position:relative; flex:0 0 52%; overflow:hidden; background:#e8e4de; }
+    .modal-left { position:relative; flex:0 0 52%; overflow:hidden; background:#f0f0f0; }
     .modal-slides { position:relative; width:100%; height:100%; min-height:440px; }
     .modal-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.5s; }
     .modal-slide.active { opacity:1; }
     .modal-slide img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
-    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(240,237,232,0.85); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:var(--text); transition:background 0.2s; border-radius:50%; }
+    .modal-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgb(242,242,242,0.85); border:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:13px; color:var(--text); transition:background 0.2s; border-radius:50%; }
     .modal-arrow:hover { background:var(--bg); }
     .modal-prev { left:14px; } .modal-next { right:14px; }
     .modal-dots { position:absolute; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:7px; }
@@ -165,6 +165,7 @@
     .modal-price-link:hover { opacity:.6; }
 </style>
   <link rel="canonical" href="https://egygrillz.com/silvers">
+  <script src="/assets/set-visibility.js"></script>
 </head>
 <body>
 
