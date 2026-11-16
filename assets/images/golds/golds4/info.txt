@@ -1,4 +1,4 @@
-name: Diamond Doll Set
-price: 14799 EGP
-description: Crafted in solid 925 sterling silver with a luxurious gold coating, adorned with precision-set CZ diamonds and vibrant emerald accents across bold, sculpted fronts for a glamorous, jewel-like brilliance.
-images: 000000.jpg,000001.jpg
+name: Ancient Scorpion
+price: 4799 EGP
+description: This exclusive scorpion grillz set features premium silver construction with rich gold plating for a bold two-tone glow. A fierce, intricately detailed scorpion motif dominates, crowned by a vibrant emerald green stone at its core for intense jewel-like brilliance.
+images: 000009.jpg

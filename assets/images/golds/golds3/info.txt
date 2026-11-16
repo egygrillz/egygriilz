@@ -1,4 +1,4 @@
-name: OpenFace & IcedOut Bar
-price: 2799 EGP
-description: Crafted in solid 925 sterling silver with a luxurious gold plating, adorned with precision-set CZ diamonds on a bold iced-out horizontal bar. Captured in a vibrant Brazilian photoshoot.
-images: 000002.jpg,000000.jpg,000001.jpg
+name: Black Gold Snake
+price: 8899 EGP
+description: his exclusive black snake grillz set is masterfully crafted in 925 sterling silver with sleek black gold plating for a dark, menacing shine. A coiled, intricately detailed black snake motif slithers across the teeth, its fierce head centered with a glowing green stone eye that radiates vivid emerald intensity.
+images: 000001.jpg

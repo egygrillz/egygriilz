@@ -1,4 +1,4 @@
-name: ELMOND's Set
+name: LELLA FADA's Set
 price: Contact us for details
-description: This custom Silver grillz set, crafted exclusively for rapper Muhab AKA ELMond , to be part of his unreleased vide clip HELW .
-images: 000000.jpeg,000001.jpeg,000002.jpeg
+description: This custom silver grillz set, crafted exclusively for rapper Lela Fada, features high-polish sterling silver construction for timeless shine and durability. The lower teeth showcase her name "للا" elegantly sculpted in flowing Arabic script — a bold, personal signature that radiates cultural pride and hip-hop flair.
+images: 000012.jpg
