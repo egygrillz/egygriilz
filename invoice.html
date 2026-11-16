@@ -1080,10 +1080,16 @@ async function initApp() {
   setupClientSearchAutocomplete();
   setupItemSearchAutocomplete();
   window.diag && window.diag('db', 'loading clients…');
-  try { await loadClients(); window.diag && window.diag('db', 'clients OK'); }
-  catch (dbErr) {
-    window.diag && window.diag('db', 'FAILED: ' + (dbErr && (dbErr.code || dbErr.message)));
-    throw dbErr;
+  try {
+    await loadClients();
+    window.diag && window.diag('db', 'clients OK');
+  } catch (dbErr) {
+    var code = String((dbErr && (dbErr.code || dbErr.message)) || '');
+    window.diag && window.diag('db', 'FAILED: ' + code);
+    if (/resource-exhausted|429|quota/i.test(code)) {
+      showToast('The daily database quota is used up. Saving still works.', 'error-toast');
+    }
+    /* الصفحة تفضل شغالة — الحفظ لسه بيشتغل */
   }
   loadAccountingTab();
   setDefaultDates();

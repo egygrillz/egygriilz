@@ -1170,10 +1170,76 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         initApp();
-        try { syncSlots(); } catch (e) {}
+        /* syncSlots بيقرا كل المواعيد وكل الأوقات — غالي جدًا.
+           بنشغّله مرة واحدة في اليوم بس، أو لما تدوس الزرار في الإعدادات. */
+        try {
+          var lastSync = Number(localStorage.getItem('eq_slots_sync') || 0);
+          if (Date.now() - lastSync > 20 * 60 * 60 * 1000) {
+            localStorage.setItem('eq_slots_sync', String(Date.now()));
+            setTimeout(function(){ try { syncSlots(); } catch (e) {} }, 4000);
+          }
+        } catch (e) {}
       });
     } catch (e) {}
   });
+
+
+  /* ═══════════════════════════════════════════════════════════════════
+     اقتصاد القراءات (2026-11-16)
+
+     المشكلة: المشروع وصل 103 ألف قراءة والقراءة وقفت بـ 429.
+       • loadOverview كان بيقرا appointments + messages + clients كاملة
+       • watchUnreadCount كان بيعمل onSnapshot على messages (قراءة كل فتحة)
+       • syncSlots كان بيقرا appointments + slots كاملة كل تسجيل دخول
+
+     الحل: كل نتيجة بتتحفظ في الذاكرة دقيقة واحدة، فالتنقل بين التابات
+     مابيولّدش قراءات جديدة. والمستمع الحيّ بيتقفل لما تسيب الصفحة.
+     ═══════════════════════════════════════════════════════════════════ */
+  var _readCache = {};
+  var _CACHE_MS = 60 * 1000;
+
+  async function cachedGet(key, fn) {
+    var hit = _readCache[key];
+    if (hit && (Date.now() - hit.at) < _CACHE_MS) return hit.val;
+    try {
+      var val = await fn();
+      _readCache[key] = { at: Date.now(), val: val };
+      /* نحفظ نسخة في المتصفح — تفضل موجودة لو الحصة خلصت */
+      try {
+        localStorage.setItem('egygz_cache_' + key, JSON.stringify({ at: Date.now(), val: val }));
+      } catch (e) {}
+      return val;
+    } catch (err) {
+      /* فشلت القراءة؟ نستخدم آخر نسخة محفوظة بدل ما الصفحة تفضى */
+      try {
+        var raw = localStorage.getItem('egygz_cache_' + key);
+        if (raw) {
+          var c = JSON.parse(raw);
+          console.warn('[editx] live read failed, using saved copy from', new Date(c.at).toLocaleString());
+          showToast('Showing saved data — database is unavailable right now.', '');
+          return c.val;
+        }
+      } catch (e) {}
+      throw err;
+    }
+  }
+  function invalidate(prefix) {
+    Object.keys(_readCache).forEach(function (k) {
+      if (!prefix || k.indexOf(prefix) === 0) delete _readCache[k];
+    });
+  }
+  window.__egygzInvalidate = invalidate;
+
+  /* أي مستمع حيّ بيتسجل هنا ويتقفل عند الخروج */
+  var _liveListeners = [];
+  function trackUnsubscribe(fn) {
+    if (typeof fn === 'function') _liveListeners.push(fn);
+  }
+  function stopAllListeners() {
+    _liveListeners.forEach(function (fn) { try { fn(); } catch (e) {} });
+    _liveListeners = [];
+  }
+  window.addEventListener('beforeunload', stopAllListeners);
 
   function initApp() {
     loadConfig();
@@ -1281,17 +1347,18 @@
       var wStartStr = weekStart.toISOString().slice(0,10);
       var wEndStr = weekEnd.toISOString().slice(0,10);
 
-      var [apptSnap, msgSnap, clientSnap] = await Promise.all([
-        db.collection('appointments').get(),
-        db.collection('messages').get(),
-        db.collection('clients').get()
-      ]);
+      /* كاش دقيقة + حد أقصى 1000 مستند عشان الحساب مايفلتش */
+      var appts = await cachedGet('appts:ov', async function () {
+        var snap = await db.collection('appointments').limit(1000).get();
+        var out = [];
+        snap.forEach(function(d){ out.push(Object.assign({id:d.id},d.data())); });
+        return out;
+      });
 
-      var appts = [];
-      apptSnap.forEach(function(d){ appts.push(Object.assign({id:d.id},d.data())); });
-
-      var unread = 0;
-      msgSnap.forEach(function(d){ if(!d.data().read) unread++; });
+      var unread = await cachedGet('unread:ov', async function () {
+        var snap = await db.collection('messages').where('read','==',false).limit(200).get();
+        return snap.size;
+      });
 
       var showed = appts.filter(function(a){return a.showedUp===true;}).length;
       var noshow = appts.filter(function(a){return a.showedUp===false;}).length;
@@ -1355,12 +1422,16 @@
 
   function watchUnreadCount() {
     if(!db) return;
-    db.collection('messages').where('read','==',false).onSnapshot(function(snap){
-      var count = snap.size;
+    /* قراءة واحدة بتتحفظ في الكاش — مش مستمع حيّ بيقرا كل ما حد يبعت رسالة */
+    cachedGet('unread:badge', async function () {
+      var snap = await db.collection('messages').where('read','==',false).limit(200).get();
+      return snap.size;
+    }).then(function (count) {
       var badge = document.getElementById('unread-badge');
+      if (!badge) return;
       badge.style.display = count>0?'inline-block':'none';
       badge.textContent = count;
-    });
+    }).catch(function(){});
   }
 
   // ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
@@ -1371,7 +1442,7 @@
   async function loadAppointments() {
     if(!db) return;
     try {
-      var snap = await db.collection('appointments').orderBy('date','desc').get();
+      var snap = await db.collection('appointments').orderBy('date','desc').limit(1000).get();
       allAppts = [];
       snap.forEach(function(d){ allAppts.push(Object.assign({id:d.id},d.data())); });
       renderAppts();
@@ -1753,7 +1824,7 @@
   async function loadClients() {
     if(!db) return;
     try {
-      var snap = await db.collection('clients').get();
+      var snap = await db.collection('clients').limit(1000).get();
       allClients = [];
       snap.forEach(function(d){ allClients.push(Object.assign({id:d.id},d.data())); });
       renderClients(allClients);
@@ -1921,7 +1992,7 @@
   async function loadMessages() {
     if(!db) return;
     try {
-      var snap = await db.collection('messages').orderBy('createdAt','desc').get();
+      var snap = await db.collection('messages').orderBy('createdAt','desc').limit(500).get();
       allMessages=[];
       snap.forEach(function(d){ allMessages.push(Object.assign({id:d.id},d.data())); });
       renderMsgList();
