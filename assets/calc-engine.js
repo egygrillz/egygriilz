@@ -43,7 +43,25 @@
     accentPrice: { cz: 50, moissanite: 375, labgrown: null, natural: null },
     settingPrice: {
       flush: 150, twoprong: 175, threeprong: 200, fourprong: 200,
-      sixprong: 220, bezelfull: 250, bezelhalf: 225, bar: 200,
+      sixprong: 220, bezelfull: 250, bezelhalf: 225, bar: 200, channel: 175,
+    },
+
+    /* Diamond CUT surcharge — a percentage on the stone price.
+       Round brilliant is the default and the cheapest to produce, every other
+       cut costs more to source. These are percentages, not EGP, so they
+       survive a rate change:  { cut: pct }. */
+    cutPct: {
+      round: 0, cushion: 8, oval: 8, princess: 6, emerald: 12, pear: 12,
+      radiant: 10, heart: 18, marquise: 20, baguette: 14, taperedbaguette: 16,
+    },
+
+    /* Stone SIZE in millimetres. Price scales with the square of the diameter
+       (a 2 mm stone is four times a 1 mm stone in face area, not twice), so
+       this table stores the multiplier at each preset size. 1 mm is the base.
+       The UI derives presets from these keys, in this order. */
+    sizeFactor: {
+      '1': 1.00, '1.5': 1.55, '2': 2.40, '2.5': 3.45, '3': 4.75,
+      '3.5': 6.30, '4': 8.10, '4.5': 10.20, '5': 12.60, '6': 18.10,
     },
     fullPrice: { cz: 0, moissanite: 500, labgrown: null, natural: null },
     coveragePrice: {
@@ -170,7 +188,7 @@
     }
     for (const key of ['materialBase', 'designPct', 'accentPrice', 'settingPrice', 'fullPrice',
       'coveragePrice', 'plating', 'enamel', 'engraving', 'anodize', 'servicePrices',
-      'timelinePct', 'moldFlat', 'goldGramsPerTooth']) {
+      'timelinePct', 'moldFlat', 'goldGramsPerTooth', 'cutPct', 'sizeFactor']) {
       const m = S[key];
       const dm = DEFAULTS[key] || {};
       if (!m || typeof m !== 'object') continue;
@@ -241,6 +259,55 @@
    *  price `accent` + `full` together. Anything that only understands one of
    *  them keeps working — `stoneDetail` simply reports 'both'. */
   const STONE_DETAIL_BOTH = 'both';
+
+  /* ───────────────────────── stone cut & size ─────────────────────────
+
+     A stone is described by four things: what it is (type), how it is cut
+     (cut), how big it is in millimetres (size) and how it is held (setting
+     / coverage). Type sets the base price; cut and size multiply it.
+
+     Round brilliant is the default everywhere — it is what the studio uses
+     unless someone asks for something else. */
+
+  const CUTS = ['round', 'cushion', 'oval', 'princess', 'emerald', 'pear',
+                'radiant', 'heart', 'marquise', 'baguette', 'taperedbaguette'];
+
+  /* 1 mm is the base size; presets run in 0.5 mm steps up to 6 mm. */
+  const SIZE_PRESETS = ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '6'];
+
+  function cleanCut(cut) {
+    const c = String(cut || '').toLowerCase().replace(/[\s_-]/g, '');
+    return CUTS.indexOf(c) !== -1 ? c : 'round';
+  }
+
+  function cleanSize(size) {
+    const n = Number(size);
+    if (!Number.isFinite(n) || n <= 0) return '1';
+    /* snap to the nearest preset so a stray decimal never invents a tier */
+    let best = '1', bestD = Infinity;
+    SIZE_PRESETS.forEach((p) => {
+      const d = Math.abs(Number(p) - n);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    return best;
+  }
+
+  function cutPctOf(cut) {
+    const p = S.cutPct[cleanCut(cut)];
+    return Number.isFinite(Number(p)) ? Number(p) : 0;
+  }
+
+  function sizeFactorOf(size) {
+    const f = S.sizeFactor[cleanSize(size)];
+    return Number.isFinite(Number(f)) && Number(f) > 0 ? Number(f) : 1;
+  }
+
+  /** Price of ONE stone after cut and size surcharges. */
+  function stoneUnitPrice(base, cut, size) {
+    const b = Number(base) || 0;
+    if (!b) return 0;
+    return money(b * (1 + cutPctOf(cut) / 100) * sizeFactorOf(size));
+  }
 
   function basePerTooth(line) {
     if (line.material === 'gold') {
@@ -327,15 +394,23 @@
         const count = Math.max(1, Math.round(Number(line.accent.count) || 1));
         const type = line.accent.type || 'cz';
         const setting = line.accent.setting || 'flush';
+        const cut = cleanCut(line.accent.cut);
+        const size = cleanSize(line.accent.size);
         let unit = S.accentPrice[type];
         if (unit === null || unit === undefined) {
           unit = Number(line.accent.customPrice !== undefined ? line.accent.customPrice : line.accent.price) || 0;
         }
+        /* A fancy cut and a bigger stone both cost more. The surcharges apply
+           to the STONE only — the setting labour does not change with cut. */
+        const unitPriced = stoneUnitPrice(Number(unit) || 0, cut, size);
         const sp = Number(S.settingPrice[setting] || 0);
-        line.accent = Object.assign({}, line.accent, { count, type, setting });
+        line.accent = Object.assign({}, line.accent, { count, type, setting, cut, size });
         line.accentUnit = Number(unit);
+        line.accentPricedUnit = unitPriced;
+        line.accentCutPct = cutPctOf(cut);
+        line.accentSizeFactor = sizeFactorOf(size);
         line.settingUnit = sp;
-        line.accentCost = count * (Number(unit) + sp);
+        line.accentCost = count * (unitPriced + sp);
         cost += line.accentCost;
         hasAccent = true;
       } else {
@@ -351,15 +426,21 @@
       } else if (line.full) {
         const type = line.full.type || 'moissanite';
         const cov = line.full.coverage || 'standardpave';
+        const cut = cleanCut(line.full.cut);
+        const size = cleanSize(line.full.size);
         let unit = S.fullPrice[type];
         if (unit === null || unit === undefined) {
           unit = Number(line.full.customPrice !== undefined ? line.full.customPrice : line.full.price) || 0;
         }
+        const unitPriced = stoneUnitPrice(Number(unit) || 0, cut, size);
         const cp = Number(S.coveragePrice[cov] || 0);
-        line.full = Object.assign({}, line.full, { type, coverage: cov });
+        line.full = Object.assign({}, line.full, { type, coverage: cov, cut, size });
         line.fullUnit = Number(unit);
+        line.fullPricedUnit = unitPriced;
+        line.fullCutPct = cutPctOf(cut);
+        line.fullSizeFactor = sizeFactorOf(size);
         line.coverageUnit = cp;
-        line.fullCost = line.teeth * (Number(unit) + cp);
+        line.fullCost = line.teeth * (unitPriced + cp);
         cost += line.fullCost;
         hasFull = true;
       } else {
@@ -548,6 +629,8 @@
           count: Math.max(1, Math.round(Number(g.accent.count) || 1)),
           type: g.accent.type || 'cz',
           setting: g.accent.setting || 'flush',
+          cut: cleanCut(g.accent.cut),
+          size: cleanSize(g.accent.size),
         };
         const ap = g.accent.customPrice !== undefined ? g.accent.customPrice : g.accent.price;
         if (ap !== undefined && ap !== null && Number.isFinite(Number(ap))) {
@@ -562,6 +645,8 @@
         const f = {
           type: g.full.type || 'moissanite',
           coverage: g.full.coverage || 'standardpave',
+          cut: cleanCut(g.full.cut),
+          size: cleanSize(g.full.size),
         };
         const fp = g.full.customPrice !== undefined ? g.full.customPrice : g.full.price;
         if (fp !== undefined && fp !== null && Number.isFinite(Number(fp))) {
@@ -859,7 +944,17 @@
   const CODE_MAT_R = flipMap(CODE_MAT);
   const CODE_STYPE = { cz: 'c', moissanite: 'm', labgrown: 'l', natural: 'n' };
   const CODE_STYPE_R = flipMap(CODE_STYPE);
-  const CODE_SET = { flush: 'f', prong: 'p', bezel: 'b', invisible: 'i', channel: 'h', pave: 'v' };
+  const CODE_SET = {
+    flush: 'f', twoprong: 'p', threeprong: 't', fourprong: 'q', sixprong: 's',
+    bezelfull: 'b', bezelhalf: 'z', bar: 'r', channel: 'h', invisible: 'i', pave: 'v',
+    /* legacy aliases kept so old saved codes still decode */
+    prong: 'p', bezel: 'b',
+  };
+  /* cut: one letter. round is the default so it can be omitted. */
+  const CODE_CUT = { round: 'r', cushion: 'c', oval: 'o', princess: 'p', emerald: 'e',
+                     pear: 'a', radiant: 'd', heart: 'h', marquee: 'm', marquise: 'm',
+                     baguette: 'b', taperedbaguette: 't' };
+  const CODE_CUT_R = flipMap(CODE_CUT);
   const CODE_SET_R = flipMap(CODE_SET);
   const CODE_COV = { standardpave: 's', honeycomb: 'h', micro: 'i', baguette: 'b' };
   const CODE_COV_R = flipMap(CODE_COV);
@@ -886,6 +981,25 @@
     return v > 0 ? String(v) : '';
   }
 
+  /** `^<cut><size>` on a stone token — omitted when it is the plain default.
+   *  `^` is used rather than `~`, which already separates the code metadata. */
+  function stoneSuffix(stone) {
+    const cut = cleanCut(stone && stone.cut);
+    const size = cleanSize(stone && stone.size);
+    if (cut === 'round' && size === '1') return '';
+    return '^' + (CODE_CUT[cut] || 'r') + String(size).replace('.', 'p');
+  }
+
+  /** Read a `^<cut><size>` suffix back off a token. */
+  function readStoneSuffix(tok) {
+    const m = /\^([a-z])(\d+(?:p\d+)?)$/.exec(String(tok || ''));
+    if (!m) return { cut: 'round', size: '1' };
+    return {
+      cut: CODE_CUT_R[m[1]] || 'round',
+      size: cleanSize(String(m[2]).replace('p', '.')),
+    };
+  }
+
   function encodeGroupToken(g, state) {
     const c = cleanGroupSpec(g);
     if (!c) return '';
@@ -908,6 +1022,9 @@
         if ((c.accent.type === 'labgrown' || c.accent.type === 'natural') && Number(c.accent.price) > 0) {
           at += '@' + fmtRateTok(c.accent.price);
         }
+        /* cut & size ride as a suffix only when they are not the default,
+           so an ordinary round 1 mm stone keeps the short code it always had */
+        at += stoneSuffix(c.accent);
         toks.push(at);
       }
       if (c.full && (c.full.bars || String(c.level) === '0.5')) {
@@ -917,6 +1034,7 @@
         if ((c.full.type === 'labgrown' || c.full.type === 'natural') && Number(c.full.price) > 0) {
           ft += '@' + fmtRateTok(c.full.price);
         }
+        ft += stoneSuffix(c.full);
         toks.push(ft);
       }
     }
@@ -994,12 +1112,14 @@
         continue;
       }
       if (tk[0] === 'a' && allowsStones(material)) {
-        const am = tk.match(/^a(\d+)([cmln])([fpbihv])(?:@(\d+(?:\.\d+)?))?$/);
+        const sfx = readStoneSuffix(tk);
+        const core = tk.split('^')[0];
+        const am = core.match(/^a(\d+)([cmln])([a-z])(?:@(\d+(?:\.\d+)?))?$/);
         if (am) {
           const count = Math.max(1, parseInt(am[1], 10) || 1);
           const type = CODE_STYPE_R[am[2]] || 'cz';
           const setting = CODE_SET_R[am[3]] || 'flush';
-          const acc = { count, type, setting };
+          const acc = { count, type, setting, cut: sfx.cut, size: sfx.size };
           if (am[4] !== undefined) {
             const pr = parseFloat(am[4]);
             if (Number.isFinite(pr) && pr >= 0) { acc.price = pr; acc.customPrice = pr; }
@@ -1011,14 +1131,16 @@
         continue;
       }
       if (tk[0] === 'f' && allowsStones(material)) {
-        const fm = tk.match(/^f([cmln])([shib])(?:@(\d+(?:\.\d+)?))?$/);
+        const sfx = readStoneSuffix(tk);
+        const core = tk.split('^')[0];
+        const fm = core.match(/^f([cmln])([shib])(?:@(\d+(?:\.\d+)?))?$/);
         if (fm) {
           if (g.level === '0.5') {
             g.full = { bars: true };
           } else {
             const type = CODE_STYPE_R[fm[1]] || 'moissanite';
             const coverage = CODE_COV_R[fm[2]] || 'standardpave';
-            const fl = { type, coverage };
+            const fl = { type, coverage, cut: sfx.cut, size: sfx.size };
             if (fm[3] !== undefined) {
               const pr = parseFloat(fm[3]);
               if (Number.isFinite(pr) && pr >= 0) { fl.price = pr; fl.customPrice = pr; }
@@ -1245,7 +1367,8 @@
       try { return 'EGZ1:' + decodeURIComponent(urlD[1]); } catch (e) {}
     }
     // Embedded EGZ- code inside text
-    const m2 = s.match(/EGZ-([A-Za-z0-9.+()/@|~_-]+)/i);
+    /* `^` carries stone cut/size, `/` separates sets, `~` starts metadata */
+    const m2 = s.match(/EGZ-([A-Za-z0-9.+()/@|~^_-]+)/i);
     if (m2) return 'EGZ-' + m2[1].replace(/[.,;:]+$/, '');
     // Embedded legacy EGZ1: code inside text
     const m1 = s.match(/EGZ1[:\uff1a]\s*([A-Za-z0-9\-_=+/]+)/i);
@@ -2032,6 +2155,7 @@
     encodeCode, encodeLineCode, decodeCode, extractCode,
     buildQuotePdfBytes, downloadQuotePdf,
     basePerTooth, allowsStones, money, fmt, roundPrice, roundUpTo, syncServiceDefaults,
+    cleanCut, cleanSize, cutPctOf, sizeFactorOf, stoneUnitPrice, CUTS, SIZE_PRESETS,
     load, save, fetchSettingsRest,
     readSettingsCache, writeSettingsCache, clearSettingsCache,
     dbReadSettings, dbWriteSettings, dbProjectId,
