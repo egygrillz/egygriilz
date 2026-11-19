@@ -546,6 +546,17 @@
                   <select class="sc-select sc-select-sm" data-sc="accentSetting"></select>
                 </div>
               </div>
+              <div class="sc-grid2-sm" style="margin-top:8px">
+                <div>
+                  <label class="sc-lbl-lite">Diamond cut</label>
+                  <select class="sc-select sc-select-sm" data-sc="accentCut"></select>
+                </div>
+                <div>
+                  <label class="sc-lbl-lite">Stone size (mm)</label>
+                  <select class="sc-select sc-select-sm" data-sc="accentSize"></select>
+                </div>
+              </div>
+              <p class="sc-faint" style="margin-top:4px">Size is measured against the real tooth. Fancy cuts carry a surcharge on the stone only.</p>
               <div class="sc-hidden" data-sc="accentCustomWrap">
                 <label class="sc-lbl-lite">Today's stone price (EGP/stone)</label>
                 <input type="number" class="sc-input sc-input-sm" data-sc="accentCustom" placeholder="Type today's rate">
@@ -568,6 +579,16 @@
                 <div>
                   <label class="sc-lbl-lite">Coverage</label>
                   <select class="sc-select sc-select-sm" data-sc="coverage"></select>
+                </div>
+              </div>
+              <div class="sc-grid2-sm" style="margin-top:8px">
+                <div>
+                  <label class="sc-lbl-lite">Diamond cut</label>
+                  <select class="sc-select sc-select-sm" data-sc="fullCut"></select>
+                </div>
+                <div>
+                  <label class="sc-lbl-lite">Stone size (mm)</label>
+                  <select class="sc-select sc-select-sm" data-sc="fullSize"></select>
                 </div>
               </div>
               <div class="sc-hidden" data-sc="fullCustomWrap">
@@ -715,6 +736,28 @@
       setOpts(el('anodize'), c.anodize);
       setOpts(el('accentSetting'), c.settingPrice);
       setOpts(el('coverage'), c.coveragePrice);
+      /* Cut and size drive the stone's unit price; round + 1 mm is the base. */
+      const CUT_NAMES = { round:'Round', cushion:'Cushion', oval:'Oval', princess:'Princess',
+        emerald:'Emerald', pear:'Pear', radiant:'Radiant', heart:'Heart', marquise:'Marquise',
+        baguette:'Baguette', taperedbaguette:'Tapered Baguette' };
+      const cutOpts = {};
+      Object.keys(CUT_NAMES).forEach((k) => {
+        const pct = engine().cutPctOf ? engine().cutPctOf(k) : 0;
+        cutOpts[k] = CUT_NAMES[k] + (pct ? ' (+' + pct + '%)' : '');
+      });
+      setOpts(el('accentCut'), cutOpts);
+      setOpts(el('fullCut'), cutOpts);
+      const sizeOpts = {};
+      ['1','1.5','2','2.5','3','3.5','4','4.5','5','6'].forEach((mm) => {
+        const f = engine().sizeFactorOf ? engine().sizeFactorOf(mm) : 1;
+        sizeOpts[mm] = mm + ' mm' + (f > 1 ? ' (' + f.toFixed(2) + '×)' : '');
+      });
+      setOpts(el('accentSize'), sizeOpts);
+      setOpts(el('fullSize'), sizeOpts);
+      if (el('accentCut')) el('accentCut').value = 'round';
+      if (el('fullCut')) el('fullCut').value = 'round';
+      if (el('accentSize')) el('accentSize').value = '1';
+      if (el('fullSize')) el('fullSize').value = '1';
 
       const lvl = el('level');
       if (lvl && c.designPct) {
@@ -791,6 +834,10 @@
       if (el('accentType')) el('accentType').addEventListener('change', () => { onAccentTypeChange(true); syncLive(); });
       if (el('accentCount')) el('accentCount').addEventListener('input', syncLive);
       if (el('accentSetting')) el('accentSetting').addEventListener('change', syncLive);
+      if (el('accentCut')) el('accentCut').addEventListener('change', syncLive);
+      if (el('accentSize')) el('accentSize').addEventListener('change', syncLive);
+      if (el('fullCut')) el('fullCut').addEventListener('change', syncLive);
+      if (el('fullSize')) el('fullSize').addEventListener('change', syncLive);
       if (el('accentCustom')) el('accentCustom').addEventListener('input', syncLive);
       if (el('fullType')) el('fullType').addEventListener('change', () => { onFullTypeChange(true); syncLive(); });
       if (el('coverage')) el('coverage').addEventListener('change', syncLive);
@@ -1199,7 +1246,11 @@
           price = parseFloat(el('accentCustom').value);
           if (price === null || isNaN(price) || price < 0) return { needRates: 'LAB_ACCENT', error: "Enter today's rate for Lab-Grown/Natural accent stones" };
         }
-        spec.accent = { count, type, setting, price, customPrice: price };
+        spec.accent = {
+          count, type, setting, price, customPrice: price,
+          cut: el('accentCut') ? el('accentCut').value : 'round',
+          size: el('accentSize') ? el('accentSize').value : '1',
+        };
       }
       if (flags.full) {
         if (level === '0.5') {
@@ -1212,7 +1263,11 @@
             price = parseFloat(el('fullCustom').value);
             if (isNaN(price) || price < 0) return { needRates: 'LAB_FULL', error: "Enter today's rate for Lab-Grown/Natural full-iced stones" };
           }
-          spec.full = { type, coverage, price, customPrice: price };
+          spec.full = {
+            type, coverage, price, customPrice: price,
+            cut: el('fullCut') ? el('fullCut').value : 'round',
+            size: el('fullSize') ? el('fullSize').value : '1',
+          };
         }
       }
       return { group: spec };
@@ -1284,6 +1339,8 @@
         if (el('accentType')) el('accentType').value = grp.accent.type || 'cz';
         onAccentTypeChange();
         if (el('accentSetting')) el('accentSetting').value = grp.accent.setting || 'flush';
+        if (el('accentCut')) el('accentCut').value = grp.accent.cut || 'round';
+        if (el('accentSize')) el('accentSize').value = grp.accent.size || '1';
         if ((cfg().accentPrice || {})[grp.accent.type] === null && grp.accent.price && el('accentCustom')) {
           el('accentCustom').value = grp.accent.price;
         }
@@ -1292,6 +1349,8 @@
         if (el('fullType')) el('fullType').value = grp.full.type || 'moissanite';
         onFullTypeChange();
         if (el('coverage')) el('coverage').value = grp.full.coverage || 'standardpave';
+        if (el('fullCut')) el('fullCut').value = grp.full.cut || 'round';
+        if (el('fullSize')) el('fullSize').value = grp.full.size || '1';
         if ((cfg().fullPrice || {})[grp.full.type] === null && grp.full.price && el('fullCustom')) {
           el('fullCustom').value = grp.full.price;
         }

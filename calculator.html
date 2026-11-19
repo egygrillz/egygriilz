@@ -107,6 +107,54 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .pill:hover{border-color:var(--ink);}
 .pill.selected{background:var(--ink);color:#fff;border-color:var(--ink);}
 .pill small{opacity:.65;font-size:10px;margin-inline-start:4px;}
+
+/* ── option rails ───────────────────────────────────────────────────────
+   Choices slide sideways instead of dropping a menu. Scroll-snap makes a
+   swipe land on a card, the fade edges say there is more to the right, and
+   nothing opens a popup over the page. */
+.rail{position:relative;}
+.rail-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;
+  padding:4px 2px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.rail-track::-webkit-scrollbar{display:none;}
+.rail::before,.rail::after{content:"";position:absolute;top:0;bottom:10px;width:26px;
+  pointer-events:none;z-index:2;opacity:0;transition:opacity .25s;}
+.rail::before{left:0;background:linear-gradient(90deg,var(--bg,#f7f4ee),transparent);}
+.rail::after{right:0;background:linear-gradient(270deg,var(--bg,#f7f4ee),transparent);}
+.rail.can-left::before{opacity:1;}
+.rail.can-right::after{opacity:1;}
+
+/* a card in a rail: image, name, price delta */
+.rc{scroll-snap-align:start;flex:0 0 auto;width:132px;cursor:pointer;
+  border:1px solid var(--line);border-radius:14px;background:#fff;
+  padding:10px 8px 9px;text-align:center;position:relative;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s,box-shadow .22s;}
+.rc:hover{transform:translateY(-3px);border-color:rgba(184,147,90,.6);
+  box-shadow:0 10px 24px rgba(67,49,20,.10);}
+.rc:active{transform:translateY(-1px) scale(.985);}
+.rc.selected{border-color:var(--gold,#b8935a);box-shadow:0 0 0 1px var(--gold,#b8935a),0 8px 20px rgba(67,49,20,.10);}
+.rc img,.rc .rc-ph{display:block;width:100%;height:74px;object-fit:contain;
+  margin:0 auto 7px;transition:transform .25s;}
+.rc:hover img{transform:scale(1.06) translateY(-2px);}
+.rc-ph{display:grid;place-items:center;color:#bdbdbd;font-size:22px;
+  border-radius:10px;background:#f6f6f6;}
+.rc-name{font-size:10.5px;font-weight:600;line-height:1.25;color:var(--ink);}
+.rc-add{font-size:9.5px;color:#8b8b8b;margin-top:2px;line-height:1.2;}
+.rc-add.free{color:#4a8c5f;}
+.rc-check{position:absolute;top:6px;right:6px;width:15px;height:15px;border-radius:50%;
+  background:var(--gold,#b8935a);color:#fff;font-size:9px;display:none;
+  align-items:center;justify-content:center;}
+.rc.selected .rc-check{display:flex;}
+
+/* size pills: compact, one row, no wrap so they slide too */
+.rail-sizes .rc{width:74px;padding:8px 4px 7px;}
+.rail-sizes .rc-name{font-size:11px;}
+.rail-sizes .rc-add{font-size:9px;}
+
+@media(max-width:560px){
+  .rc{width:112px;}
+  .rc img,.rc .rc-ph{height:60px;}
+  .rail-sizes .rc{width:64px;}
+}
 .mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
 .mode-card{border:1px solid var(--line);background:transparent;padding:16px;text-align:center;cursor:pointer;border-radius:12px;transition:.2s;}
 .mode-card:hover{border-color:var(--ink);}
@@ -166,6 +214,28 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 
 /* ── STONES / FINISHES ── */
 .stones-detail{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
+/* ── live piece preview ── */
+.piece{position:sticky;top:78px;z-index:5;margin:0 0 22px;
+  background:radial-gradient(ellipse at 50% 40%,#ffffff,rgba(247,244,238,.72));
+  border:1px solid rgba(28,25,20,.08);border-radius:20px;
+  padding:14px 16px 6px;box-shadow:0 10px 30px rgba(67,49,20,.06);}
+.piece-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:2px;}
+.piece-t{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#8b8b8b;}
+.piece-lbl{font-size:11px;color:#5f5850;text-align:right;}
+.piece canvas{display:block;width:100%;height:auto;}
+@media(max-width:900px){.piece{position:relative;top:auto;}}
+
+.laser-block{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;}
+.sc-lbl-lite{display:block;font-size:10px;color:#8b8b8b;margin-bottom:5px;}
+.swatches{display:flex;gap:7px;flex-wrap:wrap;}
+.swatch{width:24px;height:24px;border-radius:50%;background:var(--sw);cursor:pointer;
+  border:2px solid transparent;box-shadow:0 0 0 1px rgba(0,0,0,.10);transition:transform .18s;}
+.swatch:hover{transform:scale(1.12);}
+.swatch.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold,#b8935a);}
+input[type=file].sc-input{padding:9px 10px;font-size:11px;cursor:pointer;}
+.sd-lbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#8b8b8b;
+  margin:14px 0 6px;}
+.stones-detail .sd-lbl:first-child{margin-top:0;}
 .hint-box{display:flex;align-items:center;gap:12px;background:#fdf6ec;border:1px solid #ecd9b8;border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.6;color:#6b5320;margin-top:14px;flex-wrap:wrap;}
 .hint-box button{background:var(--gold);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border-radius:2px;white-space:nowrap;}
 .hint-box button:hover{background:var(--gold-d);}
@@ -270,6 +340,13 @@ footer p{font-size:11px;color:var(--faint);}
 
 <main class="calc-wrap">
   <div class="left-column">
+    <div class="piece" id="piece-preview">
+      <div class="piece-head">
+        <span class="piece-t">Your piece</span>
+        <span class="piece-lbl" data-piece-label></span>
+      </div>
+      <canvas aria-label="Live preview of your grillz"></canvas>
+    </div>
     <div id="sets-container"></div>
     <div id="order-step"></div>
   </div>
@@ -297,6 +374,7 @@ footer p{font-size:11px;color:var(--faint);}
 
 <script src="/assets/calc-engine.js?v=5"></script>
 <script src="/assets/numpad.js?v=5"></script>
+<script src="/assets/grillz-renderer.js?v=5"></script>
 <script>
 (function () {
   'use strict';
@@ -350,6 +428,10 @@ footer p{font-size:11px;color:var(--faint);}
       lvl_6_d: 'Ultimate custom work — fully sculpted, maximum detail.',
       stones_none: 'No stones', stones_accent: 'Accent stones', stones_full: 'Full iced',
       accent_count: 'Stone count', accent_type: 'Stone type', setting: 'Setting',
+      cut_lbl: 'Diamond cut', size_lbl: 'Stone size (mm)', included_lbl: 'Included',
+      laser_lbl: 'Laser work', laser_off: 'Off', laser_text: 'Text', laser_image: 'Image',
+      laser_text_ph: 'Name or word', laser_fill: 'Treatment', laser_cut: 'Cut through',
+      laser_enamel: 'Enamel fill', laser_colour: 'Enamel colour',
       full_type: 'Stone type', coverage: 'Coverage',
       custom_price: 'Price per stone (EGP)', custom_price_tooth: 'Price per tooth (EGP)',
       bars_note: 'Bar design — open horizontal bars with the natural tooth visible behind. Iced bars are a fixed option and included in the stone price.',
@@ -420,6 +502,10 @@ footer p{font-size:11px;color:var(--faint);}
       lvl_6_d: 'عمل مخصص أقصى — نحت كامل بأعلى تفصيل.',
       stones_none: 'بدون أحجار', stones_accent: 'أحجار لمسات', stones_full: 'مرصّع بالكامل',
       accent_count: 'عدد الأحجار', accent_type: 'نوع الحجر', setting: 'طريقة التركيب',
+      cut_lbl: 'شكل القصّة', size_lbl: 'حجم الحجر (مم)', included_lbl: 'داخل السعر',
+      laser_lbl: 'أعمال الليزر', laser_off: 'بدون', laser_text: 'نص', laser_image: 'صورة',
+      laser_text_ph: 'اسم أو كلمة', laser_fill: 'طريقة التنفيذ', laser_cut: 'قص كامل',
+      laser_enamel: 'تعبئة إيناميل', laser_colour: 'لون الإيناميل',
       full_type: 'نوع الحجر', coverage: 'التغطية',
       custom_price: 'السعر للحجر (جنيه)', custom_price_tooth: 'السعر للسن (جنيه)',
       bars_note: 'تصميم بار — قضبان أفقية مفتوحة وتظهر الأسنان الطبيعية خلفها. ترصيع البارات خيار ثابت ويُحسب ضمن سعر الأحجار.',
@@ -556,14 +642,55 @@ footer p{font-size:11px;color:var(--faint);}
   }
   const TEETH_PRESETS = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32];
   const STONE_TYPES = ['cz', 'moissanite', 'labgrown', 'natural'];
-  const SETTINGS = ['flush', 'twoprong', 'threeprong', 'fourprong', 'sixprong', 'bezelfull', 'bezelhalf', 'bar'];
-  const COVERAGES = ['standardpave', 'frenchpave', 'micropave', 'channel', 'invisible'];
+  /* Every cut the studio quotes. Round brilliant is the default — it is what
+     almost every piece ships with — so it sits first. */
+  const CUTS = [
+    { id:'round', name:'Round', img:'/diamonds/round-brilliant-cut.webp' },
+    { id:'princess', name:'Princess', img:'/diamonds/princess-cut.webp' },
+    { id:'cushion', name:'Cushion', img:'/diamonds/cushion-cut.webp' },
+    { id:'oval', name:'Oval', img:'/diamonds/oval-cut.webp' },
+    { id:'emerald', name:'Emerald', img:'/diamonds/emerald-cut.webp' },
+    { id:'radiant', name:'Radiant', img:'/diamonds/radiant-cut.webp' },
+    { id:'pear', name:'Pear', img:'/diamonds/pear-cut.webp' },
+    { id:'marquise', name:'Marquise', img:'/diamonds/marquise-cut.webp' },
+    { id:'heart', name:'Heart', img:'/diamonds/heart-cut.webp' },
+    { id:'baguette', name:'Baguette', img:'/diamonds/straight-baguette-cut.webp' },
+    { id:'taperedbaguette', name:'Tapered', img:'/diamonds/tapered-baguette-cut.webp' },
+  ];
+  /* Stone sizes in mm, measured against the real tooth. 1 mm is the base. */
+  const STONE_SIZES = ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '6'];
+  const cutName = (k) => (CUTS.find((c) => c.id === k) || CUTS[0]).name;
+  const cutImg = (k) => (CUTS.find((c) => c.id === k) || CUTS[0]).img;
+  /* Every setting carries its own photograph, so the picture the client
+     taps is the setting they get. */
+  const SETTING_OPTS = [
+    { id:'flush',    img:'/settings/flush.webp' },
+    { id:'twoprong', img:'/settings/two-prong.webp' },
+    { id:'threeprong',img:'/settings/three-prong.webp' },
+    { id:'fourprong',img:'/settings/four-prong.webp' },
+    { id:'sixprong', img:'/settings/six-prong.webp' },
+    { id:'bezelfull',img:'/settings/bezel.webp' },
+    { id:'bezelhalf',img:'/settings/bezel.webp' },
+    { id:'channel',  img:'/settings/channel.webp' },
+    { id:'bar',      img:'/settings/channel.webp' },
+  ];
+  const SETTINGS = SETTING_OPTS.map((o) => o.id);
+  const COVERAGE_OPTS = [
+    { id:'standardpave', img:'/settings/micro-pave.webp' },
+    { id:'frenchpave',   img:'/settings/micro-pave.webp' },
+    { id:'micropave',    img:'/settings/micro-pave.webp' },
+    { id:'channel',      img:'/settings/channel.webp' },
+    { id:'invisible',    img:'/settings/channel.webp' },
+  ];
+  const COVERAGES = COVERAGE_OPTS.map((o) => o.id);
+  const settingImg = (k) => (SETTING_OPTS.find((o) => o.id === k) || SETTING_OPTS[0]).img;
+  const coverageImg = (k) => (COVERAGE_OPTS.find((o) => o.id === k) || COVERAGE_OPTS[0]).img;
   const ENAMELS = ['none', 'single', 'multi', 'master'];
   const ENGRAVINGS = ['none', 'small', 'medium', 'large'];
   const ANODIZES = ['none', 'single', 'dual', 'multi'];
 
   const stoneTypeName = (k) => ({ cz: 'CZ', moissanite: 'Moissanite', labgrown: 'Lab-Grown', natural: 'Natural' }[k] || k);
-  const settingName = (k) => ({ flush: 'Flush', twoprong: '2-Prong', threeprong: '3-Prong', fourprong: '4-Prong', sixprong: '6-Prong', bezelfull: 'Bezel full', bezelhalf: 'Bezel half', bar: 'Bar setting' }[k] || k);
+  const settingName = (k) => ({ flush: 'Flush', twoprong: '2-Prong', threeprong: '3-Prong', fourprong: '4-Prong', sixprong: '6-Prong', bezelfull: 'Bezel full', bezelhalf: 'Bezel half', bar: 'Bar setting', channel: 'Channel' }[k] || k);
   const coverageName = (k) => ({ standardpave: 'Standard Pave', frenchpave: 'French Pave', micropave: 'Micro-Pave', channel: 'Channel', invisible: 'Invisible' }[k] || k);
   const optName = (k) => t('opt_' + k) || k;
   const levelKey = (lv) => String(lv) === '0.5' ? '05' : String(lv);
@@ -581,7 +708,12 @@ footer p{font-size:11px;color:var(--faint);}
     return {
       mode: 'none', accent: false, full: false,
       accentCount: 4, accentType: 'cz', setting: 'flush', accentPrice: '',
+      accentCut: 'round', accentSize: '2',
       fullType: 'moissanite', coverage: 'standardpave', fullPrice: '',
+      fullCut: 'round', fullSize: '2',
+      /* laser: cut text or an image clean through, or fill it with enamel */
+      laserMode: 'none', laserText: '', laserFill: 'cut', laserColor: '#1b1b1b',
+      laserImage: null, laserImageName: '',
     };
   }
   function stonesOn(st) {
@@ -635,7 +767,11 @@ footer p{font-size:11px;color:var(--faint);}
     const on = stonesOn(st);
     const out = {};
     if (on.accent) {
-      const a = { count: clamp(parseInt(st.accentCount, 10) || 1, 1, 999), type: st.accentType || 'cz', setting: st.setting || 'flush' };
+      const a = {
+        count: clamp(parseInt(st.accentCount, 10) || 1, 1, 999),
+        type: st.accentType || 'cz', setting: st.setting || 'flush',
+        cut: st.accentCut || 'round', size: st.accentSize || '2',
+      };
       if (st.accentType === 'labgrown' || st.accentType === 'natural') {
         const p = parseFloat(st.accentPrice);
         if (Number.isFinite(p) && p > 0) { a.price = p; a.customPrice = p; }
@@ -643,7 +779,10 @@ footer p{font-size:11px;color:var(--faint);}
       out.accent = a;
     }
     if (on.full) {
-      const f = { type: st.fullType || 'moissanite', coverage: st.coverage || 'standardpave' };
+      const f = {
+        type: st.fullType || 'moissanite', coverage: st.coverage || 'standardpave',
+        cut: st.fullCut || 'round', size: st.fullSize || '2',
+      };
       if (st.fullType === 'labgrown' || st.fullType === 'natural') {
         const p = parseFloat(st.fullPrice);
         if (Number.isFinite(p) && p > 0) { f.price = p; f.customPrice = p; }
@@ -779,6 +918,76 @@ footer p{font-size:11px;color:var(--faint);}
     }
     return html;
   }
+  /* ───────────────────────── rails & cards ─────────────────────────
+
+     Every choice is a scrollable rail of picture cards: nothing pops open,
+     everything is one tap away, and the price difference is printed on the
+     card so the client never has to guess what a choice costs. */
+
+  function railHtml(inner, extraClass) {
+    return '<div class="rail ' + (extraClass || '') + '"><div class="rail-track">' + inner + '</div></div>';
+  }
+
+  function cardHtml(opts) {
+    const o = opts || {};
+    return '<button type="button" class="rc' + (o.selected ? ' selected' : '') + '"' +
+      ' data-act="' + o.act + '"' + (o.attrs || '') +
+      ' aria-pressed="' + (!!o.selected) + '"' +
+      ' title="' + esc(o.title || o.name || '') + '">' +
+      '<span class="rc-check">✓</span>' +
+      (o.img ? '<img src="' + o.img + '" alt="" loading="lazy">'
+             : '<span class="rc-ph"><i class="fa-regular fa-gem"></i></span>') +
+      '<span class="rc-name">' + esc(o.name || '') + '</span>' +
+      (o.add ? '<span class="rc-add' + (o.free ? ' free' : '') + '">' + esc(o.add) + '</span>' : '') +
+      '</button>';
+  }
+
+  /** "+250 EGP" / "included" copy for a price delta. */
+  function deltaLabel(amount, per) {
+    const n = Number(amount) || 0;
+    if (n <= 0) return t('included_lbl') || 'Included';
+    return '+' + fmt(n) + ' ' + (per || 'EGP');
+  }
+
+  /* Cut cards: the surcharge is a % of the stone, so show what it adds to the
+     currently-selected stone price rather than a bare percentage. */
+  function cutCards(st, which, at) {
+    const typeKey = which === 'accent' ? 'accentType' : 'fullType';
+    const base = Number(E() ? (which === 'accent' ? E().get().accentPrice[st[typeKey]] : E().get().fullPrice[st[typeKey]]) : 0) || 0;
+    const sel = which === 'accent' ? st.accentCut : st.fullCut;
+    const field = which === 'accent' ? 'accentCut' : 'fullCut';
+    return railHtml(CUTS.map((c) => {
+      const pct = E() ? E().cutPctOf(c.id) : 0;
+      const add = base > 0 ? Math.round(base * pct / 100) : 0;
+      return cardHtml({
+        act: 'stone-field', attrs: ' ' + at + ' data-field="' + field + '" data-value="' + c.id + '"',
+        img: c.img, name: c.name,
+        add: pct ? deltaLabel(add, 'EGP') : (t('included_lbl') || 'Included'),
+        free: !pct, selected: sel === c.id,
+        title: c.name + (pct ? ' — +' + pct + '%' : ' — included'),
+      });
+    }).join(''));
+  }
+
+  /* Size cards: millimetres against the real tooth, with the price step. */
+  function sizeCards(st, which, at) {
+    const field = which === 'accent' ? 'accentSize' : 'fullSize';
+    const sel = which === 'accent' ? st.accentSize : st.fullSize;
+    const f = E() ? E().sizeFactorOf : (() => 1);
+    const base = 1;
+    return railHtml(STONE_SIZES.map((mm) => {
+      const factor = f(mm);
+      const add = Math.round((factor - base) * 100);
+      return cardHtml({
+        act: 'stone-field', attrs: ' ' + at + ' data-field="' + field + '" data-value="' + mm + '"',
+        name: mm + ' mm',
+        add: mm === '1' ? (t('included_lbl') || 'Included') : '+' + factor.toFixed(1) + '×',
+        free: mm === '1', selected: String(sel) === mm,
+        title: mm + ' mm stone — ' + factor.toFixed(2) + '× the 1 mm price',
+      });
+    }).join(''), 'rail-sizes');
+  }
+
   function renderStones(st, material, level, setIdx, groupIdx) {
     const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
     if (!E() || !E().allowsStones(material)) {
@@ -794,18 +1003,102 @@ footer p{font-size:11px;color:var(--faint);}
       html += '<div class="hint-box"><i class="fa-solid fa-gem"></i><span>' + esc(t('stones_both_note')) + '</span></div>';
     }
     if (on.accent) {
-      html += '<div class="stones-detail"><div class="g-grid">' + fieldHtml(t('accent_count'), 'number', st.accentCount,
-        'data-scope="' + (groupIdx == null ? 'set' : 'group') + '" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + ' data-field="accentCount"', '', 1, 999) +
-        selectHtml(t('accent_type'), '', st.accentType, keyOptions(STONE_TYPES, st.accentType, stoneTypeName), at + ' data-field="accentType"') +
-        selectHtml(t('setting'), '', st.setting, keyOptions(SETTINGS, st.setting, settingName), at + ' data-field="setting"') +
-        ((st.accentType === 'natural' || st.accentType === 'labgrown') ? fieldHtml(t('custom_price'), 'number', st.accentPrice, at + ' data-field="accentPrice"', '', 0, null) : '') + '</div></div>';
+      html += '<div class="stones-detail">' +
+        '<div class="sd-lbl">' + esc(t('setting')) + '</div>' +
+        railHtml(SETTING_OPTS.map((o) => cardHtml({
+          act: 'stone-field', attrs: ' ' + at + ' data-field="setting" data-value="' + o.id + '"',
+          img: o.img, name: settingName(o.id),
+          add: deltaLabel(E() ? E().get().settingPrice[o.id] : 0, 'EGP'),
+          selected: st.setting === o.id,
+        })).join('')) +
+
+        '<div class="sd-lbl">' + esc(t('accent_type')) + '</div>' +
+        railHtml(STONE_TYPES.map((k) => cardHtml({
+          act: 'stone-field', attrs: ' ' + at + ' data-field="accentType" data-value="' + k + '"',
+          name: stoneTypeName(k),
+          add: (E() && E().get().accentPrice[k] != null) ? fmt(E().get().accentPrice[k]) + ' EGP' : (t('custom_price') || 'Set price'),
+          free: !!(E() && E().get().accentPrice[k] === 0), selected: st.accentType === k,
+        })).join(''), 'rail-sizes') +
+
+        '<div class="sd-lbl">' + esc(t('cut_lbl') || 'Cut') + '</div>' +
+        cutCards(st, 'accent', at) +
+
+        '<div class="sd-lbl">' + esc(t('size_lbl') || 'Stone size') + '</div>' +
+        sizeCards(st, 'accent', at) +
+
+        '<div class="g-grid">' + fieldHtml(t('accent_count'), 'number', st.accentCount,
+          'data-scope="' + (groupIdx == null ? 'set' : 'group') + '" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + ' data-field="accentCount"', '', 1, 999) +
+          ((st.accentType === 'natural' || st.accentType === 'labgrown') ? fieldHtml(t('custom_price'), 'number', st.accentPrice, at + ' data-field="accentPrice"', '', 0, null) : '') + '</div></div>';
     }
     if (on.full) {
-      html += '<div class="stones-detail"><div class="g-grid">' +
-        selectHtml(t('full_type'), '', st.fullType, keyOptions(STONE_TYPES, st.fullType, stoneTypeName), at + ' data-field="fullType"') +
-        selectHtml(t('coverage'), '', st.coverage, keyOptions(COVERAGES, st.coverage, coverageName), at + ' data-field="coverage"') +
-        ((st.fullType === 'natural' || st.fullType === 'labgrown') ? fieldHtml(t('custom_price_tooth'), 'number', st.fullPrice, at + ' data-field="fullPrice"', '', 0, null) : '') + '</div></div>';
+      html += '<div class="stones-detail">' +
+        '<div class="sd-lbl">' + esc(t('coverage')) + '</div>' +
+        railHtml(COVERAGE_OPTS.map((o) => cardHtml({
+          act: 'stone-field', attrs: ' ' + at + ' data-field="coverage" data-value="' + o.id + '"',
+          img: o.img, name: coverageName(o.id),
+          add: deltaLabel(E() ? E().get().coveragePrice[o.id] : 0, 'EGP'),
+          selected: st.coverage === o.id,
+        })).join('')) +
+
+        '<div class="sd-lbl">' + esc(t('full_type')) + '</div>' +
+        railHtml(STONE_TYPES.map((k) => cardHtml({
+          act: 'stone-field', attrs: ' ' + at + ' data-field="fullType" data-value="' + k + '"',
+          name: stoneTypeName(k),
+          add: (E() && E().get().fullPrice[k] != null) ? fmt(E().get().fullPrice[k]) + ' EGP' : (t('custom_price') || 'Set price'),
+          free: !!(E() && E().get().fullPrice[k] === 0), selected: st.fullType === k,
+        })).join(''), 'rail-sizes') +
+
+        '<div class="sd-lbl">' + esc(t('cut_lbl') || 'Cut') + '</div>' +
+        cutCards(st, 'full', at) +
+
+        '<div class="sd-lbl">' + esc(t('size_lbl') || 'Stone size') + '</div>' +
+        sizeCards(st, 'full', at) +
+
+        ((st.fullType === 'natural' || st.fullType === 'labgrown') ?
+          '<div class="g-grid">' + fieldHtml(t('custom_price_tooth'), 'number', st.fullPrice, at + ' data-field="fullPrice"', '', 0, null) + '</div>' : '') +
+        '</div>';
     }
+    return html;
+  }
+
+  /* ───────────────────────── laser ─────────────────────────
+     Laser work is either CUT clean through the metal (you see the mouth
+     behind it) or FILLED with enamel. Text and images use the same two
+     treatments, and an uploaded photo is knocked back to black & white so the
+     cut is crisp rather than muddy. */
+  function renderLaser(st, at) {
+    const mode = st.laserMode || 'none';
+    let html = '<div class="laser-block"><div class="sd-lbl">' + esc(t('laser_lbl') || 'Laser work') + '</div>';
+    html += '<div class="pills">' +
+      [['none', t('laser_off') || 'Off'], ['text', t('laser_text') || 'Text'], ['image', t('laser_image') || 'Image']]
+        .map(([v, lbl]) => pill(v, mode === v, lbl, 'data-act="laser-mode" ' + at + ' data-value="' + v + '"')).join('') +
+      '</div>';
+
+    if (mode !== 'none') {
+      html += '<div class="g-grid" style="margin-top:12px">';
+      if (mode === 'text') {
+        html += '<label class="fld"><span class="sc-lbl-lite">' + esc(t('laser_text') || 'Text') + '</span>' +
+          '<input class="sc-input" type="text" maxlength="18" value="' + esc(st.laserText || '') + '" ' +
+          at + ' data-field="laserText" placeholder="' + esc(t('laser_text_ph') || 'Name or word') + '"></label>';
+      } else {
+        html += '<label class="fld"><span class="sc-lbl-lite">' + esc(t('laser_image') || 'Image') + '</span>' +
+          '<input class="sc-input" type="file" accept="image/*" data-act="laser-upload" ' + at + '>' +
+          (st.laserImageName ? '<span class="rc-add">' + esc(st.laserImageName) + '</span>' : '') + '</label>';
+      }
+      /* fill choice: cut through, or enamel colour */
+      html += '<div><span class="sc-lbl-lite">' + esc(t('laser_fill') || 'Treatment') + '</span><div class="pills">' +
+        [['cut', t('laser_cut') || 'Cut through'], ['enamel', t('laser_enamel') || 'Enamel fill']]
+          .map(([v, lbl]) => pill(v, (st.laserFill || 'cut') === v, lbl, 'data-act="laser-fill" ' + at + ' data-value="' + v + '"')).join('') +
+        '</div></div>';
+      if ((st.laserFill || 'cut') === 'enamel') {
+        html += '<div><span class="sc-lbl-lite">' + esc(t('laser_colour') || 'Enamel colour') + '</span><div class="swatches">' +
+          (window.GrillzRenderer ? window.GrillzRenderer.ENAMEL_COLORS : ['#1b1b1b']).map((c) =>
+            '<button type="button" class="swatch' + (st.laserColor === c ? ' on' : '') + '" style="--sw:' + c + '" data-act="laser-colour" ' + at + ' data-value="' + c + '" aria-label="' + c + '"></button>'
+          ).join('') + '</div></div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
     return html;
   }
 
@@ -875,6 +1168,7 @@ footer p{font-size:11px;color:var(--faint);}
     html += '<div style="margin-top:16px">' + renderMaterial(g, i, gi) + '</div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('group_level')) + '</div>' + renderLevelWheel(g.level, i, gi) + '</div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(g.stones, g.material, g.level, i, gi) + '</div>';
+    html += renderLaser(g, attrs);
     html += renderFinishFields(g, i, gi) + '</div>';
     return html;
   }
@@ -891,6 +1185,7 @@ footer p{font-size:11px;color:var(--faint);}
     if (s.mode === 'uniform') {
       html += '<div class="finish-block"><div class="fb-t">' + esc(t('step3_t')) + '</div>' + renderLevelWheel(s.level, i, null) + '</div>';
       html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(s.stones, s.material, s.level, i, null) + '</div>';
+      html += renderLaser(s, 'data-scope="set" data-index="' + i + '"');
       html += renderFinishFields(s, i, null);
     } else {
       html += '<p style="font-size:12px;color:var(--mut);margin:0 0 6px;line-height:1.6">' + esc(t('mixed_note')) + '</p>';
@@ -920,6 +1215,73 @@ footer p{font-size:11px;color:var(--faint);}
   function groupPriceRows(line, setIndex) {
     if (!line.isMixed || !Array.isArray(line.groups)) return '';
     return line.groups.map((g, gi) => '<div class="sum-group"><span>' + esc(g.label || (t('group_n') + ' ' + (gi + 1)) + ' · ' + g.teeth + ' ' + t('teeth_n')) + '</span><span class="sl-price">' + esc(fmt(g.subtotal || 0)) + ' EGP</span></div>').join('');
+  }
+
+  /* ───────────────────────── live render ─────────────────────────
+     The piece the client is building, drawn as metal. It sits sticky beside
+     the summary so a change is visible immediately — this is the answer to
+     "I want to see what I am buying". */
+  function drawPreview() {
+    const R = window.GrillzRenderer;
+    const host = $('#piece-preview');
+    if (!R || !host) return;
+    const canvas = host.querySelector('canvas');
+    if (!canvas) return;
+
+    const set = state.sets[0] || newSet();
+    const isMixed = set.mode === 'mixed' && set.groups && set.groups.length;
+    const src = isMixed ? set.groups[0] : set;
+    const stones = src.stones || newStones();
+    const on = stonesOn(stones);
+
+    /* the whole mouth, with the configured teeth highlighted, so the piece is
+       shown in context rather than floating on its own */
+    const teeth = (set.toothIds && set.toothIds.length)
+      ? set.toothIds
+      : (state.sets.flatMap((x) => x.toothIds || []));
+
+    R.draw(canvas, {
+      teeth,
+      material: src.material || 'silver',
+      karat: src.karat || '18',
+      plating: src.plating || 'none',
+      level: src.level || '1',
+      enamel: src.enamel || 'none',
+      stones: {
+        accent: on.accent ? { count: stones.accentCount, cut: stones.accentCut, size: stones.accentSize } : null,
+        full: on.full ? { type: stones.fullType, cut: stones.fullCut, size: stones.fullSize } : null,
+      },
+      size: on.accent ? stones.accentSize : (on.full ? stones.fullSize : '2'),
+      laser: {
+        mode: src.laserMode || 'none',
+        text: src.laserText || '',
+        fill: src.laserFill || 'cut',
+        color: src.laserColor || '#1b1b1b',
+        image: src.laserImage || null,
+      },
+      onImageReady: () => { try { drawPreview(); } catch (e) {} },
+    });
+
+    if (!drawPreview.wired) {
+      drawPreview.wired = true;
+      const redraw = () => { drawPreview.wired = 0; drawPreview(); };
+      if (window.ResizeObserver) {
+        let t = 0;
+        new ResizeObserver(() => { clearTimeout(t); t = setTimeout(redraw, 120); }).observe(canvas);
+      } else {
+        window.addEventListener('resize', redraw);
+      }
+    }
+
+    const label = host.querySelector('[data-piece-label]');
+    if (label) {
+      const bits = [matName(src.material)];
+      if (src.material === 'gold') bits.push((src.karat || '18') + 'K');
+      if (src.plating && src.plating !== 'none') bits.push(platingName(src.plating));
+      if (on.accent) bits.push(cutName(stones.accentCut) + ' ' + stones.accentSize + 'mm accent');
+      if (on.full) bits.push(cutName(stones.fullCut) + ' ' + stones.fullSize + 'mm iced');
+      label.textContent = bits.join(' · ');
+    }
   }
 
   function renderSummary() {
@@ -965,6 +1327,8 @@ footer p{font-size:11px;color:var(--faint);}
       el.setAttribute('role', 'button');
       el.setAttribute('aria-pressed', el.classList.contains('selected') ? 'true' : 'false');
     });
+    wireRails($('#sets-container'));
+    drawPreview();
     $('#order-step').innerHTML = renderOrderStep();
     /* every re-render replaces the fields, so re-attach the numeric keypad */
     if (window.Numpad) window.Numpad.attach($('#sets-container') || document);
@@ -1122,6 +1486,25 @@ footer p{font-size:11px;color:var(--faint);}
     } else if (act === 'group-level') {
       const g = s.groups[gi]; g.level = target.dataset.value;
       if (g.level === '0.5') { g.stones.mode = 'none'; g.stones.accent = false; g.stones.full = false; }
+    } else if (act === 'stone-field') {
+      /* cut / size / setting / type / coverage live on the stone object of
+         whichever set or group the card belongs to */
+      const scope = target.dataset.scope || 'set';
+      const obj = stateObject(null, scope, idx, gi);
+      const field = target.dataset.field;
+      if (obj && field) {
+        if (!obj.stones) obj.stones = newStones();
+        obj.stones[field] = target.dataset.value;
+      }
+    } else if (act === 'laser-text') {
+      /* handled by the input listener below */
+    } else if (act === 'laser-mode' || act === 'laser-fill' || act === 'laser-colour') {
+      const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
+      if (obj) {
+        if (act === 'laser-mode') obj.laserMode = target.dataset.value;
+        if (act === 'laser-fill') obj.laserFill = target.dataset.value;
+        if (act === 'laser-colour') obj.laserColor = target.dataset.value;
+      }
     } else if (act === 'stone-mode') {
       const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
       const which = target.dataset.value;               // 'accent' | 'full'
@@ -1165,9 +1548,49 @@ footer p{font-size:11px;color:var(--faint);}
     if (event.key !== 'Enter' && event.key !== ' ') return;
     const svgTooth = event.target.closest('[data-tooth]');
     if (svgTooth && svgTooth.closest('.smile-map')) { event.preventDefault(); svgTooth.dispatchEvent(new MouseEvent('click', { bubbles:true })); return; }
-    const card = event.target.closest('#sets-container .opt-card[data-act], #sets-container .mode-card[data-act]');
+    const card = event.target.closest('#sets-container .opt-card[data-act], #sets-container .mode-card[data-act], #sets-container .rc[data-act]');
     if (card) { event.preventDefault(); card.click(); }
   });
+  /* Rails: fade the edge that has more content, and let a mouse drag them the
+     way a finger would (desktop users have no swipe). */
+  function paintRailFades(scope) {
+    if (!scope) return;
+    scope.querySelectorAll('.rail').forEach((rail) => {
+      const track = rail.querySelector('.rail-track');
+      if (!track) return;
+      const max = track.scrollWidth - track.clientWidth;
+      rail.classList.toggle('can-left', track.scrollLeft > 4);
+      rail.classList.toggle('can-right', max > 4 && track.scrollLeft < max - 4);
+    });
+  }
+  function wireRails(scope) {
+    if (!scope) return;
+    paintRailFades(scope);
+    scope.querySelectorAll('.rail-track').forEach((track) => {
+      if (track.dataset.railWired === '1') return;
+      track.dataset.railWired = '1';
+      track.addEventListener('scroll', () => paintRailFades(track.closest('.rail').parentNode), { passive: true });
+      let down = false, startX = 0, startL = 0, moved = 0;
+      track.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') return;      /* native scroll handles touch */
+        down = true; moved = 0; startX = e.clientX; startL = track.scrollLeft;
+      });
+      track.addEventListener('pointermove', (e) => {
+        if (!down) return;
+        const dx = e.clientX - startX;
+        moved = Math.max(moved, Math.abs(dx));
+        if (moved > 6) { track.scrollLeft = startL - dx; track.style.cursor = 'grabbing'; }
+      });
+      const end = () => { down = false; track.style.cursor = ''; };
+      track.addEventListener('pointerup', end);
+      track.addEventListener('pointerleave', end);
+      /* a drag must not also select the card it finished over */
+      track.addEventListener('click', (e) => {
+        if (moved > 8) { e.preventDefault(); e.stopPropagation(); moved = 0; }
+      }, true);
+    });
+  }
+
   document.addEventListener('click', (event) => {
     const langBtn = event.target.closest('#lang-en,#lang-ar');
     if (langBtn) { lang = langBtn.id === 'lang-ar' ? 'ar' : 'en'; render(); return; }
@@ -1207,13 +1630,72 @@ footer p{font-size:11px;color:var(--faint);}
       else state[key] = el.value;
       updateSummaryOnly(); return;
     }
+    if (el.matches('[data-act="laser-upload"]')) { handleLaserUpload(el); return; }
     if (el.matches('[data-field]')) {
       const scope = el.dataset.scope || 'set';
       const obj = stateObject(null, scope, Number(el.dataset.index), el.dataset.group == null ? null : Number(el.dataset.group));
       if (obj) obj[el.dataset.field] = el.value;
+      /* the laser text is the one field that also has to be redrawn on the
+         piece, so it takes the slow path */
+      if (el.dataset.field === 'laserText') { render(); return; }
       updateSummaryOnly();
     }
   });
+
+  /* An uploaded picture is knocked back to black & white and kept as a data
+     URL, so the renderer can drop it into the metal the same way it drops in
+     text. Doing the conversion here, once, keeps the draw loop cheap. */
+  async function handleLaserUpload(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const obj = stateObject(null, input.dataset.scope || 'set',
+      Number(input.dataset.index), input.dataset.group == null ? null : Number(input.dataset.group));
+    if (!obj) return;
+    obj.laserImageName = file.name;
+    try {
+      obj.laserImage = await toMonoBitmap(file);
+    } catch (e) {
+      obj.laserImage = null;
+    }
+    render();
+  }
+
+  /** Read an image file and return a high-contrast black & white data URL. */
+  function toMonoBitmap(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const max = 520;
+          const k = Math.min(1, max / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * k));
+          const h = Math.max(1, Math.round(img.height * k));
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          const x = c.getContext('2d');
+          if (!x) return reject(new Error('no ctx'));
+          x.drawImage(img, 0, 0, w, h);
+          const data = x.getImageData(0, 0, w, h);
+          const px = data.data;
+          /* luminance, then a mid-grey cut so the silhouette is solid */
+          for (let i = 0; i < px.length; i += 4) {
+            const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+            const a = px[i + 3];
+            const v = a < 40 ? 255 : (lum > 128 ? 255 : 0);
+            px[i] = px[i + 1] = px[i + 2] = v;
+            px[i + 3] = 255;
+          }
+          x.putImageData(data, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
   $('#code-load').addEventListener('click', () => loadCode($('#code-input').value));
   $('#code-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); loadCode($('#code-input').value); } });
   $('#mb-pdf').addEventListener('click', downloadPdf);
