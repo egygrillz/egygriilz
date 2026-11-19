@@ -13,6 +13,7 @@
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="/assets/calc-engine.js?v=5"></script>
+<script src="/assets/rates.js?v=6"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
 <script src="/assets/staff-calculator.js?v=5"></script>
 <script src="/assets/catalog.js?v=5"></script>
@@ -1856,9 +1857,11 @@ function setupCalculatorModal() {
     if (!E || typeof E.decodeCode !== 'function') { showToast('Code reader unavailable', 'error-toast'); return false; }
     const dec = E.decodeCode(raw);
     if (!dec) { showToast('Invalid code — paste an EGZ-... or EGZ1:... code', 'error-toast'); return false; }
-    const r = dec.rates || {};
-    const S = E.get();
-    if (r.gold && !Number(S.goldPrice)) E.set({ goldPrice: r.gold });
+    /* A gold rate embedded in an old code is the rate on the day it was
+       written. The live market rate always outranks it, and is re-applied
+       here so an invoice can never be built on a stale figure. */
+    const R = window.MetalRates;
+    if (R && R.goldEgpPerGram24() > 0) E.set({ goldPrice: R.goldEgpPerGram24() });
     const order = E.calculateOrder(dec.lines || [], {
       timeline: dec.timeline || 'standard',
       mold: dec.mold || 'none',

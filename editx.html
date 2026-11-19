@@ -4348,8 +4348,9 @@
     if(!raw || !raw.trim()) return;
     var dec = window.CalcEngine.decodeCode(raw.trim());
     if(!dec || !dec.lines || !dec.lines.length){ showToast('Could not read that code','error'); return; }
-    if(dec.rates && dec.rates.gold && !Number(window.CalcEngine.get().goldPrice)){
-      window.CalcEngine.set({ goldPrice: dec.rates.gold });
+    /* a rate baked into an old code must not outrank the live market */
+    if(window.MetalRates && window.MetalRates.goldEgpPerGram24() > 0){
+      window.CalcEngine.set({ goldPrice: window.MetalRates.goldEgpPerGram24() });
     }
     modalCalc = window.CalcEngine.cleanLineSpec ? window.CalcEngine.cleanLineSpec(dec.lines[0]) : dec.lines[0];
     var nmEl = document.getElementById('f-name');
@@ -4922,6 +4923,7 @@
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script data-cfasync="false" src="assets/calc-engine.js?v=5"></script>
+<script src="/assets/rates.js?v=6"></script>
 <script data-cfasync="false" src="assets/crops.js?v=3"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
 <script data-cfasync="false" src="assets/staff-calculator.js?v=5"></script>
@@ -6114,7 +6116,7 @@
       if (!raw || !raw.trim()) return;
       var dec = E.decodeCode(raw.trim());
       if (!dec) { toast('Invalid code — paste an EGZ-... or EGZ1:... code', 'error'); return; }
-      if (dec.rates && dec.rates.gold && !Number(E.get().goldPrice)) E.set({ goldPrice: dec.rates.gold });
+      if (window.MetalRates && window.MetalRates.goldEgpPerGram24() > 0) E.set({ goldPrice: window.MetalRates.goldEgpPerGram24() });
       var order = E.calculateOrder(dec.lines || [], {
         timeline: dec.timeline || 'standard',
         mold: dec.mold || 'none',

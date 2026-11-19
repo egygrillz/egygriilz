@@ -10,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="/assets/calc-engine.js?v=5"></script>
+<script src="/assets/rates.js?v=6"></script>
     <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
 <script src="/assets/staff-calculator.js?v=5"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -2645,16 +2646,16 @@ Custom Dental Jewelry, Cairo`;
             setField("timeline", p.get("tl"));
             setField("mold", p.get("md"));
 
-            // ---- gold rate: the studio's saved rate wins, but flag any mismatch ----
+            // ---- gold rate: the live market rate is the only rate ----
+            // An old intake link may still carry a client-entered "gr"; it is
+            // never used to price, only mentioned so staff can explain the
+            // difference if the client queries it.
             const clientGold = parseFloat(p.get("gr"));
             const noteBits = [];
             if (material === "gold" && clientGold > 0) {
-                const current = parseFloat(calc.getField("goldPrice"));
-                if (!current) {
-                    calc.setField("goldPrice", clientGold);
-                    noteBits.push(`Gold rate ${clientGold} EGP/g taken from the client — verify.`);
-                } else if (current !== clientGold) {
-                    noteBits.push(`Client stated gold at ${clientGold} EGP/g; using the studio rate ${current} EGP/g — confirm with the client.`);
+                const live = (window.MetalRates && window.MetalRates.goldEgpPerGram24()) || 0;
+                if (live > 0 && Math.abs(live - clientGold) > Math.max(50, live * 0.02)) {
+                    noteBits.push(`Client stated gold at ${Math.round(clientGold)} EGP/g; priced at today's live rate ${Math.round(live)} EGP/g.`);
                 }
             }
             if (p.get("ra") || p.get("rf")) noteBits.push("Client-stated stone rate — verify before quoting.");

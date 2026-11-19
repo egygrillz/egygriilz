@@ -487,10 +487,10 @@
                 </select>
               </div>
               <div>
-                <label class="sc-lbl">Today's Gold EGP/g</label>
-                <input type="number" class="sc-input" data-sc="goldPrice" step="0.01" inputmode="decimal" placeholder="Type today's rate here">
+                <label class="sc-lbl">Live Gold EGP/g (24K)</label>
+                <input type="text" class="sc-input" data-sc="goldPrice" readonly tabindex="-1" aria-readonly="true" placeholder="Loading live rate…">
               </div>
-              <div class="sc-faint" style="grid-column:span 2">Loaded from the studio rates and saved to the database for every device. You can still edit it here.</div>
+              <div class="sc-faint" style="grid-column:span 2" data-sc="goldRateNote">From the live market feed — USD per ounce × USD/EGP. Updates itself; never typed.</div>
             </div>
 
             <div>
@@ -845,7 +845,6 @@
       ['plating', 'enamel', 'engraving', 'anodize', 'karat'].forEach((k) => {
         if (el(k)) el(k).addEventListener('change', syncLive);
       });
-      if (el('goldPrice')) el('goldPrice').addEventListener('input', syncLive);
       if (el('name')) el('name').addEventListener('input', syncLive);
 
       if (el('toggleGuide')) el('toggleGuide').addEventListener('click', toggleGuide);
@@ -1037,8 +1036,17 @@
 
     function autoFillGoldPrice() {
       if (!el('goldPrice')) return;
-      const r = getRate('gold');
-      if (!el('goldPrice').value && r) el('goldPrice').value = r;
+      /* Always the live number — the field is a readout, not an input. */
+      const R = window.MetalRates;
+      const live = R ? R.goldEgpPerGram24() : 0;
+      const r = live > 0 ? live : getRate('gold');
+      if (r > 0) el('goldPrice').value = Math.round(r).toLocaleString('en-EG');
+      const note = el('goldRateNote');
+      if (note) {
+        note.textContent = live > 0
+          ? 'Live market rate — ' + Math.round(live).toLocaleString('en-EG') + ' EGP/g, ' + (R ? R.statusLine() : '') + '. Updates itself; never typed.'
+          : 'From the live market feed — waiting for the rate.';
+      }
     }
 
     function autoFillStone(which) {
@@ -1230,7 +1238,11 @@
       if (!teeth || teeth < 1 || teeth > 16) return { error: 'Teeth must be between 1 and 16' };
       if (material === 'gold') {
         spec.karat = el('karat').value;
-        const gp = parseFloat(el('goldPrice').value);
+        const gp = (function () {
+          const R = window.MetalRates;
+          const live = R ? R.goldEgpPerGram24() : 0;
+          return live > 0 ? live : parseFloat(String(el('goldPrice').value).replace(/,/g, ''));
+        })();
         if (!gp || gp <= 0) return { needRates: 'GOLD', error: "Enter today's gold EGP/g for the gold line" };
         spec.goldPrice = gp;
       }
@@ -2122,8 +2134,10 @@
       ['materialBase.titanium', 'Titanium'],
       ['materialBase.silver', 'Sterling Silver 925'],
     ] },
-    { id: 'gold', title: 'Gold', keys: [
-      ['goldPrice', "Today's 24K gold rate (EGP/g)"],
+    { id: 'gold', title: 'Gold — the rate itself is live', keys: [
+      /* goldPrice is deliberately absent: it is fetched from the market and
+         written over on every refresh, so offering an input here would only
+         mislead whoever typed into it. */
       ['goldCastFee', 'Cast fee per tooth'],
       ['goldWeightFactor', 'Weight factor'],
       ['goldGramsPerTooth.10', 'Grams / tooth — 10K'],

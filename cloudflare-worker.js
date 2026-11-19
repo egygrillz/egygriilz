@@ -1975,7 +1975,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
     case '/rates': {
       const p = await loadPricingSettings(env, fetchImpl);
       const lines = ['CALCULATOR — LIVE RATES', LINE];
-      lines.push(`Gold rate:   ${p.goldPrice ? num(p.goldPrice) + ' EGP/g' : 'not set (entered per quote)'}`);
+      lines.push(`Gold rate:   ${p.goldPrice ? num(p.goldPrice) + ' EGP/g 24K (live market)' : 'unavailable — feeds unreachable'}`);
       if (p.karatWeights && Object.keys(p.karatWeights).length) {
         const kw = Object.entries(p.karatWeights).map(([k, v]) => `${k}k=${v}g`).join(' · ');
         lines.push(`Gold wt/t:   ${kw}`);
@@ -2745,11 +2745,43 @@ async function findMouldOrder(env, needle, fetchImpl = fetch) {
   return { ok: false, error: 'not-found' };
 }
 
+/**
+ * The market pair, from the two free feeds. Used by /api/rates and by the
+ * Telegram bot's /rates so the bot can never print a stored, stale figure.
+ */
+async function fetchLiveRates() {
+  const GRAMS_PER_OZT = 31.1034768;
+  const inRange = (n, lo, hi) => Number.isFinite(n) && n >= lo && n <= hi;
+  const getJson = async (u) => {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const r = await fetch(u, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+      if (!r.ok) throw new Error(u + ' → HTTP ' + r.status);
+      return await r.json();
+    } finally { clearTimeout(t); }
+  };
+  const [goldDoc, fxDoc] = await Promise.all([
+    getJson('https://api.gold-api.com/price/XAU'),
+    getJson('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json'),
+  ]);
+  const goldUsdPerOz = Number(goldDoc && (goldDoc.price != null ? goldDoc.price : goldDoc.ask));
+  const usdEgp = Number(fxDoc && fxDoc.usd && fxDoc.usd.egp);
+  if (!inRange(goldUsdPerOz, 100, 20000)) throw new Error('implausible gold price ' + goldUsdPerOz);
+  if (!inRange(usdEgp, 1, 500)) throw new Error('implausible USD/EGP ' + usdEgp);
+  const egpPerGram24 = (goldUsdPerOz / GRAMS_PER_OZT) * usdEgp;
+  return { goldUsdPerOz, usdEgp, egpPerGram24, at: Date.now() };
+}
+
 /** live calculator rates, in a shape the bot can print */
 async function loadPricingSettings(env, fetchImpl = fetch) {
   const p = await loadPricing(env, fetchImpl);
+  /* the market always wins over whatever was stored; if the feeds are down we
+     fall back to the stored figure rather than failing the whole command */
+  let live = 0;
+  try { live = (await fetchLiveRates()).egpPerGram24; } catch (e) { live = 0; }
   return {
-    goldPrice: Number(p && p.goldPrice) || 0,
+    goldPrice: Math.round(live > 0 ? live : (Number(p && p.goldPrice) || 0)),
     karatWeights: (p && (p.goldGramsPerTooth || p.karatWeights)) || { '10': 0.35, '14': 0.35, '18': 0.34, '21': 0.34, '22': 0.33 },
     designPct: Object.assign({ '0.5': 0, '1': 0, '2': 10, '3': 15, '4': 25, '5': 40, '6': 60 }, (p && p.designPct) || {}),
     materialBase: Object.assign({ chrome: 1000, titanium: 2800, silver: 1600 }, (p && p.materialBase) || {}),
@@ -3732,6 +3764,88 @@ export default {
 
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) });
 
+    /* ── live metal rates ──────────────────────────────────────────────────
+       Gold is quoted in USD per troy ounce and the studio bills in EGP, so
+       every price on the site depends on this pair. Serving it from the
+       Worker rather than the browser means: one server-side fetch instead of
+       two (with CORS on a third party we do not control), Cloudflare's edge
+       cache absorbing the traffic, and the correct conversion done once, in
+       one place. `?refresh=1` bypasses the edge cache. */
+    if (url.pathname === '/api/rates') {
+      const RATE_CACHE_S = 600;                    /* 10 minutes at the edge */
+      const force = url.searchParams.get('refresh') === '1';
+      const cache = caches.default;
+      const cacheKey = new Request('https://egygriilz.internal/rates/v1', { method: 'GET' });
+
+      if (!force) {
+        const hit = await cache.match(cacheKey);
+        if (hit) {
+          const body = await hit.json().catch(() => null);
+          if (body && body.ok) return json(body, 200, { origin });
+        }
+      }
+
+      const GRAMS_PER_OZT = 31.1034768;
+      const inRange = (n, lo, hi) => Number.isFinite(n) && n >= lo && n <= hi;
+
+      const getJson = async (u) => {
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 8000);
+        try {
+          const r = await fetch(u, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+          if (!r.ok) throw new Error(u + ' → HTTP ' + r.status);
+          return await r.json();
+        } finally { clearTimeout(t); }
+      };
+
+      try {
+        const [goldDoc, fxDoc] = await Promise.all([
+          getJson('https://api.gold-api.com/price/XAU'),
+          getJson('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json'),
+        ]);
+        const goldUsdPerOz = Number(goldDoc && (goldDoc.price != null ? goldDoc.price : goldDoc.ask));
+        const usdEgp = Number(fxDoc && fxDoc.usd && fxDoc.usd.egp);
+
+        /* A feed returning 0 or nonsense must not reach a price. */
+        if (!inRange(goldUsdPerOz, 100, 20000)) throw new Error('implausible gold price ' + goldUsdPerOz);
+        if (!inRange(usdEgp, 1, 500)) throw new Error('implausible USD/EGP ' + usdEgp);
+
+        const egpPerGram24 = (goldUsdPerOz / GRAMS_PER_OZT) * usdEgp;
+        const body = {
+          ok: true,
+          goldUsdPerOz,
+          usdEgp,
+          gramsPerOz: GRAMS_PER_OZT,
+          egpPerGram24: Math.round(egpPerGram24 * 100) / 100,
+          karat: {
+            '24': Math.round(egpPerGram24 * 100) / 100,
+            '22': Math.round(egpPerGram24 * (22 / 24) * 100) / 100,
+            '21': Math.round(egpPerGram24 * (21 / 24) * 100) / 100,
+            '18': Math.round(egpPerGram24 * (18 / 24) * 100) / 100,
+            '14': Math.round(egpPerGram24 * (14 / 24) * 100) / 100,
+            '10': Math.round(egpPerGram24 * (10 / 24) * 100) / 100,
+          },
+          at: Date.now(),
+        };
+
+        const put = new Response(JSON.stringify(body), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=' + RATE_CACHE_S },
+        });
+        if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(cacheKey, put.clone()));
+        return json(body, 200, { origin });
+      } catch (err) {
+        /* The last good copy is still far more useful than an error page. */
+        const stale = await cache.match(cacheKey);
+        if (stale) {
+          const body = await stale.json().catch(() => null);
+          if (body && body.ok) {
+            return json(Object.assign({}, body, { stale: true, error: String((err && err.message) || err) }), 200, { origin });
+          }
+        }
+        return json({ ok: false, error: String((err && err.message) || err) }, 503, { origin });
+      }
+    }
+
     if (url.pathname === '/api/health') {
       return json({
         ok: true,
@@ -3746,6 +3860,7 @@ export default {
         },
         endpoints: {
           health: '/api/health',
+          rates: 'GET /api/rates',
           telegram_digest: '/api/remind',
           telegram_bot: 'POST /api/telegram',
           pdf: 'POST /api/pdf',
