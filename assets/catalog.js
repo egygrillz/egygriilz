@@ -213,6 +213,38 @@
     return p;
   }
 
+  /* ── WHICH PUBLIC PAGE IS A DESIGN ON? ─────────────────────────────────
+   *  A design can sit on more than one page: /editx stores the list in
+   *  `pages` (array) and keeps `page` (string) as the legacy primary. A
+   *  design saved before either existed falls back to its own category.
+   *
+   *  Every public page uses these two helpers, so adding or removing a page
+   *  in /editx affects exactly the same set of designs everywhere.
+   * ──────────────────────────────────────────────────────────────────── */
+  function pagesOf(item) {
+    if (!item) return [];
+    var out = [];
+    var push = function (v) {
+      var s = String(v == null ? '' : v).trim();
+      if (s && out.indexOf(s) === -1) out.push(s);
+    };
+    var explicit = false;
+    if (Array.isArray(item.pages)) { explicit = true; item.pages.forEach(push); }
+    if (Object.prototype.hasOwnProperty.call(item, 'page')) { explicit = true; push(item.page); }
+    /* Only designs saved before page assignment existed fall back to their
+       category. An explicit empty list means "on no page" and must stay
+       empty — otherwise un-assigning a design never hides it. */
+    if (!explicit) push(item.category);
+    return out;
+  }
+
+  /** True when the design is published on `pageKey`. */
+  function onPage(item, pageKey) {
+    var key = String(pageKey == null ? '' : pageKey).trim();
+    if (!key) return false;
+    return pagesOf(item).indexOf(key) !== -1;
+  }
+
   /**
    * Public price display helper respecting per-design `showPrice` (Yes / No) set in /editx.
    * When `item.showPrice === false` (No), always shows "Contact for Quotation" → /contact.
@@ -249,6 +281,8 @@
     merge: merge,
     mediaPath: mediaPath,
     priceInfo: priceInfo,
+    pagesOf: pagesOf,
+    onPage: onPage,
     invalidate: function (force) {
       try { localStorage.removeItem(OVERLAY_KEY); } catch (e) {}
       try { sessionStorage.removeItem(SEED_SESSION_KEY); } catch (e) {}

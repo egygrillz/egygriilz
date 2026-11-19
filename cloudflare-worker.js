@@ -661,12 +661,31 @@ async function staffToken(env, fetchImpl = fetch) {
   }
 }
 
-/** Headers for a Firestore call — signed when we can, anonymous otherwise. */
+/** Headers for a Firestore call — signed when we can, anonymous otherwise.
+ *
+ *  `env.REQ_TOKEN` carries the browser's Firebase ID token when the caller
+ *  (the /editx dashboard) sends one. That way a read is made *as the signed-in
+ *  staff member*, so Firestore rules that name staff UIDs work even when
+ *  STAFF_EMAIL / STAFF_PASSWORD are not configured on the Worker.
+ */
 async function fsHeaders(env, fetchImpl = fetch) {
-  const token = await staffToken(env, fetchImpl);
+  const token = (env && env.REQ_TOKEN) || await staffToken(env, fetchImpl);
   const h = { 'Content-Type': 'application/json' };
   if (token) h.Authorization = 'Bearer ' + token;
   return h;
+}
+
+/** A copy of env that reads Firestore as the caller's own Firebase user.
+ *  Nothing is persisted — the token only lives for this request. */
+function envAsCaller(env, req) {
+  let token = '';
+  try {
+    const raw = (req && req.headers && req.headers.get('Authorization')) || '';
+    const m = /^Bearer\s+(.+)$/i.exec(raw.trim());
+    if (m) token = m[1].trim();
+  } catch (e) {}
+  if (!token) return env;
+  return Object.assign({}, env, { REQ_TOKEN: token });
 }
 
 /* ─────────────────────────── firestore ─────────────────────────── */
@@ -3087,7 +3106,10 @@ function cors(origin) {
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Pdf-Key, X-Moulds-Key, X-Cron-Key',
+    /* Authorization carries the dashboard's Firebase ID token; without it in
+       this list the browser blocks the request at the preflight and the
+       Worker never sees the staff member's credentials. */
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Pdf-Key, X-Moulds-Key, X-Cron-Key',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
@@ -3963,12 +3985,16 @@ export default {
       if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
       const key = env.MOULDS_KEY || '';
       const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
-      if (key && given !== key) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      /* A signed-in dashboard may read with its own Firebase ID token instead
+         of the MOULDS_KEY — that is what /editx sends. */
+      const callerEnv = envAsCaller(env, req);
+      const hasCaller = !!callerEnv.REQ_TOKEN;
+      if (key && given !== key && !hasCaller) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
 
       const limit = Math.max(1, Math.min(200, parseInt(url.searchParams.get('limit') || '60', 10) || 60));
       const status = clean(url.searchParams.get('status') || '', 20).toLowerCase();
       const force = url.searchParams.get('force') === '1' || url.searchParams.get('force') === 'true';
-      const r = await fetchMouldOrders(env, { limit, status: status || 'all', force }, env.fetchImpl || fetch)
+      const r = await fetchMouldOrders(callerEnv, { limit, status: status || 'all', force }, env.fetchImpl || fetch)
         .catch(e => ({ ok: false, error: String(e), orders: [] }));
       if (!r.ok) {
         const err = r.error || 'firestore';
@@ -3983,7 +4009,8 @@ export default {
       if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
       const key = env.MOULDS_KEY || '';
       const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
-      if (key && given !== key) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      const callerEnv = envAsCaller(env, req);
+      if (key && given !== key && !callerEnv.REQ_TOKEN) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
 
       let body;
       try { body = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
@@ -3991,7 +4018,7 @@ export default {
       const paymentLink = clean(body.paymentLink, 500);
       if (!id) return json({ ok: false, error: 'missing-id' }, 422, { origin });
 
-      const r = await approveMouldOrder(env, id, paymentLink, env.fetchImpl || fetch)
+      const r = await approveMouldOrder(callerEnv, id, paymentLink, env.fetchImpl || fetch)
         .catch(e => ({ ok: false, error: String(e) }));
       if (!r.ok) {
         const status = r.error === 'not-found' ? 404
@@ -4013,7 +4040,8 @@ export default {
       if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
       const key = env.MOULDS_KEY || '';
       const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
-      if (key && given !== key) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      const callerEnv = envAsCaller(env, req);
+      if (key && given !== key && !callerEnv.REQ_TOKEN) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
 
       let body;
       try { body = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
@@ -4025,7 +4053,7 @@ export default {
       const nowIso = new Date().toISOString();
       const fields = { status, statusUpdatedAt: nowIso };
       if (status === 'delivered') fields.deliveredAt = nowIso;
-      const patch = await saveMouldOrder(env, id, fields, env.fetchImpl || fetch);
+      const patch = await saveMouldOrder(callerEnv, id, fields, env.fetchImpl || fetch);
       return json({ ok: patch.ok, status, error: patch.ok ? undefined : patch.error }, patch.ok ? 200 : 502, { origin });
     }
 

@@ -103,7 +103,11 @@
   padding:6px 10px;background:#fff;cursor:pointer;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
 .sc-chip:hover{border-color:#949494;}
 .sc-chip.on{border-color:#000;box-shadow:inset 0 0 0 1px #000;}
+.sc-chip.sc-chip-on{background:#000;color:#fff;border-color:#000;box-shadow:none;}
+.sc-chip.sc-chip-on .sc-chip-s{color:#d8d8d8;}
 .sc-chip-t{display:block;font-size:11px;font-weight:600;line-height:1.25;}
+
+@media (max-width:520px){.sc-pad{left:10px;right:10px;bottom:10px;width:auto;}}
 .sc-chip-s{display:block;font-size:9px;color:#949494;line-height:1.25;}
 .sc-guide{display:grid;gap:8px;margin-top:8px;}
 .sc-guide-card{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fff;}
@@ -209,7 +213,8 @@
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-  const money = (n) => (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-US');
+  /* Every figure the studio reads or sends is a whole EGP — no decimals. */
+  const money = (n) => Math.round(Number(n) || 0).toLocaleString('en-US');
   const number = (n) => Number(n) || 0;
   const engine = () => global.CalcEngine;
   const labels = () => (engine() ? engine().LABELS : {});
@@ -280,6 +285,8 @@
       rateKind: null,
       rateBox: null,
       unsubEngine: null,
+      stoneAccent: false,   /* accent stones on the tooth group being edited */
+      stoneFull: false,     /* full iced cover on the same tooth group */
     };
 
     host.innerHTML = renderShell();
@@ -481,7 +488,7 @@
               </div>
               <div>
                 <label class="sc-lbl">Today's Gold EGP/g</label>
-                <input type="number" class="sc-input" data-sc="goldPrice" placeholder="Type today's rate here">
+                <input type="number" class="sc-input" data-sc="goldPrice" step="0.01" inputmode="decimal" placeholder="Type today's rate here">
               </div>
               <div class="sc-faint" style="grid-column:span 2">Loaded from the studio rates and saved to the database for every device. You can still edit it here.</div>
             </div>
@@ -504,12 +511,19 @@
 
             <div>
               <label class="sc-lbl">Stones</label>
-              <select class="sc-select" data-sc="stones">
-                <option value="none">None</option>
-                <option value="accent">Accent (per stone)</option>
-                <option value="fulliced">Full iced (per tooth)</option>
-              </select>
+              <!-- A tooth can be iced out AND carry accent stones at the same
+                   time, so these are two independent switches, not a choice. -->
+              <div class="sc-wrap" data-sc="stonesToggles">
+                <button type="button" class="sc-chip" data-sc="accentToggle" data-stone="accent">
+                  <span class="sc-chip-t">Accent stones</span><span class="sc-chip-s">per stone</span>
+                </button>
+                <button type="button" class="sc-chip" data-sc="fullToggle" data-stone="fulliced">
+                  <span class="sc-chip-t">Full iced</span><span class="sc-chip-s">per tooth</span>
+                </button>
+              </div>
+              <button type="button" class="sc-link sc-hidden" style="margin-top:6px" data-sc="clearStones">Clear stones</button>
               <p class="sc-faint sc-hidden" style="margin-top:4px" data-sc="noStonesNote">Chrome and Titanium don't take stones.</p>
+              <p class="sc-faint" style="margin-top:4px">Both can be on at once — e.g. a tooth iced out with a few accent stones on top.</p>
             </div>
 
             <div class="sc-subcard sc-hidden" data-sc="accentWrap">
@@ -750,6 +764,30 @@
       if (el('teeth')) el('teeth').addEventListener('input', syncLive);
       if (el('level')) el('level').addEventListener('change', () => { renderLevelStrip(); onStonesChange(); syncLive(); });
       if (el('stones')) el('stones').addEventListener('change', () => { onStonesChange(); syncLive(); });
+      if (el('accentToggle')) el('accentToggle').addEventListener('click', () => {
+        const f = stoneFlags();
+        setStoneFlag('accent', !f.accent);
+        onStonesChange();
+        if (stoneFlags().accent && (el('accentType').value === 'labgrown' || el('accentType').value === 'natural')) {
+          onAccentTypeChange(true);
+        }
+        syncLive();
+      });
+      if (el('fullToggle')) el('fullToggle').addEventListener('click', () => {
+        const f = stoneFlags();
+        setStoneFlag('full', !f.full);
+        onStonesChange();
+        if (stoneFlags().full && (el('fullType').value === 'labgrown' || el('fullType').value === 'natural')) {
+          onFullTypeChange(true);
+        }
+        syncLive();
+      });
+      if (el('clearStones')) el('clearStones').addEventListener('click', () => {
+        setStoneFlag('accent', false);
+        setStoneFlag('full', false);
+        onStonesChange();
+        syncLive();
+      });
       if (el('accentType')) el('accentType').addEventListener('change', () => { onAccentTypeChange(true); syncLive(); });
       if (el('accentCount')) el('accentCount').addEventListener('input', syncLive);
       if (el('accentSetting')) el('accentSetting').addEventListener('change', syncLive);
@@ -831,6 +869,42 @@
 
     /* ───────────────────────── visibility ───────────────────────── */
 
+    /* Stones are two independent switches: a tooth group can be iced out and
+       still have accent stones on it. `stoneFlags` holds the two answers. */
+    function stoneFlags() {
+      const f = { accent: false, full: false };
+      const at = el('accentToggle');
+      const ft = el('fullToggle');
+      if (at) f.accent = at.classList.contains('sc-chip-on') || at.getAttribute('aria-pressed') === 'true';
+      if (ft) f.full = ft.classList.contains('sc-chip-on') || ft.getAttribute('aria-pressed') === 'true';
+      return f;
+    }
+
+    function setStoneFlag(which, on) {
+      const btn = which === 'accent' ? el('accentToggle') : el('fullToggle');
+      const next = !!on;
+      if (btn) {
+        btn.classList.toggle('sc-chip-on', next);
+        btn.classList.toggle('on', next);
+        btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+      }
+      S.stoneAccent = which === 'accent' ? next : !!S.stoneAccent;
+      S.stoneFull = which === 'full' ? next : !!S.stoneFull;
+    }
+
+    function syncStoneChips() {
+      ['accent', 'full'].forEach((which) => {
+        const btn = which === 'accent' ? el('accentToggle') : el('fullToggle');
+        if (!btn) return;
+        const on = which === 'accent' ? !!S.stoneAccent : !!S.stoneFull;
+        btn.classList.toggle('sc-chip-on', on);
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      const clear = el('clearStones');
+      if (clear) clear.classList.toggle('sc-hidden', !(S.stoneAccent || S.stoneFull));
+    }
+
     function syncVisibility() {
       const material = el('material') ? el('material').value : 'chrome';
       const isGold = material === 'gold';
@@ -845,6 +919,15 @@
         if (noStones) { stones.value = 'none'; stones.disabled = true; }
         else stones.disabled = false;
       }
+      ['accentToggle', 'fullToggle'].forEach((k) => {
+        const b = el(k);
+        if (!b) return;
+        b.disabled = !!noStones;
+        b.style.opacity = noStones ? '.45' : '';
+        b.style.pointerEvents = noStones ? 'none' : '';
+      });
+      if (noStones) { S.stoneAccent = false; S.stoneFull = false; }
+      syncStoneChips();
       onStonesChange();
       if (isGold) autoFillGoldPrice();
     }
@@ -855,16 +938,17 @@
     }
 
     function onStonesChange() {
-      const mode = el('stones') ? el('stones').value : 'none';
-      if (el('accentWrap')) el('accentWrap').classList.toggle('sc-hidden', mode !== 'accent');
-      if (el('fullWrap')) el('fullWrap').classList.toggle('sc-hidden', mode !== 'fulliced');
-      if (mode === 'accent') autoFillStone('accent');
-      if (mode === 'fulliced') {
+      const f = stoneFlags();
+      if (el('accentWrap')) el('accentWrap').classList.toggle('sc-hidden', !f.accent);
+      if (el('fullWrap')) el('fullWrap').classList.toggle('sc-hidden', !f.full);
+      if (f.accent) autoFillStone('accent');
+      if (f.full) {
         const isBars = el('level') && el('level').value === '0.5';
         if (el('fullBarsNote')) el('fullBarsNote').classList.toggle('sc-hidden', !isBars);
         if (el('fullFields')) el('fullFields').classList.toggle('sc-hidden', !!isBars);
         if (!isBars) autoFillStone('full');
       }
+      syncStoneChips();
     }
 
     function onAccentTypeChange(user) {
@@ -1048,6 +1132,35 @@
     }
     showNoticeSlot();
 
+    /* ───────────────────── numeric keyboards ─────────────────────
+       Staff type teeth counts, stone counts and rates on a phone all day.
+       `inputmode="numeric"` gives the compact number pad instead of the full
+       letter keyboard; decimals keep a decimal point where it belongs. */
+    function applyNumericInputModes() {
+      host.querySelectorAll('input[type="number"]').forEach((inp) => {
+        const step = String(inp.getAttribute('step') || '').toLowerCase();
+        const decimal = step === 'any' || step === '0.01' || step === '0.1';
+        /* an author-specified inputmode wins, but a numeric one without a
+           decimal step is still treated as a whole number */
+        if (!inp.hasAttribute('inputmode')) {
+          inp.setAttribute('inputmode', decimal ? 'decimal' : 'numeric');
+        }
+        inp.setAttribute('enterkeyhint', 'done');
+        inp.setAttribute('autocomplete', 'off');
+      });
+      if (global.Numpad) global.Numpad.attach(host);
+    }
+    applyNumericInputModes();
+
+    if (global.Numpad) global.Numpad.bindGlobalClose();
+    /* re-rendered lists (services, mixed groups) need the same treatment */
+    const _renderServices = renderServices;
+    renderServices = function () { _renderServices.apply(this, arguments); applyNumericInputModes(); };
+    const _renderMixedGroups = renderMixedGroups;
+    renderMixedGroups = function () { _renderMixedGroups.apply(this, arguments); applyNumericInputModes(); };
+    const _renderLines = renderLines;
+    renderLines = function () { _renderLines.apply(this, arguments); applyNumericInputModes(); };
+
     /* ───────────────────── editor ⇄ line (uniform & mixed-teeth) ───────────────────── */
 
     function readGroupFields() {
@@ -1055,7 +1168,7 @@
       const material = el('material').value;
       const teeth = parseInt(el('teeth').value, 10);
       const level = el('level').value;
-      const stones = material === 'chrome' || material === 'titanium' ? 'none' : el('stones').value;
+      const flags = (material === 'chrome' || material === 'titanium') ? { accent: false, full: false } : stoneFlags();
       const spec = {
         material,
         teeth,
@@ -1074,7 +1187,9 @@
         if (!gp || gp <= 0) return { needRates: 'GOLD', error: "Enter today's gold EGP/g for the gold line" };
         spec.goldPrice = gp;
       }
-      if (stones === 'accent') {
+      /* Accent stones and full iced cover are independent — both are read, so
+         a tooth that is iced out can also carry accent stones. */
+      if (flags.accent) {
         const count = parseInt(el('accentCount').value, 10) || 0;
         if (count < 1) return { error: 'Accent stones: count must be at least 1' };
         const type = el('accentType').value;
@@ -1085,7 +1200,8 @@
           if (price === null || isNaN(price) || price < 0) return { needRates: 'LAB_ACCENT', error: "Enter today's rate for Lab-Grown/Natural accent stones" };
         }
         spec.accent = { count, type, setting, price, customPrice: price };
-      } else if (stones === 'fulliced') {
+      }
+      if (flags.full) {
         if (level === '0.5') {
           spec.full = { bars: true };
         } else {
@@ -1159,8 +1275,9 @@
         if (el('karat')) el('karat').value = String(grp.karat || '18');
         if (el('goldPrice')) el('goldPrice').value = grp.goldPrice || getRate('gold') || '';
       }
-      const mode = grp.accent ? 'accent' : (grp.full ? 'fulliced' : 'none');
-      if (el('stones')) el('stones').value = mode;
+      setStoneFlag('accent', !!grp.accent);
+      setStoneFlag('full', !!grp.full);
+      if (el('stones')) el('stones').value = grp.accent ? 'accent' : (grp.full ? 'fulliced' : 'none');
       onStonesChange();
       if (grp.accent) {
         if (el('accentCount')) el('accentCount').value = grp.accent.count || 1;
@@ -1268,7 +1385,10 @@
       }
       if (el('groupLabel')) el('groupLabel').value = '';
       // Reset stones for next group while keeping same material/karat/plating for fast entry
-      if (el('stones')) { el('stones').value = 'none'; onStonesChange(); }
+      if (el('stones')) el('stones').value = 'none';
+      setStoneFlag('accent', false);
+      setStoneFlag('full', false);
+      onStonesChange();
       syncMixedUi();
       renderMixedGroups();
       syncLive();
@@ -1649,14 +1769,16 @@
             const materialLine = l.material === 'gold'
               ? 'Gold ' + l.karat + 'K @ ' + l.goldPrice + ' EGP/g → base/tooth = ' + money(l.base) + ' EGP'
               : ((L.material || {})[l.material] || l.material) + ' → base/tooth = ' + money(l.base) + ' EGP';
-            let stoneLine = 'None';
+            const stoneBits = [];
             if (l.accent) {
-              stoneLine = 'Accent × ' + l.accent.count + ' (' + ((L.accentType || {})[l.accent.type] || '') + ' ' + money(l.accentUnit) + ' + ' + ((L.setting || {})[l.accent.setting] || '') + ' ' + l.settingUnit + ') = ' + money(l.stoneCost) + ' EGP';
-            } else if (l.full && l.full.bars) {
-              stoneLine = 'Full iced on Bars: ' + l.teeth + ' × ' + (c.barsStonesPerTooth || 400) + ' = ' + money(l.stoneCost) + ' EGP';
-            } else if (l.full) {
-              stoneLine = 'Full iced × ' + l.teeth + ' (' + ((L.accentType || {})[l.full.type] || '') + ' ' + money(l.fullUnit) + ' + ' + ((L.coverage || {})[l.full.coverage] || '') + ' ' + l.coverageUnit + ') = ' + money(l.stoneCost) + ' EGP';
+              stoneBits.push('Accent × ' + l.accent.count + ' (' + ((L.accentType || {})[l.accent.type] || '') + ' ' + money(l.accentUnit) + ' + ' + ((L.setting || {})[l.accent.setting] || '') + ' ' + l.settingUnit + ') = ' + money(l.accentCost !== undefined ? l.accentCost : l.stoneCost) + ' EGP');
             }
+            if (l.full && l.full.bars) {
+              stoneBits.push('Full iced on Bars: ' + l.teeth + ' × ' + (c.barsStonesPerTooth || 400) + ' = ' + money(l.fullCost !== undefined ? l.fullCost : l.stoneCost) + ' EGP');
+            } else if (l.full) {
+              stoneBits.push('Full iced × ' + l.teeth + ' (' + ((L.accentType || {})[l.full.type] || '') + ' ' + money(l.fullUnit) + ' + ' + ((L.coverage || {})[l.full.coverage] || '') + ' ' + l.coverageUnit + ') = ' + money(l.fullCost !== undefined ? l.fullCost : l.stoneCost) + ' EGP');
+            }
+            const stoneLine = stoneBits.length ? stoneBits.join('  +  ') + '  →  ' + money(l.stoneCost) + ' EGP' : 'None';
             out.push('  Material: ' + materialLine + ' → ' + money(l.materialTotal) + ' EGP');
             out.push('  Design: ' + (l.level === '0.5' ? '0 (Bars)' : '+' + l.designPct + '% = ' + money(l.designCost) + ' EGP'));
             out.push('  Stones: ' + stoneLine);

@@ -166,7 +166,7 @@
 </style>
   <link rel="canonical" href="https://egygrillz.com/golds">
   <script src="/assets/set-visibility.js?v=3"></script>
-  <script src="/assets/catalog.js?v=4"></script>
+  <script src="/assets/catalog.js?v=5"></script>
   <script src="/assets/crops.js?v=3"></script>
 </head>
 <body>
@@ -267,7 +267,14 @@
     document.querySelector('.menu-toggle').addEventListener('click',()=>{ document.querySelector('.main-nav').classList.toggle('active'); document.body.classList.toggle('menu-open'); });
 
     function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-    function onThisPage(x){ const p=(x&&Object.prototype.hasOwnProperty.call(x,'page'))?x.page:(x&&x.category); return p===PAGE_KEY; }
+    /* Catalogue.onPage understands designs that live on several pages at
+       once (`pages: []`), so moving a design in /editx is reflected here
+       immediately — including when it is removed from this page. */
+    function onThisPage(x){
+      if (window.Catalog && typeof window.Catalog.onPage === 'function') return window.Catalog.onPage(x, PAGE_KEY);
+      const p = x && (Array.isArray(x.pages) ? x.pages[0] : (Object.prototype.hasOwnProperty.call(x,'page') ? x.page : x.category));
+      return p === PAGE_KEY;
+    }
     function mediaPath(item,file){ return (window.Catalog&&window.Catalog.mediaPath)?window.Catalog.mediaPath(item,file):('assets/images/'+(item.category||'sets')+'/'+(item.folder||item.id)+'/'+file); }
     function isVideoName(n){ return /\.(mp4|mov|webm|ogg)$/i.test(String(n||'')); }
 

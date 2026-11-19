@@ -1,0 +1,129 @@
+rules_version = '2';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  EGYGRILLZ — Firestore security rules
+ *  ---------------------------------------------------------------------------
+ *  The dashboard (/editx) and the Cloudflare Worker both sign in as a real
+ *  Firebase Auth user. This file is the single place that decides who may
+ *  read what.
+ *
+ *  Deploy it with:
+ *      firebase deploy --only firestore:rules
+ *  …or paste the whole file into
+ *      Firebase console → Firestore Database → Rules → Publish
+ *
+ *  The one rule people trip over is `mould_orders`: it holds client phone
+ *  numbers and addresses, so anonymous reads are refused. It is readable by
+ *  staff only — the studio account must therefore appear in the staff list
+ *  below (or be granted the `staff` custom claim).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function signedIn() {
+  return request.auth != null;
+}
+
+/* Staff = custom claim `staff: true`, OR one of the studio email addresses
+   below, OR one of the extra UIDs.
+
+   Email is listed first on purpose: the dashboard signs in with a real
+   Firebase Auth account, so the studio address is already in the token and
+   nothing has to be looked up in the console. Add or remove studio accounts
+   in this one list and redeploy.
+
+   `request.auth.token.email` is set by Firebase Auth and cannot be forged by
+   the client, so this is as strong as a UID list. */
+function staffEmails() {
+  return [
+    'admin@egygrillz.com',
+    'studio@egygrillz.com',
+    'egygrillz@gmail.com',
+  ];
+}
+
+/* Only used for accounts that should have access without the studio email
+   (rarely needed — leave empty unless you have one). */
+function staffUids() {
+  return [
+    /* 'REPLACE_WITH_A_UID', */
+  ];
+}
+
+function isStaff() {
+  return signedIn() && (
+    request.auth.token.staff == true ||
+    request.auth.token.admin == true ||
+    staffEmails().hasAny([request.auth.token.email]) ||
+    staffUids().hasAny([request.auth.uid])
+  );
+}
+
+/* Anyone may look at the public catalogue & pricing that the website shows. */
+function publicRead() {
+  return true;
+}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ── public, read-only content ─────────────────────────────────────── */
+    match /settings/{docId} {
+      allow read: if publicRead();
+      allow write: if isStaff();
+    }
+
+    /* ── studio data: staff only ───────────────────────────────────────── */
+    match /appointments/{docId} {
+      /* a visitor books from /booking without an account */
+      allow create: if request.resource.data.keys().hasAny(['name', 'phone', 'date']);
+      allow read, update, delete: if isStaff();
+    }
+
+    match /clients/{docId} {
+      /* the booking page creates its own client record; reading the client
+         list back (names, phones, visit history) stays staff-only */
+      allow create: if true;
+      allow update, read, delete: if isStaff();
+    }
+
+    match /invoices/{docId} {
+      allow read, write: if isStaff();
+    }
+
+    match /quotes/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isStaff();
+    }
+
+    /* Client phone numbers and home addresses — staff only. This is the
+       collection the dashboard reported as permission-denied. */
+    match /mould_orders/{docId} {
+      allow create: if true;          // /moulds places the order from the website
+      allow read, update, delete: if isStaff();
+    }
+
+    match /messages/{docId} {
+      allow create: if true;          // /contact form
+      allow read, update, delete: if isStaff();
+    }
+
+    match /stats/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /catalog/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /banners/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    /* Everything not named above stays closed. */
+    match /{document=**} {
+      allow read, write: if isStaff();
+    }
+  }
+}
