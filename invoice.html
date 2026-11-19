@@ -12,9 +12,10 @@
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="/assets/calc-engine.js?v=4"></script>
-<script src="/assets/staff-calculator.js?v=4"></script>
-<script src="/assets/catalog.js?v=4"></script>
+<script src="/assets/calc-engine.js?v=5"></script>
+<script data-cfasync="false" src="assets/numpad.js?v=5"></script>
+<script src="/assets/staff-calculator.js?v=5"></script>
+<script src="/assets/catalog.js?v=5"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
 window.addEventListener('load', function() {
@@ -333,6 +334,8 @@ header.hidden { transform:translateY(-100%); }
   outline:none; color:#1a1a1a;
 }
 .search-input:focus { border-color:#1a1a1a; }
+/* leave room for the clear button so the text never runs underneath it */
+.search-input { padding-right:22px; }
 
 .clients-table { width:100%; border-collapse:collapse; }
 .clients-table th {
@@ -394,6 +397,13 @@ header.hidden { transform:translateY(-100%); }
   font-family:'Arimo',sans-serif; font-size:13px; padding:8px 0 8px 22px; outline:none;
 }
 .acc-search-input:focus { border-bottom-color:#1a1a1a; }
+.search-clear-btn {
+  position:absolute; right:0; top:50%; transform:translateY(-50%);
+  border:none; background:none; cursor:pointer; color:#bbb;
+  font-size:16px; line-height:1; padding:2px 4px; display:none; z-index:2;
+}
+.search-clear-btn.show { display:block; }
+.search-clear-btn:hover { color:#1a1a1a; }
 .acc-filter-btn {
   font-size:9px; letter-spacing:2px; text-transform:uppercase; border:1px solid #ddd;
   background:#fff; padding:8px 16px; cursor:pointer; transition:all 0.2s;
@@ -838,7 +848,8 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
         <div class="acc-toolbar">
           <div class="acc-search-wrap">
             <i class="fas fa-search acc-search-icon"></i>
-            <input type="text" class="acc-search-input" id="acc-search-input" placeholder="Search by number, client name...">
+            <input type="text" class="acc-search-input" id="acc-search-input" placeholder="Search by number, client name, phone, item..." autocomplete="off" spellcheck="false">
+            <button type="button" class="search-clear-btn" id="acc-search-clear" title="Clear search" aria-label="Clear search">&times;</button>
           </div>
           <button class="acc-filter-btn active" data-filter="all">All</button>
           <button class="acc-filter-btn" data-filter="pending">Pending</button>
@@ -867,7 +878,8 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
         <div class="clients-toolbar">
           <div class="search-wrap">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" id="client-search" placeholder="Search by name, phone, or email...">
+            <input type="text" class="search-input" id="client-search" placeholder="Search by name, phone, or email..." autocomplete="off" spellcheck="false">
+            <button type="button" class="search-clear-btn" id="client-search-clear" title="Clear search" aria-label="Clear search">&times;</button>
           </div>
         </div>
         <div id="clients-table-wrap">
@@ -988,7 +1000,7 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 
 <!-- Firebase SDK -->
 <script type="module">
-import { getFirestore, collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, runTransaction, increment, serverTimestamp }
+import { getFirestore, collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, runTransaction, increment, serverTimestamp, getCountFromServer }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseApp, requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js';
 
@@ -1020,6 +1032,9 @@ function showToast(msg, type='', dur=2800) {
 window.showToast = (msg, isErr) => showToast(msg, isErr ? 'error-toast' : 'success');
 
 function fmt(n) { return Math.round(Number(n) || 0).toLocaleString('en-EG'); }
+/* Whole-EGP money, so a calculated line never prints decimals on screen or
+   in a PDF. Same rounding rule as the pricing engine. */
+function moneyStr(n) { return fmt(n) + ' EGP'; }
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
 /* Monotonic invoice numbering — scans max EGY-NNN suffix so deleting an invoice never reuses a number */
@@ -1123,22 +1138,28 @@ function mergeInvoices(localArr, remoteArr) {
 async function initApp() {
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'block';
-  setupHeader();
-  setupTabs();
-  setupReveal();
-  setupInvoiceForm();
-  setupDesignPicker();
-  setupCalculatorModal();
-  setupServicesBar();
-  setupImportQuoteModal();
-  setupPaymentMethods();
-  setupSaveEmail();
-  setupAddClientModal();
-  setupClientsTabSearch();
-  setupAccSearch();
-  setupResetBtn();
-  setupClientSearchAutocomplete();
-  setupItemSearchAutocomplete();
+  /* One failing block must never take the whole studio down: each setup step
+     is isolated, so a broken optional widget cannot leave the invoice and
+     client search inputs wired to nothing. */
+  const safeSetup = (name, fn) => {
+    try { fn(); } catch (e) { console.warn('[invoice] setup failed: ' + name, e); }
+  };
+  safeSetup('header', setupHeader);
+  safeSetup('tabs', setupTabs);
+  safeSetup('reveal', setupReveal);
+  safeSetup('invoice form', setupInvoiceForm);
+  safeSetup('design picker', setupDesignPicker);
+  safeSetup('calculator modal', setupCalculatorModal);
+  safeSetup('services bar', setupServicesBar);
+  safeSetup('import quote', setupImportQuoteModal);
+  safeSetup('payment methods', setupPaymentMethods);
+  safeSetup('save/email', setupSaveEmail);
+  safeSetup('add client', setupAddClientModal);
+  safeSetup('reset', setupResetBtn);
+  /* search last — the two inputs the studio uses most */
+  safeSetup('client autocomplete', setupClientSearchAutocomplete);
+  safeSetup('item autocomplete', setupItemSearchAutocomplete);
+  safeSetup('clients tab search', setupClientsTabSearch);
 
   await Promise.allSettled([
     E ? E.load(db) : Promise.resolve(),
@@ -1261,9 +1282,7 @@ function setupClientSearchAutocomplete() {
     const q = input.value.trim().toLowerCase();
     if (!q) { dropdown.classList.remove('open'); return; }
     const matches = clients.filter(c =>
-      (c.name||'').toLowerCase().includes(q) ||
-      (c.id||'').includes(q) ||
-      (c.email||'').toLowerCase().includes(q)
+      searchHit(q, [c.name, c.id, c.phone, c.email])
     ).slice(0, 8);
     renderClientDropdown(matches);
   });
@@ -1466,6 +1485,9 @@ async function loadClients(append = false, force = false) {
         clients = cached.list;
         clientHasMore = !!cached.hasMore;
         updateHeroStats();
+        /* the page cache holds at most CLIENT_PAGE_SIZE names — the headline
+           total must still come from the database, not from list length */
+        refreshClientTotal().then(updateHeroStats).catch(() => {});
         return;
       }
     } catch (e) {}
@@ -1478,7 +1500,15 @@ async function loadClients(append = false, force = false) {
       if (append && clientCursor) constraints.push(startAfter(clientCursor));
       snap = await getDocs(query(...constraints));
     } catch (idxErr) {
-      snap = await getDocs(query(collection(db, 'clients'), limit(CLIENT_PAGE_SIZE)));
+      try {
+        snap = await getDocs(query(collection(db, 'clients'), limit(CLIENT_PAGE_SIZE)));
+      } catch (e2) {
+        /* Last resort: the collection without orderBy/limit can still be read
+           in one go on small studios — and an unreadable clients collection
+           must never take the invoice builder down. */
+        console.warn('[invoice] clients read failed', e2);
+        snap = { docs: [], forEach() {} };
+      }
     }
     const batch = [];
     snap.forEach(docSnap => { batch.push({ id: docSnap.id, ...docSnap.data() }); });
@@ -1490,22 +1520,41 @@ async function loadClients(append = false, force = false) {
     } else {
       clients = batch;
     }
-    clients.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    clients.sort((a,b) => sLower(a.name).localeCompare(sLower(b.name)));
     if (!append) {
       try { sessionStorage.setItem(INV_CLIENTS_CACHE, JSON.stringify({ at: Date.now(), list: clients, hasMore: clientHasMore })); } catch (e) {}
     }
+    if (!append) await refreshClientTotal();
     updateHeroStats();
   } catch(e) {
     console.error('Firebase error:', e);
     showToast('Firebase connection error', 'error-toast');
-    throw e;
+    /* never rethrow: a failed clients read must not stop the invoice form */
   } finally {
     clientLoading = false;
   }
 }
 
+let remoteClientTotal = 0;
+
+/** Ask Firestore for the number of client documents (aggregation query —
+    one read, no bodies). Falls back to the loaded page length. */
+async function refreshClientTotal() {
+  try {
+    if (typeof getCountFromServer === 'function') {
+      const snap = await getCountFromServer(collection(db, 'clients'));
+      const n = Number(snap && snap.data && snap.data().count);
+      if (Number.isFinite(n) && n >= 0) { remoteClientTotal = n; return n; }
+    }
+  } catch (e) { /* aggregation unavailable on this project/rules */ }
+  remoteClientTotal = Math.max(remoteClientTotal, clients.length);
+  return remoteClientTotal;
+}
+
 function updateHeroStats() {
-  document.getElementById('stat-clients').textContent = clients.length;
+  const shown = clients.length;
+  const totalEl = document.getElementById('stat-clients');
+  if (totalEl) totalEl.textContent = remoteClientTotal > shown ? remoteClientTotal : shown;
   const invs = getInvoices();
   document.getElementById('stat-invoices').textContent = invs.length;
   const totalRev = invs.filter(i=>i.status==='paid').reduce((s,i)=>s+i.total,0);
@@ -1617,14 +1666,16 @@ function renderItems() {
           <input class="item-field" placeholder="Item name / description" value="${escHtml(item.name)}" data-id="${item.id}" data-field="name">
           <input class="item-spec-input" placeholder="Material / teeth / finish spec (optional)" value="${escHtml(item.spec || '')}" data-id="${item.id}" data-field="spec">
         </div>
-        <input class="item-field" type="number" min="1" value="${item.qty}" data-id="${item.id}" data-field="qty" style="text-align:center">
-        <input class="item-field" type="number" min="0" step="0.01" value="${item.price}" data-id="${item.id}" data-field="price">
+        <input class="item-field" type="number" min="1" data-pad-mode="numeric" value="${item.qty}" data-id="${item.id}" data-field="qty" style="text-align:center">
+        <input class="item-field" type="number" min="0" step="0.01" data-pad-mode="decimal" value="${item.price}" data-id="${item.id}" data-field="price">
         <button class="item-remove" data-remove="${item.id}" title="Remove item"><i class="fas fa-times"></i></button>
       </div>
     `;
   });
 
   wrap.innerHTML = html;
+  /* qty and price open the same big keypad the calculator uses */
+  if (window.Numpad) window.Numpad.attach(wrap);
 
   wrap.querySelectorAll('.item-field,.item-spec-input').forEach(inp => {
     inp.addEventListener('input', () => {
@@ -1643,7 +1694,33 @@ function renderItems() {
 }
 
 function escHtml(str) {
-  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── SEARCH HELPERS ──────────────────────────────────────────────
+   Invoice and client records written by earlier versions (and by the
+   public forms) sometimes hold numbers where the code expects text — a
+   phone stored as 201234567890, an invoice number as 12. Calling
+   .toLowerCase()/.includes() on those throws inside the filter, and the
+   list silently never updates: exactly what "search isn't working" looked
+   like. Everything below coerces first, so a search can never throw. */
+function sText(v) { return v == null ? '' : String(v); }
+function sLower(v) { return sText(v).toLowerCase(); }
+function sDigits(v) { return sText(v).replace(/[^0-9]/g, ''); }
+
+/** Does `q` occur in any of the given fields? Digits are compared
+    digit-only, so "+20 100 123 4567" matches "201001234567" and
+    "01001234567" alike. */
+function searchHit(q, fields) {
+  const needle = sLower(q).trim();
+  if (!needle) return true;
+  const needleDigits = sDigits(needle);
+  for (const f of fields) {
+    if (sLower(f).includes(needle)) return true;
+    if (needleDigits && sDigits(f).includes(needleDigits)) return true;
+  }
+  return false;
 }
 
 /* ══════════════════════════════════════════════════
@@ -2043,14 +2120,18 @@ function setupPaymentMethods() {
    PREVIEW UPDATE
 ══════════════════════════════════════════════════ */
 function calcTotals() {
-  const subtotal = lineItems.reduce((s,i) => s + (i.qty * i.price), 0);
+  /* Every figure on an invoice is whole EGP. Each line is rounded the same
+     way the pricing engine rounds it, so the price on the card, the price in
+     the invoice and the printed total always agree. */
+  const round = n => Math.round(Number(n) || 0);
+  const subtotal = lineItems.reduce((s, i) => s + round((Number(i.qty) || 0) * (Number(i.price) || 0)), 0);
   const discVal = parseFloat(document.getElementById('discount-val').value) || 0;
   const discType = document.getElementById('discount-type').value;
-  const discount = discType === 'pct' ? subtotal * discVal / 100 : discVal;
+  const discount = round(discType === 'pct' ? subtotal * discVal / 100 : discVal);
   const total = Math.max(0, subtotal - discount);
   const rate = parseFloat(document.getElementById('usd-rate').value) || 50;
   const usd = total / rate;
-  const deposit = parseFloat(document.getElementById('deposit-val').value) || 0;
+  const deposit = round(parseFloat(document.getElementById('deposit-val').value) || 0);
   const remaining = Math.max(0, total - deposit);
   return { subtotal, discount, total, usd, deposit, remaining, rate };
 }
@@ -2146,7 +2227,7 @@ function buildInvoiceData() {
     clientEmail: selectedClient?.email || '',
     clientPhone: selectedClient?.phone || '',
     quoteId: pendingQuoteId || '',
-    items: lineItems.map(i => ({ name: i.name || '', spec: i.spec || '', qty: Number(i.qty)||1, price: Number(i.price)||0 })),
+    items: lineItems.map(i => ({ name: i.name || '', spec: i.spec || '', qty: Number(i.qty)||1, price: Math.round(Number(i.price)||0) })),
     subtotal, discount,
     discountInput: Number(document.getElementById('discount-val').value) || 0,
     discountType: document.getElementById('discount-type').value || 'egp',
@@ -2416,8 +2497,22 @@ EGYGRILLZ Studio · Smart Smile Dental Clinic, Heliopolis, Cairo`
 /* ══════════════════════════════════════════════════
    ACCOUNTING TAB
 ══════════════════════════════════════════════════ */
+function wireSearchClear(inputId, btnId, onChange) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (!input) return;
+  const sync = () => { if (btn) btn.classList.toggle('show', !!input.value); };
+  input.addEventListener('input', sync);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { input.value = ''; sync(); onChange(); }
+  });
+  if (btn) btn.addEventListener('click', () => { input.value = ''; sync(); onChange(); input.focus(); });
+  sync();
+}
+
 function setupAccSearch() {
   document.getElementById('acc-search-input').addEventListener('input', () => renderInvoicesList());
+  wireSearchClear('acc-search-input', 'acc-search-clear', () => renderInvoicesList());
   document.querySelectorAll('.acc-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.acc-filter-btn').forEach(b => b.classList.remove('active'));
@@ -2442,25 +2537,42 @@ function loadAccountingTab() {
   renderInvoicesList();
 }
 
-function renderInvoicesList() {
-  const q = (document.getElementById('acc-search-input')?.value || '').toLowerCase();
-  let invs = getInvoices().sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+function invStatusOf(inv) {
+  const st = sLower(inv && inv.status).trim();
+  if (st === 'paid') return 'paid';
+  if (st === 'partial') return 'partial';
+  if (inv && Number(inv.deposit) > 0) return 'partial';
+  return 'pending';
+}
 
-  if (accStatusFilter !== 'all') invs = invs.filter(i => i.status === accStatusFilter);
-  if (q) invs = invs.filter(i =>
-    (i.number||'').toLowerCase().includes(q) ||
-    (i.clientName||'').toLowerCase().includes(q) ||
-    (i.clientPhone||'').includes(q)
-  );
+function invTime(inv) {
+  const raw = (inv && (inv.createdAt || inv.date)) || '';
+  const t = new Date(raw).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function renderInvoicesList() {
+  const q = sText(document.getElementById('acc-search-input')?.value);
+  let invs = getInvoices().slice().sort((a, b) => invTime(b) - invTime(a));
+
+  if (accStatusFilter !== 'all') invs = invs.filter(i => invStatusOf(i) === accStatusFilter);
+  if (q.trim()) invs = invs.filter(i => searchHit(q, [
+    i.number, i.id, i.clientName, i.clientPhone, i.clientEmail,
+    i.date, i.due, i.notes, invStatusOf(i),
+    (i.items || []).map(it => (it && it.name) || '').join(' '),
+  ]));
 
   const wrap = document.getElementById('invoices-list-wrap');
+  if (!wrap) return;
   if (!invs.length) {
-    wrap.innerHTML = '<div class="no-invoices">No invoices match your search</div>';
+    wrap.innerHTML = '<div class="no-invoices">' + (q.trim()
+      ? 'No invoices match “' + escHtml(q.trim()) + '”'
+      : 'No invoices yet — create your first one!') + '</div>';
     return;
   }
 
   wrap.innerHTML = invs.map(inv => {
-    const st = ['paid','partial','pending'].includes(inv.status) ? inv.status : 'pending';
+    const st = invStatusOf(inv);
     return `
     <div class="inv-list-row">
       <div class="inv-list-num">${escHtml(inv.number || '—')}</div>
@@ -2477,7 +2589,7 @@ function renderInvoicesList() {
         <button type="button" class="inv-mini-btn danger" data-del="${escHtml(inv.id)}">Delete</button>
       </div>
     </div>`;
-  }).join('') + (invHasMore ? `<div style="text-align:center;padding:16px;"><button type="button" class="inv-mini-btn" id="load-more-invs-btn">Load more invoices</button></div>` : '');
+  }).join('') + (invHasMore && !q.trim() ? `<div style="text-align:center;padding:16px;"><button type="button" class="inv-mini-btn" id="load-more-invs-btn">Load more invoices</button></div>` : '');
 
   const moreInvBtn = wrap.querySelector('#load-more-invs-btn');
   if (moreInvBtn) {
@@ -2582,7 +2694,11 @@ function loadInvoiceIntoBuilder(inv) {
 function renderClientsTable(list) {
   const wrap = document.getElementById('clients-table-wrap');
   if (!list.length) {
-    wrap.innerHTML = '<div class="clients-empty">No clients found</div>'; return;
+    const term = (document.getElementById('client-search')?.value || '').trim();
+    wrap.innerHTML = '<div class="clients-empty">' + (term
+      ? 'No clients match “' + escHtml(term) + '”'
+      : 'No clients yet') + '</div>';
+    return;
   }
   wrap.innerHTML = `
     <table class="clients-table">
@@ -2629,13 +2745,15 @@ function renderClientsTable(list) {
 }
 
 function setupClientsTabSearch() {
+  wireSearchClear('client-search', 'client-search-clear', () => renderClientsTable(clients.filter(c => {
+    const q = document.getElementById('client-search').value;
+    return q.trim() ? searchHit(q, [c.name, c.id, c.phone, c.email, c.lastVisit]) : true;
+  })));
   document.getElementById('client-search').addEventListener('input', e => {
-    const q = e.target.value.toLowerCase();
-    renderClientsTable(clients.filter(c =>
-      (c.name||'').toLowerCase().includes(q) ||
-      (c.id||'').includes(q) ||
-      (c.email||'').toLowerCase().includes(q)
-    ));
+    const q = e.target.value;
+    renderClientsTable(q.trim()
+      ? clients.filter(c => searchHit(q, [c.name, c.id, c.phone, c.email, c.lastVisit]))
+      : clients);
   });
 }
 

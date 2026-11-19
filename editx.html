@@ -37,7 +37,7 @@
       document.getElementById('topbar-title').textContent=pageTitle(name);
       closeSidebar();
       if(name==='overview') loadOverview();
-      if(name==='appointments') loadAppointments();
+      if(name==='appointments'){ loadAppointments(); if(db) loadReminderTemplates(); }
       if(name==='clients') loadClients();
       if(name==='messages') loadMessages();
       if(name==='moulds'){ loadMouldPricesPanel(); loadMouldOrders(); }
@@ -679,6 +679,19 @@
       padding:5px 6px;cursor:pointer;outline:none;
     }
     .card-page-select:focus{border-color:var(--ink);}
+    /* Multi-page assignment: one chip per public page, tap to toggle. */
+    .page-chips{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0;}
+    .page-chip{
+      display:inline-flex;align-items:center;gap:4px;
+      font-family:'Arimo',sans-serif;font-size:9px;letter-spacing:.4px;
+      padding:3px 8px;border-radius:999px;cursor:pointer;
+      border:1px solid var(--line);background:#fff;color:#6b6b6b;
+      transition:background .15s,color .15s,border-color .15s;
+    }
+    .page-chip:hover{border-color:#9a9a9a;color:var(--ink);}
+    .page-chip.on{background:#1f1f1f;border-color:#1f1f1f;color:#fff;}
+    .page-chip.on:hover{opacity:.85;}
+    .page-chip i{font-size:8px;}
     .design-price-box{
       display:flex;align-items:center;justify-content:space-between;gap:14px;
       border:1px solid var(--line);border-left:3px solid var(--ink);border-radius:0 6px 6px 0;
@@ -988,6 +1001,46 @@
               <button class="btn-muted2" onclick="loadAppointments()"><i class="fas fa-rotate"></i> Refresh</button>
             </div>
             <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Name / Phone</th><th>Service</th><th>Showed Up</th><th>Status</th><th>Reminder</th><th>Actions</th></tr></thead><tbody id="appt-tbody"></tbody></table></div>
+          </div>
+
+          <!-- ══ GMAIL REMINDER TEMPLATES ══ -->
+          <div class="section-card" id="reminder-template-card" style="margin-top:22px;">
+            <div class="mould-tpl-head">
+              <div>
+                <p class="ph-title" style="font-size:15px;">Gmail reminder templates</p>
+                <p class="ph-sub">One template per reminder type. Every “Email” button and “Reminders for tomorrow” opens Gmail with this subject and message already written — you just press Send.</p>
+              </div>
+              <button class="btn-muted2" onclick="toggleReminderTemplates()" id="rem-tpl-toggle">Edit</button>
+            </div>
+            <div id="reminder-tpl-body" style="display:none;padding:22px 26px 26px;">
+              <div class="filter-tabs" style="margin-bottom:18px;flex-wrap:wrap;">
+                <button class="filter-tab active" data-rem-kind="appointment" onclick="setReminderTemplateKind('appointment',this)">Appointment reminder</button>
+                <button class="filter-tab" data-rem-kind="confirmation" onclick="setReminderTemplateKind('confirmation',this)">Booking confirmation</button>
+                <button class="filter-tab" data-rem-kind="followup" onclick="setReminderTemplateKind('followup',this)">After-visit follow-up</button>
+                <button class="filter-tab" data-rem-kind="reply" onclick="setReminderTemplateKind('reply',this)">Reply to a message</button>
+              </div>
+              <div class="form-group">
+                <label class="mould-label">Subject</label>
+                <input class="form-input" id="rem-tpl-subject" type="text" placeholder="Your appointment reminder">
+              </div>
+              <div class="form-group">
+                <label class="mould-label">Message</label>
+                <textarea class="form-input" id="rem-tpl-body" rows="14" spellcheck="true"></textarea>
+                <p class="mould-hint">Placeholders:
+                  <code>{client_name}</code> <code>{date}</code> <code>{time}</code>
+                  <code>{day}</code> <code>{service}</code> <code>{phone}</code>
+                  <code>{studio_name}</code> <code>{address}</code> <code>{site}</code>
+                  <code>{message}</code> <code>{notes}</code>
+                </p>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn-black" onclick="saveReminderTemplate()">Save template</button>
+                <button class="btn-muted2" onclick="resetReminderTemplate()">Reset to default</button>
+                <button class="btn-muted2" onclick="previewReminderTemplate()"><i class="fas fa-eye"></i> Preview</button>
+                <button class="btn-muted2" onclick="openTestReminderGmail()"><i class="fas fa-envelope"></i> Open Gmail test</button>
+              </div>
+              <pre class="mould-preview" id="rem-tpl-preview" style="display:none;"></pre>
+            </div>
           </div>
           <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleCSVImport(this.files[0])">
         </div>
@@ -1593,15 +1646,17 @@
           <option value="gallery">Gallery</option>
         </select>
       </div>
-      <div class="form-row"><div class="form-group"><label class="form-label">Name *</label><input type="text" class="form-input" id="f-name" placeholder="Item name"></div><div class="form-group"><label class="form-label">Public page</label><select class="form-select" id="f-page">
-          <option value="">Not on a page</option>
-          <option value="index">Home</option>
-          <option value="golds">Golds</option>
-          <option value="silvers">Silvers</option>
-          <option value="diamonds">Diamonds</option>
-          <option value="latest-designs">Latest Designs</option>
-          <option value="grillz-gallery">Gallery</option>
-        </select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Name *</label><input type="text" class="form-input" id="f-name" placeholder="Item name"></div>
+        <div class="form-group"><label class="form-label">Public pages <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#888;">— one design can appear on more than one</span></label>
+          <div class="page-chips" id="f-pages">
+            <button type="button" class="page-chip" data-page-key="index" onclick="toggleModalPage(this)">Home</button>
+            <button type="button" class="page-chip" data-page-key="golds" onclick="toggleModalPage(this)">Golds</button>
+            <button type="button" class="page-chip" data-page-key="silvers" onclick="toggleModalPage(this)">Silvers</button>
+            <button type="button" class="page-chip" data-page-key="diamonds" onclick="toggleModalPage(this)">Diamonds</button>
+            <button type="button" class="page-chip" data-page-key="latest-designs" onclick="toggleModalPage(this)">Latest Designs</button>
+            <button type="button" class="page-chip" data-page-key="grillz-gallery" onclick="toggleModalPage(this)">Gallery</button>
+          </div>
+        </div></div>
       <div class="form-group">
         <label class="form-label">Price — set by the pricing calculator (supports mixed teeth &amp; short codes)</label>
         <div class="design-price-box">
@@ -1806,6 +1861,45 @@
     if (!d || !t) return '';
     return String(d).trim() + '_' + _slotNormTime(t).replace(/[ :]/g, '');
   }
+  /* Aggregation query: how many client documents really exist.
+     `get().size` only counted the first page (and burned reads); count()
+     asks Firestore for the number itself so "Total Clients" is truthful. */
+  /* Returns the real document count, or null when it genuinely could not be
+     read. null and 0 must stay distinct: an empty collection is a real answer
+     ("0 clients") and must overwrite a stale stored counter. */
+  async function countCollection(name) {
+    if (!db) return null;
+    try {
+      if (typeof db.collection(name).count === 'function') {
+        var agg = await db.collection(name).count().get();
+        var n = Number(agg && agg.data && agg.data().count);
+        if (Number.isFinite(n)) return n;
+      }
+    } catch (e) { console.warn('[count] aggregation unavailable', name, e && e.message); }
+    /* older SDK / rules without aggregation: fall back to a bounded page */
+    try {
+      var snap = await db.collection(name).limit(500).get();
+      return snap.size;
+    } catch (e) { return null; }
+  }
+  function countClients() { return countCollection('clients'); }
+
+  /* Write the real client total into stats/summary so the Overview card and
+     any offline/partial view agree with the database. */
+  async function syncClientCounter() {
+    if (!db) return 0;
+    var n = await countClients();
+    if (!Number.isFinite(Number(n))) return 0;  /* null = unreadable, leave the stored value alone */
+    try {
+      await db.collection('stats').doc('summary').set({
+        totalClients: Number(n),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) { /* counter sync is best-effort */ }
+    invalidate('stats:');
+    return Number(n);
+  }
+
   function _bumpSummaryStat(deltas) {
     if (!db || !deltas) return;
     try {
@@ -2058,13 +2152,23 @@
           return snap.size;
         }),
         cachedGet('stats:summary', async function () {
+          var summary = {};
           try {
             var sDoc = await db.collection('stats').doc('summary').get();
-            if (sDoc.exists) return sDoc.data() || {};
+            if (sDoc.exists) summary = sDoc.data() || {};
           } catch (e) {}
-          /* Fallback when stats/summary doc hasn't been initialized yet: bounded count */
-          var cSnap = await db.collection('clients').limit(200).get();
-          return { totalClients: cSnap.size, _partial: true };
+          /* The stored counter drifts (imports, deletes, older bugs), so the
+             real number comes from a count() aggregation — one read, no
+             document bodies. The counter is only a fallback. */
+          var real = await countClients();
+          if (Number.isFinite(Number(real))) {
+            summary.totalClients = Number(real);
+            summary._counted = true;
+          } else if (!Number.isFinite(Number(summary.totalClients))) {
+            summary.totalClients = 0;
+            summary._partial = true;
+          }
+          return summary;
         })
       ]);
 
@@ -2241,24 +2345,35 @@
 
   
   function reminderCell(a){
+    var id = escAttr(a.id);
+    /* Most appointments carry a phone, not an email. When there is no email
+       address the same template goes out over WhatsApp instead, so a
+       reminder is always one click away. */
     if(!a.email){
-      return '<span class="rem-tag never">No email</span>';
+      var digits = String(a.phone || '').replace(/\D/g, '');
+      if(!digits) return '<span class="rem-tag never">No email</span>';
+      if(digits.indexOf('0') === 0) digits = '20' + digits.slice(1);
+      return '<button class="btn-sm btn-rem" onclick="openWhatsAppFor(\'' + id + '\',\'appointment\')" title="WhatsApp reminder">' +
+             '<i class="fab fa-whatsapp"></i> Remind</button>';
     }
-    if(a.reminderSentAt){
-      var when = String(a.reminderSentAt).slice(0,10);
-      return '<span class="rem-tag sent-tag"><i class="fas fa-check"></i> Sent</span>'+
-             '<br><span class="rem-tag">'+escHtml(when)+'</span>';
+    var sent = a.reminderSentAt
+      ? '<span class="rem-tag sent-tag"><i class="fas fa-check"></i> Sent</span>' +
+        '<br><span class="rem-tag">' + escHtml(String(a.reminderSentAt).slice(0,10)) + '</span><br>'
+      : '';
+    /* One button per reminder template — every one opens Gmail pre-written. */
+    var buttons = '<button class="btn-sm btn-rem" onclick="openGmailFor(\'' + id + '\',\'appointment\')" title="Appointment reminder"><i class="fas fa-envelope"></i> Remind</button>';
+    if (isUpcoming(a)) {
+      buttons += '<br><button class="btn-sm btn-rem" onclick="openGmailFor(\'' + id + '\',\'confirmation\')" title="Booking confirmation"><i class="fas fa-circle-check"></i> Confirm</button>';
+    } else {
+      buttons += '<br><button class="btn-sm btn-rem" onclick="openGmailFor(\'' + id + '\',\'followup\')" title="After-visit follow-up"><i class="fas fa-star"></i> Follow-up</button>';
     }
-    if(!isUpcoming(a)){
-      return '<button class="btn-sm btn-rem" onclick="openGmailFor(\''+a.id+'\')"><i class="fas fa-envelope"></i> Email</button>'+
-             '<br><span class="rem-tag no">past</span>';
-    }
-    return '<button class="btn-sm btn-rem" onclick="openGmailFor(\''+a.id+'\')"><i class="fas fa-envelope"></i> Email</button>';
+    return sent + buttons + (isUpcoming(a) ? '' : '<br><span class="rem-tag no">past</span>');
   }
 
   
-  /** Reminder button: confirm first, then open Gmail */
-  function openGmailFor(id){
+  /** Reminder button: confirm first, then open Gmail.
+   *  `kind` picks the template: appointment | confirmation | followup */
+  function openGmailFor(id, kind){
     var list = ((cache.appointments && cache.appointments.items) || []);
     if (typeof allAppts !== 'undefined' && allAppts && allAppts.length) {
       allAppts.forEach(function(x){ if (!list.some(function(y){ return y.id === x.id; })) list.push(x); });
@@ -2270,10 +2385,32 @@
     if(!a) return;
     if(!a.email){ showToast('No email for this client','error'); return; }
     var when = (a.date || '') + (a.time ? ' at ' + a.time : '');
-    if(!confirm('Open Gmail with the reminder for ' + (a.name || 'this client') + '?\n\n' + when + '\n\nSubject and message are already written. You only press Send.')) return;
-    openGmail(gmailCompose(a));
-    markReminderSent(a);
-    showToast('Gmail opened - press Send there','success');
+    var kindKey = kind || 'appointment';
+    var kindLabel = { appointment: 'reminder', confirmation: 'confirmation', followup: 'follow-up' }[kindKey] || 'reminder';
+    if(!confirm('Open Gmail with the ' + kindLabel + ' for ' + (a.name || 'this client') + '?\n\n' + when + '\n\nSubject and message are already written. You only press Send.')) return;
+    var out = renderReminder(kindKey, a);
+    openGmail(gmailUrl(a.email || '', out.subject, out.body));
+    if (kindKey !== 'followup') markReminderSent(a);
+    showToast('Gmail opened — press Send there','success');
+  }
+
+  /** Same templates, sent over WhatsApp: wa.me opens with the message typed. */
+  function openWhatsAppFor(id, kind){
+    var list = ((cache.appointments && cache.appointments.items) || []);
+    if (typeof allAppts !== 'undefined' && allAppts && allAppts.length) {
+      allAppts.forEach(function(x){ if (!list.some(function(y){ return y.id === x.id; })) list.push(x); });
+    }
+    var a = list.find(function(x){ return x.id === id; });
+    if(!a) return;
+    var digits = String(a.phone || '').replace(/\D/g, '');
+    if(!digits){ showToast('No phone for this client','error'); return; }
+    if(digits.indexOf('0') === 0) digits = '20' + digits.slice(1);
+    var out = renderReminder(kind || 'appointment', a);
+    var text = out.subject + '\n\n' + out.body;
+    var url = 'https://wa.me/' + digits + '?text=' + encodeURIComponent(text);
+    showToast('WhatsApp opened — press Send there','success');
+    window.open(url, '_blank', 'noopener');
+    if ((kind || 'appointment') !== 'followup') markReminderSent(a);
   }
 
   /** Reply button: same system */
@@ -2302,6 +2439,8 @@
     addr: 'Inside Smart Smile Clinics, 38 Abou Bakr EL-Sdeek, Heliopolis, Floor 5, Apt 504, Cairo',
     site: 'https://egygrillz.com'
   };
+  /* STUDIO_INFO is the same studio block the reminder templates fill in —
+     defined once, above, next to the templates themselves. */
 
   /** Build a Gmail compose URL. Never fails, never needs a server. */
   function gmailUrl(to, subject, body){
@@ -2331,72 +2470,294 @@
     setTimeout(function(){ if(!w) location.href = url; }, 400);
   }
 
-  /** Reminder email — fully composed, press Send */
-  function gmailCompose(a){
-    var name = a.name || 'there';
-    var service = a.service || 'your appointment';
-    var date = a.date || '';
-    var time = a.time || '';
-    var subj = 'Your appointment reminder - ' + (date || 'tomorrow');
-    var body =
-      'Dear ' + name + ',\n'
-    + '\n'
-    + 'This is a friendly reminder of your upcoming appointment at the EGYGRILLZ studio.\n'
-    + '\n'
-    + 'APPOINTMENT DETAILS\n'
-    + 'Date:     ' + (date || '-') + '\n'
-    + 'Time:     ' + (time || '-') + '\n'
-    + 'Service:  ' + service + '\n'
-    + '\n'
-    + 'LOCATION\n'
-    + 'EGYGRILLZ Studio\n'
-    + 'Inside Smart Smile Clinics\n'
-    + '38 Abou Bakr EL-Sdeek, Heliopolis\n'
-    + 'Floor 5, Apt 504 - Cairo, Egypt\n'
-    + '\n'
-    + 'BEFORE YOU COME\n'
-    + 'Please arrive 10 minutes early and avoid eating for one hour before your visit.\n'
-    + 'If you are running late, simply reply to this email and we will adjust your slot.\n'
-    + '\n'
-    + 'We look forward to seeing you.\n'
-    + '\n'
-    + 'Kind regards,\n'
-    + 'EGYGRILLZ\n'
-    + 'Custom Grillz Studio - Cairo';
-    return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1'
-      + '&to='  + encodeURIComponent(a.email || '')
-      + '&su='  + encodeURIComponent(subj)
-      + '&body=' + encodeURIComponent(body);
+  /* ═══════════════════════════════════════════════════════════════════
+     GMAIL REMINDER TEMPLATES
+     ---------------------------------------------------------------------
+     Every reminder the studio sends — appointment reminder, booking
+     confirmation, after-visit follow-up, reply to a message — is a
+     template stored in Firestore `settings/reminder_templates`:
+
+        { appointment: {subject, body}, confirmation: {...}, ... }
+
+     A template is plain text with {placeholders}. The dashboard fills it in
+     and opens Gmail's compose window; a human presses Send. Editing a
+     template here changes every reminder from then on, on every device.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  var STUDIO_INFO = {
+    name: 'EGYGRILLZ',
+    address: 'Inside Smart Smile Clinics, 38 Abou Bakr EL-Sdeek, Heliopolis, Floor 5, Apt 504 - Cairo, Egypt',
+    site: 'https://egygrillz.com',
+  };
+
+  var REMINDER_TEMPLATES_DEFAULT = {
+    appointment: {
+      subject: 'Your appointment reminder — {date}',
+      body: [
+        'Dear {client_name},',
+        '',
+        'This is a friendly reminder of your upcoming appointment at the {studio_name} studio.',
+        '',
+        'APPOINTMENT DETAILS',
+        'Date:     {day}, {date}',
+        'Time:     {time}',
+        'Service:  {service}',
+        '',
+        'LOCATION',
+        '{studio_name} Studio',
+        '{address}',
+        '',
+        'BEFORE YOU COME',
+        'Please arrive 10 minutes early and avoid eating for one hour before your visit.',
+        'If you are running late, simply reply to this email and we will adjust your slot.',
+        '',
+        'We look forward to seeing you.',
+        '',
+        'Kind regards,',
+        '{studio_name}',
+        'Custom Grillz Studio - Cairo',
+      ].join('\n'),
+    },
+    confirmation: {
+      subject: 'Your booking is confirmed — {date} at {time}',
+      body: [
+        'Dear {client_name},',
+        '',
+        'Your appointment at {studio_name} is confirmed. We are looking forward to it.',
+        '',
+        'Date:     {day}, {date}',
+        'Time:     {time}',
+        'Service:  {service}',
+        '',
+        'LOCATION',
+        '{address}',
+        '',
+        'If anything changes, just reply to this email and we will find another slot together.',
+        '',
+        'Kind regards,',
+        '{studio_name}',
+        'Custom Grillz Studio - Cairo',
+      ].join('\n'),
+    },
+    followup: {
+      subject: 'Thank you for visiting {studio_name}',
+      body: [
+        'Dear {client_name},',
+        '',
+        'Thank you for visiting {studio_name} for your {service}.',
+        '',
+        'We hope you are happy with the result. If you have any question about cleaning,',
+        'fitting or care, simply reply to this email — we are always here.',
+        '',
+        'If you enjoyed your visit, a short review helps other clients find us:',
+        '{site}',
+        '',
+        'Kind regards,',
+        '{studio_name}',
+        'Custom Grillz Studio - Cairo',
+      ].join('\n'),
+    },
+    reply: {
+      subject: 'Re: Your inquiry — {studio_name}',
+      body: [
+        'Dear {client_name},',
+        '',
+        'Thank you for getting in touch with {studio_name}.',
+        '',
+        'Regarding your question:',
+        '',
+        '{message}',
+        '',
+        'We would be glad to help. A member of the studio replies within one working day.',
+        'If your question is about a specific piece, tell us the design name or send us a photo',
+        'and we will confirm the details and the price for you.',
+        '',
+        'HOW TO REACH US',
+        'Studio: {address}',
+        'Booking: {site}/booking',
+        '',
+        'Kind regards,',
+        '{studio_name}',
+        'Custom Grillz Studio - Cairo',
+      ].join('\n'),
+    },
+  };
+
+  var REMINDER_TEMPLATES = {};
+  var reminderTemplateKind = 'appointment';
+
+  function cloneTemplates(src) {
+    var out = {};
+    Object.keys(REMINDER_TEMPLATES_DEFAULT).forEach(function (k) {
+      var t = (src && src[k]) || {};
+      out[k] = {
+        subject: String(t.subject || '').trim() || REMINDER_TEMPLATES_DEFAULT[k].subject,
+        body: String(t.body || '').trim() || REMINDER_TEMPLATES_DEFAULT[k].body,
+      };
+    });
+    return out;
+  }
+  REMINDER_TEMPLATES = cloneTemplates(null);
+
+  function weekdayName(iso) {
+    var d = iso ? new Date(iso + 'T00:00:00') : null;
+    if (!d || isNaN(d.getTime())) return '';
+    try { return d.toLocaleDateString('en-US', { weekday: 'long' }); } catch (e) { return ''; }
   }
 
-  /** Reply email to a client message — fully composed */
-  function gmailReply(m){
-    var name = m.name || 'there';
-    var subj = 'Re: Your inquiry - EGYGRILLZ';
-    var body =
-      'Dear ' + name + ',\n'
-    + '\n'
-    + 'Thank you for getting in touch with EGYGRILLZ.\n'
-    + '\n'
-    + 'Regarding your question:\n'
-    + '\n'
-    + (m.message ? '  "' + String(m.message).replace(/\n/g, '\n  ') + '"\n\n' : '')
-    + 'We would be glad to help. A member of the studio replies within one working day.\n'
-    + 'If your question is about a specific piece, tell us the design name or send us a photo\n'
-    + 'and we will confirm the details and the price for you.\n'
-    + '\n'
-    + 'HOW TO REACH US\n'
-    + 'Studio: Inside Smart Smile Clinics, 38 Abou Bakr EL-Sdeek, Heliopolis,\n'
-    + 'Floor 5, Apt 504, Cairo.\n'
-    + 'Booking: https://egygrillz.com/booking\n'
-    + '\n'
-    + 'Kind regards,\n'
-    + 'EGYGRILLZ\n'
-    + 'Custom Grillz Studio - Cairo';
+  function reminderValues(ctx) {
+    var c = ctx || {};
+    return {
+      client_name: c.name || 'there',
+      date: c.date || '',
+      day: weekdayName(c.date),
+      time: c.time || '',
+      service: c.service || 'your appointment',
+      phone: c.phone || '',
+      studio_name: STUDIO_INFO.name,
+      address: STUDIO_INFO.address,
+      site: STUDIO_INFO.site,
+      message: c.message || '',
+      notes: c.notes || '',
+    };
+  }
+
+  function fillTemplate(text, values) {
+    return String(text || '').replace(/\{(\w+)\}/g, function (m, k) {
+      return Object.prototype.hasOwnProperty.call(values, k) ? String(values[k] == null ? '' : values[k]) : m;
+    });
+  }
+
+  function renderReminder(kind, ctx) {
+    var tpl = REMINDER_TEMPLATES[kind] || REMINDER_TEMPLATES_DEFAULT[kind] || REMINDER_TEMPLATES_DEFAULT.appointment;
+    var values = reminderValues(ctx);
+    return {
+      subject: fillTemplate(tpl.subject, values).replace(/\s{2,}/g, ' ').trim(),
+      body: fillTemplate(tpl.body, values)
+    };
+  }
+
+  async function loadReminderTemplates(force) {
+    if (!db) return REMINDER_TEMPLATES;
+    try {
+      var snap = await db.collection('settings').doc('reminder_templates').get();
+      if (snap.exists) REMINDER_TEMPLATES = cloneTemplates(snap.data() || {});
+    } catch (e) {
+      console.warn('[reminders] template read failed', e && e.message);
+    }
+    return REMINDER_TEMPLATES;
+  }
+
+  function toggleReminderTemplates() {
+    var box = document.getElementById('reminder-tpl-body');
+    var btn = document.getElementById('rem-tpl-toggle');
+    if (!box) return;
+    var open = box.style.display === 'none';
+    box.style.display = open ? '' : 'none';
+    if (btn) btn.textContent = open ? 'Close' : 'Edit';
+    if (open) {
+      setReminderTemplateKind(reminderTemplateKind);
+      if (db) loadReminderTemplates().then(function () { setReminderTemplateKind(reminderTemplateKind); });
+    }
+  }
+
+  function setReminderTemplateKind(kind, btn) {
+    reminderTemplateKind = kind || 'appointment';
+    document.querySelectorAll('[data-rem-kind]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-rem-kind') === reminderTemplateKind);
+    });
+    var tpl = REMINDER_TEMPLATES[reminderTemplateKind] || REMINDER_TEMPLATES_DEFAULT[reminderTemplateKind];
+    var subj = document.getElementById('rem-tpl-subject');
+    var body = document.getElementById('rem-tpl-body');
+    if (subj) subj.value = tpl.subject;
+    if (body) body.value = tpl.body;
+    var prev = document.getElementById('rem-tpl-preview');
+    if (prev) prev.style.display = 'none';
+  }
+
+  function sampleReminderContext() {
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return {
+      name: 'Ahmed Mostafa',
+      date: localISODate(tomorrow),
+      time: '6:30 PM',
+      service: 'Custom Grillz — Fitting',
+      phone: '0100 123 4567',
+      message: 'How much is a gold set with 6 teeth?',
+      notes: ''
+    };
+  }
+
+  async function saveReminderTemplate() {
+    var subj = (document.getElementById('rem-tpl-subject') || {}).value || '';
+    var body = (document.getElementById('rem-tpl-body') || {}).value || '';
+    if (!body.trim()) { showToast('Write the message first', 'error'); return; }
+    if (!db) { showToast('Not connected to the database', 'error'); return; }
+    REMINDER_TEMPLATES[reminderTemplateKind] = {
+      subject: subj.trim() || REMINDER_TEMPLATES_DEFAULT[reminderTemplateKind].subject,
+      body: body
+    };
+    try {
+      var patch = { updatedAt: new Date().toISOString() };
+      patch[reminderTemplateKind] = REMINDER_TEMPLATES[reminderTemplateKind];
+      await db.collection('settings').doc('reminder_templates').set(patch, { merge: true });
+      showToast('Template saved — every reminder uses it now', 'success');
+    } catch (e) {
+      showToast('Could not save: ' + (e.message || e), 'error');
+    }
+  }
+
+  function resetReminderTemplate() {
+    var d = REMINDER_TEMPLATES_DEFAULT[reminderTemplateKind];
+    var subj = document.getElementById('rem-tpl-subject');
+    var body = document.getElementById('rem-tpl-body');
+    if (subj) subj.value = d.subject;
+    if (body) body.value = d.body;
+    showToast('Default restored — press Save template to keep it');
+  }
+
+  function previewReminderTemplate() {
+    var tpl = {
+      subject: (document.getElementById('rem-tpl-subject') || {}).value || '',
+      body: (document.getElementById('rem-tpl-body') || {}).value || ''
+    };
+    var values = reminderValues(sampleReminderContext());
+    var pre = document.getElementById('rem-tpl-preview');
+    if (!pre) return;
+    pre.textContent = 'Subject: ' + fillTemplate(tpl.subject, values) + '\n\n' + fillTemplate(tpl.body, values);
+    pre.style.display = 'block';
+  }
+
+  function openTestReminderGmail() {
+    var tpl = {
+      subject: (document.getElementById('rem-tpl-subject') || {}).value || '',
+      body: (document.getElementById('rem-tpl-body') || {}).value || ''
+    };
+    var values = reminderValues(sampleReminderContext());
+    openGmail(gmailUrl('', fillTemplate(tpl.subject, values), fillTemplate(tpl.body, values)));
+  }
+
+  /** Reminder email — template-filled, press Send */
+  function gmailCompose(a) {
+    var out = renderReminder('appointment', a);
+    return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1'
+      + '&to='  + encodeURIComponent(a.email || '')
+      + '&su='  + encodeURIComponent(out.subject)
+      + '&body=' + encodeURIComponent(out.body);
+  }
+
+  /** Reply email to a client message — template-filled */
+  function gmailReply(m) {
+    var out = renderReminder('reply', {
+      name: m.name, email: m.email, phone: m.phone,
+      message: m.message ? '"' + String(m.message).replace(/\n/g, '\n  ') + '"' : '',
+      date: m.date, time: m.time, service: m.service
+    });
     return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1'
       + '&to='  + encodeURIComponent(m.email || '')
-      + '&su='  + encodeURIComponent(subj)
-      + '&body=' + encodeURIComponent(body);
+      + '&su='  + encodeURIComponent(out.subject)
+      + '&body=' + encodeURIComponent(out.body);
   }
 
   
@@ -2410,19 +2771,28 @@
   }
 
   
-  function sendAllTomorrow(){
+  function sendAllTomorrow(kind){
     var t = new Date(); t.setDate(t.getDate()+1);
     var tomorrow = localISODate(t);
+    var kindKey = kind || 'appointment';
     var list = allAppts.filter(function(a){
-      return a.date===tomorrow && a.email && !a.reminderSentAt;
+      return a.date===tomorrow && a.email && (kindKey !== 'appointment' || !a.reminderSentAt);
     });
-    if(!list.length){ showToast('No appointments tomorrow need a reminder','error'); return; }
-    if(!confirm('Open Gmail for '+list.length+' client(s)?\n\nEvery message will be ready — you just press Send.')) return;
+    if(!list.length){
+      showToast(kindKey === 'confirmation'
+        ? 'No appointments tomorrow need a confirmation'
+        : 'No appointments tomorrow need a reminder','error');
+      return;
+    }
+    loadReminderTemplates();
+    if(!confirm('Open Gmail for '+list.length+' client(s)?\n\nEvery message uses the saved Gmail template and is ready — you just press Send.')) return;
     list.forEach(function(a, i){
       setTimeout(function(){
-        var w = window.open(gmailCompose(a), '_blank');
+        var out = renderReminder(kindKey, a);
+        var url = gmailUrl(a.email || '', out.subject, out.body);
+        var w = window.open(url, '_blank');
         if (w) { try { w.opener = null; } catch (e) {} }
-        markReminderSent(a);
+        if (kindKey !== 'followup') markReminderSent(a);
       }, i * 700);
     });
     setTimeout(function(){ renderAppts(); showToast('Opened '+list.length+' Gmail tab(s)','success'); }, list.length*700 + 400);
@@ -2756,7 +3126,8 @@
     closeClientModal();
     try {
       await db.collection('clients').doc(delId).delete();
-      _bumpSummaryStat({ totalClients: -1 });
+      /* re-count rather than decrement: a drifted counter only gets worse */
+      syncClientCounter();
       allClients = allClients.filter(function(c){return c.id!==delId;});
       invalidate('clients:');
       invalidate('stats:');
@@ -2789,8 +3160,9 @@
         data.totalAppointments=0;
         data.totalNoShows=0;
         if (!data.firstVisit) data.firstVisit = localTodayStr();
+        var existed = allClients.some(function(c){ return c.id === docId; });
         await db.collection('clients').doc(docId).set(data, { merge: true });
-        _bumpSummaryStat({ totalClients: 1 });
+        if (!existed) syncClientCounter();
         allClients = allClients.filter(function(c){ return c.id !== docId; });
         allClients.unshift(Object.assign({id:docId},data));
         showToast(' Client added','success');
@@ -2839,7 +3211,7 @@
           count += chunk.length;
         } catch(err){ errors += chunk.length; }
       }
-      if (count > 0) _bumpSummaryStat({ totalClients: count });
+      if (count > 0) syncClientCounter();
       invalidate('clients:');
       invalidate('stats:');
       showToast(' Imported '+count+' clients'+(errors?' ('+errors+' errors)':''),'success');
@@ -3452,31 +3824,72 @@
     { key: 'latest-designs', label: 'Latest Designs' },
     { key: 'grillz-gallery', label: 'Gallery' }
   ];
+  /* A design can be published on SEVERAL pages at once. `pages` is the real
+     list; `page` is kept in step as the legacy single value so old pages,
+     codes and quotes keep working. */
+  function pagesOfItem(item){
+    if(!item) return [];
+    var out=[];
+    var push=function(v){ var s=String(v==null?'':v).trim(); if(s && out.indexOf(s)===-1) out.push(s); };
+    var explicit=false;
+    if(Array.isArray(item.pages)){ explicit=true; item.pages.forEach(push); }
+    if(Object.prototype.hasOwnProperty.call(item,'page')){ explicit=true; push(item.page); }
+    /* only pre-`page` designs fall back to their category — an explicit
+       empty list means "not on any page" and must stay empty */
+    if(!explicit && item.category) push(item.category);
+    return out;
+  }
   function pageOfItem(item){
-    if(!item) return '';
-    return Object.prototype.hasOwnProperty.call(item,'page') ? (item.page || '') : (item.category || '');
+    var pages = pagesOfItem(item);
+    return pages.length ? pages[0] : '';
+  }
+  function itemOnPage(item, key){
+    return pagesOfItem(item).indexOf(String(key||'')) !== -1;
   }
   function pageLabel(key){
     for(var i=0;i<PUBLIC_PAGES.length;i++){ if(PUBLIC_PAGES[i].key === (key||'')) return PUBLIC_PAGES[i].label; }
     return key || 'Not on a page';
   }
-  function pageOptionsHtml(current){
-    var cur = current || '';
-    return PUBLIC_PAGES.map(function(p){
-      return '<option value="'+p.key+'"'+(p.key===cur?' selected':'')+'>'+p.label+'</option>';
+  /* Checkbox chips — one design, many pages. */
+  function pageChipsHtml(item, cat){
+    var pages = pagesOfItem(item);
+    return PUBLIC_PAGES.filter(function(p){ return p.key; }).map(function(p){
+      var on = pages.indexOf(p.key) !== -1;
+      return '<button type="button" class="page-chip'+(on?' on':'')+'" aria-pressed="'+(on?'true':'false')+'"'+
+        ' data-page-key="'+escAttr(p.key)+'"'+
+        ' onclick="toggleItemPage(\''+escAttr(cat)+'\',\''+escAttr(item.id)+'\',\''+escAttr(p.key)+'\')" title="'+
+        (on?'Shown on '+escAttr(p.label)+' — click to remove':'Not on '+escAttr(p.label)+' — click to add')+'">'+
+        (on?'<i class="fas fa-check"></i>':'<i class="fas fa-plus" style="opacity:.45"></i>') + ' ' + p.label + '</button>';
     }).join('');
   }
 
   // ‑‑ CALCULATOR PRICING (no manual prices) ‑‑
   function calcPriceOf(item){
     if(!item || !item.calc || !window.CalcEngine) return 0;
-    try { return window.CalcEngine.calculateLine(item.calc).subtotal || 0; } catch(e){ return 0; }
+    try {
+      var line = window.CalcEngine.calculateLine(item.calc);
+      /* Prices shown on a card are always whole EGP — a set that calculates
+         to 21,898.62 is quoted as 21,899, never with decimals. */
+      var rounder = window.CalcEngine.roundPrice;
+      var n = rounder ? rounder(line.subtotal) : Math.round(line.subtotal);
+      return Number.isFinite(n) ? n : 0;
+    } catch(e){ return 0; }
   }
   function fmtEGP(n){ return Math.round(Number(n)||0).toLocaleString('en-EG') + ' EGP'; }
+  /* A legacy typed price ("21899 EGP", "21,899.00") is normalised to the same
+     rounded shape, so the inventory never mixes rounded and raw figures. */
+  function cleanLegacyPrice(raw){
+    var str = String(raw == null ? '' : raw).trim();
+    if(!str) return '';
+    if(/contact|quot|inquir|upon request|ask|dm/i.test(str)) return str;
+    var num = parseFloat(str.replace(/[^0-9.]/g, ''));
+    if(!Number.isFinite(num) || num <= 0) return str;
+    return fmtEGP(Math.round(num));
+  }
   function priceLabelOf(item){
     var n = calcPriceOf(item);
     if(n > 0) return fmtEGP(n);
-    if(item && item.price) return item.price;      /* legacy price, flagged below */
+    if(item && item.price) return cleanLegacyPrice(item.price);  /* legacy price */
     return 'No price';
   }
   function priceSourceOf(item){
@@ -3510,19 +3923,64 @@
     }
   }
 
-  // ‑‑ ASSIGN A DESIGN TO A PUBLIC PAGE (writes catalog.json) ‑‑
+  /* ── PUBLISH A DESIGN ON ONE MORE (OR ONE FEWER) PAGE ──
+     The old single `<select>` replaced the page, so a design could only ever
+     be on one page and "removing" it silently left the previous page value
+     behind when the write failed. Each chip now toggles exactly one page in
+     the `pages` array, the local cache is updated only after the write
+     succeeds, and `page` is mirrored to the first entry for older readers. */
   async function assignItemPage(cat, id, page){
+    /* legacy single-page entry point — keeps working for old links */
     try{
       var list = await readCatalog();
       var entry = catalogEntry(list, id);
       if(!entry){ showToast('Item not found in catalog.json','error'); renderUnifiedInventory(); return; }
+      entry.pages = page ? [page] : [];
       entry.page = page || null;
       await writeCatalog(list, 'Assign ' + id + ' to ' + pageLabel(page));
-      if(cache[cat] && cache[cat].items){
-        var item = cache[cat].items.find(function(i){ return i.id === id; });
-        if(item) item.page = page || null;
-      }
+      invalidateCatalogueCaches();
       showToast('Moved to ' + pageLabel(page), 'success');
+      await loadInventory();
+    } catch(e){
+      showToast('Error: ' + e.message, 'error');
+      renderUnifiedInventory();
+    }
+  }
+
+  function invalidateCatalogueCaches(){
+    try {
+      localStorage.removeItem('egygz_catalog_overlay_v1');
+      if (window.Catalog && typeof window.Catalog.invalidate === 'function') window.Catalog.invalidate();
+    } catch (e) {}
+  }
+
+  async function toggleItemPage(cat, id, pageKey){
+    var key = String(pageKey || '').trim();
+    if(!key) return;
+    try{
+      var list = await readCatalog();
+      var entry = catalogEntry(list, id);
+      if(!entry){ showToast('Item not found in catalog.json','error'); renderUnifiedInventory(); return; }
+      var pages = pagesOfItem(entry);
+      var idx = pages.indexOf(key);
+      var adding = idx === -1;
+      if(adding) pages.push(key);
+      else pages.splice(idx, 1);
+      entry.pages = pages.slice();
+      /* legacy mirror: first page, or null when the design is on none */
+      entry.page = pages.length ? pages[0] : null;
+      await writeCatalog(list, (adding ? 'Add ' : 'Remove ') + id + (adding ? ' to ' : ' from ') + pageLabel(key));
+      invalidateCatalogueCaches();
+      /* update the in-memory copy only now — a failed write leaves the card
+         showing the truth instead of a page that was never saved */
+      Object.keys(cache).forEach(function(k){
+        if(!cache[k] || !cache[k].items) return;
+        var item = cache[k].items.find(function(i){ return i.id === id; });
+        if(item){ item.pages = pages.slice(); item.page = entry.page; }
+      });
+      showToast(adding
+        ? 'Added to ' + pageLabel(key)
+        : 'Removed from ' + pageLabel(key), 'success');
       renderUnifiedInventory();
     } catch(e){
       showToast('Error: ' + e.message, 'error');
@@ -3550,9 +4008,9 @@
     });
     var filtered=items.filter(function(item){
       if(wantPage){
-        var p = pageOfItem(item);
-        if(wantPage === '__none__'){ if(p !== '') return false; }
-        else if(p !== wantPage) return false;
+        var pages = pagesOfItem(item);
+        if(wantPage === '__none__'){ if(pages.length) return false; }
+        else if(pages.indexOf(wantPage) === -1) return false;
       }
       if(!query) return true;
       var catLbl=(CAT_BADGE_LABELS[item._catKey]||item._catKey||'').toLowerCase();
@@ -3584,7 +4042,7 @@
       }).join('');
       var hasVideo=allMedia.some(function(f){return isVideoFile(f);});
       var isChecked=bulkSelected[cat]&&bulkSelected[cat].has(item.id);
-      return '<div class="set-card '+(isChecked?'bulk-selected':'')+'" data-id="'+item.id+'" data-cat="'+cat+'" data-page="'+escAttr(pageOfItem(item))+'">'+
+      return '<div class="set-card '+(isChecked?'bulk-selected':'')+'" data-id="'+item.id+'" data-cat="'+cat+'" data-page="'+escAttr(pagesOfItem(item).join(' '))+'">'+
         '<span class="card-cat-badge">'+(CAT_BADGE_LABELS[cat]||cat)+'</span>'+
         '<input type="checkbox" class="card-checkbox" '+(isChecked?'checked':'')+' onchange="toggleBulkSelect(\''+cat+'\',\''+item.id+'\',this)">'+
         '<div class="mini-slider">'+(mediaHtml||'<div class="no-img"><i class="fas fa-camera"></i></div>')+(hasVideo?'<span class="video-badge"><i class="fas fa-play"></i> Video</span>':'')+'</div>'+
@@ -3610,9 +4068,9 @@
               '<i class="fas '+(item.showPrice===false?'fa-eye-slash':'fa-eye')+'"></i> '+(item.showPrice===false?'No · Quote':'Yes')+
             '</button>'+
           '</div>'+
-          '<div class="card-page-row">'+
-            '<label class="card-page-label" for="page-'+cat+'-'+item.id+'">Page</label>'+
-            '<select class="card-page-select" id="page-'+cat+'-'+item.id+'" onchange="assignItemPage(\''+cat+'\',\''+item.id+'\',this.value)">'+pageOptionsHtml(pageOfItem(item))+'</select>'+
+          '<div class="card-page-row" style="flex-wrap:wrap;">'+
+            '<label class="card-page-label">Pages</label>'+
+            '<div class="page-chips">'+pageChipsHtml(item, cat)+'</div>'+
           '</div>'+
           '<div class="inline-save-row" id="isave-'+cat+'-'+item.id+'">'+
             '<button class="btn-isave" onclick="saveInlineEdit(\''+cat+'\',\''+item.id+'\')">Save to Site</button>'+
@@ -3923,10 +4381,34 @@
       }
     });
   }
+  /* ── modal page chips (add/edit a design) ── */
+  function modalPageKeys(){
+    return Array.prototype.slice.call(document.querySelectorAll('#f-pages .page-chip.on'))
+      .map(function(b){ return b.getAttribute('data-page-key'); })
+      .filter(Boolean);
+  }
+  function setModalPages(keys){
+    var want = (keys || []).map(String);
+    document.querySelectorAll('#f-pages .page-chip').forEach(function(b){
+      var on = want.indexOf(b.getAttribute('data-page-key')) !== -1;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  function toggleModalPage(btn){
+    if(!btn) return;
+    var on = !btn.classList.contains('on');
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var box = document.getElementById('f-pages');
+    if(box) box.dataset.touched = '1';
+  }
   function resetModal(){
     pendingImages=[];existingImages=[];currentEditId='';currentEditCat='';modalCalc=null;modalShowPrice=true;
     ['edit-id','edit-category','f-name','f-desc'].forEach(function(id){document.getElementById(id).value='';});
-    var fp=document.getElementById('f-page'); if(fp) fp.value='';
+    setModalPages([]);
+    var pagesBox = document.getElementById('f-pages');
+    if(pagesBox) pagesBox.dataset.touched = '';
     updateDesignPricePanel();
     document.getElementById('file-input').value='';
     document.getElementById('image-previews').innerHTML='';
@@ -3951,12 +4433,10 @@
   function onModalCatChange(cat){
     currentEditCat = cat;
     document.getElementById('edit-category').value = cat;
-    /* keep the page assignment in step with the media category while adding */
-    var fpEl = document.getElementById('f-page');
-    if(fpEl && currentMode === 'add'){
+    /* keep the default page in step with the media category while adding */
+    if(currentMode === 'add'){
       var def = (cat === 'sets') ? '' : (CAT[cat] ? CAT[cat].folder : cat);
-      if(!fpEl.value || fpEl.value === fpEl.dataset.prevDefault) fpEl.value = def;
-      fpEl.dataset.prevDefault = def;
+      setModalPages(def ? [def] : []);
     }
     var catGroup = document.getElementById('modal-cat-group');
     if(catGroup) catGroup.style.display = currentMode === 'edit' ? 'none' : '';
@@ -3978,12 +4458,10 @@
       'Add ' + ((CAT[cat] && CAT[cat].label) || cap(cat));
     document.getElementById('publish-btn').textContent='Publish to Site';
     /* new designs default to the page that matches their media category */
-    var fpEl=document.getElementById('f-page');
-    if(fpEl){
-      var defPage = (cat==='sets' ? '' : (CAT[cat] ? CAT[cat].folder : cat));
-      fpEl.value = defPage;
-      fpEl.dataset.prevDefault = defPage;
-    }
+    var defPage = (cat==='sets' ? '' : (CAT[cat] ? CAT[cat].folder : cat));
+    setModalPages(defPage ? [defPage] : []);
+    var pagesBox = document.getElementById('f-pages');
+    if(pagesBox) pagesBox.dataset.touched = '';
     setUploadHint(cat);
     document.getElementById('modal-overlay').classList.add('open');
   }
@@ -3999,7 +4477,9 @@
     var catGroup=document.getElementById('modal-cat-group');
     if(catGroup) catGroup.style.display='none';
     document.getElementById('f-name').value=item.name||'';
-    var fp=document.getElementById('f-page'); if(fp) fp.value=pageOfItem(item);
+    setModalPages(pagesOfItem(item));
+    var pagesBox = document.getElementById('f-pages');
+    if(pagesBox) pagesBox.dataset.touched = '1';
     modalCalc = item.calc || null;
     modalShowPrice = (item.showPrice !== false);
     updateDesignPricePanel();
@@ -4117,7 +4597,8 @@
     var catInfo=CAT[cat]||CAT.sets;
     var name=document.getElementById('f-name').value.trim();
     var desc=document.getElementById('f-desc').value.trim();
-    var pageVal=(document.getElementById('f-page')||{}).value || '';
+    var pageKeys = modalPageKeys();
+    var pageVal = pageKeys.length ? pageKeys[0] : '';
     var calcSpec = modalCalc ? (window.CalcEngine && window.CalcEngine.cleanLineSpec ? window.CalcEngine.cleanLineSpec(modalCalc) : modalCalc) : null;
     var showPriceVal = !!modalShowPrice;
     /* price is computed from the calculator spec; preserve legacy price if editing without a calc spec */
@@ -4206,6 +4687,7 @@
         entry.category = realCat;
         entry.folder = itemId;
         entry.calc = calcSpec;
+        entry.pages = pageKeys.slice();
         entry.page = pageVal || null;
       } else {
         catalog.push({
@@ -4216,6 +4698,7 @@
           showPrice: showPriceVal,
           description: desc,
           category: realCat,
+          pages: pageKeys.slice(),
           page: pageVal || null,
           calc: calcSpec,
           images: imgs,
@@ -4438,9 +4921,10 @@
 
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script data-cfasync="false" src="assets/calc-engine.js?v=4"></script>
+<script data-cfasync="false" src="assets/calc-engine.js?v=5"></script>
 <script data-cfasync="false" src="assets/crops.js?v=3"></script>
-<script data-cfasync="false" src="assets/staff-calculator.js?v=4"></script>
+<script data-cfasync="false" src="assets/numpad.js?v=5"></script>
+<script data-cfasync="false" src="assets/staff-calculator.js?v=5"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
 <script data-cfasync="false">
@@ -4793,12 +5277,14 @@
       html += '<div class="inv-item-row" data-row="' + escA(it.id) + '">' +
         '<div><input class="inv-item-input" data-id="' + escA(it.id) + '" data-field="name" placeholder="Item name / description" value="' + escA(it.name) + '">' +
         '<input class="inv-item-spec" data-id="' + escA(it.id) + '" data-field="spec" placeholder="Material / teeth / finish spec (optional)" value="' + escA(it.spec || '') + '"></div>' +
-        '<input class="inv-item-input" type="number" min="1" data-id="' + escA(it.id) + '" data-field="qty" value="' + escA(it.qty) + '" style="text-align:center;">' +
-        '<input class="inv-item-input" type="number" min="0" step="1" data-id="' + escA(it.id) + '" data-field="price" value="' + escA(it.price) + '">' +
+        '<input class="inv-item-input" type="number" min="1" inputmode="numeric" data-id="' + escA(it.id) + '" data-field="qty" value="' + escA(it.qty) + '" style="text-align:center;">' +
+        '<input class="inv-item-input" type="number" min="0" step="1" inputmode="numeric" data-id="' + escA(it.id) + '" data-field="price" value="' + escA(it.price) + '">' +
         '<button class="inv-item-remove" data-remove="' + escA(it.id) + '" title="Remove">&times;</button>' +
         '</div>';
     });
     wrap.innerHTML = html;
+    /* qty and price get the same big keypad as the calculator */
+    if (window.Numpad) window.Numpad.attach(wrap);
     wrap.querySelectorAll('input[data-id]').forEach(function (inp) {
       inp.addEventListener('input', function () {
         var it = lineItems.find(function (x) { return String(x.id) === String(inp.dataset.id); });
@@ -6051,12 +6537,25 @@
      `mould_orders` holds client phone numbers and addresses, so Firestore
      refuses to let a browser read it. The Worker reads it with the studio's
      own credentials and hands the dashboard the list. ─────────────────── */
+  /* The signed-in staff member's Firebase ID token. The Worker reads
+     mould_orders *as that user*, so Firestore rules that name staff UIDs
+     work without any extra secret on the Worker. */
+  async function staffIdToken() {
+    try {
+      var u = firebase.auth && firebase.auth().currentUser;
+      if (u && typeof u.getIdToken === 'function') return await u.getIdToken();
+    } catch (e) { console.warn('[moulds] no staff token', e && e.message); }
+    return '';
+  }
+
   async function mouldWorkerJSON(path, body, allowPrompt) {
     var headers = { 'Content-Type': 'application/json' };
     try {
       var mk = localStorage.getItem('egygz_moulds_key');
       if (mk) headers['X-Moulds-Key'] = mk;
     } catch (e) {}
+    var tok = await staffIdToken();
+    if (tok) headers['Authorization'] = 'Bearer ' + tok;
     var ctrl = new AbortController();
     var tmr = setTimeout(function () { ctrl.abort(); }, 15000);
     try {
@@ -6065,7 +6564,7 @@
       var r = await fetch(WORKER_BASE + path, opts);
       var data = null;
       try { data = await r.json(); } catch (e) { data = null; }
-      if (r.status === 401 && allowPrompt !== false) {
+      if (r.status === 401 && allowPrompt !== false && !tok) {
         try { localStorage.removeItem('egygz_moulds_key'); } catch (e) {}
         var entered = window.prompt('Enter your MOULDS_KEY (configured in Cloudflare Worker secrets).\nSaved on this device only:');
         if (entered && entered.trim()) {
@@ -6158,8 +6657,9 @@
         if (why === 'quota' || w.status === 429 || /429|quota|exhaust/i.test(why)) { quota = true; failure = quotaHint(); }
         else failure = 'Worker: ' + why;
         if (why === 'permission-denied' || why === 'firestore-403') {
-          failure += ' — the database refuses to let the studio account read mould_orders. ' +
-                     'Firebase console → Firestore → Rules must allow that account to read the collection.';
+          failure += ' — the database refuses to let this account read mould_orders. ' +
+                     'Publish firestore.rules (it already lists admin@egygrillz.com in staffEmails()), ' +
+                     'or add this account there, then redeploy.';
         }
       }
     } catch (e) {
@@ -6205,13 +6705,25 @@
       }
 
       var who = 'not signed in';
+      var uid = '';
       try {
         var u = firebase.auth && firebase.auth().currentUser;
-        if (u) who = u.email || u.uid;
+        if (u) { who = u.email || u.uid; uid = u.uid || ''; }
       } catch (e) {}
       box.innerHTML = '<div class="mould-empty"><i class="fas fa-triangle-exclamation"></i>Could not load mould orders.<br>' +
         escHtml(failure || 'unknown error') +
-        '<br><small style="opacity:.7;">Dashboard signed in as: ' + escHtml(who) + '</small></div>';
+        '<br><small style="opacity:.7;">Dashboard signed in as: ' + escHtml(who) +
+        (uid ? ' · UID ' + escHtml(uid) : '') + '</small>' +
+        '<div style="margin-top:16px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto;font-size:12px;line-height:1.9;color:#6b6b6b;">' +
+        '<strong style="color:#1f1f1f;">How to fix it</strong><br>' +
+        '1 — Firebase → Firestore → Rules: paste <code>firestore.rules</code> from this repository and Publish. ' +
+        'It already allows <code>admin@egygrillz.com</code> to read <code>mould_orders</code>; ' +
+        'add any other studio address to <code>staffEmails()</code> in the same file.' +
+        (who && who !== 'not signed in' ? ' This dashboard is signed in as <code>' + escHtml(who) + '</code>.' : '') +
+        (uid ? ' (UID <code>' + escHtml(uid) + '</code>.)' : '') +
+        '<br>2 — Then paste the current <code>cloudflare-worker.js</code> into Cloudflare and reload: ' +
+        'the Worker reads the list for you, so the browser never needs database access at all.' +
+        '</div></div>';
       return;
     }
 

@@ -295,7 +295,8 @@ footer p{font-size:11px;color:var(--faint);}
   <p data-i18n="footer_note">Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.</p>
 </footer>
 
-<script src="/assets/calc-engine.js?v=4"></script>
+<script src="/assets/calc-engine.js?v=5"></script>
+<script src="/assets/numpad.js?v=5"></script>
 <script>
 (function () {
   'use strict';
@@ -353,6 +354,7 @@ footer p{font-size:11px;color:var(--faint);}
       custom_price: 'Price per stone (EGP)', custom_price_tooth: 'Price per tooth (EGP)',
       bars_note: 'Bar design — open horizontal bars with the natural tooth visible behind. Iced bars are a fixed option and included in the stone price.',
       stones_hint: 'Stones & diamonds are only available on Silver and Gold. Tap below to switch your metal in one tap.',
+      stones_both_note: 'This tooth is iced out and also carries accent stones — both are priced.',
       switch_silver: 'Switch to Silver',
       plating_none: 'No plating',
       pl_yellowgold: 'Yellow Gold', pl_whitegold: 'White Gold', pl_rosegold: 'Rose Gold',
@@ -422,6 +424,7 @@ footer p{font-size:11px;color:var(--faint);}
       custom_price: 'السعر للحجر (جنيه)', custom_price_tooth: 'السعر للسن (جنيه)',
       bars_note: 'تصميم بار — قضبان أفقية مفتوحة وتظهر الأسنان الطبيعية خلفها. ترصيع البارات خيار ثابت ويُحسب ضمن سعر الأحجار.',
       stones_hint: 'الأحجار والألماس متاحة فقط على الفضة والذهب. اضغط أدناه لتبديل المعدن بضغطة واحدة.',
+      stones_both_note: 'هذا السن مرصّع بالكامل ويحمل أحجار لمسات أيضاً — يُحسب الاثنان معاً.',
       switch_silver: 'التبديل إلى الفضة',
       plating_none: 'بدون طلاء',
       pl_yellowgold: 'ذهب أصفر', pl_whitegold: 'ذهب أبيض', pl_rosegold: 'ذهب وردي',
@@ -571,8 +574,25 @@ footer p{font-size:11px;color:var(--faint);}
 
   /* ───────────────────────── state ───────────────────────── */
 
+  /* A tooth can be iced out AND carry accent stones; `accent` and `full` are
+     two independent switches. `mode` is kept for saved codes/quotes that were
+     written when only one finish was possible. */
   function newStones() {
-    return { mode: 'none', accentCount: 4, accentType: 'cz', setting: 'flush', accentPrice: '', fullType: 'moissanite', coverage: 'standardpave', fullPrice: '' };
+    return {
+      mode: 'none', accent: false, full: false,
+      accentCount: 4, accentType: 'cz', setting: 'flush', accentPrice: '',
+      fullType: 'moissanite', coverage: 'standardpave', fullPrice: '',
+    };
+  }
+  function stonesOn(st) {
+    if (!st) return { accent: false, full: false };
+    if (st.accent || st.full) return { accent: !!st.accent, full: !!st.full };
+    return { accent: st.mode === 'accent', full: st.mode === 'full' };
+  }
+  function stonesMode(st) {
+    const f = stonesOn(st);
+    if (f.accent && f.full) return 'both';
+    return f.accent ? 'accent' : (f.full ? 'full' : 'none');
   }
   function newGroup(material) {
     return { label: '', material: material || 'silver', karat: '18', teeth: 4, level: '1', stones: newStones(), plating: 'none', enamel: 'none', engraving: 'none', anodize: 'none' };
@@ -612,23 +632,25 @@ footer p{font-size:11px;color:var(--faint);}
   function stonesSpec(st, material, level) {
     if (!E() || !E().allowsStones(material)) return {};
     if (String(level) === '0.5') return { full: { bars: true } };
-    if (st.mode === 'accent') {
+    const on = stonesOn(st);
+    const out = {};
+    if (on.accent) {
       const a = { count: clamp(parseInt(st.accentCount, 10) || 1, 1, 999), type: st.accentType || 'cz', setting: st.setting || 'flush' };
       if (st.accentType === 'labgrown' || st.accentType === 'natural') {
         const p = parseFloat(st.accentPrice);
         if (Number.isFinite(p) && p > 0) { a.price = p; a.customPrice = p; }
       }
-      return { accent: a };
+      out.accent = a;
     }
-    if (st.mode === 'full') {
+    if (on.full) {
       const f = { type: st.fullType || 'moissanite', coverage: st.coverage || 'standardpave' };
       if (st.fullType === 'labgrown' || st.fullType === 'natural') {
         const p = parseFloat(st.fullPrice);
         if (Number.isFinite(p) && p > 0) { f.price = p; f.customPrice = p; }
       }
-      return { full: f };
+      out.full = f;
     }
-    return {};
+    return out;
   }
 
   function groupSpec(g, setMaterial) {
@@ -725,7 +747,15 @@ footer p{font-size:11px;color:var(--faint);}
     return '<div class="fld"><label>' + esc(label) + '</label><select ' + (attrs || '') + '>' + options.map((o) => optionHtml(o[0], o[0], value, '', o[1])).join('') + '</select></div>';
   }
   function fieldHtml(label, type, value, attrs, placeholder, min, max) {
-    return '<div class="fld"><label>' + esc(label) + '</label><input type="' + type + '" value="' + esc(value == null ? '' : value) + '" ' + (attrs || '') + (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + (min != null ? ' min="' + min + '"' : '') + (max != null ? ' max="' + max + '"' : '') + '></div>';
+    /* Numbers get the compact keypad on phones (teeth, stone counts, rates);
+       a rate typed with a decimal point keeps its decimal keypad. */
+    let extra = '';
+    if (type === 'number') {
+      const a = String(attrs || '');
+      const decimal = /step\s*=\s*["']?(any|0\.0*[1-9])/i.test(a) || /goldRate|Rate/.test(a);
+      extra = ' data-pad-mode="' + (decimal ? 'decimal' : 'numeric') + '" inputmode="' + (decimal ? 'decimal' : 'numeric') + '" enterkeyhint="done"';
+    }
+    return '<div class="fld"><label>' + esc(label) + '</label><input type="' + type + '"' + extra + ' value="' + esc(value == null ? '' : value) + '" ' + (attrs || '') + (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + (min != null ? ' min="' + min + '"' : '') + (max != null ? ' max="' + max + '"' : '') + '></div>';
   }
   function keyOptions(keys, current, nameFn) {
     return keys.map((k) => [k, nameFn ? nameFn(k) : k]);
@@ -755,14 +785,22 @@ footer p{font-size:11px;color:var(--faint);}
       return '<div class="hint-box"><i class="fa-regular fa-gem"></i><span>' + esc(t('stones_hint')) + '</span><button type="button" data-act="switch-silver" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + '>' + esc(t('switch_silver')) + '</button></div>';
     }
     if (String(level) === '0.5') return '<div class="hint-box"><i class="fa-solid fa-bars"></i><span>' + esc(t('bars_note')) + '</span></div>';
-    let html = '<div class="pills">' + [['none','stones_none'],['accent','stones_accent'],['full','stones_full']].map(([v,k]) => pill(k, st.mode === v, t(k), 'data-act="stone-mode" ' + at + ' data-value="' + v + '"')).join('') + '</div>';
-    if (st.mode === 'accent') {
+    /* Two independent switches: the same tooth can be iced out and carry
+       accent stones at once. Tapping a switch never clears the other one. */
+    const on = stonesOn(st);
+    const mode = stonesMode(st);
+    let html = '<div class="pills">' + [['accent','stones_accent'],['full','stones_full']].map(([v,k]) => pill(k, on[v], t(k), 'data-act="stone-mode" ' + at + ' data-value="' + v + '"')).join('') + '</div>';
+    if (mode === 'both') {
+      html += '<div class="hint-box"><i class="fa-solid fa-gem"></i><span>' + esc(t('stones_both_note')) + '</span></div>';
+    }
+    if (on.accent) {
       html += '<div class="stones-detail"><div class="g-grid">' + fieldHtml(t('accent_count'), 'number', st.accentCount,
         'data-scope="' + (groupIdx == null ? 'set' : 'group') + '" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + ' data-field="accentCount"', '', 1, 999) +
         selectHtml(t('accent_type'), '', st.accentType, keyOptions(STONE_TYPES, st.accentType, stoneTypeName), at + ' data-field="accentType"') +
         selectHtml(t('setting'), '', st.setting, keyOptions(SETTINGS, st.setting, settingName), at + ' data-field="setting"') +
         ((st.accentType === 'natural' || st.accentType === 'labgrown') ? fieldHtml(t('custom_price'), 'number', st.accentPrice, at + ' data-field="accentPrice"', '', 0, null) : '') + '</div></div>';
-    } else if (st.mode === 'full') {
+    }
+    if (on.full) {
       html += '<div class="stones-detail"><div class="g-grid">' +
         selectHtml(t('full_type'), '', st.fullType, keyOptions(STONE_TYPES, st.fullType, stoneTypeName), at + ' data-field="fullType"') +
         selectHtml(t('coverage'), '', st.coverage, keyOptions(COVERAGES, st.coverage, coverageName), at + ' data-field="coverage"') +
@@ -928,6 +966,8 @@ footer p{font-size:11px;color:var(--faint);}
       el.setAttribute('aria-pressed', el.classList.contains('selected') ? 'true' : 'false');
     });
     $('#order-step').innerHTML = renderOrderStep();
+    /* every re-render replaces the fields, so re-attach the numeric keypad */
+    if (window.Numpad) window.Numpad.attach($('#sets-container') || document);
     renderSummary();
     applyI18n();
   }
@@ -979,7 +1019,10 @@ footer p{font-size:11px;color:var(--faint);}
           return Object.assign(newGroup(), g, {
             material: mat, karat: String(g.karat || line.karat || '18'),
             teeth: clamp(parseInt(g.teeth, 10) || 1, 1, 16), level: String(g.level || '1'),
-            stones: Object.assign(newStones(), g.accent ? { mode:'accent', accentCount:g.accent.count, accentType:g.accent.type, setting:g.accent.setting, accentPrice:g.accent.customPrice || g.accent.price || '' } : {}, g.full ? { mode:'full', fullType:g.full.type || 'moissanite', coverage:g.full.coverage || 'standardpave', fullPrice:g.full.customPrice || g.full.price || '' } : {}),
+            stones: Object.assign(newStones(),
+              g.accent ? { accent:true, mode:'accent', accentCount:g.accent.count, accentType:g.accent.type, setting:g.accent.setting, accentPrice:g.accent.customPrice || g.accent.price || '' } : {},
+              g.full ? { full:true, mode:'full', fullType:g.full.type || 'moissanite', coverage:g.full.coverage || 'standardpave', fullPrice:g.full.customPrice || g.full.price || '' } : {},
+              (g.accent && g.full) ? { mode:'both' } : {}),
             plating: g.plating || line.plating || 'none', enamel:g.enamel || line.enamel || 'none', engraving:g.engraving || line.engraving || 'none', anodize:g.anodize || 'none',
           });
         });
@@ -989,8 +1032,9 @@ footer p{font-size:11px;color:var(--faint);}
       }
       const mat = line.material || 'silver';
       const st = newStones();
-      if (line.accent) Object.assign(st, { mode:'accent', accentCount:line.accent.count || 4, accentType:line.accent.type || 'cz', setting:line.accent.setting || 'flush', accentPrice:line.accent.customPrice || line.accent.price || '' });
-      else if (line.full) Object.assign(st, { mode:'full', fullType:line.full.type || 'moissanite', coverage:line.full.coverage || 'standardpave', fullPrice:line.full.customPrice || line.full.price || '' });
+      if (line.accent) Object.assign(st, { accent:true, mode:'accent', accentCount:line.accent.count || 4, accentType:line.accent.type || 'cz', setting:line.accent.setting || 'flush', accentPrice:line.accent.customPrice || line.accent.price || '' });
+      if (line.full) Object.assign(st, { full:true, mode:'full', fullType:line.full.type || 'moissanite', coverage:line.full.coverage || 'standardpave', fullPrice:line.full.customPrice || line.full.price || '' });
+      if (line.accent && line.full) st.mode = 'both';
       let toothIds = E().cleanToothIds(line.toothIds || []);
       if (!toothIds.length) toothIds = toothPreset(clamp(Number(line.teeth) || 6, 1, 32));
       return Object.assign(newSet(), {
@@ -1038,7 +1082,7 @@ footer p{font-size:11px;color:var(--faint);}
       const obj = act === 'level-step' ? s : s.groups[gi];
       const current = Math.max(0, LEVELS.indexOf(String(obj.level || '1')));
       obj.level = LEVELS[(current + Number(target.dataset.value) + LEVELS.length) % LEVELS.length];
-      if (obj.level === '0.5') obj.stones.mode = 'none';
+      if (obj.level === '0.5') { obj.stones.mode = 'none'; obj.stones.accent = false; obj.stones.full = false; }
     } else if (act === 'material') {
       const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
       obj.material = target.dataset.value;
@@ -1074,13 +1118,16 @@ footer p{font-size:11px;color:var(--faint);}
       s.toothIds = TOOTH_ORDER.filter((id) => s.toothIds.includes(id));
     } else if (act === 'level') {
       s.level = target.dataset.value;
-      if (s.level === '0.5') s.stones.mode = 'none';
+      if (s.level === '0.5') { s.stones.mode = 'none'; s.stones.accent = false; s.stones.full = false; }
     } else if (act === 'group-level') {
       const g = s.groups[gi]; g.level = target.dataset.value;
-      if (g.level === '0.5') g.stones.mode = 'none';
+      if (g.level === '0.5') { g.stones.mode = 'none'; g.stones.accent = false; g.stones.full = false; }
     } else if (act === 'stone-mode') {
       const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
-      obj.stones.mode = target.dataset.value;
+      const which = target.dataset.value;               // 'accent' | 'full'
+      const cur = stonesOn(obj.stones);
+      obj.stones[which] = !cur[which];
+      obj.stones.mode = stonesMode(obj.stones);
     } else if (act === 'finish') {
       stateObject(null, target.dataset.scope || 'set', idx, gi)[target.dataset.field] = target.dataset.value;
     } else if (act === 'switch-silver') {

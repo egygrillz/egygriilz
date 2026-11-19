@@ -362,7 +362,7 @@
     .reveal.visible { opacity:1; transform:translateY(0); }
   </style>
   <script src="/assets/set-visibility.js?v=3"></script>
-  <script src="/assets/catalog.js?v=4"></script>
+  <script src="/assets/catalog.js?v=5"></script>
   <script src="/assets/crops.js?v=3"></script>
   <script src="/assets/home-banners.js?v=3"></script>
 </head>
@@ -746,8 +746,17 @@
       if (id) slideshowIntervals.set(container, id);
     }
 
+    /* A design can be published on several pages at once (editx writes
+       `pages`), so membership goes through the shared catalogue helper. */
+    function onPage(x, key){
+      if (window.Catalog && typeof window.Catalog.onPage === 'function') return window.Catalog.onPage(x, key);
+      if(!x) return false;
+      const p = Array.isArray(x.pages) ? x.pages : (Object.prototype.hasOwnProperty.call(x,'page') ? [x.page] : [x.category || '']);
+      return p.indexOf(key) !== -1;
+    }
     function pageOf(x){
       if(!x) return '';
+      if (Array.isArray(x.pages) && x.pages.length) return x.pages[0];
       return Object.prototype.hasOwnProperty.call(x,'page') ? x.page : (x.category || '');
     }
 
@@ -759,7 +768,7 @@
             : Promise.resolve(null),
           window.Catalog.load()
         ]);
-        const mine = (all||[]).filter(x => pageOf(x) === cat).sort((a,b)=>(a.order||999)-(b.order||999));
+        const mine = (all||[]).filter(x => onPage(x, cat)).sort((a,b)=>(a.order||999)-(b.order||999));
         const d = mine[0];
 
         if (banner && banner.name) document.getElementById(nameId).textContent = banner.name;
@@ -786,7 +795,7 @@
         const all = await window.Catalog.load();
         const want = cat === 'latest' ? 'latest-designs' : cat;
         const results = (all||[])
-          .filter(x => pageOf(x) === want)
+          .filter(x => onPage(x, want))
           .sort((a,b) => (a.order||999) - (b.order||999))
           .slice(0, 8)
           .map(x => ({ folder: x.folder || x.id, item: x, data: { name: x.name, desc: x.description, images: (x.images || []).filter(f=>!isVidName(f)) } }));
@@ -848,7 +857,7 @@
       buildSkeleton(strip, 5);
       try {
         const all = await window.Catalog.load();
-        const latestList = (all||[]).filter(x => { const p = pageOf(x); return p === 'latest-designs' || p === 'index'; })
+        const latestList = (all||[]).filter(x => onPage(x, 'latest-designs') || onPage(x, 'index'))
           .sort((a,b) => (a.order||999) - (b.order||999));
         const slice = (latestList.length ? latestList : (all||[])).slice(0, 8);
         const frag = document.createDocumentFragment();
@@ -890,7 +899,7 @@
       const scrollEl = document.getElementById('lv-gallery-scroll');
       try {
         const all = await window.Catalog.load();
-        const list = (all || []).filter(x => pageOf(x) === 'grillz-gallery')
+        const list = (all || []).filter(x => onPage(x, 'grillz-gallery'))
           .sort((a,b) => (a.order||999) - (b.order||999));
         if (!list.length) return;
         const frag = document.createDocumentFragment();

@@ -446,7 +446,8 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 
 <div class="toast" id="toast"></div>
 
-<script src="/assets/staff-calculator.js?v=4"></script>
+<script data-cfasync="false" src="assets/numpad.js?v=5"></script>
+<script src="/assets/staff-calculator.js?v=5"></script>
 <script type="module">
 /* ══════════════════════════════════════════════════════════════════
    1. AUTH
@@ -488,7 +489,7 @@ try { db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (
 // load the engine as a classic script (it attaches to window.CalcEngine)
 await new Promise((res, rej) => {
   const s = document.createElement('script');
-  s.src = '/assets/calc-engine.js?v=4';
+  s.src = '/assets/calc-engine.js?v=5';
   s.onload = res; s.onerror = rej;
   document.head.appendChild(s);
 });

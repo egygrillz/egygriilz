@@ -223,6 +223,25 @@
 
   const money = (n) => Math.round(Number(n) || 0);
 
+  /** Round a price the way the studio quotes it: nearest whole EGP.
+   *  Everything a client sees (cards, PDFs, invoices) goes through this so a
+   *  calculated 21,898.62 never surfaces as a ragged decimal. */
+  function roundPrice(n) { return Math.round(Number(n) || 0); }
+
+  /** Nearest whole EGP *and* up to the studio's roundTo step (default 50).
+   *  Used for set totals only — per-tooth maths stays exact until the end. */
+  function roundUpTo(n, step) {
+    const s = Math.max(1, Math.round(Number(step) || 0));
+    const v = Math.max(0, Number(n) || 0);
+    return s > 1 ? Math.ceil(v / s) * s : Math.round(v);
+  }
+
+  /** Both finishes can live on ONE tooth group (a tooth can be iced out and
+   *  carry accent stones at the same time), so the engine must be able to
+   *  price `accent` + `full` together. Anything that only understands one of
+   *  them keeps working — `stoneDetail` simply reports 'both'. */
+  const STONE_DETAIL_BOTH = 'both';
+
   function basePerTooth(line) {
     if (line.material === 'gold') {
       const karat = String(line.karat || '18');
@@ -293,9 +312,17 @@
     line.designCost = line.materialTotal * (pct / 100);
 
     // Stones (precious metals only: Silver 925 & Gold)
+    /* A single tooth group can carry BOTH finishes at once: the tooth is
+       iced out (pavé / full cover) and still has accent stones set on it.
+       They used to be mutually exclusive, which silently dropped whichever
+       one was typed second. Both are now priced and added together. */
     line.stoneCost = 0;
     line.stoneDetail = 'none';
     if (allowsStones(line.material)) {
+      let cost = 0;
+      let hasAccent = false;
+      let hasFull = false;
+
       if (line.accent && Number(line.accent.count) > 0) {
         const count = Math.max(1, Math.round(Number(line.accent.count) || 1));
         const type = line.accent.type || 'cz';
@@ -306,17 +333,22 @@
         }
         const sp = Number(S.settingPrice[setting] || 0);
         line.accent = Object.assign({}, line.accent, { count, type, setting });
-        line.stoneDetail = 'accent';
         line.accentUnit = Number(unit);
         line.settingUnit = sp;
-        line.stoneCost = count * (Number(unit) + sp);
-      } else if (line.full && (line.full.bars || isBars)) {
+        line.accentCost = count * (Number(unit) + sp);
+        cost += line.accentCost;
+        hasAccent = true;
+      } else {
         delete line.accent;
+        delete line.accentCost;
+      }
+
+      if (line.full && (line.full.bars || isBars)) {
         line.full = { bars: true };
-        line.stoneDetail = 'bars';
-        line.stoneCost = line.teeth * Number(S.barsStonesPerTooth || 0);
+        line.fullCost = line.teeth * Number(S.barsStonesPerTooth || 0);
+        cost += line.fullCost;
+        hasFull = true;
       } else if (line.full) {
-        delete line.accent;
         const type = line.full.type || 'moissanite';
         const cov = line.full.coverage || 'standardpave';
         let unit = S.fullPrice[type];
@@ -325,17 +357,26 @@
         }
         const cp = Number(S.coveragePrice[cov] || 0);
         line.full = Object.assign({}, line.full, { type, coverage: cov });
-        line.stoneDetail = 'full';
         line.fullUnit = Number(unit);
         line.coverageUnit = cp;
-        line.stoneCost = line.teeth * (Number(unit) + cp);
+        line.fullCost = line.teeth * (Number(unit) + cp);
+        cost += line.fullCost;
+        hasFull = true;
       } else {
-        delete line.accent;
         delete line.full;
+        delete line.fullCost;
       }
+
+      line.stoneCost = cost;
+      if (hasAccent && hasFull) line.stoneDetail = STONE_DETAIL_BOTH;
+      else if (hasAccent) line.stoneDetail = 'accent';
+      else if (hasFull) line.stoneDetail = (line.full && line.full.bars) ? 'bars' : 'full';
+      else line.stoneDetail = 'none';
     } else {
       delete line.accent;
       delete line.full;
+      delete line.fullCost;
+      delete line.accentCost;
     }
 
     // Per-tooth finishes
@@ -500,6 +541,8 @@
       if (gp > 0) out.goldPrice = gp;
     }
     if (allowsStones(out.material)) {
+      /* Accent stones and full iced cover may both sit on the same teeth —
+         keep both, never let one silently replace the other. */
       if (g.accent && Number(g.accent.count) > 0) {
         const a = {
           count: Math.max(1, Math.round(Number(g.accent.count) || 1)),
@@ -512,7 +555,8 @@
           a.customPrice = Number(ap);
         }
         out.accent = a;
-      } else if (g.full && (g.full.bars || out.level === '0.5')) {
+      }
+      if (g.full && (g.full.bars || out.level === '0.5')) {
         out.full = { bars: true };
       } else if (g.full) {
         const f = {
@@ -608,8 +652,11 @@
 
     const preRound = Math.max(0, gross - discountAmount);
     const roundTo = Number(S.roundTo) || 1;
-    const total = (o.round !== false && roundTo > 1 && preRound > 0)
-      ? Math.ceil(preRound / roundTo) * roundTo
+    /* Totals always land on a whole EGP (and on the studio's rounding step
+       when one is configured) so no quotation, invoice or catalogue card can
+       ever print a figure like 21,898.62. */
+    const total = o.round !== false
+      ? roundUpTo(preRound, roundTo > 1 ? roundTo : 1)
       : money(preRound);
 
     const depositPct = Number(o.depositPct) || 0;
@@ -722,7 +769,7 @@
     }
     parts.push(SHORT_LEVEL[String(g.level)] || L.level[g.level] || ('L' + g.level));
     if (g.accent && g.accent.count) parts.push(`${g.accent.count}x ${L.accentType[g.accent.type] || g.accent.type}`.trim());
-    else if (g.full && (g.full.bars || String(g.level) === '0.5')) parts.push('Full iced bars');
+    if (g.full && (g.full.bars || String(g.level) === '0.5')) parts.push('Full iced bars');
     else if (g.full) parts.push(`Full iced ${L.accentType[g.full.type] || g.full.type}`.trim());
     if (g.plating && g.plating !== 'none') parts.push(L.plating[g.plating] || g.plating);
     if (g.enamel && g.enamel !== 'none') parts.push('Enamel ' + (L.enamel[g.enamel] || g.enamel));
@@ -855,13 +902,15 @@
     const toks = [matTok, String(c.teeth || 1), lvlTok];
 
     if (allowsStones(c.material)) {
+      /* both tokens are emitted when a tooth group is iced out AND accented */
       if (c.accent && c.accent.count > 0) {
         let at = 'a' + c.accent.count + (CODE_STYPE[c.accent.type] || 'c') + (CODE_SET[c.accent.setting] || 'f');
         if ((c.accent.type === 'labgrown' || c.accent.type === 'natural') && Number(c.accent.price) > 0) {
           at += '@' + fmtRateTok(c.accent.price);
         }
         toks.push(at);
-      } else if (c.full && (c.full.bars || String(c.level) === '0.5')) {
+      }
+      if (c.full && (c.full.bars || String(c.level) === '0.5')) {
         toks.push('fb');
       } else if (c.full) {
         let ft = 'f' + (CODE_STYPE[c.full.type] || 'm') + (CODE_COV[c.full.coverage] || 's');
@@ -1982,7 +2031,7 @@
     lineLabel, groupLabel, cleanLineSpec, cleanGroupSpec, cleanToothIds,
     encodeCode, encodeLineCode, decodeCode, extractCode,
     buildQuotePdfBytes, downloadQuotePdf,
-    basePerTooth, allowsStones, money, fmt, syncServiceDefaults,
+    basePerTooth, allowsStones, money, fmt, roundPrice, roundUpTo, syncServiceDefaults,
     load, save, fetchSettingsRest,
     readSettingsCache, writeSettingsCache, clearSettingsCache,
     dbReadSettings, dbWriteSettings, dbProjectId,

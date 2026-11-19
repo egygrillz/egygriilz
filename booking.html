@@ -546,7 +546,11 @@
     db = firebase.firestore();
     } catch(e) { console.error('Firebase init failed:', e); }
 
-    emailjs.init('rvcNsK9pAj-jhd9RE');
+    /* EmailJS is an optional extra confirmation mail. Ad-blockers and some
+       networks block its CDN, so it must never break the rest of the page. */
+    try {
+      if (typeof emailjs !== 'undefined' && emailjs && emailjs.init) emailjs.init('rvcNsK9pAj-jhd9RE');
+    } catch (e) { console.warn('[booking] emailjs unavailable', e && e.message); }
 
     // ── HEADER SCROLL ──
     (function(){
@@ -906,6 +910,7 @@
         }
 
         try {
+          if (typeof emailjs === 'undefined' || !emailjs || !emailjs.send) throw new Error('emailjs unavailable');
           await emailjs.send('service_r8fhuah', 'template_d2twd6h', {
             to_name: name,
             to_email: email,
@@ -955,7 +960,7 @@
 
   <script src="/assets/booking-secure.js?v=3"></script>
   <script src="/assets/egygz-notify.js?v=3" defer></script>
-  <script src="/assets/calc-engine.js?v=4"></script>
+  <script src="/assets/calc-engine.js?v=5"></script>
   <script data-cfasync="false">
   /* Site settings: reads cached settings/site via REST and fills every [data-cfg] element. */
   (function () {
