@@ -109,8 +109,12 @@
     }
 
     var FV = firebase.firestore.FieldValue;
-    var slotRef = db.collection('slots').doc(slotDocId(selectedDate, selectedTime));
-    var apptRef = db.collection('appointments').doc();
+    var bookingId = slotDocId(selectedDate, selectedTime);
+    var slotRef = db.collection('slots').doc(bookingId);
+    // Use the same deterministic ID in both collections. Firestore rules use
+    // this link to allow public claims only when the slot and appointment are
+    // created together in this transaction.
+    var apptRef = db.collection('appointments').doc(bookingId);
     var apptPayload = {
       service: selectedServices.join(', '),
       date: selectedDate,
@@ -158,45 +162,16 @@
         resetConfirmBtn(btn);
         return;
       }
-      // Only fall back to direct create when rules forbid public get() inside a transaction
-      // (create-only rules still reject duplicates server-side). Never overwrite on network errors.
-      if (code !== 'permission-denied') {
-        console.error('Booking transaction failed:', txErr);
-        alert('Network error while confirming your appointment. Please check your connection and try again.');
-        resetConfirmBtn(btn);
-        return;
-      }
-      try {
-        await slotRef.set({ date: selectedDate, time: selectedTime });
-      } catch (slotErr) {
-        var sc = String((slotErr && slotErr.code) || '');
-        console.warn('Slot claim failed:', slotErr);
-        if (sc === 'unavailable' || sc === 'deadline-exceeded' || sc === 'cancelled') {
-          alert('Network error while checking slot availability. Please try again.');
-          resetConfirmBtn(btn);
-          return;
-        }
-        alert('Sorry, this time was just taken. Please pick another slot.');
-        selectedTime = null;
-        try { localStorage.removeItem('egygz_taken_v1'); } catch (_) {}
-        await window.loadTakenSlots(true);
-        resetConfirmBtn(btn);
-        goStep(2);
-        renderTimeSlots(selectedDate);
-        var s2 = document.getElementById('step2-next');
-        if (s2) s2.disabled = true;
-        return;
-      }
-      try {
-        await apptRef.set(apptPayload);
-        booked = true;
-      } catch (apptErr) {
-        console.error('Booking error:', apptErr);
-        try { await slotRef.delete(); } catch (_) {}
-        alert('We could not complete your booking right now. Please try again or reach us on WhatsApp.');
-        resetConfirmBtn(btn);
-        return;
-      }
+      // Do not split the slot claim and appointment write into separate
+      // requests. The rules intentionally require both writes in one atomic
+      // transaction; a permission error therefore indicates a deployment or
+      // configuration issue, not a slot conflict.
+      console.error('Booking transaction failed:', txErr);
+      alert(code === 'permission-denied'
+        ? 'The booking service is temporarily unavailable. Please contact us on WhatsApp.'
+        : 'Network error while confirming your appointment. Please check your connection and try again.');
+      resetConfirmBtn(btn);
+      return;
     }
 
     if (!booked) { resetConfirmBtn(btn); return; }
