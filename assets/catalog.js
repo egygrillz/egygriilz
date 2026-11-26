@@ -197,12 +197,51 @@
     return vis.filter(list).catch(function () { return list; });
   }
 
+  function normalizeDesignName(value) {
+    return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+  }
+
+  /* The editor or an older seed can contain multiple records for the same
+     design/page. Keep the first ordered record per page, but retain that
+     design on other pages where it is intentionally listed. */
+  function dedupePageDuplicates(list) {
+    var seen = Object.create(null);
+    var out = [];
+    (list || []).forEach(function (item) {
+      if (!item || typeof item !== 'object') return;
+      var pages = pagesOf(item);
+      if (!pages.length) { out.push(item); return; }
+      var nameKey = normalizeDesignName(item.name);
+      var imageFiles = (Array.isArray(item.images) ? item.images : [])
+        .concat(Array.isArray(item.videos) ? item.videos : [])
+        .map(function (file) { return mediaPath(item, file); })
+        .filter(Boolean).sort();
+      var imageKey = imageFiles.length ? imageFiles.join('|') : '';
+      var keptPages = [];
+      pages.forEach(function (page) {
+        var pageSeen = seen[page] || (seen[page] = Object.create(null));
+        var duplicate = (nameKey && pageSeen['name:' + nameKey]) ||
+          (imageKey && pageSeen['images:' + imageKey]);
+        if (duplicate) return;
+        keptPages.push(page);
+        if (nameKey) pageSeen['name:' + nameKey] = true;
+        if (imageKey) pageSeen['images:' + imageKey] = true;
+      });
+      if (!keptPages.length) return;
+      if (keptPages.length === pages.length) out.push(item);
+      else out.push(Object.assign({}, item, { pages: keptPages, page: keptPages[0] }));
+    });
+    return out;
+  }
+
   function load(force) {
     var now = Date.now();
     if (!force && cache && (now - cachedAt) < TTL) return Promise.resolve(cache);
     if (!force && inflight) return inflight;
     var p = Promise.all([readSeed(!!force), readOverlay(!!force)])
       .then(function (r) { return applyVisibility(merge(r[0], r[1])); })
+      .then(dedupePageDuplicates)
       .catch(function () { return cache || []; })
       .then(function (list) {
         if (inflight === p) inflight = null;
