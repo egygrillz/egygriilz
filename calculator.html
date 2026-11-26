@@ -180,23 +180,15 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .chart-caption{font-size:11px;color:var(--mut);text-align:center;margin-top:8px;}
 .arch{display:flex;gap:4px;justify-content:center;direction:ltr;}
 .arch + .arch{margin-top:14px;}
-/* Circular complexity selector with the original level examples. */
-.level-wheel-wrap{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin:8px auto 6px;max-width:560px;}
-.level-turn{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);font-size:15px;transition:.2s;}
-.level-turn:hover{border-color:var(--gold);background:rgba(255,255,255,.4);}
-.level-wheel{position:relative;width:min(100%,340px);aspect-ratio:1;margin:auto;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28) 0 24%,transparent 24.5% 57%,rgba(0,0,0,.12) 57.5% 58%,transparent 58.5%);}
-.level-wheel::before{content:"";position:absolute;inset:19%;border:1px solid rgba(0,0,0,.2);border-radius:50%;}
-.level-wheel-item{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px;border:1px solid transparent;background:transparent;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transform:translate(var(--x),var(--y)) scale(.82);transition:transform .38s cubic-bezier(.2,.8,.2,1),background .25s,border .25s,box-shadow .25s;z-index:1;color:var(--mut);}
-.level-wheel-item img{width:68px;height:57px;object-fit:contain;filter:drop-shadow(0 9px 9px rgba(0,0,0,.12));}
-.level-wheel-item .wheel-name{font-size:9px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
-.level-wheel-item.active{z-index:2;transform:translate(var(--x),var(--y)) scale(1.14);border-color:rgba(0,0,0,.65);background:rgba(255,255,255,.76);box-shadow:0 12px 30px rgba(0,0,0,.12);color:var(--ink);}
-.level-wheel-item.active img{width:76px;height:63px;}
-.level-wheel-center{position:absolute;inset:39%;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;font-family:'Playfair Display',serif;font-size:12px;color:var(--gold-d);}
-.level-picked{text-align:center;min-height:56px;margin:0 auto 10px;max-width:460px;}
-.level-picked strong{display:block;font-family:'Playfair Display',serif;font-size:18px;}
-.level-picked span{font-size:11px;color:var(--mut);line-height:1.5;display:block;margin-top:3px;}
-.level-examples{font-size:10px;color:var(--gold-d);margin-top:4px;}
-@media(max-width:560px){.smile-map{padding:14px 6px;border-radius:16px}.teeth-chart{width:100%}.level-wheel{width:min(100%,290px)}.level-wheel-item{width:72px;height:72px;margin:-36px}.level-wheel-item img{width:55px;height:46px}.level-wheel-item.active img{width:64px;height:52px}.level-wheel-center{font-size:10px}.step{padding:24px 0}.opt-card img{height:96px}.opt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+/* Floating image selector for complexity levels — no rings or labels under images. */
+.level-float-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:center;gap:10px;margin:12px auto 6px;max-width:640px;}
+.level-float-item{position:relative;display:grid;place-items:center;min-width:0;min-height:104px;padding:8px;border:0;background:transparent;transition:transform .28s cubic-bezier(.2,.8,.2,1),filter .28s;}
+.level-float-item img{width:100%;max-width:78px;height:76px;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(0,0,0,.16));transition:transform .28s,filter .28s;}
+.level-float-item:hover{transform:translateY(-7px);}
+.level-float-item.active{transform:translateY(-8px) scale(1.1);}
+.level-float-item.active img{filter:drop-shadow(0 18px 16px rgba(0,0,0,.24));}
+.level-float-item.active::after{content:"";position:absolute;bottom:0;width:22px;height:2px;background:var(--ink);border-radius:2px;}
+@media(max-width:560px){.smile-map{padding:14px 6px;border-radius:16px}.teeth-chart{width:100%}.level-float-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:2px}.level-float-item{min-height:78px;padding:4px}.level-float-item img{max-width:64px;height:62px}.step{padding:24px 0}.opt-card img{height:96px}.opt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
 
 /* ── GROUP BUILDER ── */
 .group-card{border:1px solid var(--line);background:rgba(255,255,255,.18);border-radius:16px;padding:22px;margin-top:16px;}
@@ -219,14 +211,6 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 
 /* ── STONES / FINISHES ── */
 .stones-detail{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
-.laser-block{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;}
-.sc-lbl-lite{display:block;font-size:10px;color:#8b8b8b;margin-bottom:5px;}
-.swatches{display:flex;gap:7px;flex-wrap:wrap;}
-.swatch{width:24px;height:24px;border-radius:50%;background:var(--sw);cursor:pointer;
-  border:2px solid transparent;box-shadow:0 0 0 1px rgba(0,0,0,.10);transition:transform .18s;}
-.swatch:hover{transform:scale(1.12);}
-.swatch.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold,#555555);}
-input[type=file].sc-input{padding:9px 10px;font-size:11px;cursor:pointer;}
 .sd-lbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#8b8b8b;
   margin:14px 0 6px;}
 .stones-detail .sd-lbl:first-child{margin-top:0;}
@@ -377,7 +361,7 @@ footer p{font-size:11px;color:var(--faint);}
   <p data-i18n="footer_note">Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.</p>
 </footer>
 
-<script src="/assets/calc-engine.js?v=7"></script>
+<script src="/assets/calc-engine.js?v=8"></script>
 <script src="/assets/numpad.js?v=5"></script>
 <script src="/assets/grillz-renderer.js?v=5"></script>
 <script src="/assets/rates.js?v=6"></script>
@@ -435,9 +419,6 @@ footer p{font-size:11px;color:var(--faint);}
       stones_none: 'No stones', stones_accent: 'Accent stones', stones_full: 'Full iced',
       accent_count: 'Stone count', accent_type: 'Stone type', setting: 'Setting',
       cut_lbl: 'Diamond cut', size_lbl: 'Stone size (mm)', included_lbl: 'Included',
-      laser_lbl: 'Laser work', laser_off: 'Off', laser_text: 'Text', laser_image: 'Image',
-      laser_text_ph: 'Name or word', laser_fill: 'Treatment', laser_cut: 'Cut through',
-      laser_enamel: 'Enamel fill', laser_colour: 'Enamel colour',
       full_type: 'Stone type', coverage: 'Coverage',
       custom_price: 'Price per stone (EGP)', custom_price_tooth: 'Price per tooth (EGP)',
       bars_note: 'Bar design — open horizontal bars with the natural tooth visible behind. Iced bars are a fixed option and included in the stone price.',
@@ -511,9 +492,6 @@ footer p{font-size:11px;color:var(--faint);}
       stones_none: 'بدون أحجار', stones_accent: 'أحجار لمسات', stones_full: 'مرصّع بالكامل',
       accent_count: 'عدد الأحجار', accent_type: 'نوع الحجر', setting: 'طريقة التركيب',
       cut_lbl: 'شكل القصّة', size_lbl: 'حجم الحجر (مم)', included_lbl: 'داخل السعر',
-      laser_lbl: 'أعمال الليزر', laser_off: 'بدون', laser_text: 'نص', laser_image: 'صورة',
-      laser_text_ph: 'اسم أو كلمة', laser_fill: 'طريقة التنفيذ', laser_cut: 'قص كامل',
-      laser_enamel: 'تعبئة إيناميل', laser_colour: 'لون الإيناميل',
       full_type: 'نوع الحجر', coverage: 'التغطية',
       custom_price: 'السعر للحجر (جنيه)', custom_price_tooth: 'السعر للسن (جنيه)',
       bars_note: 'تصميم بار — قضبان أفقية مفتوحة وتظهر الأسنان الطبيعية خلفها. ترصيع البارات خيار ثابت ويُحسب ضمن سعر الأحجار.',
@@ -721,9 +699,6 @@ footer p{font-size:11px;color:var(--faint);}
       accentCut: 'round', accentSize: '2',
       fullType: 'moissanite', coverage: 'standardpave', fullPrice: '',
       fullCut: 'round', fullSize: '2',
-      /* laser: cut text or an image clean through, or fill it with enamel */
-      laserMode: 'none', laserText: '', laserFill: 'cut', laserColor: '#1b1b1b',
-      laserImage: null, laserImageName: '',
     };
   }
   function stonesOn(st) {
@@ -972,161 +947,49 @@ footer p{font-size:11px;color:var(--faint);}
 
   /* Cut cards: the surcharge is a % of the stone, so show what it adds to the
      currently-selected stone price rather than a bare percentage. */
-  function cutCards(st, which, at) {
-    const typeKey = which === 'accent' ? 'accentType' : 'fullType';
-    const base = Number(E() ? (which === 'accent' ? E().get().accentPrice[st[typeKey]] : E().get().fullPrice[st[typeKey]]) : 0) || 0;
-    const sel = which === 'accent' ? st.accentCut : st.fullCut;
-    const field = which === 'accent' ? 'accentCut' : 'fullCut';
-    return railHtml(CUTS.map((c) => {
-      const pct = E() ? E().cutPctOf(c.id) : 0;
-      const add = base > 0 ? Math.round(base * pct / 100) : 0;
-      return cardHtml({
-        act: 'stone-field', attrs: ' ' + at + ' data-field="' + field + '" data-value="' + c.id + '"',
-        img: c.img, name: c.name,
-        add: pct ? deltaLabel(add, 'EGP') : (t('included_lbl') || 'Included'),
-        free: !pct, selected: sel === c.id,
-        title: c.name + (pct ? ' — +' + pct + '%' : ' — included'),
-      });
-    }).join(''));
-  }
-
-  /* Size cards: millimetres against the real tooth, with the price step. */
-  function sizeCards(st, which, at) {
-    const field = which === 'accent' ? 'accentSize' : 'fullSize';
-    const sel = which === 'accent' ? st.accentSize : st.fullSize;
-    const f = E() ? E().sizeFactorOf : (() => 1);
-    const base = 1;
-    return railHtml(STONE_SIZES.map((mm) => {
-      const factor = f(mm);
-      const add = Math.round((factor - base) * 100);
-      return cardHtml({
-        act: 'stone-field', attrs: ' ' + at + ' data-field="' + field + '" data-value="' + mm + '"',
-        name: mm + ' mm',
-        add: mm === '1' ? (t('included_lbl') || 'Included') : '+' + factor.toFixed(1) + '×',
-        free: mm === '1', selected: String(sel) === mm,
-        title: mm + ' mm stone — ' + factor.toFixed(2) + '× the 1 mm price',
-      });
-    }).join(''), 'rail-sizes');
-  }
-
   function renderStones(st, material, level, setIdx, groupIdx) {
-    const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
+    const at = groupIdx == null
+      ? 'data-scope="set" data-index="' + setIdx + '"'
+      : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
     if (!E() || !E().allowsStones(material)) {
       return '<div class="hint-box"><i class="fa-regular fa-gem"></i><span>' + esc(t('stones_hint')) + '</span><button type="button" data-act="switch-silver" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + '>' + esc(t('switch_silver')) + '</button></div>';
     }
     if (String(level) === '0.5') return '<div class="hint-box"><i class="fa-solid fa-bars"></i><span>' + esc(t('bars_note')) + '</span></div>';
-    /* Two independent switches: the same tooth can be iced out and carry
-       accent stones at once. Tapping a switch never clears the other one. */
+
     const on = stonesOn(st);
     const mode = stonesMode(st);
-    let html = '<div class="pills">' + [['accent','stones_accent'],['full','stones_full']].map(([v,k]) => pill(k, on[v], t(k), 'data-act="stone-mode" ' + at + ' data-value="' + v + '"')).join('') + '</div>';
+    const select = (label, field, value, options) => selectHtml(label, '', value, options,
+      at + ' data-field="' + field + '"');
+    let html = '<div class="pills">' + [['accent','stones_accent'],['full','stones_full']]
+      .map(([v,k]) => pill(k, on[v], t(k), 'data-act="stone-mode" ' + at + ' data-value="' + v + '"')).join('') + '</div>';
     if (mode === 'both') {
       html += '<div class="hint-box"><i class="fa-solid fa-gem"></i><span>' + esc(t('stones_both_note')) + '</span></div>';
     }
     if (on.accent) {
-      html += '<div class="stones-detail">' +
-        '<div class="sd-lbl">' + esc(t('setting')) + '</div>' +
-        railHtml(SETTING_OPTS.map((o) => cardHtml({
-          act: 'stone-field', attrs: ' ' + at + ' data-field="setting" data-value="' + o.id + '"',
-          img: o.img, name: settingName(o.id),
-          add: deltaLabel(E() ? E().get().settingPrice[o.id] : 0, 'EGP'),
-          selected: st.setting === o.id,
-        })).join('')) +
-
-        '<div class="sd-lbl">' + esc(t('accent_type')) + '</div>' +
-        railHtml(STONE_TYPES.map((k) => cardHtml({
-          act: 'stone-field', attrs: ' ' + at + ' data-field="accentType" data-value="' + k + '"',
-          name: stoneTypeName(k),
-          add: (E() && E().get().accentPrice[k] != null) ? fmt(E().get().accentPrice[k]) + ' EGP' : (t('custom_price') || 'Set price'),
-          free: !!(E() && E().get().accentPrice[k] === 0), selected: st.accentType === k,
-        })).join(''), 'rail-sizes') +
-
-        '<div class="sd-lbl">' + esc(t('cut_lbl') || 'Cut') + '</div>' +
-        cutCards(st, 'accent', at) +
-
-        '<div class="sd-lbl">' + esc(t('size_lbl') || 'Stone size') + '</div>' +
-        sizeCards(st, 'accent', at) +
-
-        '<div class="g-grid">' + fieldHtml(t('accent_count'), 'number', st.accentCount,
-          'data-scope="' + (groupIdx == null ? 'set' : 'group') + '" data-index="' + setIdx + '"' + (groupIdx == null ? '' : ' data-group="' + groupIdx + '"') + ' data-field="accentCount"', '', 1, 999) +
-          ((st.accentType === 'natural' || st.accentType === 'labgrown') ? fieldHtml(t('custom_price'), 'number', st.accentPrice, at + ' data-field="accentPrice"', '', 0, null) : '') + '</div></div>';
+      html += '<div class="stones-detail"><div class="g-grid">' +
+        select(t('setting'), 'setting', st.setting, SETTING_OPTS.map((o) => [o.id, settingName(o.id)])) +
+        select(t('accent_type'), 'accentType', st.accentType, STONE_TYPES.map((k) => [k, stoneTypeName(k)])) +
+        select(t('cut_lbl') || 'Cut', 'accentCut', st.accentCut, CUTS.map((c) => [c.id, c.name])) +
+        select(t('size_lbl') || 'Stone size', 'accentSize', String(st.accentSize), STONE_SIZES.map((mm) => [mm, mm + ' mm'])) +
+        fieldHtml(t('accent_count'), 'number', st.accentCount,
+          at + ' data-field="accentCount"', '', 1, 999) +
+        ((st.accentType === 'natural' || st.accentType === 'labgrown')
+          ? fieldHtml(t('custom_price'), 'number', st.accentPrice, at + ' data-field="accentPrice"', '', 0, null)
+          : '') + '</div></div>';
     }
     if (on.full) {
-      html += '<div class="stones-detail">' +
-        '<div class="sd-lbl">' + esc(t('coverage')) + '</div>' +
-        railHtml(COVERAGE_OPTS.map((o) => cardHtml({
-          act: 'stone-field', attrs: ' ' + at + ' data-field="coverage" data-value="' + o.id + '"',
-          img: o.img, name: coverageName(o.id),
-          add: deltaLabel(E() ? E().get().coveragePrice[o.id] : 0, 'EGP'),
-          selected: st.coverage === o.id,
-        })).join('')) +
-
-        '<div class="sd-lbl">' + esc(t('full_type')) + '</div>' +
-        railHtml(STONE_TYPES.map((k) => cardHtml({
-          act: 'stone-field', attrs: ' ' + at + ' data-field="fullType" data-value="' + k + '"',
-          name: stoneTypeName(k),
-          add: (E() && E().get().fullPrice[k] != null) ? fmt(E().get().fullPrice[k]) + ' EGP' : (t('custom_price') || 'Set price'),
-          free: !!(E() && E().get().fullPrice[k] === 0), selected: st.fullType === k,
-        })).join(''), 'rail-sizes') +
-
-        '<div class="sd-lbl">' + esc(t('cut_lbl') || 'Cut') + '</div>' +
-        cutCards(st, 'full', at) +
-
-        '<div class="sd-lbl">' + esc(t('size_lbl') || 'Stone size') + '</div>' +
-        sizeCards(st, 'full', at) +
-
-        ((st.fullType === 'natural' || st.fullType === 'labgrown') ?
-          '<div class="g-grid">' + fieldHtml(t('custom_price_tooth'), 'number', st.fullPrice, at + ' data-field="fullPrice"', '', 0, null) + '</div>' : '') +
-        '</div>';
+      html += '<div class="stones-detail"><div class="g-grid">' +
+        select(t('coverage'), 'coverage', st.coverage, COVERAGE_OPTS.map((o) => [o.id, coverageName(o.id)])) +
+        select(t('full_type'), 'fullType', st.fullType, STONE_TYPES.map((k) => [k, stoneTypeName(k)])) +
+        select(t('cut_lbl') || 'Cut', 'fullCut', st.fullCut, CUTS.map((c) => [c.id, c.name])) +
+        select(t('size_lbl') || 'Stone size', 'fullSize', String(st.fullSize), STONE_SIZES.map((mm) => [mm, mm + ' mm'])) +
+        ((st.fullType === 'natural' || st.fullType === 'labgrown')
+          ? fieldHtml(t('custom_price_tooth'), 'number', st.fullPrice, at + ' data-field="fullPrice"', '', 0, null)
+          : '') + '</div></div>';
     }
     return html;
   }
 
-  /* ───────────────────────── laser ─────────────────────────
-     Laser work is either CUT clean through the metal (you see the mouth
-     behind it) or FILLED with enamel. Text and images use the same two
-     treatments, and an uploaded photo is knocked back to black & white so the
-     cut is crisp rather than muddy. */
-  function renderLaser(st, at) {
-    const mode = st.laserMode || 'none';
-    let html = '<div class="laser-block"><div class="sd-lbl">' + esc(t('laser_lbl') || 'Laser work') + '</div>';
-    html += '<div class="pills">' +
-      [['none', t('laser_off') || 'Off'], ['text', t('laser_text') || 'Text'], ['image', t('laser_image') || 'Image']]
-        .map(([v, lbl]) => pill(v, mode === v, lbl, 'data-act="laser-mode" ' + at + ' data-value="' + v + '"')).join('') +
-      '</div>';
-
-    if (mode !== 'none') {
-      html += '<div class="g-grid" style="margin-top:12px">';
-      if (mode === 'text') {
-        html += '<label class="fld"><span class="sc-lbl-lite">' + esc(t('laser_text') || 'Text') + '</span>' +
-          '<input class="sc-input" type="text" maxlength="18" value="' + esc(st.laserText || '') + '" ' +
-          at + ' data-field="laserText" placeholder="' + esc(t('laser_text_ph') || 'Name or word') + '"></label>';
-      } else {
-        html += '<label class="fld"><span class="sc-lbl-lite">' + esc(t('laser_image') || 'Image') + '</span>' +
-          '<input class="sc-input" type="file" accept="image/*" data-act="laser-upload" ' + at + '>' +
-          (st.laserImageName ? '<span class="rc-add">' + esc(st.laserImageName) + '</span>' : '') + '</label>';
-      }
-      /* fill choice: cut through, or enamel colour */
-      html += '<div><span class="sc-lbl-lite">' + esc(t('laser_fill') || 'Treatment') + '</span><div class="pills">' +
-        [['cut', t('laser_cut') || 'Cut through'], ['enamel', t('laser_enamel') || 'Enamel fill']]
-          .map(([v, lbl]) => pill(v, (st.laserFill || 'cut') === v, lbl, 'data-act="laser-fill" ' + at + ' data-value="' + v + '"')).join('') +
-        '</div></div>';
-      if ((st.laserFill || 'cut') === 'enamel') {
-        html += '<div><span class="sc-lbl-lite">' + esc(t('laser_colour') || 'Enamel colour') + '</span><div class="swatches">' +
-          (window.GrillzRenderer ? window.GrillzRenderer.ENAMEL_COLORS : ['#1b1b1b']).map((c) =>
-            '<button type="button" class="swatch' + (st.laserColor === c ? ' on' : '') + '" style="--sw:' + c + '" data-act="laser-colour" ' + at + ' data-value="' + c + '" aria-label="' + c + '"></button>'
-          ).join('') + '</div></div>';
-      }
-      html += '</div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  /* The gold rate is never typed by anyone. It comes from the live feed,
-     converted from USD per troy ounce to EGP per gram, and this panel is a
-     readout — with the karat breakdown and the time of the quote, so a client
-     can see exactly what the number is and when it was taken. */
   function renderGoldRateField() {
     const R = window.MetalRates;
     const rate = R && typeof R.goldEgpPerGram24 === 'function' ? R.goldEgpPerGram24() : 0;
@@ -1193,21 +1056,14 @@ footer p{font-size:11px;color:var(--faint);}
 
   function renderLevelWheel(current, setIndex, groupIndex) {
     const selected = String(current || '1');
-    const selectedIndex = Math.max(0, LEVELS.indexOf(selected));
     const groupAttr = groupIndex == null ? '' : ' data-group="' + groupIndex + '"';
     const chooseAct = groupIndex == null ? 'level' : 'group-level';
-    const stepAct = groupIndex == null ? 'level-step' : 'group-level-step';
-    const radius = 108;
-    const items = LEVELS.map((lv, index) => {
-      const offset = (index - selectedIndex + LEVELS.length) % LEVELS.length;
-      const angle = (offset / LEVELS.length) * Math.PI * 2 - Math.PI / 2;
-      const x = Math.round(Math.cos(angle) * radius), y = Math.round(Math.sin(angle) * radius);
+    const items = LEVELS.map((lv) => {
       const active = lv === selected;
-      return '<button type="button" class="level-wheel-item' + (active ? ' active' : '') + '" style="--x:' + x + 'px;--y:' + y + 'px" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(levelName(lv) + '. ' + levelDesc(lv)) + '"><img src="' + LEVEL_IMG(lv) + '" alt="" loading="lazy"><span class="wheel-name">' + esc(levelName(lv)) + '</span></button>';
+      const label = levelName(lv);
+      return '<button type="button" class="level-float-item' + (active ? ' active' : '') + '" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(label + '. ' + levelDesc(lv)) + '" title="' + esc(label) + '"><img src="' + LEVEL_IMG(lv) + '" alt="" loading="lazy"></button>';
     }).join('');
-    const prevLabel = lang === 'ar' ? 'المستوى السابق' : 'Previous level';
-    const nextLabel = lang === 'ar' ? 'المستوى التالي' : 'Next level';
-    return '<div class="level-wheel-wrap"><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="-1" aria-label="' + prevLabel + '">' + (lang === 'ar' ? '›' : '‹') + '</button><div class="level-wheel" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '<div class="level-wheel-center">' + (lang === 'ar' ? 'مستوى' : 'LEVEL') + '</div></div><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="1" aria-label="' + nextLabel + '">' + (lang === 'ar' ? '‹' : '›') + '</button></div><div class="level-picked"><strong>' + esc(levelName(selected)) + '</strong><span>' + esc(levelDesc(selected)) + '</span><span class="level-examples">' + esc(levelExamples(selected)) + '</span></div>';
+    return '<div class="level-float-grid" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '</div>';
   }
 
   function renderGroupEditor(g, i, gi) {
@@ -1218,7 +1074,6 @@ footer p{font-size:11px;color:var(--faint);}
     html += '<div style="margin-top:16px">' + renderMaterial(g, i, gi) + '</div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('group_level')) + '</div>' + renderLevelWheel(g.level, i, gi) + '</div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(g.stones, g.material, g.level, i, gi) + '</div>';
-    html += renderLaser(g, attrs);
     html += renderFinishFields(g, i, gi) + '</div>';
     return html;
   }
@@ -1242,7 +1097,6 @@ footer p{font-size:11px;color:var(--faint);}
     if (s.mode === 'uniform') {
       html += '<div class="finish-block"><div class="fb-t">' + esc(t('step3_t')) + '</div>' + renderLevelWheel(s.level, i, null) + '</div>';
       html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(s.stones, s.material, s.level, i, null) + '</div>';
-      html += renderLaser(s, 'data-scope="set" data-index="' + i + '"');
       html += renderFinishFields(s, i, null);
     } else {
       html += '<p style="font-size:12px;color:var(--mut);margin:0 0 6px;line-height:1.6">' + esc(t('mixed_note')) + '</p>';
@@ -1443,12 +1297,7 @@ footer p{font-size:11px;color:var(--faint);}
     const idx = Number(target.dataset.index || 0);
     const gi = target.dataset.group == null ? null : Number(target.dataset.group);
     const s = state.sets[idx];
-    if (act === 'level-step' || act === 'group-level-step') {
-      const obj = act === 'level-step' ? s : s.groups[gi];
-      const current = Math.max(0, LEVELS.indexOf(String(obj.level || '1')));
-      obj.level = LEVELS[(current + Number(target.dataset.value) + LEVELS.length) % LEVELS.length];
-      if (obj.level === '0.5') { obj.stones.mode = 'none'; obj.stones.accent = false; obj.stones.full = false; }
-    } else if (act === 'material') {
+    if (act === 'material') {
       const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
       obj.material = target.dataset.value;
       if (obj.material !== 'gold') obj.karat = '18';
@@ -1500,15 +1349,6 @@ footer p{font-size:11px;color:var(--faint);}
       if (obj && field) {
         if (!obj.stones) obj.stones = newStones();
         obj.stones[field] = target.dataset.value;
-      }
-    } else if (act === 'laser-text') {
-      /* handled by the input listener below */
-    } else if (act === 'laser-mode' || act === 'laser-fill' || act === 'laser-colour') {
-      const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
-      if (obj) {
-        if (act === 'laser-mode') obj.laserMode = target.dataset.value;
-        if (act === 'laser-fill') obj.laserFill = target.dataset.value;
-        if (act === 'laser-colour') obj.laserColor = target.dataset.value;
       }
     } else if (act === 'stone-mode') {
       const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
@@ -1637,72 +1477,14 @@ footer p{font-size:11px;color:var(--faint);}
       state[key] = el.value;
       updateSummaryOnly(); return;
     }
-    if (el.matches('[data-act="laser-upload"]')) { handleLaserUpload(el); return; }
     if (el.matches('[data-field]')) {
       const scope = el.dataset.scope || 'set';
       const obj = stateObject(null, scope, Number(el.dataset.index), el.dataset.group == null ? null : Number(el.dataset.group));
       if (obj) obj[el.dataset.field] = el.value;
-      /* the laser text is the one field that also has to be redrawn on the
-         piece, so it takes the slow path */
-      if (el.dataset.field === 'laserText') { render(); return; }
       updateSummaryOnly();
     }
   });
 
-  /* An uploaded picture is knocked back to black & white and kept as a data
-     URL, so the renderer can drop it into the metal the same way it drops in
-     text. Doing the conversion here, once, keeps the draw loop cheap. */
-  async function handleLaserUpload(input) {
-    const file = input.files && input.files[0];
-    if (!file) return;
-    const obj = stateObject(null, input.dataset.scope || 'set',
-      Number(input.dataset.index), input.dataset.group == null ? null : Number(input.dataset.group));
-    if (!obj) return;
-    obj.laserImageName = file.name;
-    try {
-      obj.laserImage = await toMonoBitmap(file);
-    } catch (e) {
-      obj.laserImage = null;
-    }
-    render();
-  }
-
-  /** Read an image file and return a high-contrast black & white data URL. */
-  function toMonoBitmap(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = reject;
-        img.onload = () => {
-          const max = 520;
-          const k = Math.min(1, max / Math.max(img.width, img.height));
-          const w = Math.max(1, Math.round(img.width * k));
-          const h = Math.max(1, Math.round(img.height * k));
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          const x = c.getContext('2d');
-          if (!x) return reject(new Error('no ctx'));
-          x.drawImage(img, 0, 0, w, h);
-          const data = x.getImageData(0, 0, w, h);
-          const px = data.data;
-          /* luminance, then a mid-grey cut so the silhouette is solid */
-          for (let i = 0; i < px.length; i += 4) {
-            const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-            const a = px[i + 3];
-            const v = a < 40 ? 255 : (lum > 128 ? 255 : 0);
-            px[i] = px[i + 1] = px[i + 2] = v;
-            px[i + 3] = 255;
-          }
-          x.putImageData(data, 0, 0);
-          resolve(c.toDataURL('image/png'));
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
   $('#code-load').addEventListener('click', () => loadCode($('#code-input').value));
   $('#code-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); loadCode($('#code-input').value); } });
   $('#mb-pdf').addEventListener('click', downloadPdf);
