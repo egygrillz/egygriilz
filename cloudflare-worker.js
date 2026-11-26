@@ -426,8 +426,8 @@ function lineLabel(l) {
   const mat = l.material === 'gold' ? `Gold ${l.karat || '18'}K` : String(l.material || '');
   const bits = [`${mat} / ${l.teeth || 0} ${(Number(l.teeth) === 1) ? 'tooth' : 'teeth'} / level ${l.level || '1'}`];
   if (l.accent && l.accent.count) bits.push(`${l.accent.count}x ${l.accent.type || ''}`.trim());
-  if (l.full && l.full.bars) bits.push('full iced on bars');
-  else if (l.full) bits.push(`full iced ${l.full.type || ''}`.trim());
+  if (l.full && l.full.bars) bits.push('full coverage bars');
+  else if (l.full) bits.push(`full coverage ${l.full.type || ''}`.trim());
   if (l.plating && l.plating !== 'none' && l.plating !== 'mixed') bits.push(String(l.plating));
   if (l.anodize && l.anodize !== 'none' && l.anodize !== 'mixed') bits.push('anodize ' + l.anodize);
   if (l.enamel && l.enamel !== 'none' && l.enamel !== 'mixed') bits.push('enamel ' + l.enamel);
