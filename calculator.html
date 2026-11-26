@@ -91,8 +91,6 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .opt-card{border:1px solid transparent;background:transparent;padding:14px 10px 12px;text-align:center;cursor:pointer;position:relative;transition:.28s;border-radius:12px;}
 .opt-card:hover{border-color:rgba(184,147,90,.42);transform:translateY(-4px);background:rgba(255,255,255,.3);}
 .opt-card.selected{border-color:var(--gold);background:rgba(255,255,255,.42);box-shadow:0 12px 32px rgba(67,49,20,.08);}
-.opt-card img{height:118px;width:auto;margin:0 auto 8px;object-fit:contain;filter:drop-shadow(0 15px 13px rgba(38,31,20,.14));transition:transform .3s,filter .3s;}
-.opt-card:hover img,.opt-card.selected img{transform:translateY(-3px) scale(1.035);filter:drop-shadow(0 19px 17px rgba(38,31,20,.18));}
 .opt-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
 .opt-desc{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;}
 .opt-price{font-size:11px;color:var(--gold-d);font-weight:700;margin-top:6px;}
@@ -123,20 +121,15 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .rail.can-left::before{opacity:1;}
 .rail.can-right::after{opacity:1;}
 
-/* a card in a rail: image, name, price delta */
-.rc{scroll-snap-align:start;flex:0 0 auto;width:132px;cursor:pointer;
-  border:1px solid var(--line);border-radius:14px;background:#fff;
-  padding:10px 8px 9px;text-align:center;position:relative;
-  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s,box-shadow .22s;}
+/* compact text-first rail choice */
+.rc{scroll-snap-align:start;flex:0 0 auto;width:118px;min-height:54px;cursor:pointer;
+  border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.72);
+  padding:9px 10px;text-align:center;position:relative;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
 .rc:hover{transform:translateY(-3px);border-color:rgba(184,147,90,.6);
   box-shadow:0 10px 24px rgba(67,49,20,.10);}
 .rc:active{transform:translateY(-1px) scale(.985);}
 .rc.selected{border-color:var(--gold,#b8935a);box-shadow:0 0 0 1px var(--gold,#b8935a),0 8px 20px rgba(67,49,20,.10);}
-.rc img,.rc .rc-ph{display:block;width:100%;height:74px;object-fit:contain;
-  margin:0 auto 7px;transition:transform .25s;}
-.rc:hover img{transform:scale(1.06) translateY(-2px);}
-.rc-ph{display:grid;place-items:center;color:#bdbdbd;font-size:22px;
-  border-radius:10px;background:#f6f6f6;}
 .rc-name{font-size:10.5px;font-weight:600;line-height:1.25;color:var(--ink);}
 .rc-add{font-size:9.5px;color:#8b8b8b;margin-top:2px;line-height:1.2;}
 .rc-add.free{color:#4a8c5f;}
@@ -151,8 +144,7 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .rail-sizes .rc-add{font-size:9px;}
 
 @media(max-width:560px){
-  .rc{width:112px;}
-  .rc img,.rc .rc-ph{height:60px;}
+  .rc{width:104px;}
   .rail-sizes .rc{width:64px;}
 }
 .mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
@@ -175,23 +167,17 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .chart-caption{font-size:11px;color:var(--mut);text-align:center;margin-top:8px;}
 .arch{display:flex;gap:4px;justify-content:center;direction:ltr;}
 .arch + .arch{margin-top:14px;}
-/* Circular, touch-friendly complexity selector. */
-.level-wheel-wrap{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin:8px auto 6px;max-width:560px;}
-.level-turn{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);font-size:15px;transition:.2s;}
-.level-turn:hover{border-color:var(--gold);background:rgba(255,255,255,.4);}
-.level-wheel{position:relative;width:min(100%,340px);aspect-ratio:1;margin:auto;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28) 0 24%,transparent 24.5% 57%,rgba(184,147,90,.12) 57.5% 58%,transparent 58.5%);}
-.level-wheel::before{content:"";position:absolute;inset:19%;border:1px solid rgba(184,147,90,.2);border-radius:50%;}
-.level-wheel-item{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px;border:1px solid transparent;background:transparent;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transform:translate(var(--x),var(--y)) scale(.82);transition:transform .38s cubic-bezier(.2,.8,.2,1),background .25s,border .25s,box-shadow .25s;z-index:1;color:var(--mut);}
-.level-wheel-item img{width:68px;height:57px;object-fit:contain;filter:drop-shadow(0 9px 9px rgba(30,24,17,.12));}
-.level-wheel-item .wheel-name{font-size:9px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
-.level-wheel-item.active{z-index:2;transform:translate(var(--x),var(--y)) scale(1.14);border-color:rgba(184,147,90,.65);background:rgba(255,255,255,.76);box-shadow:0 12px 30px rgba(51,38,18,.12);color:var(--ink);}
-.level-wheel-item.active img{width:76px;height:63px;}
-.level-wheel-center{position:absolute;inset:39%;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;font-family:'Playfair Display',serif;font-size:12px;color:var(--gold-d);}
-.level-picked{text-align:center;min-height:56px;margin:0 auto 10px;max-width:460px;}
-.level-picked strong{display:block;font-family:'Playfair Display',serif;font-size:18px;}
+/* Compact complexity choices: clear level buttons instead of a decorative dial. */
+.level-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px 0 10px;}
+.level-option{min-width:0;min-height:46px;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.22);padding:8px 9px;text-align:left;color:var(--ink);transition:background .18s,border-color .18s;}
+.level-option:hover{border-color:var(--gold);}
+.level-option.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+.level-option b{display:block;font-size:10px;letter-spacing:.04em;}
+.level-picked{text-align:left;min-height:36px;margin:2px 0 10px;max-width:620px;}
+.level-picked strong{display:block;font-family:'Playfair Display',serif;font-size:15px;}
 .level-picked span{font-size:11px;color:var(--mut);line-height:1.5;display:block;margin-top:3px;}
-.level-examples{font-size:10px;color:var(--gold-d);margin-top:4px;}
-@media(max-width:560px){.smile-map{padding:14px 6px;border-radius:16px}.teeth-chart{width:100%}.level-wheel{width:min(100%,290px)}.level-wheel-item{width:72px;height:72px;margin:-36px}.level-wheel-item img{width:55px;height:46px}.level-wheel-item.active img{width:64px;height:52px}.level-wheel-center{font-size:10px}.step{padding:24px 0}.opt-card img{height:96px}.opt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+.level-examples{font-size:10px;color:var(--mut);margin-top:4px;}
+@media(max-width:560px){.smile-map{padding:14px 6px;border-radius:16px}.teeth-chart{width:100%}.level-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.step{padding:24px 0}.opt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
 
 /* ── GROUP BUILDER ── */
 .group-card{border:1px solid var(--line);background:rgba(255,255,255,.18);border-radius:16px;padding:22px;margin-top:16px;}
@@ -214,16 +200,19 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 
 /* ── STONES / FINISHES ── */
 .stones-detail{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
-/* ── live piece preview ── */
-.piece{position:sticky;top:78px;z-index:5;margin:0 0 22px;
-  background:radial-gradient(ellipse at 50% 40%,#ffffff,rgba(247,244,238,.72));
-  border:1px solid rgba(28,25,20,.08);border-radius:20px;
-  padding:14px 16px 6px;box-shadow:0 10px 30px rgba(67,49,20,.06);}
-.piece-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:2px;}
-.piece-t{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#8b8b8b;}
-.piece-lbl{font-size:11px;color:#5f5850;text-align:right;}
-.piece canvas{display:block;width:100%;height:auto;}
-@media(max-width:900px){.piece{position:relative;top:auto;}}
+/* ── compact, collapsible live piece preview ── */
+.piece{position:relative;z-index:5;margin:0 0 18px;background:rgba(255,255,255,.42);
+  border:1px solid rgba(28,25,20,.10);border-radius:8px;padding:0 13px;
+  box-shadow:0 4px 16px rgba(67,49,20,.035);}
+.piece-head{min-height:44px;display:flex;align-items:center;gap:10px;list-style:none;cursor:pointer;}
+.piece-head::-webkit-details-marker{display:none;}
+.piece-t{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);white-space:nowrap;}
+.piece-lbl{font-size:10px;color:var(--mut);text-align:right;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.piece-toggle{color:var(--mut);font-size:10px;transition:transform .2s;}
+.piece[open] .piece-toggle{transform:rotate(180deg);}
+.piece-content{border-top:1px solid var(--line);padding:8px 0 0;}
+.piece canvas{display:block;width:100%;height:auto;max-height:210px;}
+.piece:not([open]) .piece-head{margin:0;}
 
 .laser-block{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;}
 .sc-lbl-lite{display:block;font-size:10px;color:#8b8b8b;margin-bottom:5px;}
@@ -358,13 +347,16 @@ footer p{font-size:11px;color:var(--faint);}
 
 <main class="calc-wrap">
   <div class="left-column">
-    <div class="piece" id="piece-preview">
-      <div class="piece-head">
+    <details class="piece" id="piece-preview">
+      <summary class="piece-head">
         <span class="piece-t">Your piece</span>
         <span class="piece-lbl" data-piece-label></span>
+        <span class="piece-toggle" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
+      </summary>
+      <div class="piece-content">
+        <canvas aria-label="Live preview of your grillz"></canvas>
       </div>
-      <canvas aria-label="Live preview of your grillz"></canvas>
-    </div>
+    </details>
     <div id="sets-container"></div>
     <div id="order-step"></div>
   </div>
@@ -390,7 +382,7 @@ footer p{font-size:11px;color:var(--faint);}
   <p data-i18n="footer_note">Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.</p>
 </footer>
 
-<script src="/assets/calc-engine.js?v=5"></script>
+<script src="/assets/calc-engine.js?v=6"></script>
 <script src="/assets/numpad.js?v=5"></script>
 <script src="/assets/grillz-renderer.js?v=5"></script>
 <script src="/assets/rates.js?v=6"></script>
@@ -941,9 +933,9 @@ footer p{font-size:11px;color:var(--faint);}
     const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
     const platingCards = PLATINGS.map((p) => {
       const selected = obj.plating === p.id;
-      return '<div class="opt-card' + (selected ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="' + p.id + '"><span class="opt-check">✓</span><img src="' + p.img + '" alt="' + esc(platingName(p.id)) + '" loading="lazy"><div class="opt-name">' + esc(platingName(p.id)) + '</div></div>';
+      return '<div class="opt-card' + (selected ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="' + p.id + '"><span class="opt-check">✓</span><div class="opt-name">' + esc(platingName(p.id)) + '</div></div>';
     }).join('');
-    let html = '<div class="finish-block"><div class="fb-t">' + esc(t('plating_none')) + ' / Plating</div><div class="finish-grid"><div class="opt-card' + (obj.plating === 'none' ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="none"><span class="opt-check">✓</span><div style="height:104px;display:grid;place-items:center;font-size:26px;color:#ccc"><i class="fa-solid fa-ban"></i></div><div class="opt-name">' + esc(t('plating_none')) + '</div></div>' + platingCards + '</div></div>';
+    let html = '<div class="finish-block"><div class="fb-t">' + esc(t('plating_none')) + ' / Plating</div><div class="finish-grid"><div class="opt-card' + (obj.plating === 'none' ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="none"><span class="opt-check">✓</span><div class="opt-name">' + esc(t('plating_none')) + '</div></div>' + platingCards + '</div></div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('enamel')) + '</div><div class="pills">' + ENAMELS.map((k) => pill(k, obj.enamel === k, optName(k), 'data-act="finish" ' + at + ' data-field="enamel" data-value="' + k + '"')).join('') + '</div></div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('engraving')) + '</div><div class="pills">' + ENGRAVINGS.map((k) => pill(k, obj.engraving === k, optName(k), 'data-act="finish" ' + at + ' data-field="engraving" data-value="' + k + '"')).join('') + '</div></div>';
     if ((groupIdx == null ? state.sets[setIdx].material : obj.material) === 'titanium') {
@@ -953,9 +945,9 @@ footer p{font-size:11px;color:var(--faint);}
   }
   /* ───────────────────────── rails & cards ─────────────────────────
 
-     Every choice is a scrollable rail of picture cards: nothing pops open,
-     everything is one tap away, and the price difference is printed on the
-     card so the client never has to guess what a choice costs. */
+     Compact text-first choices keep the configurator quick to scan. Prices
+     remain visible on each option so customers can compare without artwork
+     pushing the useful details below the fold. */
 
   function railHtml(inner, extraClass) {
     return '<div class="rail ' + (extraClass || '') + '"><div class="rail-track">' + inner + '</div></div>';
@@ -968,8 +960,6 @@ footer p{font-size:11px;color:var(--faint);}
       ' aria-pressed="' + (!!o.selected) + '"' +
       ' title="' + esc(o.title || o.name || '') + '">' +
       '<span class="rc-check">✓</span>' +
-      (o.img ? '<img src="' + o.img + '" alt="" loading="lazy">'
-             : '<span class="rc-ph"><i class="fa-regular fa-gem"></i></span>') +
       '<span class="rc-name">' + esc(o.name || '') + '</span>' +
       (o.add ? '<span class="rc-add' + (o.free ? ' free' : '') + '">' + esc(o.add) + '</span>' : '') +
       '</button>';
@@ -1175,7 +1165,7 @@ footer p{font-size:11px;color:var(--faint);}
       const name = matName(m.id);
       const desc = t('mat_' + m.id + '_d');
       const per = (m.id === 'gold' && !(goldRateForLine() > 0)) ? null : perToothBase(m.id, obj.karat || '18');
-      html += '<div class="opt-card' + (obj.material === m.id ? ' selected' : '') + '" data-act="material" ' + at + ' data-value="' + m.id + '"><span class="opt-check">✓</span><img src="' + m.img + '" alt="' + esc(name) + '" loading="lazy"><div class="opt-name">' + esc(name) + '</div><div class="opt-desc">' + esc(desc) + '</div><div class="opt-price">' + (per == null ? esc(lang === 'ar' ? 'أدخل سعر الذهب لحساب السعر' : 'Enter gold rate to price') : esc(fmt(per)) + ' EGP ' + esc(t('per_tooth'))) + '</div></div>';
+      html += '<div class="opt-card' + (obj.material === m.id ? ' selected' : '') + '" data-act="material" ' + at + ' data-value="' + m.id + '"><span class="opt-check">✓</span><div class="opt-name">' + esc(name) + '</div><div class="opt-desc">' + esc(desc) + '</div><div class="opt-price">' + (per == null ? esc(lang === 'ar' ? 'أدخل سعر الذهب لحساب السعر' : 'Enter gold rate to price') : esc(fmt(per)) + ' EGP ' + esc(t('per_tooth'))) + '</div></div>';
     });
     html += '</div>';
     if (obj.material === 'gold') html += '<div class="karat-row"><span class="lbl">' + esc(t('karat')) + '</span>' + KARATS.map((k) => pill(k, obj.karat === k, k + 'K', 'data-act="karat" ' + at + ' data-value="' + k + '"')).join('') + '</div>';
@@ -1205,21 +1195,13 @@ footer p{font-size:11px;color:var(--faint);}
 
   function renderLevelWheel(current, setIndex, groupIndex) {
     const selected = String(current || '1');
-    const selectedIndex = Math.max(0, LEVELS.indexOf(selected));
     const groupAttr = groupIndex == null ? '' : ' data-group="' + groupIndex + '"';
     const chooseAct = groupIndex == null ? 'level' : 'group-level';
-    const stepAct = groupIndex == null ? 'level-step' : 'group-level-step';
-    const radius = 108;
-    const items = LEVELS.map((lv, index) => {
-      const offset = (index - selectedIndex + LEVELS.length) % LEVELS.length;
-      const angle = (offset / LEVELS.length) * Math.PI * 2 - Math.PI / 2;
-      const x = Math.round(Math.cos(angle) * radius), y = Math.round(Math.sin(angle) * radius);
+    const items = LEVELS.map((lv) => {
       const active = lv === selected;
-      return '<button type="button" class="level-wheel-item' + (active ? ' active' : '') + '" style="--x:' + x + 'px;--y:' + y + 'px" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(levelName(lv) + '. ' + levelDesc(lv)) + '"><img src="' + LEVEL_IMG(lv) + '" alt="" loading="lazy"><span class="wheel-name">' + esc(levelName(lv)) + '</span></button>';
+      return '<button type="button" class="level-option' + (active ? ' active' : '') + '" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(levelName(lv) + '. ' + levelDesc(lv)) + '"><b>' + esc(lv === '0.5' ? 'L0.5' : 'L' + lv) + ' · ' + esc(levelName(lv)) + '</b></button>';
     }).join('');
-    const prevLabel = lang === 'ar' ? 'المستوى السابق' : 'Previous level';
-    const nextLabel = lang === 'ar' ? 'المستوى التالي' : 'Next level';
-    return '<div class="level-wheel-wrap"><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="-1" aria-label="' + prevLabel + '">' + (lang === 'ar' ? '›' : '‹') + '</button><div class="level-wheel" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '<div class="level-wheel-center">' + (lang === 'ar' ? 'مستوى' : 'LEVEL') + '</div></div><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="1" aria-label="' + nextLabel + '">' + (lang === 'ar' ? '‹' : '›') + '</button></div><div class="level-picked"><strong>' + esc(levelName(selected)) + '</strong><span>' + esc(levelDesc(selected)) + '</span><span class="level-examples">' + esc(levelExamples(selected)) + '</span></div>';
+    return '<div class="level-options" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '</div><div class="level-picked"><strong>' + esc(levelName(selected)) + '</strong><span>' + esc(levelDesc(selected)) + '</span><span class="level-examples">' + esc(levelExamples(selected)) + '</span></div>';
   }
 
   function renderGroupEditor(g, i, gi) {
@@ -1276,7 +1258,11 @@ footer p{font-size:11px;color:var(--faint);}
 
   function groupPriceRows(line, setIndex) {
     if (!line.isMixed || !Array.isArray(line.groups)) return '';
-    return line.groups.map((g, gi) => '<div class="sum-group"><span>' + esc(g.label || (t('group_n') + ' ' + (gi + 1)) + ' · ' + g.teeth + ' ' + t('teeth_n')) + '</span><span class="sl-price">' + esc(fmt(g.subtotal || 0)) + ' EGP</span></div>').join('');
+    return line.groups.map((g, gi) => {
+      const spec = E().groupLabel(g, { includeMaterial: true });
+      const title = (g.label ? g.label + ' · ' : (t('group_n') + ' ' + (gi + 1) + ' · ')) + spec;
+      return '<div class="sum-group"><span>' + esc(title) + '</span><span class="sl-price">' + esc(fmt(g.subtotal || 0)) + ' EGP</span></div>';
+    }).join('');
   }
 
   /* ───────────────────────── live render ─────────────────────────
@@ -1351,7 +1337,7 @@ footer p{font-size:11px;color:var(--faint);}
     const code = currentCode();
     if (!order) {
       $('#mb-total-val').textContent = '—';
-      const prompt = lang === 'ar' ? 'أدخل سعر عيار 24 الحالي في خانة سعر الذهب لحساب التقدير.' : 'Enter today’s 24K gold rate in the Gold Rate field to calculate this estimate.';
+      const prompt = lang === 'ar' ? 'جارٍ تحميل سعر الذهب المباشر عيار 24. سيتحدّث التقدير تلقائياً.' : 'Loading the live 24K gold rate. Your estimate will update automatically.';
       $('#summary').innerHTML = '<div class="sum-title">' + esc(t('sum_title')) + '</div><div class="sum-sub">' + esc(t('sum_sub')) + '</div><div class="hint-box"><i class="fa-solid fa-coins"></i><span>' + esc(prompt) + '</span></div><div class="sum-total-row"><span class="sum-total-lbl">' + esc(t('sum_total')) + '</span><span class="sum-total">—<span class="curr">EGP</span></span></div><div class="sum-note">' + esc(t('sum_note')) + '</div>';
       return;
     }
@@ -1587,6 +1573,8 @@ footer p{font-size:11px;color:var(--faint);}
       if (s.groups.length > 1) s.groups.splice(gi, 1);
     } else if (act === 'add-set') {
       state.sets.push(newSet());
+      const preview = $('#piece-preview');
+      if (preview) preview.open = false;
     } else if (act === 'remove-set') {
       if (state.sets.length > 1) { state.sets.splice(idx, 1); showToast(t('set_removed')); }
     } else if (act === 'pdf') {
@@ -1761,6 +1749,11 @@ footer p{font-size:11px;color:var(--faint);}
   $('#code-load').addEventListener('click', () => loadCode($('#code-input').value));
   $('#code-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); loadCode($('#code-input').value); } });
   $('#mb-pdf').addEventListener('click', downloadPdf);
+
+  const piecePreview = $('#piece-preview');
+  if (piecePreview) piecePreview.addEventListener('toggle', () => {
+    if (piecePreview.open) requestAnimationFrame(drawPreview);
+  });
 
   if (E() && typeof E().onChange === 'function') E().onChange(() => render());
   render();
