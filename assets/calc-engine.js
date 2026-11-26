@@ -854,8 +854,8 @@
     }
     parts.push(SHORT_LEVEL[String(g.level)] || L.level[g.level] || ('L' + g.level));
     if (g.accent && g.accent.count) parts.push(`${g.accent.count}x ${L.accentType[g.accent.type] || g.accent.type}`.trim());
-    if (g.full && (g.full.bars || String(g.level) === '0.5')) parts.push('Full iced bars');
-    else if (g.full) parts.push(`Full iced ${L.accentType[g.full.type] || g.full.type}`.trim());
+    if (g.full && (g.full.bars || String(g.level) === '0.5')) parts.push('Full coverage bars');
+    else if (g.full) parts.push(`Full coverage ${L.accentType[g.full.type] || g.full.type}`.trim());
     if (g.plating && g.plating !== 'none') parts.push(L.plating[g.plating] || g.plating);
     if (g.enamel && g.enamel !== 'none') parts.push('Enamel ' + (L.enamel[g.enamel] || g.enamel));
     if (g.engraving && g.engraving !== 'none') parts.push('Engraving ' + (L.engraving[g.engraving] || g.engraving));
@@ -884,8 +884,8 @@
     const tWord = Number(line.teeth) === 1 ? '1 tooth' : `${line.teeth} teeth`;
     const bits = [`${mat} / ${tWord} / ${L.level[line.level] || line.level}`];
     if (line.accent && line.accent.count) bits.push(`${line.accent.count}x ${L.accentType[line.accent.type] || ''}`.trim());
-    if (line.full && (line.full.bars || String(line.level) === '0.5')) bits.push('Full iced on bars');
-    else if (line.full) bits.push(`Full iced ${L.accentType[line.full.type] || ''}`.trim());
+    if (line.full && (line.full.bars || String(line.level) === '0.5')) bits.push('Full coverage bars');
+    else if (line.full) bits.push(`Full coverage ${L.accentType[line.full.type] || ''}`.trim());
     if (line.plating && line.plating !== 'none') bits.push(L.plating[line.plating]);
     if (line.enamel && line.enamel !== 'none') bits.push('Enamel ' + L.enamel[line.enamel]);
     if (line.engraving && line.engraving !== 'none') bits.push('Engraving ' + L.engraving[line.engraving]);
@@ -1649,11 +1649,11 @@
         parts.push(`${line.accent.count} ${type} accent, ${setting}`);
       }
       if (line.full) {
-        if (line.full.bars || String(line.level) === '0.5') parts.push('Iced bars');
+        if (line.full.bars || String(line.level) === '0.5') parts.push('Full coverage bars');
         else {
           const type = L.accentType[line.full.type] || line.full.type || 'Diamond';
           const cover = L.coverage[line.full.coverage] || line.full.coverage || '';
-          parts.push(`Full ${type}${cover ? `, ${cover}` : ''}`);
+          parts.push(`Full coverage ${type}${cover ? `, ${cover}` : ''}`);
         }
       }
       return parts.length ? parts.join(' / ') : 'None';
