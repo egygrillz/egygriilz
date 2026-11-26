@@ -1645,21 +1645,21 @@
       cmds = [];
       rectFill(0, H, W, H, 1, 1, 1);
       if (isFirst) {
-        // Luxury charcoal header band with gold rule
+        // Charcoal header with neutral grayscale rules and typography.
         rectFill(0, H, W, 108, 0.08, 0.08, 0.08);
-        rectFill(0, H - 108, W, 2.2, 0.72, 0.58, 0.32);
+        rectFill(0, H - 108, W, 2.2, 0.45, 0.45, 0.45);
         textAt(studioName, ML, H - 46, 'F4', 24, 1, 1, 1);
-        textAt('BESPOKE DENTAL JEWELRY  -  CAIRO ATELIER', ML, H - 64, 'F1', 8, 0.76, 0.64, 0.40);
+        textAt('BESPOKE DENTAL JEWELRY  -  CAIRO ATELIER', ML, H - 64, 'F1', 8, 0.68, 0.68, 0.68);
         textAt(addr, ML, H - 82, 'F1', 7.5, 0.72, 0.72, 0.72);
 
-        textRight('BESPOKE ESTIMATE', W - MR, H - 42, 'F2', 10, 0.85, 0.73, 0.48);
+        textRight('BESPOKE ESTIMATE', W - MR, H - 42, 'F2', 10, 0.80, 0.80, 0.80);
         textRight('Ref: ' + refId, W - MR, H - 58, 'F1', 8.5, 0.90, 0.90, 0.90);
         textRight('Date: ' + dateStr, W - MR, H - 72, 'F1', 8.5, 0.78, 0.78, 0.78);
         textRight('Valid for ' + validDays + ' days', W - MR, H - 86, 'F1', 7.5, 0.65, 0.65, 0.65);
         y = H - 130;
       } else {
         rectFill(0, H, W, 46, 0.08, 0.08, 0.08);
-        rectFill(0, H - 46, W, 1.5, 0.72, 0.58, 0.32);
+        rectFill(0, H - 46, W, 1.5, 0.45, 0.45, 0.45);
         textAt(studioName + '  -  BESPOKE ESTIMATE (CONTINUED)', ML, H - 28, 'F2', 9, 1, 1, 1);
         textRight('Ref: ' + refId, W - MR, H - 28, 'F1', 8, 0.8, 0.8, 0.8);
         y = H - 68;
@@ -1686,8 +1686,8 @@
     const cPhone = pdfClean(m.clientPhone || '');
     const cNotes = pdfClean(m.notes || '');
     if (cName || cPhone) {
-      rectFill(ML, y, CW, 34, 0.97, 0.97, 0.96);
-      rectStroke(ML, y, CW, 34, 0.88, 0.88, 0.86, 0.5);
+      rectFill(ML, y, CW, 34, 0.97, 0.97, 0.97);
+      rectStroke(ML, y, CW, 34, 0.88, 0.88, 0.88, 0.5);
       textAt('PREPARED FOR', ML + 12, y - 13, 'F2', 7, 0.52, 0.52, 0.52);
       textAt([cName, cPhone].filter(Boolean).join('   |   '), ML + 12, y - 26, 'F2', 9.5, 0.12, 0.12, 0.12);
       textRight(`${order.teethTotal || 0} ${(order.teethTotal === 1) ? 'Tooth' : 'Teeth'}  -  ${order.lineCount || 0} ${(order.lineCount === 1) ? 'Set' : 'Sets'}`, W - MR - 12, y - 22, 'F1', 8.5, 0.35, 0.35, 0.35);
@@ -1696,7 +1696,7 @@
 
     // Section heading: Custom Sets
     if ((order.lines || []).length) {
-      textAt('CUSTOM GRILLZ SPECIFICATION', ML, y, 'F2', 8.5, 0.45, 0.36, 0.18);
+      textAt('CUSTOM GRILLZ SPECIFICATION', ML, y, 'F2', 8.5, 0.38, 0.38, 0.38);
       textRight('AMOUNT (' + cur + ')', W - MR, y, 'F2', 8, 0.48, 0.48, 0.48);
       y -= 7;
       hLine(ML, W - MR, y, 0.15, 0.15, 0.15, 0.8);
@@ -1711,39 +1711,78 @@
         textRight(fmt(ln.subtotal) + ' ' + cur, W - MR, y, 'F2', 10.5, 0.10, 0.10, 0.10);
         y -= 13;
 
-        if (Array.isArray(ln.toothIds) && ln.toothIds.length) {
+        const isMultiGroup = ln.isMixed && Array.isArray(ln.groups) && ln.groups.length > 1;
+        if (!isMultiGroup && Array.isArray(ln.toothIds) && ln.toothIds.length) {
           const tLines = pdfWrap('Selected teeth (' + ln.teeth + '): ' + ln.toothIds.join(', '), 86);
           tLines.forEach((tl) => { need(12); textAt(tl, ML + 8, y, 'F1', 7.8, 0.42, 0.42, 0.42); y -= 11; });
         }
 
-        const isMultiGroup = ln.isMixed && Array.isArray(ln.groups) && ln.groups.length > 1;
         if (isMultiGroup) {
-          textAt(`Mixed set - ${ln.teeth} teeth across ${ln.groups.length} groups. Group totals are included in the set subtotal.`, ML + 8, y, 'F1', 7.8, 0.35, 0.35, 0.35);
+          textAt(`Mixed set - ${ln.teeth} teeth across ${ln.groups.length} groups. Tooth totals roll into each group and the set subtotal.`, ML + 8, y, 'F1', 7.8, 0.35, 0.35, 0.35);
           y -= 14;
+          let toothCursor = 0;
           ln.groups.forEach((g, gi) => {
+            const count = Math.max(1, Math.round(Number(g.teeth) || 1));
+            const mappedIds = Array.isArray(g.toothIds) && g.toothIds.length
+              ? g.toothIds.slice(0, count)
+              : (Array.isArray(ln.toothIds) ? ln.toothIds.slice(toothCursor, toothCursor + count) : []);
+            toothCursor += count;
             const prefix = g.label ? `${g.label} - ` : `Group ${gi + 1} - `;
-            const gSpec = prefix + groupLabel(g, { includeMaterial: true })
-              + (Array.isArray(g.toothIds) && g.toothIds.length ? ` [${g.toothIds.join(', ')}]` : '');
+            const gSpec = prefix + groupLabel(g, { includeMaterial: true });
             const wrapped = pdfWrap(gSpec, 70);
-            const groupCosts = [
-              [`Base (${g.teeth} teeth)`, Number(g.materialTotal) || 0],
-              [`Complexity L${g.level || '1'} (+${Number(g.designPct) || 0}%)`, Number(g.designCost) || 0],
-              ['Stones', Number(g.stoneCost) || 0],
-              ['Plating', Number(g.platingCost) || 0],
-              ['Enamel', Number(g.enamelCost) || 0],
-              ['Engraving', Number(g.engravingCost) || 0],
-              ['Anodize', Number(g.anodizeCost) || 0],
-            ].filter((row, ri) => ri < 2 || row[1] > 0);
-            need(36 + wrapped.length * 10 + groupCosts.length * 9.5 + 20);
+            const matName = g.material === 'gold' ? `Gold ${g.karat || '18'}K` : (L.material[g.material] || g.material);
+            const platingName = g.plating && g.plating !== 'none' ? (L.plating[g.plating] || g.plating) : '';
+            const groupParts = [
+              ['Base', Number(g.materialTotal) || 0],
+              [`Complexity L${g.level || '1'} (${Number(g.designPct) || 0}%)`, Number(g.designCost) || 0],
+            ];
+            if (Number(g.stoneCost) > 0) groupParts.push(['Stones', Number(g.stoneCost)]);
+            if (platingName) groupParts.push([`Plating: ${platingName}`, Number(g.platingCost) || 0]);
+            if (g.enamel && g.enamel !== 'none') groupParts.push([`Enamel: ${L.enamel[g.enamel] || g.enamel}`, Number(g.enamelCost) || 0]);
+            if (g.engraving && g.engraving !== 'none') groupParts.push([`Engraving: ${L.engraving[g.engraving] || g.engraving}`, Number(g.engravingCost) || 0]);
+            if (g.anodize && g.anodize !== 'none') groupParts.push([`Anodize: ${L.anodize[g.anodize] || g.anodize}`, Number(g.anodizeCost) || 0]);
+
+            const splitAmount = (amount) => {
+              const total = Math.round(Number(amount) || 0);
+              const base = Math.floor(total / count);
+              const remainder = total - base * count;
+              return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
+            };
+            const shares = groupParts.map((part) => splitAmount(part[1]));
+            const displaySpec = groupLabel(g, { includeMaterial: true }).replace(/^\d+\s+teeth?\s*/i, '');
+            const toothRows = Array.from({ length: count }, (_, ti) => {
+              const name = mappedIds[ti] || `Tooth ${ti + 1} of ${count}`;
+              const total = shares.reduce((sum, list) => sum + list[ti], 0);
+              const parts = groupParts.map((part, pi) => `${part[0]}: ${fmt(shares[pi][ti])} ${cur}`);
+              return { name, total, parts };
+            });
+            const groupDifference = Math.round(Number(g.subtotal) || 0) - toothRows.reduce((sum, tooth) => sum + tooth.total, 0);
+            if (groupDifference && toothRows.length) {
+              toothRows[toothRows.length - 1].total += groupDifference;
+              toothRows[toothRows.length - 1].parts.push(`Rounding: ${fmt(groupDifference)} ${cur}`);
+            }
+
+            need(34 + wrapped.length * 10 + toothRows.reduce((sum, tooth) => sum + 22 + Math.ceil(tooth.parts.join(' | ').length / 88) * 8, 0) + 22);
             wrapped.forEach((wl, wi) => {
               textAt((wi === 0 ? '' : '  ') + wl, ML + 10, y, wi === 0 ? 'F2' : 'F1', 8, 0.20, 0.20, 0.20);
               y -= 10;
             });
-            groupCosts.forEach(([label, amount]) => {
-              need(11);
-              textAt(String(label), ML + 18, y, 'F1', 7.2, 0.45, 0.45, 0.45);
-              textRight(fmt(amount) + ' ' + cur, W - MR, y, 'F1', 7.2, 0.35, 0.35, 0.35);
-              y -= 9.5;
+
+            toothRows.forEach((tooth, ti) => {
+              const toothSpec = `${tooth.name} - ${matName} - ${displaySpec}`;
+              pdfWrap(toothSpec, 68).forEach((tl, li) => {
+                need(10);
+                textAt((li ? '  ' : '') + tl, ML + 16, y, li ? 'F1' : 'F2', 7.4, 0.20, 0.20, 0.20);
+                if (!li) textRight(fmt(tooth.total) + ' ' + cur, W - MR, y, 'F2', 7.4, 0.20, 0.20, 0.20);
+                y -= 9;
+              });
+              const costLines = pdfWrap(tooth.parts.join('  |  '), 88);
+              costLines.forEach((cl) => {
+                need(9);
+                textAt(cl, ML + 24, y, 'F1', 6.8, 0.42, 0.42, 0.42);
+                y -= 8;
+              });
+              if (ti < toothRows.length - 1) y -= 2;
             });
             need(12);
             textAt('Group subtotal', ML + 18, y, 'F2', 7.8, 0.18, 0.18, 0.18);
@@ -1777,7 +1816,7 @@
     // Studio services
     if ((order.services || []).length) {
       need(44);
-      textAt('STUDIO SERVICES', ML, y, 'F2', 8.5, 0.45, 0.36, 0.18);
+      textAt('STUDIO SERVICES', ML, y, 'F2', 8.5, 0.38, 0.38, 0.38);
       y -= 6;
       hLine(ML, W - MR, y, 0.80, 0.80, 0.80, 0.5);
       y -= 14;
@@ -1809,7 +1848,7 @@
 
     y -= 2;
     rectFill(sumX - 10, y + 8, 235, 30, 0.08, 0.08, 0.08);
-    textAt('ESTIMATED TOTAL', sumX, y - 10, 'F2', 9, 0.85, 0.73, 0.48);
+    textAt('ESTIMATED TOTAL', sumX, y - 10, 'F2', 9, 0.80, 0.80, 0.80);
     textRight(fmt(order.total) + ' ' + cur, W - MR - 8, y - 10.5, 'F2', 12, 1, 1, 1);
     y -= 34;
 
@@ -1832,9 +1871,9 @@
       const boxH = 38 + codeLines.length * 12;
       need(boxH + 14);
       y -= 10;
-      rectFill(ML, y, CW, boxH, 0.98, 0.97, 0.94);
-      rectStroke(ML, y, CW, boxH, 0.76, 0.64, 0.40, 0.8);
-      textAt('INSTANT DESIGN CODE  -  SEND TO EGYGRILLZ OR PASTE IN ANY CALCULATOR', ML + 12, y - 14, 'F2', 7.3, 0.48, 0.38, 0.18);
+      rectFill(ML, y, CW, boxH, 0.96, 0.96, 0.96);
+      rectStroke(ML, y, CW, boxH, 0.55, 0.55, 0.55, 0.8);
+      textAt('INSTANT DESIGN CODE  -  SEND TO EGYGRILLZ OR PASTE IN ANY CALCULATOR', ML + 12, y - 14, 'F2', 7.3, 0.38, 0.38, 0.38);
       let cy = y - 28;
       codeLines.forEach((cl) => {
         textAt(cl, ML + 12, cy, 'F2', 9.2, 0.10, 0.10, 0.10);

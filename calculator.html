@@ -20,8 +20,8 @@
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --ink:#191817;--mut:#77736d;--faint:#aaa49b;--line:rgba(28,25,20,.13);
-  --gold:#b8935a;--gold-d:#92713f;--ivory:#f7f4ee;--card:transparent;--dark:#171614;
+  --ink:#111111;--mut:#666666;--faint:#999999;--line:rgba(0,0,0,.14);
+  --gold:#555555;--gold-d:#222222;--ivory:#FAFAF9;--card:#FFFFFF;--dark:#111111;
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Arimo',sans-serif;background:var(--ivory);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -56,7 +56,7 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .hero-script{font-family:'Alex Brush',cursive;font-size:34px;color:var(--gold-d);line-height:1;}
 .hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,56px);font-weight:700;letter-spacing:1px;margin:8px 0 12px;}
 .hero p{font-size:15px;color:var(--mut);line-height:1.7;max-width:640px;margin:0 auto;}
-.code-bar{max-width:640px;margin:28px auto 0;display:flex;gap:8px;background:rgba(255,255,255,.24);border:1px solid var(--line);border-radius:999px;padding:6px;box-shadow:0 8px 28px rgba(45,35,22,.045);}
+.code-bar{max-width:640px;margin:28px auto 0;display:flex;gap:8px;background:rgba(255,255,255,.24);border:1px solid var(--line);border-radius:999px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,.045);}
 .code-bar input{flex:1;border:none;outline:none;font-size:13px;padding:10px 12px;color:var(--ink);background:transparent;min-width:0;}
 .code-bar input::placeholder{color:var(--faint);}
 .code-bar button{background:var(--ink);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:0 22px;border-radius:2px;transition:.2s;white-space:nowrap;}
@@ -71,26 +71,33 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .step{background:transparent;border:0;border-top:1px solid var(--line);padding:30px 0;margin:0 0 12px;border-radius:0;}
 .step:first-child{border-top:0;}
 .left-column{min-width:0;}
-.set-block{padding:0 0 26px;margin:0 0 18px;border-bottom:1px solid var(--line);}
+.set-shell{position:relative;margin:0 0 16px;padding:0 0 16px;border-bottom:1px solid var(--line);}
+.set-block{margin:0;padding:0;border:0;}
+.set-summary{display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 112px 10px 14px;list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:7px;background:#fff;}
+.set-summary::-webkit-details-marker{display:none;}
+.set-summary-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;}
+.set-summary-title small{font-family:'Arimo',sans-serif;font-size:11px;color:var(--mut);font-weight:400;margin-inline-start:8px;}
+.set-summary-meta{margin-inline-start:auto;font-size:11px;color:var(--mut);white-space:nowrap;}
+.set-chevron{font-size:11px;color:var(--mut);transition:transform .2s;}
+.set-block[open] .set-summary{border-radius:7px 7px 0 0;background:#f5f5f5;}
+.set-block[open] .set-chevron{transform:rotate(180deg);}
+.set-content{padding:0 14px 8px;border:1px solid var(--line);border-top:0;border-radius:0 0 7px 7px;background:rgba(255,255,255,.55);}
 .step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;}
 .step-num{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--gold-d);border:1px solid var(--gold);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .step-head h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:.5px;}
 .step-head p{font-size:12px;color:var(--mut);margin-top:3px;line-height:1.6;}
-.set-block{margin-bottom:8px;}
-.set-head{display:flex;align-items:center;justify-content:space-between;margin:26px 0 14px;}
-.set-head:first-child{margin-top:0;}
-.set-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
-.set-title span{font-family:'Arimo',sans-serif;font-size:11px;color:var(--mut);font-weight:400;margin-inline-start:8px;}
-.set-remove{background:none;border:1px solid var(--line);color:var(--mut);font-size:11px;padding:7px 14px;border-radius:999px;transition:.2s;}
-.set-remove:hover{border-color:#c00;color:#c00;}
+.set-remove{position:absolute;z-index:2;inset-inline-end:52px;top:17px;width:30px;height:30px;display:grid;place-items:center;background:transparent;border:1px solid var(--line);color:var(--mut);font-size:11px;border-radius:50%;transition:.2s;}
+.set-remove:hover{border-color:#333333;color:#333333;}
 .add-set-btn{width:100%;background:none;border:1px dashed var(--gold);color:var(--gold-d);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:16px;border-radius:4px;transition:.2s;margin-bottom:22px;}
-.add-set-btn:hover{background:rgba(184,147,90,.08);}
+.add-set-btn:hover{background:rgba(0,0,0,.08);}
 
 /* ── OPTION CARDS ── */
 .opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;}
 .opt-card{border:1px solid transparent;background:transparent;padding:14px 10px 12px;text-align:center;cursor:pointer;position:relative;transition:.28s;border-radius:12px;}
-.opt-card:hover{border-color:rgba(184,147,90,.42);transform:translateY(-4px);background:rgba(255,255,255,.3);}
-.opt-card.selected{border-color:var(--gold);background:rgba(255,255,255,.42);box-shadow:0 12px 32px rgba(67,49,20,.08);}
+.opt-card:hover{border-color:rgba(0,0,0,.42);transform:translateY(-4px);background:rgba(255,255,255,.3);}
+.opt-card.selected{border-color:var(--gold);background:rgba(255,255,255,.42);box-shadow:0 12px 32px rgba(0,0,0,.08);}
+.opt-card img{height:118px;width:auto;margin:0 auto 8px;object-fit:contain;filter:drop-shadow(0 15px 13px rgba(0,0,0,.14));transition:transform .3s,filter .3s;}
+.opt-card:hover img,.opt-card.selected img{transform:translateY(-3px) scale(1.035);filter:drop-shadow(0 19px 17px rgba(0,0,0,.18));}
 .opt-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
 .opt-desc{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;}
 .opt-price{font-size:11px;color:var(--gold-d);font-weight:700;margin-top:6px;}
@@ -116,25 +123,30 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .rail-track::-webkit-scrollbar{display:none;}
 .rail::before,.rail::after{content:"";position:absolute;top:0;bottom:10px;width:26px;
   pointer-events:none;z-index:2;opacity:0;transition:opacity .25s;}
-.rail::before{left:0;background:linear-gradient(90deg,var(--bg,#f7f4ee),transparent);}
-.rail::after{right:0;background:linear-gradient(270deg,var(--bg,#f7f4ee),transparent);}
+.rail::before{left:0;background:linear-gradient(90deg,var(--bg,#FAFAF9),transparent);}
+.rail::after{right:0;background:linear-gradient(270deg,var(--bg,#FAFAF9),transparent);}
 .rail.can-left::before{opacity:1;}
 .rail.can-right::after{opacity:1;}
 
-/* compact text-first rail choice */
-.rc{scroll-snap-align:start;flex:0 0 auto;width:118px;min-height:54px;cursor:pointer;
-  border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.72);
-  padding:9px 10px;text-align:center;position:relative;
-  transition:transform .18s,border-color .18s,box-shadow .18s;}
-.rc:hover{transform:translateY(-3px);border-color:rgba(184,147,90,.6);
-  box-shadow:0 10px 24px rgba(67,49,20,.10);}
+/* a card in a rail: image, name, price delta */
+.rc{scroll-snap-align:start;flex:0 0 auto;width:132px;cursor:pointer;
+  border:1px solid var(--line);border-radius:14px;background:#fff;
+  padding:10px 8px 9px;text-align:center;position:relative;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s,box-shadow .22s;}
+.rc:hover{transform:translateY(-3px);border-color:rgba(0,0,0,.6);
+  box-shadow:0 10px 24px rgba(0,0,0,.10);}
 .rc:active{transform:translateY(-1px) scale(.985);}
-.rc.selected{border-color:var(--gold,#b8935a);box-shadow:0 0 0 1px var(--gold,#b8935a),0 8px 20px rgba(67,49,20,.10);}
+.rc.selected{border-color:var(--gold,#555555);box-shadow:0 0 0 1px var(--gold,#555555),0 8px 20px rgba(0,0,0,.10);}
+.rc img,.rc .rc-ph{display:block;width:100%;height:74px;object-fit:contain;
+  margin:0 auto 7px;transition:transform .25s;}
+.rc:hover img{transform:scale(1.06) translateY(-2px);}
+.rc-ph{display:grid;place-items:center;color:#bdbdbd;font-size:22px;
+  border-radius:10px;background:#f6f6f6;}
 .rc-name{font-size:10.5px;font-weight:600;line-height:1.25;color:var(--ink);}
 .rc-add{font-size:9.5px;color:#8b8b8b;margin-top:2px;line-height:1.2;}
-.rc-add.free{color:#4a8c5f;}
+.rc-add.free{color:#555555;}
 .rc-check{position:absolute;top:6px;right:6px;width:15px;height:15px;border-radius:50%;
-  background:var(--gold,#b8935a);color:#fff;font-size:9px;display:none;
+  background:var(--gold,#555555);color:#fff;font-size:9px;display:none;
   align-items:center;justify-content:center;}
 .rc.selected .rc-check{display:flex;}
 
@@ -144,13 +156,14 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .rail-sizes .rc-add{font-size:9px;}
 
 @media(max-width:560px){
-  .rc{width:104px;}
+  .rc{width:112px;}
+  .rc img,.rc .rc-ph{height:60px;}
   .rail-sizes .rc{width:64px;}
 }
 .mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
 .mode-card{border:1px solid var(--line);background:transparent;padding:16px;text-align:center;cursor:pointer;border-radius:12px;transition:.2s;}
 .mode-card:hover{border-color:var(--ink);}
-.mode-card.selected{border-color:var(--gold);background:rgba(255,255,255,.38);box-shadow:0 8px 22px rgba(67,49,20,.06);}
+.mode-card.selected{border-color:var(--gold);background:rgba(255,255,255,.38);box-shadow:0 8px 22px rgba(0,0,0,.06);}
 .mode-card .mc-t{font-size:13px;font-weight:700;}
 .mode-card .mc-d{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;}
 
@@ -161,23 +174,29 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .counter-btn:hover{border-color:var(--ink);}
 .counter-num{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;min-width:56px;text-align:center;}
 .counter-lbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;}
-.smile-map{background:radial-gradient(ellipse at 50% 48%,rgba(255,255,255,.72),rgba(247,244,238,.12) 72%);border:1px solid rgba(28,25,20,.08);border-radius:22px;padding:22px 16px;overflow:hidden;}
-.teeth-chart{display:block;width:min(100%,760px);height:auto;margin:0 auto;color:#665f54;--tooth-selected:#b8935a;--tooth-selected-opacity:.36;}
+.smile-map{background:radial-gradient(ellipse at 50% 48%,rgba(255,255,255,.72),rgba(255,255,255,.12) 72%);border:1px solid rgba(0,0,0,.08);border-radius:22px;padding:22px 16px;overflow:hidden;}
+.teeth-chart{display:block;width:min(100%,760px);height:auto;margin:0 auto;color:#666666;--tooth-selected:#555555;--tooth-selected-opacity:.36;}
 .teeth-chart .tooth{cursor:pointer;}
 .chart-caption{font-size:11px;color:var(--mut);text-align:center;margin-top:8px;}
 .arch{display:flex;gap:4px;justify-content:center;direction:ltr;}
 .arch + .arch{margin-top:14px;}
-/* Compact complexity choices: clear level buttons instead of a decorative dial. */
-.level-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px 0 10px;}
-.level-option{min-width:0;min-height:46px;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.22);padding:8px 9px;text-align:left;color:var(--ink);transition:background .18s,border-color .18s;}
-.level-option:hover{border-color:var(--gold);}
-.level-option.active{background:var(--ink);border-color:var(--ink);color:#fff;}
-.level-option b{display:block;font-size:10px;letter-spacing:.04em;}
-.level-picked{text-align:left;min-height:36px;margin:2px 0 10px;max-width:620px;}
-.level-picked strong{display:block;font-family:'Playfair Display',serif;font-size:15px;}
+/* Circular complexity selector with the original level examples. */
+.level-wheel-wrap{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin:8px auto 6px;max-width:560px;}
+.level-turn{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);font-size:15px;transition:.2s;}
+.level-turn:hover{border-color:var(--gold);background:rgba(255,255,255,.4);}
+.level-wheel{position:relative;width:min(100%,340px);aspect-ratio:1;margin:auto;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28) 0 24%,transparent 24.5% 57%,rgba(0,0,0,.12) 57.5% 58%,transparent 58.5%);}
+.level-wheel::before{content:"";position:absolute;inset:19%;border:1px solid rgba(0,0,0,.2);border-radius:50%;}
+.level-wheel-item{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px;border:1px solid transparent;background:transparent;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transform:translate(var(--x),var(--y)) scale(.82);transition:transform .38s cubic-bezier(.2,.8,.2,1),background .25s,border .25s,box-shadow .25s;z-index:1;color:var(--mut);}
+.level-wheel-item img{width:68px;height:57px;object-fit:contain;filter:drop-shadow(0 9px 9px rgba(0,0,0,.12));}
+.level-wheel-item .wheel-name{font-size:9px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.level-wheel-item.active{z-index:2;transform:translate(var(--x),var(--y)) scale(1.14);border-color:rgba(0,0,0,.65);background:rgba(255,255,255,.76);box-shadow:0 12px 30px rgba(0,0,0,.12);color:var(--ink);}
+.level-wheel-item.active img{width:76px;height:63px;}
+.level-wheel-center{position:absolute;inset:39%;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;font-family:'Playfair Display',serif;font-size:12px;color:var(--gold-d);}
+.level-picked{text-align:center;min-height:56px;margin:0 auto 10px;max-width:460px;}
+.level-picked strong{display:block;font-family:'Playfair Display',serif;font-size:18px;}
 .level-picked span{font-size:11px;color:var(--mut);line-height:1.5;display:block;margin-top:3px;}
-.level-examples{font-size:10px;color:var(--mut);margin-top:4px;}
-@media(max-width:560px){.smile-map{padding:14px 6px;border-radius:16px}.teeth-chart{width:100%}.level-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.step{padding:24px 0}.opt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+.level-examples{font-size:10px;color:var(--gold-d);margin-top:4px;}
+@media(max-width:560px){.smile-map{padding:14px 6px;border-radius:16px}.teeth-chart{width:100%}.level-wheel{width:min(100%,290px)}.level-wheel-item{width:72px;height:72px;margin:-36px}.level-wheel-item img{width:55px;height:46px}.level-wheel-item.active img{width:64px;height:52px}.level-wheel-center{font-size:10px}.step{padding:24px 0}.opt-card img{height:96px}.opt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
 
 /* ── GROUP BUILDER ── */
 .group-card{border:1px solid var(--line);background:rgba(255,255,255,.18);border-radius:16px;padding:22px;margin-top:16px;}
@@ -185,47 +204,33 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .group-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;}
 .group-label-inp{flex:1;min-width:140px;border:1px solid var(--line);border-radius:2px;padding:8px 10px;font-size:12px;}
 .group-remove{background:none;border:none;color:var(--faint);font-size:16px;padding:4px;}
-.group-remove:hover{color:#c00;}
+.group-remove:hover{color:#333333;}
 .g-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
 .g-grid .full{grid-column:1/-1;}
 .fld label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin-bottom:5px;}
-.fld select,.fld input,.group-label-inp,.order-grid textarea{width:100%;border:1px solid rgba(28,25,20,.18);border-radius:8px;padding:11px 12px;font-size:13px;background:rgba(255,255,255,.44);color:var(--ink);outline:none;backdrop-filter:blur(8px);}
-.fld select:focus,.fld input:focus,.group-label-inp:focus,.order-grid textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,147,90,.12);}
+.fld select,.fld input,.group-label-inp,.order-grid textarea{width:100%;border:1px solid rgba(0,0,0,.18);border-radius:8px;padding:11px 12px;font-size:13px;background:rgba(255,255,255,.44);color:var(--ink);outline:none;backdrop-filter:blur(8px);}
+.fld select:focus,.fld input:focus,.group-label-inp:focus,.order-grid textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(0,0,0,.12);}
 .fld select:focus,.fld input:focus{border-color:var(--ink);}
 .g-pills{display:flex;flex-wrap:wrap;gap:6px;}
 .g-pill{border:1px solid var(--line);background:transparent;font-size:11px;padding:6px 12px;border-radius:999px;transition:.15s;}
 .g-pill.selected{background:var(--ink);color:#fff;border-color:var(--ink);}
 .g-add{margin-top:14px;background:none;border:1px dashed var(--gold);color:var(--gold-d);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:12px 18px;border-radius:4px;transition:.2s;}
-.g-add:hover{background:rgba(184,147,90,.08);}
+.g-add:hover{background:rgba(0,0,0,.08);}
 
 /* ── STONES / FINISHES ── */
 .stones-detail{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
-/* ── compact, collapsible live piece preview ── */
-.piece{position:relative;z-index:5;margin:0 0 18px;background:rgba(255,255,255,.42);
-  border:1px solid rgba(28,25,20,.10);border-radius:8px;padding:0 13px;
-  box-shadow:0 4px 16px rgba(67,49,20,.035);}
-.piece-head{min-height:44px;display:flex;align-items:center;gap:10px;list-style:none;cursor:pointer;}
-.piece-head::-webkit-details-marker{display:none;}
-.piece-t{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);white-space:nowrap;}
-.piece-lbl{font-size:10px;color:var(--mut);text-align:right;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.piece-toggle{color:var(--mut);font-size:10px;transition:transform .2s;}
-.piece[open] .piece-toggle{transform:rotate(180deg);}
-.piece-content{border-top:1px solid var(--line);padding:8px 0 0;}
-.piece canvas{display:block;width:100%;height:auto;max-height:210px;}
-.piece:not([open]) .piece-head{margin:0;}
-
 .laser-block{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;}
 .sc-lbl-lite{display:block;font-size:10px;color:#8b8b8b;margin-bottom:5px;}
 .swatches{display:flex;gap:7px;flex-wrap:wrap;}
 .swatch{width:24px;height:24px;border-radius:50%;background:var(--sw);cursor:pointer;
   border:2px solid transparent;box-shadow:0 0 0 1px rgba(0,0,0,.10);transition:transform .18s;}
 .swatch:hover{transform:scale(1.12);}
-.swatch.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold,#b8935a);}
+.swatch.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold,#555555);}
 input[type=file].sc-input{padding:9px 10px;font-size:11px;cursor:pointer;}
 .sd-lbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#8b8b8b;
   margin:14px 0 6px;}
 .stones-detail .sd-lbl:first-child{margin-top:0;}
-.hint-box{display:flex;align-items:center;gap:12px;background:#fdf6ec;border:1px solid #ecd9b8;border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.6;color:#6b5320;margin-top:14px;flex-wrap:wrap;}
+.hint-box{display:flex;align-items:center;gap:12px;background:#F5F5F5;border:1px solid #D6D6D6;border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.6;color:#333333;margin-top:14px;flex-wrap:wrap;}
 .hint-box button{background:var(--gold);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border-radius:2px;white-space:nowrap;}
 .hint-box button:hover{background:var(--gold-d);}
 /* ── live gold readout ── */
@@ -233,17 +238,17 @@ input[type=file].sc-input{padding:9px 10px;font-size:11px;cursor:pointer;}
   border:1px solid var(--line);background:rgba(255,255,255,.62);}
 .gold-rate-head{display:grid;grid-template-columns:34px minmax(0,1fr) 32px;align-items:center;gap:12px;}
 .gold-rate-icon{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
-  background:rgba(28,25,20,.05);color:var(--ink);font-size:13px;}
+  background:rgba(0,0,0,.05);color:var(--ink);font-size:13px;}
 .gold-rate-copy strong{font-size:12px;display:block;letter-spacing:.02em;}
 .gold-rate-copy span{font-size:10px;line-height:1.5;color:var(--mut);display:block;margin-top:3px;}
 .gold-rate-copy em{font-style:normal;opacity:.8;}
 .gr-refresh{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
   background:#fff;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:11px;
   transition:transform .35s,color .2s,border-color .2s;}
-.gr-refresh:hover{color:var(--ink);border-color:rgba(28,25,20,.28);transform:rotate(90deg);}
+.gr-refresh:hover{color:var(--ink);border-color:rgba(0,0,0,.28);transform:rotate(90deg);}
 .gr-karats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
-.gr-k{padding:9px 6px;border-radius:9px;background:rgba(28,25,20,.035);text-align:center;}
-.gr-k-main{background:rgba(28,25,20,.075);}
+.gr-k{padding:9px 6px;border-radius:9px;background:rgba(0,0,0,.035);text-align:center;}
+.gr-k-main{background:rgba(0,0,0,.075);}
 .gr-k-lbl{display:block;font-size:9px;letter-spacing:.12em;color:var(--mut);}
 .gr-k-val{display:block;font-size:13px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;}
 .gr-foot{margin-top:11px;font-size:9.5px;line-height:1.55;color:var(--mut);opacity:.85;}
@@ -264,37 +269,37 @@ input[type=file].sc-input{padding:9px 10px;font-size:11px;cursor:pointer;}
 .order-grid textarea:focus{border-color:var(--ink);}
 
 /* ── SUMMARY ── */
-.summary{position:sticky;top:84px;background:var(--dark);color:#f5f0e6;border-radius:4px;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.18);}
+.summary{position:sticky;top:84px;background:var(--dark);color:#f5f5f5;border-radius:4px;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.18);}
 @media(max-width:980px){.summary{position:static;}}
 .sum-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:.5px;}
-.sum-sub{font-size:11px;color:#9a958a;margin-top:2px;}
+.sum-sub{font-size:11px;color:#999999;margin-top:2px;}
 .sum-lines{margin-top:18px;border-top:1px solid rgba(255,255,255,.12);padding-top:14px;display:flex;flex-direction:column;gap:10px;}
 .sum-line{display:flex;justify-content:space-between;gap:12px;font-size:12px;}
-.sum-line .sl-name{color:#cfc9bd;line-height:1.5;}
+.sum-line .sl-name{color:#cccccc;line-height:1.5;}
 .sum-line .sl-price{color:#fff;font-weight:700;white-space:nowrap;}
-.sum-group{font-size:11px;color:#9a958a;padding-inline-start:12px;display:flex;justify-content:space-between;gap:10px;}
-.sum-group .sl-price{color:#cfc9bd;}
+.sum-group{font-size:11px;color:#999999;padding-inline-start:12px;display:flex;justify-content:space-between;gap:10px;}
+.sum-group .sl-price{color:#cccccc;}
 .sum-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;border-top:1px solid rgba(255,255,255,.12);padding-top:16px;}
-.sum-total-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#9a958a;}
+.sum-total-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#999999;}
 .sum-total{font-family:'Playfair Display',serif;font-size:38px;font-weight:700;color:#fff;line-height:1;}
 .sum-total .curr{font-size:14px;color:var(--gold);font-family:'Arimo',sans-serif;font-weight:400;margin-inline-start:4px;}
-.sum-dep{display:flex;justify-content:space-between;font-size:12px;margin-top:10px;color:#cfc9bd;}
+.sum-dep{display:flex;justify-content:space-between;font-size:12px;margin-top:10px;color:#cccccc;}
 .sum-dep b{color:#fff;}
 .sum-code{margin-top:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:4px;padding:12px;}
-.sum-code .sc-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#9a958a;}
+.sum-code .sc-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#999999;}
 .sum-code .sc-val{font-size:12px;color:#fff;word-break:break-all;margin-top:5px;line-height:1.6;font-family:ui-monospace,Menlo,monospace;}
 .sum-btns{display:flex;flex-direction:column;gap:9px;margin-top:18px;}
 .btn-gold{background:var(--gold);color:#141414;border:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:15px;border-radius:2px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.btn-gold:hover{background:#c9a86a;}
-.btn-line{background:transparent;color:#f5f0e6;border:1px solid rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:12px;border-radius:2px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-gold:hover{background:#777777;}
+.btn-line{background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:12px;border-radius:2px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn-line:hover{border-color:#fff;}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-.sum-note{font-size:10px;color:#9a958a;line-height:1.7;margin-top:14px;text-align:center;}
+.sum-note{font-size:10px;color:#999999;line-height:1.7;margin-top:14px;text-align:center;}
 
 /* ── MOBILE BAR ── */
 .mobile-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(20,20,20,.96);backdrop-filter:blur(10px);color:#fff;padding:12px 5%;z-index:800;align-items:center;justify-content:space-between;gap:12px;}
 .mobile-bar .mb-total{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;}
-.mobile-bar .mb-total small{font-family:'Arimo',sans-serif;font-size:10px;color:#9a958a;display:block;letter-spacing:1px;text-transform:uppercase;}
+.mobile-bar .mb-total small{font-family:'Arimo',sans-serif;font-size:10px;color:#999999;display:block;letter-spacing:1px;text-transform:uppercase;}
 .mobile-bar button{background:var(--gold);color:#141414;border:none;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:12px 20px;border-radius:2px;}
 @media(max-width:980px){.mobile-bar{display:flex;}body{padding-bottom:70px;}}
 
@@ -347,16 +352,6 @@ footer p{font-size:11px;color:var(--faint);}
 
 <main class="calc-wrap">
   <div class="left-column">
-    <details class="piece" id="piece-preview">
-      <summary class="piece-head">
-        <span class="piece-t">Your piece</span>
-        <span class="piece-lbl" data-piece-label></span>
-        <span class="piece-toggle" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
-      </summary>
-      <div class="piece-content">
-        <canvas aria-label="Live preview of your grillz"></canvas>
-      </div>
-    </details>
     <div id="sets-container"></div>
     <div id="order-step"></div>
   </div>
@@ -382,7 +377,7 @@ footer p{font-size:11px;color:var(--faint);}
   <p data-i18n="footer_note">Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.</p>
 </footer>
 
-<script src="/assets/calc-engine.js?v=6"></script>
+<script src="/assets/calc-engine.js?v=7"></script>
 <script src="/assets/numpad.js?v=5"></script>
 <script src="/assets/grillz-renderer.js?v=5"></script>
 <script src="/assets/rates.js?v=6"></script>
@@ -761,6 +756,8 @@ footer p{font-size:11px;color:var(--faint);}
     clientPhone: '',
     notes: '',
   };
+  // Keep the active set open; earlier sets can be collapsed and reopened.
+  let openSetIndexes = new Set([0]);
 
   /* ───────────────────────── pricing ───────────────────────── */
 
@@ -933,7 +930,7 @@ footer p{font-size:11px;color:var(--faint);}
     const at = groupIdx == null ? 'data-scope="set" data-index="' + setIdx + '"' : 'data-scope="group" data-index="' + setIdx + '" data-group="' + groupIdx + '"';
     const platingCards = PLATINGS.map((p) => {
       const selected = obj.plating === p.id;
-      return '<div class="opt-card' + (selected ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="' + p.id + '"><span class="opt-check">✓</span><div class="opt-name">' + esc(platingName(p.id)) + '</div></div>';
+      return '<div class="opt-card' + (selected ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="' + p.id + '"><span class="opt-check">✓</span><img src="' + p.img + '" alt="' + esc(platingName(p.id)) + '" loading="lazy"><div class="opt-name">' + esc(platingName(p.id)) + '</div></div>';
     }).join('');
     let html = '<div class="finish-block"><div class="fb-t">' + esc(t('plating_none')) + ' / Plating</div><div class="finish-grid"><div class="opt-card' + (obj.plating === 'none' ? ' selected' : '') + '" data-act="finish" ' + at + ' data-field="plating" data-value="none"><span class="opt-check">✓</span><div class="opt-name">' + esc(t('plating_none')) + '</div></div>' + platingCards + '</div></div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('enamel')) + '</div><div class="pills">' + ENAMELS.map((k) => pill(k, obj.enamel === k, optName(k), 'data-act="finish" ' + at + ' data-field="enamel" data-value="' + k + '"')).join('') + '</div></div>';
@@ -960,6 +957,7 @@ footer p{font-size:11px;color:var(--faint);}
       ' aria-pressed="' + (!!o.selected) + '"' +
       ' title="' + esc(o.title || o.name || '') + '">' +
       '<span class="rc-check">✓</span>' +
+      (o.img ? '<img src="' + o.img + '" alt="" loading="lazy">' : '<span class="rc-ph"><i class="fa-regular fa-gem"></i></span>') +
       '<span class="rc-name">' + esc(o.name || '') + '</span>' +
       (o.add ? '<span class="rc-add' + (o.free ? ' free' : '') + '">' + esc(o.add) + '</span>' : '') +
       '</button>';
@@ -1165,7 +1163,7 @@ footer p{font-size:11px;color:var(--faint);}
       const name = matName(m.id);
       const desc = t('mat_' + m.id + '_d');
       const per = (m.id === 'gold' && !(goldRateForLine() > 0)) ? null : perToothBase(m.id, obj.karat || '18');
-      html += '<div class="opt-card' + (obj.material === m.id ? ' selected' : '') + '" data-act="material" ' + at + ' data-value="' + m.id + '"><span class="opt-check">✓</span><div class="opt-name">' + esc(name) + '</div><div class="opt-desc">' + esc(desc) + '</div><div class="opt-price">' + (per == null ? esc(lang === 'ar' ? 'أدخل سعر الذهب لحساب السعر' : 'Enter gold rate to price') : esc(fmt(per)) + ' EGP ' + esc(t('per_tooth'))) + '</div></div>';
+      html += '<div class="opt-card' + (obj.material === m.id ? ' selected' : '') + '" data-act="material" ' + at + ' data-value="' + m.id + '"><span class="opt-check">✓</span><img src="' + m.img + '" alt="' + esc(name) + '" loading="lazy"><div class="opt-name">' + esc(name) + '</div><div class="opt-desc">' + esc(desc) + '</div><div class="opt-price">' + (per == null ? esc(lang === 'ar' ? 'أدخل سعر الذهب لحساب السعر' : 'Enter gold rate to price') : esc(fmt(per)) + ' EGP ' + esc(t('per_tooth'))) + '</div></div>';
     });
     html += '</div>';
     if (obj.material === 'gold') html += '<div class="karat-row"><span class="lbl">' + esc(t('karat')) + '</span>' + KARATS.map((k) => pill(k, obj.karat === k, k + 'K', 'data-act="karat" ' + at + ' data-value="' + k + '"')).join('') + '</div>';
@@ -1195,13 +1193,21 @@ footer p{font-size:11px;color:var(--faint);}
 
   function renderLevelWheel(current, setIndex, groupIndex) {
     const selected = String(current || '1');
+    const selectedIndex = Math.max(0, LEVELS.indexOf(selected));
     const groupAttr = groupIndex == null ? '' : ' data-group="' + groupIndex + '"';
     const chooseAct = groupIndex == null ? 'level' : 'group-level';
-    const items = LEVELS.map((lv) => {
+    const stepAct = groupIndex == null ? 'level-step' : 'group-level-step';
+    const radius = 108;
+    const items = LEVELS.map((lv, index) => {
+      const offset = (index - selectedIndex + LEVELS.length) % LEVELS.length;
+      const angle = (offset / LEVELS.length) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.round(Math.cos(angle) * radius), y = Math.round(Math.sin(angle) * radius);
       const active = lv === selected;
-      return '<button type="button" class="level-option' + (active ? ' active' : '') + '" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(levelName(lv) + '. ' + levelDesc(lv)) + '"><b>' + esc(lv === '0.5' ? 'L0.5' : 'L' + lv) + ' · ' + esc(levelName(lv)) + '</b></button>';
+      return '<button type="button" class="level-wheel-item' + (active ? ' active' : '') + '" style="--x:' + x + 'px;--y:' + y + 'px" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(levelName(lv) + '. ' + levelDesc(lv)) + '"><img src="' + LEVEL_IMG(lv) + '" alt="" loading="lazy"><span class="wheel-name">' + esc(levelName(lv)) + '</span></button>';
     }).join('');
-    return '<div class="level-options" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '</div><div class="level-picked"><strong>' + esc(levelName(selected)) + '</strong><span>' + esc(levelDesc(selected)) + '</span><span class="level-examples">' + esc(levelExamples(selected)) + '</span></div>';
+    const prevLabel = lang === 'ar' ? 'المستوى السابق' : 'Previous level';
+    const nextLabel = lang === 'ar' ? 'المستوى التالي' : 'Next level';
+    return '<div class="level-wheel-wrap"><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="-1" aria-label="' + prevLabel + '">' + (lang === 'ar' ? '›' : '‹') + '</button><div class="level-wheel" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '<div class="level-wheel-center">' + (lang === 'ar' ? 'مستوى' : 'LEVEL') + '</div></div><button type="button" class="level-turn" data-act="' + stepAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="1" aria-label="' + nextLabel + '">' + (lang === 'ar' ? '‹' : '›') + '</button></div><div class="level-picked"><strong>' + esc(levelName(selected)) + '</strong><span>' + esc(levelDesc(selected)) + '</span><span class="level-examples">' + esc(levelExamples(selected)) + '</span></div>';
   }
 
   function renderGroupEditor(g, i, gi) {
@@ -1219,7 +1225,14 @@ footer p{font-size:11px;color:var(--faint);}
 
   function renderSet(s, i) {
     const isLast = state.sets.length === 1;
-    let html = '<section class="set-block"><div class="set-head"><div class="set-title">' + esc(t('set_n')) + ' ' + (i + 1) + '<span>' + (s.mode === 'mixed' ? esc(t('mode_mixed')) : esc(matName(s.material))) + '</span></div>' + (!isLast ? '<button type="button" class="set-remove" data-act="remove-set" data-index="' + i + '"><i class="fa-solid fa-trash-can"></i> ' + esc(t('remove')) + '</button>' : '') + '</div>';
+    const teethCount = s.mode === 'mixed'
+      ? (s.groups || []).reduce((sum, g) => sum + (Number(g.teeth) || 0), 0)
+      : (s.toothIds || []).length;
+    const setTitle = esc(t('set_n')) + ' ' + (i + 1);
+    const setKind = s.mode === 'mixed' ? esc(t('mode_mixed')) : esc(matName(s.material));
+    let html = '<div class="set-shell">' + (!isLast ? '<button type="button" class="set-remove" data-act="remove-set" data-index="' + i + '" aria-label="' + esc(t('remove')) + '"><i class="fa-solid fa-trash-can"></i></button>' : '') +
+      '<details class="set-block set-accordion" data-set-index="' + i + '"' + (openSetIndexes.has(i) ? ' open' : '') + '>' +
+      '<summary class="set-summary"><span class="set-summary-title">' + setTitle + '<small>' + setKind + '</small></span><span class="set-summary-meta">' + teethCount + ' ' + esc(t(teethCount === 1 ? 'tooth_n' : 'teeth_n')) + '</span><i class="fa-solid fa-chevron-down set-chevron" aria-hidden="true"></i></summary><div class="set-content">';
     html += '<section class="step">' + headerStep(1, t('step1_t'), t('step1_s')) + renderMaterial(s, i, null) + (i === 0 && usesGold() ? renderGoldRateField() : '') + '</section>';
     html += '<section class="step">' + headerStep(2, t('step2_t'), t('step2_s'));
     html += '<div class="mode-toggle">' +
@@ -1236,7 +1249,7 @@ footer p{font-size:11px;color:var(--faint);}
       html += (s.groups || []).map((g, gi) => renderGroupEditor(g, i, gi)).join('');
       html += '<button type="button" class="g-add" data-act="add-group" data-index="' + i + '"><i class="fa-solid fa-plus"></i> ' + esc(t('add_group')) + '</button>';
     }
-    html += '</section></section>';
+    html += '</section></div></details></div>';
     return html;
   }
 
@@ -1265,73 +1278,6 @@ footer p{font-size:11px;color:var(--faint);}
     }).join('');
   }
 
-  /* ───────────────────────── live render ─────────────────────────
-     The piece the client is building, drawn as metal. It sits sticky beside
-     the summary so a change is visible immediately — this is the answer to
-     "I want to see what I am buying". */
-  function drawPreview() {
-    const R = window.GrillzRenderer;
-    const host = $('#piece-preview');
-    if (!R || !host) return;
-    const canvas = host.querySelector('canvas');
-    if (!canvas) return;
-
-    const set = state.sets[0] || newSet();
-    const isMixed = set.mode === 'mixed' && set.groups && set.groups.length;
-    const src = isMixed ? set.groups[0] : set;
-    const stones = src.stones || newStones();
-    const on = stonesOn(stones);
-
-    /* the whole mouth, with the configured teeth highlighted, so the piece is
-       shown in context rather than floating on its own */
-    const teeth = (set.toothIds && set.toothIds.length)
-      ? set.toothIds
-      : (state.sets.flatMap((x) => x.toothIds || []));
-
-    R.draw(canvas, {
-      teeth,
-      material: src.material || 'silver',
-      karat: src.karat || '18',
-      plating: src.plating || 'none',
-      level: src.level || '1',
-      enamel: src.enamel || 'none',
-      stones: {
-        accent: on.accent ? { count: stones.accentCount, cut: stones.accentCut, size: stones.accentSize } : null,
-        full: on.full ? { type: stones.fullType, cut: stones.fullCut, size: stones.fullSize } : null,
-      },
-      size: on.accent ? stones.accentSize : (on.full ? stones.fullSize : '2'),
-      laser: {
-        mode: src.laserMode || 'none',
-        text: src.laserText || '',
-        fill: src.laserFill || 'cut',
-        color: src.laserColor || '#1b1b1b',
-        image: src.laserImage || null,
-      },
-      onImageReady: () => { try { drawPreview(); } catch (e) {} },
-    });
-
-    if (!drawPreview.wired) {
-      drawPreview.wired = true;
-      const redraw = () => { drawPreview.wired = 0; drawPreview(); };
-      if (window.ResizeObserver) {
-        let t = 0;
-        new ResizeObserver(() => { clearTimeout(t); t = setTimeout(redraw, 120); }).observe(canvas);
-      } else {
-        window.addEventListener('resize', redraw);
-      }
-    }
-
-    const label = host.querySelector('[data-piece-label]');
-    if (label) {
-      const bits = [matName(src.material)];
-      if (src.material === 'gold') bits.push((src.karat || '18') + 'K');
-      if (src.plating && src.plating !== 'none') bits.push(platingName(src.plating));
-      if (on.accent) bits.push(cutName(stones.accentCut) + ' ' + stones.accentSize + 'mm accent');
-      if (on.full) bits.push(cutName(stones.fullCut) + ' ' + stones.fullSize + 'mm iced');
-      label.textContent = bits.join(' · ');
-    }
-  }
-
   function renderSummary() {
     const order = calcOrder();
     const code = currentCode();
@@ -1357,8 +1303,16 @@ footer p{font-size:11px;color:var(--faint);}
   }
 
   function render() {
-    $('#sets-container').innerHTML = state.sets.map(renderSet).join('') + '<button type="button" class="add-set-btn" data-act="add-set"><i class="fa-solid fa-plus"></i> ' + esc(t('add_set')) + '</button>';
-    $$('.teeth-chart', $('#sets-container')).forEach((svg) => {
+    const setsHost = $('#sets-container');
+    setsHost.innerHTML = state.sets.map(renderSet).join('') + '<button type="button" class="add-set-btn" data-act="add-set"><i class="fa-solid fa-plus"></i> ' + esc(t('add_set')) + '</button>';
+    $$('.set-accordion', setsHost).forEach((details) => {
+      details.addEventListener('toggle', () => {
+        const i = Number(details.dataset.setIndex);
+        if (details.open) openSetIndexes.add(i);
+        else openSetIndexes.delete(i);
+      });
+    });
+    $$('.teeth-chart', setsHost).forEach((svg) => {
       const setIndex = Number(svg.closest('.smile-map').dataset.set);
       const selected = new Set((state.sets[setIndex] && state.sets[setIndex].toothIds) || []);
       svg.querySelectorAll('[data-tooth]').forEach((path) => {
@@ -1376,7 +1330,6 @@ footer p{font-size:11px;color:var(--faint);}
       el.setAttribute('aria-pressed', el.classList.contains('selected') ? 'true' : 'false');
     });
     wireRails($('#sets-container'));
-    drawPreview();
     $('#order-step').innerHTML = renderOrderStep();
     /* every re-render replaces the fields, so re-attach the numeric keypad */
     if (window.Numpad) window.Numpad.attach($('#sets-container') || document);
@@ -1454,6 +1407,7 @@ footer p{font-size:11px;color:var(--faint);}
       });
     });
     state.sets = nextSets;
+    openSetIndexes = new Set([state.sets.length - 1]);
     state.timeline = decoded.timeline || 'standard';
     state.mold = decoded.mold || 'none';
     state.clientName = decoded.clientName || '';
@@ -1573,10 +1527,13 @@ footer p{font-size:11px;color:var(--faint);}
       if (s.groups.length > 1) s.groups.splice(gi, 1);
     } else if (act === 'add-set') {
       state.sets.push(newSet());
-      const preview = $('#piece-preview');
-      if (preview) preview.open = false;
     } else if (act === 'remove-set') {
-      if (state.sets.length > 1) { state.sets.splice(idx, 1); showToast(t('set_removed')); }
+      if (state.sets.length > 1) {
+        state.sets.splice(idx, 1);
+        openSetIndexes = new Set(Array.from(openSetIndexes).filter((n) => n !== idx).map((n) => n > idx ? n - 1 : n));
+        if (!openSetIndexes.size) openSetIndexes.add(state.sets.length - 1);
+        showToast(t('set_removed'));
+      }
     } else if (act === 'pdf') {
       downloadPdf(); return;
     } else if (act === 'copy-code') {
@@ -1749,11 +1706,6 @@ footer p{font-size:11px;color:var(--faint);}
   $('#code-load').addEventListener('click', () => loadCode($('#code-input').value));
   $('#code-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); loadCode($('#code-input').value); } });
   $('#mb-pdf').addEventListener('click', downloadPdf);
-
-  const piecePreview = $('#piece-preview');
-  if (piecePreview) piecePreview.addEventListener('toggle', () => {
-    if (piecePreview.open) requestAnimationFrame(drawPreview);
-  });
 
   if (E() && typeof E().onChange === 'function') E().onChange(() => render());
   render();
