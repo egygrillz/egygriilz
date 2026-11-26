@@ -2003,7 +2003,8 @@ function applyImportedQuote(transfer) {
   }
   if (transfer.depositAmount > 0) {
     document.getElementById('deposit-val').value = transfer.depositAmount;
-    document.getElementById('inv-status').value = 'partial';
+    const invoiceTotal = Number(transfer.total) || lineItems.reduce((sum, item) => sum + (Number(item.qty) || 1) * (Number(item.price) || 0), 0) - (Number(transfer.discountAmount) || 0);
+    document.getElementById('inv-status').value = Number(transfer.depositAmount) >= invoiceTotal && invoiceTotal > 0 ? 'paid' : 'partial';
   }
   renderItems();
   updatePreview();

@@ -542,7 +542,7 @@
     // Mixed-teeth set (2+ tooth groups inside one single set)
     let rawSum = 0;
     const pricedGroups = rawGroups.map((g) => {
-      const res = calculateSingleGroup(mergeGroupDefaults(src, g), 16);
+      const res = calculateSingleGroup(mergeGroupDefaults(src, g), 32);
       rawSum += res.rawTotal;
       return res.line;
     });
