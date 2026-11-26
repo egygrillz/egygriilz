@@ -271,6 +271,12 @@
     (function(){
       var s = document.createElement('script');
       s.src = '/assets/calc-engine.js?v=5';
+      var r = document.createElement('script');
+      r.src = '/assets/rates.js?v=6';
+      r.onload = function(){
+        if (window.MetalRates && window.CalcEngine) window.MetalRates.attach(window.CalcEngine);
+      };
+      document.head.appendChild(r);
       function paint(){
         try {
           var E = window.CalcEngine;

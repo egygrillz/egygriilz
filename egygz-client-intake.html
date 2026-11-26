@@ -200,6 +200,7 @@
 </style>
   <link rel="canonical" href="https://egygrillz.com/egygz-client-intake">
   <script src="/assets/calc-engine.js?v=5"></script>
+<script src="/assets/rates.js?v=6"></script>
 </head>
 <body>
 <div class="wrap">
@@ -264,8 +265,8 @@ const I18N = {
         expiredBtn: "Request a new link",
         name: { t: "Your details", h: "So we know who this is for.", c: "Your name", d: "Design name (optional)", dp: "e.g. top grillz, bottom bars, left fang" },
         mat: { t: "Material", h: "What should the piece be made of?" },
-        karat: "Gold karat", goldRate: "Today's gold price per gram in Egypt (EGP) — optional",
-        goldRateHint: "If you don't know it, leave it empty — the studio will confirm it with you.",
+        karat: "Gold karat", goldRate: "Gold price", 
+        goldRateHint: "The gold rate is taken automatically from today's market and converted from USD — you don't need to know it.",
         teethT: "Number of teeth", teethH: "How many teeth should the piece cover?", teethL: "Teeth (1–16)",
         lvlT: "Design style", lvlH: "Pick the closest style — the studio will confirm with you.",
         stT: "Stones", stH: "Do you want stones?",
@@ -299,8 +300,8 @@ const I18N = {
         expiredBtn: "اطلب لينك جديد",
         name: { t: "بياناتك", h: "عشان نعرف الطلب ده لمين.", c: "اسمك", d: "اسم التصميم (اختياري)", dp: "مثال: توب جريلز، بتوم بارز، ناب شمال" },
         mat: { t: "المادة", h: "تحب القطعة تكون من إيه؟" },
-        karat: "عيار الذهب", goldRate: "سعر جرام الذهب النهارده في مصر (جنيه) — اختياري",
-        goldRateHint: "لو مش عارفه سيبه فاضي — الاستوديو يأكده معاك.",
+        karat: "عيار الذهب", goldRate: "سعر الذهب",
+        goldRateHint: "سعر الذهب بيتحدد أوتوماتيك من سعر السوق النهارده ومحوّل من الدولار — مش محتاج تعرفه.",
         teethT: "عدد الضروس", teethH: "القطعة تغطي كام ضرس؟", teethL: "عدد الضروس (1–16)",
         lvlT: "ستايل التصميم", lvlH: "اختار الأقرب ليك — والاستوديو يأكد معاك.",
         stT: "الأحجار", stH: "عايز أحجار؟",
@@ -608,8 +609,7 @@ function render() {
         html = `<div class="card step-enter"><h1>${esc(L.mat.t)}</h1><p class="hint">${esc(L.mat.h)}</p>${optsHtml("material", a.m, true)}`;
         if (a.m === "gold") {
             html += `<div class="field" style="margin:16px 0 0"><label class="f">${esc(L.karat)}</label>${selHtml("karat", a.karat)}</div>
-                     <div class="field" style="margin:16px 0 0"><label class="f">${esc(L.goldRate)}</label><input type="number" data-input="rl_gold" value="${esc(a.goldRate || "")}" inputmode="numeric">
-                     <p class="hint" style="margin:8px 0 0">${esc(L.goldRateHint)}</p></div>`;
+                     <p class="hint" style="margin:10px 0 0">${esc(L.goldRateHint)}</p>`;
         }
         html += `</div>`;
     }
@@ -709,7 +709,6 @@ document.addEventListener("click", e => {
         if (key === "material") {
             state.answers.m = val;
             if (val === "chrome" || val === "titanium") state.answers.s = "none";
-            if (val !== "gold") state.answers.goldRate = "";
             if (val !== "titanium") state.answers.an = "none";
         } else if (key === "level") state.answers.l = val;
         else if (key === "plating") state.answers.pl = val;
@@ -722,8 +721,7 @@ document.addEventListener("input", e => {
     const el = e.target.closest("[data-input]");
     if (!el) return;
     const key = el.dataset.input;
-    if (key === "rl_gold") state.answers.goldRate = el.value;
-    else if (key === "sc" || key === "t") state.answers[key] = el.value.replace(/[^0-9]/g, "");
+    if (key === "sc" || key === "t") state.answers[key] = el.value.replace(/[^0-9]/g, "");
     else state.answers[key] = el.value;
 });
 document.addEventListener("change", e => {
@@ -799,7 +797,9 @@ function answerToGroup(a) {
     };
     if (m === "gold") {
         g.karat = a.karat || "18";
-        if (parseFloat(a.goldRate) > 0) g.goldPrice = parseFloat(a.goldRate);
+        /* the market rate is the only rate — never the client's guess */
+        const live = (window.MetalRates && window.MetalRates.goldEgpPerGram24()) || 0;
+        if (live > 0) g.goldPrice = live;
     }
     if (m !== "chrome" && m !== "titanium") {
         if (a.s === "accent") {
@@ -840,7 +840,7 @@ function makeCode() {
     p.set("c", a.c.trim());
     p.set("n", a.n.trim());
     p.set("m", a.m || "chrome");
-    if (a.m === "gold") { p.set("k", a.karat); if (a.goldRate) p.set("gr", a.goldRate); }
+    if (a.m === "gold") { p.set("k", a.karat); }
     p.set("t", String(parseInt(a.t, 10) || 6));
     p.set("l", a.l);
     p.set("s", a.s);
@@ -860,7 +860,7 @@ function loadAnyCode(raw) {
     const applyGrp = (g) => {
         state.answers.m = g.material || "chrome";
         state.answers.karat = g.karat || "18";
-        state.answers.goldRate = g.goldPrice ? String(g.goldPrice) : "";
+
         state.answers.t = String(g.teeth || 6);
         state.answers.l = String(g.level || "1");
         state.answers.s = g.accent ? "accent" : (g.full ? "fulliced" : "none");

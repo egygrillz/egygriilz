@@ -239,12 +239,30 @@ input[type=file].sc-input{padding:9px 10px;font-size:11px;cursor:pointer;}
 .hint-box{display:flex;align-items:center;gap:12px;background:#fdf6ec;border:1px solid #ecd9b8;border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.6;color:#6b5320;margin-top:14px;flex-wrap:wrap;}
 .hint-box button{background:var(--gold);color:#fff;border:none;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border-radius:2px;white-space:nowrap;}
 .hint-box button:hover{background:var(--gold-d);}
-.gold-rate-panel{display:grid;grid-template-columns:36px minmax(0,1fr) minmax(180px,260px);align-items:center;gap:14px;margin:18px 0 2px;padding:15px 0;border-top:1px solid rgba(184,147,90,.28);border-bottom:1px solid rgba(184,147,90,.28);}
-.gold-rate-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(184,147,90,.12);color:var(--gold-d);}
-.gold-rate-copy strong{font-size:12px;display:block;}
+/* ── live gold readout ── */
+.gold-rate-panel{margin:18px 0 2px;padding:16px 18px;border-radius:14px;
+  border:1px solid var(--line);background:rgba(255,255,255,.62);}
+.gold-rate-head{display:grid;grid-template-columns:34px minmax(0,1fr) 32px;align-items:center;gap:12px;}
+.gold-rate-icon{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(28,25,20,.05);color:var(--ink);font-size:13px;}
+.gold-rate-copy strong{font-size:12px;display:block;letter-spacing:.02em;}
 .gold-rate-copy span{font-size:10px;line-height:1.5;color:var(--mut);display:block;margin-top:3px;}
-.gold-rate-panel input{width:100%;min-width:0;border:1px solid rgba(28,25,20,.18);border-radius:8px;padding:12px;background:rgba(255,255,255,.5);font-size:14px;}
-@media(max-width:640px){.gold-rate-panel{grid-template-columns:32px 1fr;gap:10px}.gold-rate-panel input{grid-column:1/-1}}
+.gold-rate-copy em{font-style:normal;opacity:.8;}
+.gr-refresh{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+  background:#fff;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:11px;
+  transition:transform .35s,color .2s,border-color .2s;}
+.gr-refresh:hover{color:var(--ink);border-color:rgba(28,25,20,.28);transform:rotate(90deg);}
+.gr-karats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
+.gr-k{padding:9px 6px;border-radius:9px;background:rgba(28,25,20,.035);text-align:center;}
+.gr-k-main{background:rgba(28,25,20,.075);}
+.gr-k-lbl{display:block;font-size:9px;letter-spacing:.12em;color:var(--mut);}
+.gr-k-val{display:block;font-size:13px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;}
+.gr-foot{margin-top:11px;font-size:9.5px;line-height:1.55;color:var(--mut);opacity:.85;}
+.gold-rate-panel.is-empty{opacity:.72;}
+@media(max-width:640px){
+  .gold-rate-panel{padding:13px 14px;}
+  .gr-karats{grid-template-columns:repeat(2,1fr);}
+}
 .finish-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:6px;}
 .finish-block{margin-top:18px;}
 .finish-block > .fb-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut);margin-bottom:8px;}
@@ -375,6 +393,7 @@ footer p{font-size:11px;color:var(--faint);}
 <script src="/assets/calc-engine.js?v=5"></script>
 <script src="/assets/numpad.js?v=5"></script>
 <script src="/assets/grillz-renderer.js?v=5"></script>
+<script src="/assets/rates.js?v=6"></script>
 <script>
 (function () {
   'use strict';
@@ -449,7 +468,9 @@ footer p{font-size:11px;color:var(--faint);}
       mold: 'Dental mold', mold_none: 'I already have my mold', mold_normal: 'Normal per arch', mold_digital: 'Digital full mouth',
       client_name: 'Your name', client_phone: 'Phone / WhatsApp', client_notes: 'Notes (optional)',
       client_name_ph: 'e.g. Omar', client_phone_ph: '01xxxxxxxxx', client_notes_ph: 'Anything we should know?',
-      gold_rate_lbl: 'Enter today’s 24K gold rate (EGP / gram) — required each time', gold_rate_note: 'Required for every gold estimate. Please confirm today’s 24K studio rate; saved or old rates are never reused.',
+      gold_rate_live: 'Live gold rate', gold_rate_wait: 'Fetching today’s rate…',
+      gold_rate_cached: 'cached', gold_rate_source: 'Live market rate: USD per troy ounce × USD/EGP, converted to EGP per gram.',
+      gold_rate_refreshing: 'Refreshing rates…', refresh: 'Refresh',
       add_set: '+ Add Another Set',
       sum_title: 'Your Estimate', sum_sub: 'Live studio pricing — EGP',
       sum_total: 'Total', sum_deposit: 'Full payment required (100%)', sum_balance: 'Remaining after full payment',
@@ -523,7 +544,9 @@ footer p{font-size:11px;color:var(--faint);}
       mold: 'قالب الأسنان', mold_none: 'لديّ القالب بالفعل', mold_normal: 'عادي لكل فك', mold_digital: 'رقمي للفم الكامل',
       client_name: 'اسمك', client_phone: 'الهاتف / واتساب', client_notes: 'ملاحظات (اختياري)',
       client_name_ph: 'مثال: عمر', client_phone_ph: '01xxxxxxxxx', client_notes_ph: 'هل هناك أي شيء يجب أن نعرفه؟',
-      gold_rate_lbl: 'أدخل سعر عيار 24 اليوم (جنيه / جرام) — مطلوب في كل مرة', gold_rate_note: 'مطلوب لكل تقدير ذهبي. أكّد سعر الاستوديو اليوم لعيار 24؛ لا نستخدم سعرًا محفوظًا أو قديمًا.',
+      gold_rate_live: 'سعر الذهب المباشر', gold_rate_wait: 'جاري تحميل سعر اليوم…',
+      gold_rate_cached: 'محفوظ مؤقتًا', gold_rate_source: 'سعر السوق المباشر: دولار للأونصة × سعر الدولار، محوّل إلى جنيه للجرام.',
+      gold_rate_refreshing: 'جاري تحديث الأسعار…', refresh: 'تحديث',
       add_set: '+ إضافة طقم آخر',
       sum_title: 'تقديرك', sum_sub: 'أسعار الاستوديو المباشرة — جنيه',
       sum_total: 'الإجمالي', sum_deposit: 'الدفع الكامل مطلوب (100٪)', sum_balance: 'المتبقي بعد الدفع الكامل',
@@ -745,14 +768,24 @@ footer p{font-size:11px;color:var(--faint);}
     clientName: '',
     clientPhone: '',
     notes: '',
-    goldRate: '',
   };
 
   /* ───────────────────────── pricing ───────────────────────── */
 
+  /* The line rate is the live 24K market rate, always. There is deliberately
+     no manual override: a stale hand-typed rate is how a gold quote silently
+     loses money. */
   function goldRateForLine() {
-    const entered = parseFloat(state.goldRate);
-    return Number.isFinite(entered) && entered > 0 ? entered : 0;
+    const R = window.MetalRates;
+    /* if the rate service did not load at all, the calculator must still be
+       able to price gold from the engine's stored figure rather than showing
+       a blank total */
+    const live = R && typeof R.goldEgpPerGram24 === 'function' ? R.goldEgpPerGram24() : 0;
+    if (live > 0) return live;
+    /* before the first fetch lands, fall back to the last cached figure so
+       the page can still show a price rather than a blank */
+    const seeded = Number(E() && E().get().goldPrice) || 0;
+    return seeded > 0 ? seeded : 0;
   }
   function usesGold() {
     return state.sets.some((s) => {
@@ -1102,8 +1135,37 @@ footer p{font-size:11px;color:var(--faint);}
     return html;
   }
 
+  /* The gold rate is never typed by anyone. It comes from the live feed,
+     converted from USD per troy ounce to EGP per gram, and this panel is a
+     readout — with the karat breakdown and the time of the quote, so a client
+     can see exactly what the number is and when it was taken. */
   function renderGoldRateField() {
-    return '<div class="gold-rate-panel"><div class="gold-rate-icon"><i class="fa-solid fa-coins"></i></div><div class="gold-rate-copy"><strong>' + esc(t('gold_rate_lbl')) + '</strong><span>' + esc(t('gold_rate_note')) + '</span></div><input type="number" min="0.01" step="0.01" required inputmode="decimal" value="' + esc(state.goldRate) + '" data-order="goldRate" aria-label="' + esc(t('gold_rate_lbl')) + '"></div>';
+    const R = window.MetalRates;
+    const rate = R && typeof R.goldEgpPerGram24 === 'function' ? R.goldEgpPerGram24() : 0;
+    const status = R && typeof R.statusLine === 'function' ? R.statusLine() : '';
+    const src = R ? (R.current().source || '') : '';
+    const karats = ['24', '21', '18', '14'];
+    const rows = karats.map((k) => {
+      const v = rate > 0 ? rate * (Number(k) / 24) : 0;
+      return '<div class="gr-k' + (k === '24' ? ' gr-k-main' : '') + '">' +
+        '<span class="gr-k-lbl">' + k + 'K</span>' +
+        '<span class="gr-k-val">' + (v > 0 ? fmt(Math.round(v)) : '—') + '</span>' +
+        '</div>';
+    }).join('');
+
+    return '<div class="gold-rate-panel live' + (rate > 0 ? '' : ' is-empty') + '">' +
+      '<div class="gold-rate-head">' +
+        '<div class="gold-rate-icon"><i class="fa-solid fa-coins"></i></div>' +
+        '<div class="gold-rate-copy">' +
+          '<strong>' + esc(t('gold_rate_live')) + '</strong>' +
+          '<span>' + esc(status || (rate > 0 ? '' : t('gold_rate_wait'))) +
+            (src === 'cache' ? ' · <em>' + esc(t('gold_rate_cached')) + '</em>' : '') + '</span>' +
+        '</div>' +
+        '<button type="button" class="gr-refresh" data-act="rates-refresh" aria-label="' + esc(t('refresh')) + '"><i class="fa-solid fa-rotate"></i></button>' +
+      '</div>' +
+      '<div class="gr-karats">' + rows + '</div>' +
+      '<div class="gr-foot">' + esc(t('gold_rate_source')) + '</div>' +
+    '</div>';
   }
 
   function renderMaterial(obj, setIdx, groupIdx) {
@@ -1373,7 +1435,6 @@ footer p{font-size:11px;color:var(--faint);}
   }
 
   function useDecoded(decoded) {
-    state.goldRate = '';
     if (!decoded || !Array.isArray(decoded.lines) || !decoded.lines.length) return false;
     const nextSets = decoded.lines.map((line) => {
       const groups = Array.isArray(line.groups) ? line.groups : null;
@@ -1450,7 +1511,6 @@ footer p{font-size:11px;color:var(--faint);}
     } else if (act === 'material') {
       const obj = stateObject(null, target.dataset.scope || 'set', idx, gi);
       obj.material = target.dataset.value;
-      if (obj.material === 'gold') state.goldRate = '';
       if (obj.material !== 'gold') obj.karat = '18';
       if (obj.material === 'chrome' || obj.material === 'titanium') obj.stones = newStones();
     } else if (act === 'karat') {
@@ -1486,6 +1546,11 @@ footer p{font-size:11px;color:var(--faint);}
     } else if (act === 'group-level') {
       const g = s.groups[gi]; g.level = target.dataset.value;
       if (g.level === '0.5') { g.stones.mode = 'none'; g.stones.accent = false; g.stones.full = false; }
+    } else if (act === 'rates-refresh') {
+      if (window.MetalRates) {
+        showToast(t('gold_rate_refreshing'));
+        window.MetalRates.load({ force: true }).then(() => render());
+      }
     } else if (act === 'stone-field') {
       /* cut / size / setting / type / coverage live on the stone object of
          whichever set or group the card belongs to */
@@ -1615,9 +1680,7 @@ footer p{font-size:11px;color:var(--faint);}
   document.addEventListener('change', (event) => {
     const el = event.target;
     if (el.matches('[data-order]')) {
-      const key = el.dataset.order;
-      if (key === 'goldRate') state.goldRate = el.value;
-      else state[key] = el.value;
+      state[el.dataset.order] = el.value;
       render(); return;
     }
     if (el.matches('[data-field]')) setValueFromElement(el);
@@ -1626,8 +1689,7 @@ footer p{font-size:11px;color:var(--faint);}
     const el = event.target;
     if (el.matches('[data-order]')) {
       const key = el.dataset.order;
-      if (key === 'goldRate') state.goldRate = el.value;
-      else state[key] = el.value;
+      state[key] = el.value;
       updateSummaryOnly(); return;
     }
     if (el.matches('[data-act="laser-upload"]')) { handleLaserUpload(el); return; }
@@ -1702,7 +1764,23 @@ footer p{font-size:11px;color:var(--faint);}
 
   if (E() && typeof E().onChange === 'function') E().onChange(() => render());
   render();
-  if (E() && typeof E().load === 'function') E().load(null).then(() => render()).catch(() => {});
+
+  /* Live rates: attach before the settings load so the first paint already
+     has a market number, and re-render whenever the pair moves. The saved
+     goldPrice in the database is legacy — it is overwritten here on every
+     refresh, because a stored rate must never outrank the market. */
+  if (window.MetalRates) {
+    window.MetalRates.attach(E(), { interval: 5 * 60 * 1000 });
+    window.MetalRates.onChange(() => render());
+  }
+
+  if (E() && typeof E().load === 'function') {
+    E().load(null).then(() => {
+      const R = window.MetalRates;
+      if (R && R.goldEgpPerGram24() > 0) E().set({ goldPrice: R.goldEgpPerGram24() });
+      render();
+    }).catch(() => {});
+  }
   const params = new URLSearchParams(location.search);
   const incoming = params.get('c') || params.get('code');
   if (incoming) loadCode(incoming);

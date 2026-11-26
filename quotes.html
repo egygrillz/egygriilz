@@ -495,6 +495,22 @@ await new Promise((res, rej) => {
 });
 const E = window.CalcEngine;
 
+// live metal rates — every gold price on this page derives from them
+await new Promise((res) => {
+  if (window.MetalRates) return res();
+  const s = document.createElement('script');
+  s.src = '/assets/rates.js?v=6';
+  s.onload = res; s.onerror = res;
+  document.head.appendChild(s);
+});
+if (window.MetalRates) {
+  window.MetalRates.attach(E, { interval: 5 * 60 * 1000 });
+  /* the rate can land after the first paint, so repaint when it does */
+  window.MetalRates.onChange(function () {
+    try { if (typeof recalc === 'function') recalc(); } catch (e) {}
+  });
+}
+
 const [settingsLoad] = await Promise.all([
   E.load(db).catch(err => ({ ok: false, error: err })),
   window.SiteConfig ? window.SiteConfig.load(db).catch(() => {}) : Promise.resolve(),
@@ -778,9 +794,13 @@ function recalc(){
     const gs = Array.isArray(l.groups) ? l.groups : [l];
     return gs.some(g => g.material === 'gold' && !Number(g.goldPrice));
   }) && !Number(S.goldPrice);
+  const RATES = window.MetalRates;
+  const rateTag = (RATES && RATES.goldEgpPerGram24() > 0)
+    ? ` · gold ${RATES.fmtEgpPerGram()} EGP/g 24K · ${RATES.statusLine()}`
+    : '';
   $('totalSub').innerHTML = goldMissing
-    ? '<span style="color:var(--rose)"><i class="fas fa-triangle-exclamation"></i> Set today\'s 24K gold rate above</span>'
-    : `${LAST.lineCount} design(s)${LAST.services.length ? ` · ${LAST.services.length} service(s)` : ''} · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}`;
+    ? '<span style="color:var(--rose)"><i class="fas fa-triangle-exclamation"></i> Live gold rate unavailable — retrying</span>'
+    : `${LAST.lineCount} design(s)${LAST.services.length ? ` · ${LAST.services.length} service(s)` : ''} · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}${rateTag}`;
 
   const rows = [];
   if (LAST.lines.length) rows.push(['Designs subtotal', `${fmt(LAST.linesSubtotal)} EGP`]);
