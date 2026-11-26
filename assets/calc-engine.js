@@ -1595,44 +1595,35 @@
       ? rawOrder
       : calculateOrder((rawOrder && rawOrder.lines) || [], rawOrder || {});
     const cur = order.currency || S.currency || 'EGP';
-    const site = (_g.SiteConfig && _g.SiteConfig.data) ? _g.SiteConfig.data : {};
-    const studioName = pdfClean(m.studioName || site.studioName || 'EGYGRILLZ') || 'EGYGRILLZ';
-    const addr = pdfClean([site.addressLine1, site.addressLine2, site.addressLine3].filter(Boolean).join(', '))
-      || '38 Abou Bakr El-Sdeek, Heliopolis, Cairo, Egypt';
-    const validDays = Number(m.validDays || site.quoteValidDays || 7);
-    const dateStr = pdfClean(m.date || new Date().toISOString().slice(0, 10));
-    const refId = pdfClean(m.id || ('EGZ-' + dateStr.replace(/-/g, '').slice(2) + '-' + String(Math.floor(1000 + Math.random() * 9000))));
-    const code = pdfClean(m.code || encodeCode(Object.assign({}, order, {
-      clientName: m.clientName || '',
-      clientPhone: m.clientPhone || '',
-      notes: m.notes || '',
-    })));
-
-    const W = 595.28;
-    const H = 841.89;
-    const ML = 44;
-    const MR = 44;
-    const CW = W - ML - MR;
+    const studioName = pdfClean(m.studioName || 'EGYGRILLZ') || 'EGYGRILLZ';
+    const W = 595.28, H = 841.89, ML = 42, MR = 42, CW = W - ML - MR;
+    const cName = pdfClean(m.clientName || '') || '—';
+    const cPhone = pdfClean(m.clientPhone || '');
+    const cNotes = pdfClean(m.notes || '');
+    const lines = Array.isArray(order.lines) ? order.lines : [];
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateObj = m.date ? new Date(m.date) : now;
+    const dateStr = Number.isNaN(dateObj.getTime())
+      ? pdfClean(m.date)
+      : `${pad(dateObj.getDate())}/${pad(dateObj.getMonth() + 1)}/${dateObj.getFullYear()}`;
+    const timeStr = pdfClean(m.time || `${pad(now.getHours())}:${pad(now.getMinutes())}`);
+    const code = pdfClean(m.code || '');
 
     const pages = [];
     let cmds = [];
     let y = H;
-
     const f2 = (n) => Number(n).toFixed(2);
     const push = (s) => cmds.push(s);
     const rectFill = (x, topY, w, h, r, g, b) => {
       push(`${f2(r)} ${f2(g)} ${f2(b)} rg ${f2(x)} ${f2(topY - h)} ${f2(w)} ${f2(h)} re f`);
     };
-    const rectStroke = (x, topY, w, h, r, g, b, lw) => {
-      push(`${f2(lw || 0.6)} w ${f2(r)} ${f2(g)} ${f2(b)} RG ${f2(x)} ${f2(topY - h)} ${f2(w)} ${f2(h)} re S`);
-    };
     const hLine = (x1, x2, py, r, g, b, lw) => {
       push(`${f2(lw || 0.5)} w ${f2(r)} ${f2(g)} ${f2(b)} RG ${f2(x1)} ${f2(py)} m ${f2(x2)} ${f2(py)} l S`);
     };
     const textAt = (txt, x, py, font, size, r, g, b) => {
-      const s = pdfEsc(txt);
-      if (!s) return;
-      push(`BT /${font} ${f2(size)} Tf ${f2(r)} ${f2(g)} ${f2(b)} rg 1 0 0 1 ${f2(x)} ${f2(py)} Tm (${s}) Tj ET`);
+      const value = pdfEsc(txt);
+      if (value) push(`BT /${font} ${f2(size)} Tf ${f2(r)} ${f2(g)} ${f2(b)} rg 1 0 0 1 ${f2(x)} ${f2(py)} Tm (${value}) Tj ET`);
     };
     const textRight = (txt, rightX, py, font, size, r, g, b) => {
       const clean = pdfClean(txt);
@@ -1640,290 +1631,282 @@
       const approxW = clean.length * size * (font === 'F2' || font === 'F4' ? 0.54 : 0.50);
       textAt(clean, Math.max(ML, rightX - approxW), py, font, size, r, g, b);
     };
-
-    function startPage(isFirst) {
+    const moneyText = (n) => (Number(n) > 0 ? `${fmt(n)} ${cur}` : '-');
+    const matText = (line) => line.material === 'gold'
+      ? `Gold ${line.karat || '18'}K`
+      : (L.material[line.material] || line.material || '—');
+    const levelText = (line) => {
+      const lv = String(line.level || '1');
+      const name = L.level[lv] || `Level ${lv}`;
+      const pct = Number(line.designPct) || 0;
+      return `${name} (+${pct}%)`;
+    };
+    const stoneText = (line) => {
+      const parts = [];
+      if (line.accent && Number(line.accent.count) > 0) {
+        const type = L.accentType[line.accent.type] || line.accent.type || 'Stone';
+        const setting = L.setting[line.accent.setting] || line.accent.setting || 'Flush';
+        parts.push(`${line.accent.count} ${type} accent, ${setting}`);
+      }
+      if (line.full) {
+        if (line.full.bars || String(line.level) === '0.5') parts.push('Iced bars');
+        else {
+          const type = L.accentType[line.full.type] || line.full.type || 'Diamond';
+          const cover = L.coverage[line.full.coverage] || line.full.coverage || '';
+          parts.push(`Full ${type}${cover ? `, ${cover}` : ''}`);
+        }
+      }
+      return parts.length ? parts.join(' / ') : 'None';
+    };
+    const drawPageHeader = (first) => {
       cmds = [];
       rectFill(0, H, W, H, 1, 1, 1);
-      if (isFirst) {
-        // Charcoal header with neutral grayscale rules and typography.
-        rectFill(0, H, W, 108, 0.08, 0.08, 0.08);
-        rectFill(0, H - 108, W, 2.2, 0.45, 0.45, 0.45);
-        textAt(studioName, ML, H - 46, 'F4', 24, 1, 1, 1);
-        textAt('BESPOKE DENTAL JEWELRY  -  CAIRO ATELIER', ML, H - 64, 'F1', 8, 0.68, 0.68, 0.68);
-        textAt(addr, ML, H - 82, 'F1', 7.5, 0.72, 0.72, 0.72);
-
-        textRight('BESPOKE ESTIMATE', W - MR, H - 42, 'F2', 10, 0.80, 0.80, 0.80);
-        textRight('Ref: ' + refId, W - MR, H - 58, 'F1', 8.5, 0.90, 0.90, 0.90);
-        textRight('Date: ' + dateStr, W - MR, H - 72, 'F1', 8.5, 0.78, 0.78, 0.78);
-        textRight('Valid for ' + validDays + ' days', W - MR, H - 86, 'F1', 7.5, 0.65, 0.65, 0.65);
-        y = H - 130;
+      if (first) {
+        textAt(studioName, ML, H - 46, 'F2', 23, 0.06, 0.06, 0.06);
+        textAt('Beyond Jewelry.', ML, H - 63, 'F1', 9, 0.45, 0.45, 0.45);
+        textAt('Custom dental jewelry - Cairo, Egypt', ML, H - 79, 'F1', 8, 0.45, 0.45, 0.45);
+        textRight('DATE   ' + dateStr, W - MR, H - 44, 'F1', 9, 0.22, 0.22, 0.22);
+        textRight('TIME   ' + timeStr, W - MR, H - 59, 'F1', 9, 0.22, 0.22, 0.22);
+        textRight('QUOTATION', W - MR, H - 80, 'F2', 12, 0.06, 0.06, 0.06);
+        hLine(ML, W - MR, H - 99, 0.82, 0.82, 0.82, 0.8);
+        y = H - 122;
       } else {
-        rectFill(0, H, W, 46, 0.08, 0.08, 0.08);
-        rectFill(0, H - 46, W, 1.5, 0.45, 0.45, 0.45);
-        textAt(studioName + '  -  BESPOKE ESTIMATE (CONTINUED)', ML, H - 28, 'F2', 9, 1, 1, 1);
-        textRight('Ref: ' + refId, W - MR, H - 28, 'F1', 8, 0.8, 0.8, 0.8);
-        y = H - 68;
+        textAt(studioName, ML, H - 38, 'F2', 16, 0.06, 0.06, 0.06);
+        textRight('QUOTATION - CONTINUED', W - MR, H - 38, 'F2', 9, 0.25, 0.25, 0.25);
+        hLine(ML, W - MR, H - 52, 0.82, 0.82, 0.82, 0.7);
+        y = H - 74;
       }
-    }
-
-    function finishPage() {
-      hLine(ML, W - MR, 46, 0.88, 0.88, 0.88, 0.5);
-      textAt('egygrillz.com   -   Instagram @egygrillz   -   Handcrafted in Cairo, Egypt', ML, 32, 'F1', 7.5, 0.50, 0.50, 0.50);
+    };
+    const finishPage = () => {
+      hLine(ML, W - MR, 43, 0.87, 0.87, 0.87, 0.5);
+      textAt('egygrillz.com  -  @egygrillz  -  booking: egygrillz.com/booking.html', ML, 29, 'F1', 7.2, 0.55, 0.55, 0.55);
       pages.push(cmds.join('\n'));
-    }
-
-    function need(h) {
-      if (y - h < 66) {
+    };
+    const need = (height) => {
+      if (y - height < 61) {
         finishPage();
-        startPage(false);
+        drawPageHeader(false);
       }
-    }
-
-    startPage(true);
-
-    // Optional client info strip
-    const cName = pdfClean(m.clientName || '');
-    const cPhone = pdfClean(m.clientPhone || '');
-    const cNotes = pdfClean(m.notes || '');
-    if (cName || cPhone) {
-      rectFill(ML, y, CW, 34, 0.97, 0.97, 0.97);
-      rectStroke(ML, y, CW, 34, 0.88, 0.88, 0.88, 0.5);
-      textAt('PREPARED FOR', ML + 12, y - 13, 'F2', 7, 0.52, 0.52, 0.52);
-      textAt([cName, cPhone].filter(Boolean).join('   |   '), ML + 12, y - 26, 'F2', 9.5, 0.12, 0.12, 0.12);
-      textRight(`${order.teethTotal || 0} ${(order.teethTotal === 1) ? 'Tooth' : 'Teeth'}  -  ${order.lineCount || 0} ${(order.lineCount === 1) ? 'Set' : 'Sets'}`, W - MR - 12, y - 22, 'F1', 8.5, 0.35, 0.35, 0.35);
-      y -= 48;
-    }
-
-    // Section heading: Custom Sets
-    if ((order.lines || []).length) {
-      textAt('CUSTOM GRILLZ SPECIFICATION', ML, y, 'F2', 8.5, 0.38, 0.38, 0.38);
-      textRight('AMOUNT (' + cur + ')', W - MR, y, 'F2', 8, 0.48, 0.48, 0.48);
-      y -= 7;
-      hLine(ML, W - MR, y, 0.15, 0.15, 0.15, 0.8);
-      y -= 16;
-
-      order.lines.forEach((ln, idx) => {
-        need(64);
-        const setTitle = ln.name
-          ? `Set ${idx + 1}: ${ln.name}`
-          : `Set ${idx + 1}: ${ln.mixedMaterials ? 'Custom Mixed Grillz' : ((ln.material === 'gold' ? 'Gold ' + (ln.karat || '18') + 'K' : (L.material[ln.material] || ln.material)) + ' Grillz')}`;
-        textAt(setTitle, ML, y, 'F2', 10.5, 0.10, 0.10, 0.10);
-        textRight(fmt(ln.subtotal) + ' ' + cur, W - MR, y, 'F2', 10.5, 0.10, 0.10, 0.10);
+    };
+    const drawRow = (label, value, opts) => {
+      const o = opts || {};
+      const indent = Number(o.indent) || 0;
+      const font = o.bold ? 'F2' : 'F1';
+      const color = o.bold ? 0.12 : 0.25;
+      const size = o.size || 8.8;
+      const left = pdfWrap(label, 44);
+      const right = pdfWrap(String(value == null ? '' : value), 43);
+      const rows = Math.max(1, left.length, right.length);
+      need(rows * 13 + 2);
+      if (o.rule) hLine(ML + indent, W - MR, y + 5, 0.84, 0.84, 0.84, 0.45);
+      for (let i = 0; i < rows; i++) {
+        textAt(left[i] || '', ML + indent, y, font, size, color, color, color);
+        textRight(right[i] || '', W - MR, y, font, size, color, color, color);
         y -= 13;
-
-        const isMultiGroup = ln.isMixed && Array.isArray(ln.groups) && ln.groups.length > 1;
-        if (!isMultiGroup && Array.isArray(ln.toothIds) && ln.toothIds.length) {
-          const tLines = pdfWrap('Selected teeth (' + ln.teeth + '): ' + ln.toothIds.join(', '), 86);
-          tLines.forEach((tl) => { need(12); textAt(tl, ML + 8, y, 'F1', 7.8, 0.42, 0.42, 0.42); y -= 11; });
-        }
-
-        if (isMultiGroup) {
-          textAt(`Mixed set - ${ln.teeth} teeth across ${ln.groups.length} groups. Tooth totals roll into each group and the set subtotal.`, ML + 8, y, 'F1', 7.8, 0.35, 0.35, 0.35);
-          y -= 14;
-          let toothCursor = 0;
-          ln.groups.forEach((g, gi) => {
-            const count = Math.max(1, Math.round(Number(g.teeth) || 1));
-            const mappedIds = Array.isArray(g.toothIds) && g.toothIds.length
-              ? g.toothIds.slice(0, count)
-              : (Array.isArray(ln.toothIds) ? ln.toothIds.slice(toothCursor, toothCursor + count) : []);
-            toothCursor += count;
-            const prefix = g.label ? `${g.label} - ` : `Group ${gi + 1} - `;
-            const gSpec = prefix + groupLabel(g, { includeMaterial: true });
-            const wrapped = pdfWrap(gSpec, 70);
-            const matName = g.material === 'gold' ? `Gold ${g.karat || '18'}K` : (L.material[g.material] || g.material);
-            const platingName = g.plating && g.plating !== 'none' ? (L.plating[g.plating] || g.plating) : '';
-            const groupParts = [
-              ['Base', Number(g.materialTotal) || 0],
-              [`Complexity L${g.level || '1'} (${Number(g.designPct) || 0}%)`, Number(g.designCost) || 0],
-            ];
-            if (Number(g.stoneCost) > 0) groupParts.push(['Stones', Number(g.stoneCost)]);
-            if (platingName) groupParts.push([`Plating: ${platingName}`, Number(g.platingCost) || 0]);
-            if (g.enamel && g.enamel !== 'none') groupParts.push([`Enamel: ${L.enamel[g.enamel] || g.enamel}`, Number(g.enamelCost) || 0]);
-            if (g.engraving && g.engraving !== 'none') groupParts.push([`Engraving: ${L.engraving[g.engraving] || g.engraving}`, Number(g.engravingCost) || 0]);
-            if (g.anodize && g.anodize !== 'none') groupParts.push([`Anodize: ${L.anodize[g.anodize] || g.anodize}`, Number(g.anodizeCost) || 0]);
-
-            const splitAmount = (amount) => {
-              const total = Math.round(Number(amount) || 0);
-              const base = Math.floor(total / count);
-              const remainder = total - base * count;
-              return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
-            };
-            const shares = groupParts.map((part) => splitAmount(part[1]));
-            const displaySpec = groupLabel(g, { includeMaterial: true }).replace(/^\d+\s+teeth?\s*/i, '');
-            const toothRows = Array.from({ length: count }, (_, ti) => {
-              const name = mappedIds[ti] || `Tooth ${ti + 1} of ${count}`;
-              const total = shares.reduce((sum, list) => sum + list[ti], 0);
-              const parts = groupParts.map((part, pi) => `${part[0]}: ${fmt(shares[pi][ti])} ${cur}`);
-              return { name, total, parts };
-            });
-            const groupDifference = Math.round(Number(g.subtotal) || 0) - toothRows.reduce((sum, tooth) => sum + tooth.total, 0);
-            if (groupDifference && toothRows.length) {
-              toothRows[toothRows.length - 1].total += groupDifference;
-              toothRows[toothRows.length - 1].parts.push(`Rounding: ${fmt(groupDifference)} ${cur}`);
-            }
-
-            need(34 + wrapped.length * 10 + toothRows.reduce((sum, tooth) => sum + 22 + Math.ceil(tooth.parts.join(' | ').length / 88) * 8, 0) + 22);
-            wrapped.forEach((wl, wi) => {
-              textAt((wi === 0 ? '' : '  ') + wl, ML + 10, y, wi === 0 ? 'F2' : 'F1', 8, 0.20, 0.20, 0.20);
-              y -= 10;
-            });
-
-            toothRows.forEach((tooth, ti) => {
-              const toothSpec = `${tooth.name} - ${matName} - ${displaySpec}`;
-              pdfWrap(toothSpec, 68).forEach((tl, li) => {
-                need(10);
-                textAt((li ? '  ' : '') + tl, ML + 16, y, li ? 'F1' : 'F2', 7.4, 0.20, 0.20, 0.20);
-                if (!li) textRight(fmt(tooth.total) + ' ' + cur, W - MR, y, 'F2', 7.4, 0.20, 0.20, 0.20);
-                y -= 9;
-              });
-              const costLines = pdfWrap(tooth.parts.join('  |  '), 88);
-              costLines.forEach((cl) => {
-                need(9);
-                textAt(cl, ML + 24, y, 'F1', 6.8, 0.42, 0.42, 0.42);
-                y -= 8;
-              });
-              if (ti < toothRows.length - 1) y -= 2;
-            });
-            need(12);
-            textAt('Group subtotal', ML + 18, y, 'F2', 7.8, 0.18, 0.18, 0.18);
-            textRight(fmt(g.subtotal) + ' ' + cur, W - MR, y, 'F2', 7.8, 0.18, 0.18, 0.18);
-            y -= 12;
-            hLine(ML + 10, W - MR, y, 0.91, 0.91, 0.91, 0.4);
-            y -= 10;
-          });
-        } else {
-          const specWrapped = pdfWrap(lineLabel(ln), 78);
-          specWrapped.forEach((sl) => { need(12); textAt(sl, ML + 8, y, 'F1', 8.3, 0.28, 0.28, 0.28); y -= 11.5; });
-
-          // Itemized sub-costs for a uniform set.
-          const parts = [`Base: ${fmt(ln.materialTotal)}`];
-          if (ln.designCost) parts.push(`Complexity: +${fmt(ln.designCost)}`);
-          if (ln.stoneCost) parts.push(`Stones: +${fmt(ln.stoneCost)}`);
-          if (ln.platingCost) parts.push(`Plating: +${fmt(ln.platingCost)}`);
-          if (ln.enamelCost) parts.push(`Enamel: +${fmt(ln.enamelCost)}`);
-          if (ln.engravingCost) parts.push(`Engraving: +${fmt(ln.engravingCost)}`);
-          if (ln.anodizeCost) parts.push(`Anodize: +${fmt(ln.anodizeCost)}`);
-          const costWrapped = pdfWrap(parts.join('  |  ') + ' ' + cur, 86);
-          costWrapped.forEach((cl) => { need(12); textAt(cl, ML + 8, y, 'F1', 7.5, 0.50, 0.50, 0.50); y -= 11; });
-        }
-
-        y -= 3;
-        hLine(ML, W - MR, y, 0.90, 0.90, 0.90, 0.5);
-        y -= 14;
-      });
-    }
-
-    // Studio services
-    if ((order.services || []).length) {
-      need(44);
-      textAt('STUDIO SERVICES', ML, y, 'F2', 8.5, 0.38, 0.38, 0.38);
-      y -= 6;
-      hLine(ML, W - MR, y, 0.80, 0.80, 0.80, 0.5);
-      y -= 14;
-      order.services.forEach((sv) => {
-        need(16);
-        const lbl = sv.name + (sv.qty > 1 ? `  (x${sv.qty})` : '');
-        textAt(lbl, ML + 4, y, 'F1', 8.8, 0.18, 0.18, 0.18);
-        textRight(fmt(sv.subtotal) + ' ' + cur, W - MR, y, 'F1', 8.8, 0.18, 0.18, 0.18);
-        y -= 14;
-      });
-      y -= 6;
-    }
-
-    // Totals block
-    need(120);
-    const sumX = W - MR - 225;
-    const addSumRow = (lbl, val, bold) => {
-      need(16);
-      textAt(lbl, sumX, y, bold ? 'F2' : 'F1', 8.8, 0.25, 0.25, 0.25);
-      textRight(val, W - MR, y, bold ? 'F2' : 'F1', 8.8, 0.12, 0.12, 0.12);
+      }
+    };
+    const sectionTitle = (title, sub) => {
+      need(34);
+      textAt(title, ML, y, 'F2', 10.5, 0.10, 0.10, 0.10);
+      if (sub) textRight(sub, W - MR, y, 'F2', 9, 0.20, 0.20, 0.20);
+      y -= 7;
+      hLine(ML, W - MR, y, 0.82, 0.82, 0.82, 0.65);
       y -= 14;
     };
-    if (order.linesSubtotal) addSumRow('Custom Grillz Subtotal', fmt(order.linesSubtotal) + ' ' + cur, false);
-    if (order.servicesSubtotal) addSumRow('Studio Services', fmt(order.servicesSubtotal) + ' ' + cur, false);
-    if (order.timelineAmount) addSumRow(`${L.timeline[order.timeline] || 'Rush'} (+${order.timelinePct}%)`, '+' + fmt(order.timelineAmount) + ' ' + cur, false);
-    else addSumRow('Timeline', L.timeline[order.timeline] || 'Standard (21 business days)', false);
-    if (order.moldCost) addSumRow(`Dental Mold (${L.mold[order.mold] || order.mold})`, '+' + fmt(order.moldCost) + ' ' + cur, false);
-    if (order.discountAmount) addSumRow('Studio Discount', '-' + fmt(order.discountAmount) + ' ' + cur, false);
 
-    y -= 2;
-    rectFill(sumX - 10, y + 8, 235, 30, 0.08, 0.08, 0.08);
-    textAt('ESTIMATED TOTAL', sumX, y - 10, 'F2', 9, 0.80, 0.80, 0.80);
-    textRight(fmt(order.total) + ' ' + cur, W - MR - 8, y - 10.5, 'F2', 12, 1, 1, 1);
-    y -= 34;
-
-    if (order.depositPct > 0) {
-      addSumRow(`Deposit to Begin (${order.depositPct}%)`, fmt(order.deposit) + ' ' + cur, true);
-      addSumRow('Balance on Delivery', fmt(order.balance) + ' ' + cur, false);
+    drawPageHeader(true);
+    // Compact quotation summary, mirroring the supplied reference.
+    textAt('Client: ' + cName, ML, y, 'F1', 8.6, 0.12, 0.12, 0.12);
+    textAt('Designs: ' + lines.length, ML + 190, y, 'F1', 8.6, 0.12, 0.12, 0.12);
+    textAt('Teeth total: ' + (order.teethTotal || 0), ML + 290, y, 'F1', 8.6, 0.12, 0.12, 0.12);
+    textRight('Timeline: ' + (L.timeline[order.timeline] || 'Standard'), W - MR, y, 'F1', 8.6, 0.12, 0.12, 0.12);
+    y -= 18;
+    if (cPhone) {
+      textAt('Phone: ' + cPhone, ML, y, 'F1', 8.1, 0.35, 0.35, 0.35);
+      y -= 14;
     }
+    pdfWrap('Prices in ' + cur + '. This quotation is an estimate - gold and diamond rates are confirmed against the day of production.', 112)
+      .forEach((line) => { need(12); textAt(line, ML, y, 'F1', 7.7, 0.48, 0.48, 0.48); y -= 11; });
+    y -= 5;
+
+    lines.forEach((line, index) => {
+      const givenName = pdfClean(line.name || '');
+      const title = /^design\s+\d+$/i.test(givenName)
+        ? givenName
+        : `Design ${index + 1}${givenName ? ': ' + givenName : ''}`;
+      need(44);
+      sectionTitle(`${index + 1}. ${title}`, '');
+      const mixed = line.isMixed && Array.isArray(line.groups) && line.groups.length > 1;
+      if (!mixed) {
+        const toothSuffix = Array.isArray(line.toothIds) && line.toothIds.length
+          ? ` (${line.toothIds.join(', ')})` : '';
+        drawRow('Material', matText(line));
+        drawRow('Teeth', `${line.teeth || 1}${toothSuffix}`);
+        drawRow('Design level', levelText(line));
+        drawRow('Base cost', moneyText(line.materialTotal));
+        drawRow('Design cost', moneyText(line.designCost));
+        drawRow('Stones', stoneText(line) === 'None' ? 'None' : `${stoneText(line)} - ${moneyText(line.stoneCost)}`);
+        if (line.plating && line.plating !== 'none') {
+          drawRow('Plating', `${L.plating[line.plating] || line.plating} - ${moneyText(line.platingCost)}`);
+        }
+        if (line.enamel && line.enamel !== 'none') drawRow('Enamel', `${L.enamel[line.enamel] || line.enamel} - ${moneyText(line.enamelCost)}`);
+        if (line.engraving && line.engraving !== 'none') drawRow('Engraving', `${L.engraving[line.engraving] || line.engraving} - ${moneyText(line.engravingCost)}`);
+        if (line.anodize && line.anodize !== 'none') drawRow('Anodize', `${L.anodize[line.anodize] || line.anodize} - ${moneyText(line.anodizeCost)}`);
+        drawRow('Design subtotal', `${fmt(line.subtotal)} ${cur}`, { bold: true, rule: true });
+      } else {
+        drawRow('Material', line.mixedMaterials ? 'Mixed materials' : matText(line));
+        drawRow('Teeth total', String(line.teeth || 0));
+        let toothCursor = 0;
+        line.groups.forEach((group, groupIndex) => {
+          const count = Math.max(1, Math.round(Number(group.teeth) || 1));
+          const optionalRows = (group.enamel && group.enamel !== 'none' ? 1 : 0)
+            + (group.engraving && group.engraving !== 'none' ? 1 : 0)
+            + (group.anodize && group.anodize !== 'none' ? 1 : 0);
+          const estimatedGroupHeight = 30 + count * (12 + (7 + optionalRows) * 13 + 3);
+          if (y - estimatedGroupHeight < 61 && y < H - 100) {
+            finishPage();
+            drawPageHeader(false);
+            sectionTitle(`${index + 1}. ${title} (continued)`, '');
+          }
+          const ids = Array.isArray(group.toothIds) && group.toothIds.length
+            ? group.toothIds.slice(0, count)
+            : (Array.isArray(line.toothIds) ? line.toothIds.slice(toothCursor, toothCursor + count) : []);
+          toothCursor += count;
+          const groupName = group.label ? `Group ${groupIndex + 1}: ${group.label}` : `Group ${groupIndex + 1}`;
+          need(28);
+          textAt(groupName, ML + 8, y, 'F2', 8.8, 0.22, 0.22, 0.22);
+          y -= 14;
+          const componentRows = [
+            ['Base cost', Number(group.materialTotal) || 0],
+            ['Design cost', Number(group.designCost) || 0],
+            ['Stones', Number(group.stoneCost) || 0],
+            ['Plating', Number(group.platingCost) || 0],
+            ['Enamel', Number(group.enamelCost) || 0],
+            ['Engraving', Number(group.engravingCost) || 0],
+            ['Anodize', Number(group.anodizeCost) || 0],
+          ];
+          const split = componentRows.map((row) => {
+            const total = Math.round(Number(row[1]) || 0);
+            const each = Math.floor(total / count);
+            const remainder = total - each * count;
+            return Array.from({ length: count }, (_, toothIndex) => each + (toothIndex < remainder ? 1 : 0));
+          });
+          const toothTotals = Array.from({ length: count }, (_, toothIndex) =>
+            split.reduce((sum, shares) => sum + shares[toothIndex], 0));
+          const difference = Math.round(Number(group.subtotal) || 0) - toothTotals.reduce((sum, n) => sum + n, 0);
+          if (difference && toothTotals.length) toothTotals[toothTotals.length - 1] += difference;
+          const groupMaterial = group.material === 'gold'
+            ? `Gold ${group.karat || '18'}K`
+            : (L.material[group.material] || group.material || '—');
+          const groupLevel = levelText(group);
+          const groupStone = stoneText(group);
+          const rowsForTooth = (ti) => {
+            const toothId = ids[ti] || `Tooth ${ti + 1}`;
+            const prices = split.map((shares) => shares[ti]);
+            if (ti === count - 1 && difference) prices[prices.length - 1] += difference;
+            textAt(`Tooth ${toothId}`, ML + 16, y, 'F2', 8.2, 0.18, 0.18, 0.18);
+            textRight(`${fmt(toothTotals[ti])} ${cur}`, W - MR, y, 'F2', 8.2, 0.18, 0.18, 0.18);
+            y -= 12;
+            drawRow('Material', groupMaterial, { indent: 24, size: 7.8 });
+            drawRow('Design level', groupLevel, { indent: 24, size: 7.8 });
+            drawRow('Base cost', moneyText(prices[0]), { indent: 24, size: 7.8 });
+            drawRow('Design cost', moneyText(prices[1]), { indent: 24, size: 7.8 });
+            drawRow('Stones', groupStone === 'None' ? 'None' : `${groupStone} - ${moneyText(prices[2])}`, { indent: 24, size: 7.8 });
+            if (group.plating && group.plating !== 'none') {
+              drawRow('Plating', `${L.plating[group.plating] || group.plating} - ${moneyText(prices[3])}`, { indent: 24, size: 7.8 });
+            }
+            if (group.enamel && group.enamel !== 'none') drawRow('Enamel', `${L.enamel[group.enamel] || group.enamel} - ${moneyText(prices[4])}`, { indent: 24, size: 7.8 });
+            if (group.engraving && group.engraving !== 'none') drawRow('Engraving', `${L.engraving[group.engraving] || group.engraving} - ${moneyText(prices[5])}`, { indent: 24, size: 7.8 });
+            if (group.anodize && group.anodize !== 'none') drawRow('Anodize', `${L.anodize[group.anodize] || group.anodize} - ${moneyText(prices[6])}`, { indent: 24, size: 7.8 });
+            drawRow('Tooth subtotal', `${fmt(toothTotals[ti])} ${cur}`, { bold: true, indent: 24, size: 7.8 });
+            y -= 3;
+          };
+          for (let ti = 0; ti < count; ti++) rowsForTooth(ti);
+          drawRow('Group subtotal', `${fmt(group.subtotal)} ${cur}`, { bold: true, indent: 8, rule: true });
+          y -= 5;
+        });
+        drawRow('Design subtotal', `${fmt(line.subtotal)} ${cur}`, { bold: true, rule: true });
+      }
+      y -= 7;
+    });
+
+    if ((order.services || []).length) {
+      sectionTitle('Additional services', '');
+      order.services.forEach((service) => {
+        const label = service.name + (service.qty > 1 ? ` (x${service.qty})` : '');
+        drawRow(label, `${fmt(service.subtotal)} ${cur}`);
+      });
+    }
+
+    const statedTotal = (Number(order.linesSubtotal) || 0) + (Number(order.servicesSubtotal) || 0)
+      + (Number(order.timelineAmount) || 0) + (Number(order.moldCost) || 0)
+      - (Number(order.discountAmount) || 0);
+    const rounding = Math.round((Number(order.total) || 0) - statedTotal);
+    const sumRows = 3 + (order.servicesSubtotal ? 1 : 0) + (order.discountAmount ? 1 : 0) + (rounding ? 1 : 0);
+    need(34 + sumRows * 13 + 44);
+    sectionTitle('Quote totals', '');
+    drawRow(`Subtotal (${lines.length} designs)`, `${fmt(order.linesSubtotal || 0)} ${cur}`);
+    if (order.servicesSubtotal) drawRow('Additional services', `${fmt(order.servicesSubtotal)} ${cur}`);
+    const timelineLabel = L.timeline[order.timeline] || 'Standard';
+    drawRow(`Timeline - ${timelineLabel}${order.timelineAmount ? ` (+${order.timelinePct}%)` : ' (no surcharge)'}`,
+      `${fmt(order.timelineAmount || 0)} ${cur}`);
+    const moldLabel = L.mold[order.mold] || order.mold || 'None';
+    drawRow(`Mold - ${moldLabel}`, `${fmt(order.moldCost || 0)} ${cur}`);
+    if (order.discountAmount) drawRow('Discount', `-${fmt(order.discountAmount)} ${cur}`);
+    if (rounding) drawRow('Rounding adjustment', `${rounding > 0 ? '+' : '-'}${fmt(Math.abs(rounding))} ${cur}`);
+    need(44);
+    rectFill(ML, y + 8, CW, 31, 0.08, 0.08, 0.08);
+    textAt('TOTAL', ML + 12, y - 11, 'F2', 10, 1, 1, 1);
+    textRight(`${fmt(order.total)} ${cur}`, W - MR - 12, y - 11, 'F2', 12, 1, 1, 1);
+    y -= 43;
 
     if (cNotes) {
-      need(40);
-      y -= 6;
-      textAt('NOTES', ML, y, 'F2', 7.5, 0.48, 0.48, 0.48);
-      y -= 12;
-      pdfWrap(cNotes, 90).forEach((nl) => { need(12); textAt(nl, ML, y, 'F1', 8.2, 0.25, 0.25, 0.25); y -= 11; });
+      y -= 3;
+      sectionTitle('Notes', '');
+      pdfWrap(cNotes, 100).forEach((line) => { need(12); textAt(line, ML, y, 'F1', 8.2, 0.25, 0.25, 0.25); y -= 11; });
     }
-
-    // Instant Transfer Code card
     if (code) {
-      const codeLines = pdfWrap(code, 76);
-      const boxH = 38 + codeLines.length * 12;
-      need(boxH + 14);
-      y -= 10;
-      rectFill(ML, y, CW, boxH, 0.96, 0.96, 0.96);
-      rectStroke(ML, y, CW, boxH, 0.55, 0.55, 0.55, 0.8);
-      textAt('INSTANT DESIGN CODE  -  SEND TO EGYGRILLZ OR PASTE IN ANY CALCULATOR', ML + 12, y - 14, 'F2', 7.3, 0.38, 0.38, 0.38);
-      let cy = y - 28;
-      codeLines.forEach((cl) => {
-        textAt(cl, ML + 12, cy, 'F2', 9.2, 0.10, 0.10, 0.10);
-        cy -= 12;
-      });
-      textAt('Send this PDF or code on WhatsApp / Instagram @egygrillz or book your impression at egygrillz.com/booking', ML + 12, y - boxH + 8, 'F1', 7.2, 0.42, 0.42, 0.42);
-      y -= (boxH + 12);
+      need(38);
+      y -= 4;
+      textAt('Design code: ' + code, ML, y, 'F1', 6.8, 0.48, 0.48, 0.48);
+      y -= 12;
     }
-
-    // Studio notes
-    need(42);
-    textAt('Good to know: Gold & natural diamond estimates follow live daily market rates and are locked upon deposit confirmation.', ML, y, 'F1', 7.2, 0.48, 0.48, 0.48);
-    y -= 11;
-    textAt('Every EGYGRILLZ piece is custom-fitted to your exact dental impression in our Cairo studio.', ML, y, 'F1', 7.2, 0.48, 0.48, 0.48);
 
     finishPage();
+    const totalPages = pages.length;
+    pages.forEach((stream, index) => {
+      const label = `Page ${index + 1} of ${totalPages}`;
+      const approxW = label.length * 7.2 * 0.5;
+      pages[index] += `\nBT /F1 7.20 Tf 0.55 0.55 0.55 rg 1 0 0 1 ${f2(W - MR - approxW)} 29 Tm (${pdfEsc(label)}) Tj ET`;
+    });
 
-    // Assemble valid PDF-1.4 document
-    const enc = (s) => {
-      const a = new Uint8Array(s.length);
-      for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i) & 0xff;
-      return a;
+    const enc = (str) => {
+      const arr = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) arr[i] = str.charCodeAt(i) & 0xff;
+      return arr;
     };
     const objs = [];
     const addObj = (body) => { objs.push(body); return objs.length; };
-
     const catalogId = addObj('');
     const pagesId = addObj('');
     const f1 = addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
     const f2Id = addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
-    const f4 = addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding /WinAnsiEncoding >>');
-
     const pageIds = pages.map((stream) => {
       const contentId = addObj(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
-      return addObj(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${f2(W)} ${f2(H)}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2Id} 0 R /F4 ${f4} 0 R >> >> /Contents ${contentId} 0 R >>`);
+      return addObj(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${f2(W)} ${f2(H)}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2Id} 0 R >> >> /Contents ${contentId} 0 R >>`);
     });
-
     objs[catalogId - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
     objs[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
-
     let out = '%PDF-1.4\n';
     const offsets = [0];
-    objs.forEach((body, i) => {
+    objs.forEach((body, index) => {
       offsets.push(out.length);
-      out += `${i + 1} 0 obj\n${body}\nendobj\n`;
+      out += `${index + 1} 0 obj\n${body}\nendobj\n`;
     });
     const xrefPos = out.length;
     out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-    for (let i = 1; i < offsets.length; i++) {
-      out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    for (let index = 1; index < offsets.length; index++) {
+      out += String(offsets[index]).padStart(10, '0') + ' 00000 n \n';
     }
     out += `trailer\n<< /Size ${objs.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
     return enc(out);
