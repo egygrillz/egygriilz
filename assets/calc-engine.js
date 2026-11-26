@@ -1716,36 +1716,57 @@
           tLines.forEach((tl) => { need(12); textAt(tl, ML + 8, y, 'F1', 7.8, 0.42, 0.42, 0.42); y -= 11; });
         }
 
-        if (ln.isMixed && Array.isArray(ln.groups) && ln.groups.length > 1) {
-          textAt(`Mixed Set - ${ln.teeth} teeth across ${ln.groups.length} custom tooth groups:`, ML + 8, y, 'F2', 8, 0.30, 0.30, 0.30);
-          y -= 12;
+        const isMultiGroup = ln.isMixed && Array.isArray(ln.groups) && ln.groups.length > 1;
+        if (isMultiGroup) {
+          textAt(`Mixed set - ${ln.teeth} teeth across ${ln.groups.length} groups. Group totals are included in the set subtotal.`, ML + 8, y, 'F1', 7.8, 0.35, 0.35, 0.35);
+          y -= 14;
           ln.groups.forEach((g, gi) => {
             const prefix = g.label ? `${g.label} - ` : `Group ${gi + 1} - `;
             const gSpec = prefix + groupLabel(g, { includeMaterial: true })
               + (Array.isArray(g.toothIds) && g.toothIds.length ? ` [${g.toothIds.join(', ')}]` : '');
-            const wrapped = pdfWrap(gSpec, 72);
+            const wrapped = pdfWrap(gSpec, 70);
+            const groupCosts = [
+              [`Base (${g.teeth} teeth)`, Number(g.materialTotal) || 0],
+              [`Complexity L${g.level || '1'} (+${Number(g.designPct) || 0}%)`, Number(g.designCost) || 0],
+              ['Stones', Number(g.stoneCost) || 0],
+              ['Plating', Number(g.platingCost) || 0],
+              ['Enamel', Number(g.enamelCost) || 0],
+              ['Engraving', Number(g.engravingCost) || 0],
+              ['Anodize', Number(g.anodizeCost) || 0],
+            ].filter((row, ri) => ri < 2 || row[1] > 0);
+            need(36 + wrapped.length * 10 + groupCosts.length * 9.5 + 20);
             wrapped.forEach((wl, wi) => {
-              need(13);
-              textAt((wi === 0 ? '- ' : '  ') + wl, ML + 14, y, 'F1', 8.2, 0.22, 0.22, 0.22);
-              if (wi === 0) textRight(fmt(g.subtotal) + ' ' + cur, W - MR, y, 'F1', 8.2, 0.32, 0.32, 0.32);
-              y -= 11.5;
+              textAt((wi === 0 ? '' : '  ') + wl, ML + 10, y, wi === 0 ? 'F2' : 'F1', 8, 0.20, 0.20, 0.20);
+              y -= 10;
             });
+            groupCosts.forEach(([label, amount]) => {
+              need(11);
+              textAt(String(label), ML + 18, y, 'F1', 7.2, 0.45, 0.45, 0.45);
+              textRight(fmt(amount) + ' ' + cur, W - MR, y, 'F1', 7.2, 0.35, 0.35, 0.35);
+              y -= 9.5;
+            });
+            need(12);
+            textAt('Group subtotal', ML + 18, y, 'F2', 7.8, 0.18, 0.18, 0.18);
+            textRight(fmt(g.subtotal) + ' ' + cur, W - MR, y, 'F2', 7.8, 0.18, 0.18, 0.18);
+            y -= 12;
+            hLine(ML + 10, W - MR, y, 0.91, 0.91, 0.91, 0.4);
+            y -= 10;
           });
         } else {
           const specWrapped = pdfWrap(lineLabel(ln), 78);
           specWrapped.forEach((sl) => { need(12); textAt(sl, ML + 8, y, 'F1', 8.3, 0.28, 0.28, 0.28); y -= 11.5; });
-        }
 
-        // Itemized sub-costs line
-        const parts = [`Base: ${fmt(ln.materialTotal)}`];
-        if (ln.designCost) parts.push(`Complexity: +${fmt(ln.designCost)}`);
-        if (ln.stoneCost) parts.push(`Stones: +${fmt(ln.stoneCost)}`);
-        if (ln.platingCost) parts.push(`Plating: +${fmt(ln.platingCost)}`);
-        if (ln.enamelCost) parts.push(`Enamel: +${fmt(ln.enamelCost)}`);
-        if (ln.engravingCost) parts.push(`Engraving: +${fmt(ln.engravingCost)}`);
-        if (ln.anodizeCost) parts.push(`Anodize: +${fmt(ln.anodizeCost)}`);
-        const costWrapped = pdfWrap(parts.join('  |  ') + ' ' + cur, 86);
-        costWrapped.forEach((cl) => { need(12); textAt(cl, ML + 8, y, 'F1', 7.5, 0.50, 0.50, 0.50); y -= 11; });
+          // Itemized sub-costs for a uniform set.
+          const parts = [`Base: ${fmt(ln.materialTotal)}`];
+          if (ln.designCost) parts.push(`Complexity: +${fmt(ln.designCost)}`);
+          if (ln.stoneCost) parts.push(`Stones: +${fmt(ln.stoneCost)}`);
+          if (ln.platingCost) parts.push(`Plating: +${fmt(ln.platingCost)}`);
+          if (ln.enamelCost) parts.push(`Enamel: +${fmt(ln.enamelCost)}`);
+          if (ln.engravingCost) parts.push(`Engraving: +${fmt(ln.engravingCost)}`);
+          if (ln.anodizeCost) parts.push(`Anodize: +${fmt(ln.anodizeCost)}`);
+          const costWrapped = pdfWrap(parts.join('  |  ') + ' ' + cur, 86);
+          costWrapped.forEach((cl) => { need(12); textAt(cl, ML + 8, y, 'F1', 7.5, 0.50, 0.50, 0.50); y -= 11; });
+        }
 
         y -= 3;
         hLine(ML, W - MR, y, 0.90, 0.90, 0.90, 0.5);
