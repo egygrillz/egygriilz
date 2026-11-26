@@ -87,25 +87,25 @@ service cloud.firestore {
           'service', 'date', 'time', 'name', 'phone', 'email', 'notes',
           'status', 'showedUp', 'createdAt'
         ])
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 100
-        && request.resource.data.phone is string
-        && request.resource.data.phone.size() <= 40
-        && request.resource.data.email is string
-        && request.resource.data.email.size() <= 254
-        && request.resource.data.service is string
-        && request.resource.data.service.size() <= 500
-        && request.resource.data.notes is string
-        && request.resource.data.notes.size() <= 1000
-        && request.resource.data.date is string
-        && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && request.resource.data.time is string
-        && request.resource.data.time.matches('(0?[1-9]|1[0-2]):[0-5][0-9] [AP]M')
-        && request.resource.data.status == 'confirmed'
+        && request.resource.data['name'] is string
+        && request.resource.data['name'].size() > 0
+        && request.resource.data['name'].size() <= 100
+        && request.resource.data['phone'] is string
+        && request.resource.data['phone'].size() <= 40
+        && request.resource.data['email'] is string
+        && request.resource.data['email'].size() <= 254
+        && request.resource.data['service'] is string
+        && request.resource.data['service'].size() <= 500
+        && request.resource.data['notes'] is string
+        && request.resource.data['notes'].size() <= 1000
+        && request.resource.data['date'] is string
+        && request.resource.data['date'].matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data['time'] is string
+        && request.resource.data['time'].matches('(0?[1-9]|1[0-2]):[0-5][0-9] [AP]M')
+        && request.resource.data['status'] == 'confirmed'
         && existsAfter(/databases/$(database)/documents/slots/$(docId))
-        && getAfter(/databases/$(database)/documents/slots/$(docId)).data.date == request.resource.data.date
-        && getAfter(/databases/$(database)/documents/slots/$(docId)).data.time == request.resource.data.time;
+        && getAfter(/databases/$(database)/documents/slots/$(docId)).data['date'] == request.resource.data['date']
+        && getAfter(/databases/$(database)/documents/slots/$(docId)).data['time'] == request.resource.data['time'];
       allow read, update, delete: if isStaff();
     }
 
@@ -118,13 +118,13 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['date', 'time'])
         && request.resource.data.keys().hasAll(['date', 'time'])
-        && request.resource.data.date is string
-        && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && request.resource.data.time is string
-        && request.resource.data.time.matches('(0?[1-9]|1[0-2]):[0-5][0-9] [AP]M')
+        && request.resource.data['date'] is string
+        && request.resource.data['date'].matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data['time'] is string
+        && request.resource.data['time'].matches('(0?[1-9]|1[0-2]):[0-5][0-9] [AP]M')
         && existsAfter(/databases/$(database)/documents/appointments/$(docId))
-        && getAfter(/databases/$(database)/documents/appointments/$(docId)).data.date == request.resource.data.date
-        && getAfter(/databases/$(database)/documents/appointments/$(docId)).data.time == request.resource.data.time;
+        && getAfter(/databases/$(database)/documents/appointments/$(docId)).data['date'] == request.resource.data['date']
+        && getAfter(/databases/$(database)/documents/appointments/$(docId)).data['time'] == request.resource.data['time'];
       allow update, delete: if isStaff();
     }
 
