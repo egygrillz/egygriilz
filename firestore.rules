@@ -144,6 +144,10 @@ service cloud.firestore {
       allow read, update, delete: if isStaff();
     }
 
+    match /design_templates/{docId} {
+      allow read, create, update, delete: if isStaff();
+    }
+
     /* Client phone numbers and home addresses — staff only. This is the
        collection the dashboard reported as permission-denied. */
     match /mould_orders/{docId} {
