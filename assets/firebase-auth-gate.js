@@ -5,7 +5,7 @@
  * runs with that user's token. Explicit visibility:visible ensures the sign-in
  * dialog is always visible even when the host page hides body.auth-locked.
  */
-import { initializeApp, getApps, getApp }
+import { initializeApp, getApps }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, setPersistence, browserLocalPersistence,
          onAuthStateChanged, signInWithEmailAndPassword, signOut as fbSignOut }
@@ -21,7 +21,11 @@ export const FIREBASE_CONFIG = {
 };
 
 export function firebaseApp() {
-  return getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
+  const apps = getApps();
+  const studio = apps.find(app => app.options.projectId === FIREBASE_CONFIG.projectId);
+  if (studio) return studio;
+  return apps.some(app => app.name === '[DEFAULT]')
+    ? initializeApp(FIREBASE_CONFIG, 'egygz-studio') : initializeApp(FIREBASE_CONFIG);
 }
 export function firebaseAuth() {
   return getAuth(firebaseApp());

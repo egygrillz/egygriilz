@@ -12,10 +12,10 @@
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="/assets/calc-engine.js?v=8"></script>
-<script src="/assets/rates.js?v=6"></script>
+<script src="/assets/calc-engine.js?v=9"></script>
+<script src="/assets/rates.js?v=7"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=5"></script>
+<script src="/assets/staff-calculator.js?v=6"></script>
 <script src="/assets/catalog.js?v=6"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
@@ -1001,21 +1001,10 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 
 <!-- Firebase SDK -->
 <script type="module">
-import { getFirestore, collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, runTransaction, increment, serverTimestamp, getCountFromServer }
+import { collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, runTransaction, increment, serverTimestamp, getCountFromServer }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { firebaseApp, requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js';
-
-const fbApp = firebaseApp();
-const db = getFirestore(fbApp);
-/* Bridge v10 modular Firestore into CalcEngine / SiteConfig / StaffCalculator */
-db._egygzProjectId = 'egygrillz-studio';
-db._egygzGet = async (col, id) => {
-  const snap = await getDoc(doc(db, col, id));
-  return snap.exists() ? snap.data() : null;
-};
-db._egygzSet = async (col, id, data, merge = true) => {
-  await setDoc(doc(db, col, id), data, { merge: !!merge });
-};
+import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js?v=2';
+import { db, settingsDb } from '/assets/studio-db.js';
 const E = window.CalcEngine;
 
 
@@ -1163,8 +1152,8 @@ async function initApp() {
   safeSetup('clients tab search', setupClientsTabSearch);
 
   await Promise.allSettled([
-    E ? E.load(db) : Promise.resolve(),
-    window.SiteConfig ? window.SiteConfig.load(db) : Promise.resolve(),
+    E ? E.load(settingsDb) : Promise.resolve(),
+    window.SiteConfig ? window.SiteConfig.load(settingsDb) : Promise.resolve(),
     preloadCatalogDesigns(),
     loadClients().catch(dbErr => {
       const code = String((dbErr && (dbErr.code || dbErr.message)) || '');
@@ -1175,6 +1164,7 @@ async function initApp() {
     loadRemoteInvoices(),
   ]);
 
+  if (E && window.MetalRates) MetalRates.attach(E);
   if (E && typeof E.onChange === 'function') {
     E.onChange(() => {
       designCache = {};
@@ -1814,7 +1804,7 @@ function ensureInvoiceCalc(){
   const host = document.getElementById('invCalcHost');
   if (!host || !window.StaffCalculator) return null;
   INVOICE_CALC = window.StaffCalculator.mount(host, {
-    db: db,
+    db: settingsDb,
     designMode: true,
     showApply: false,
     applyLabel: 'Add to Invoice',
@@ -1869,24 +1859,7 @@ function setupCalculatorModal() {
       services: dec.services || [],
       discount: dec.discount || null,
     });
-    const items = [];
-    (order.lines || []).forEach(ln => {
-      const bm = ln.mixedMaterials ? 'Mixed Materials' : (ln.material === 'gold' ? ('Gold ' + (ln.karat || '18') + 'K') : (E.LABELS.material[ln.material] || 'Custom'));
-      items.push({ name: ln.name || (bm + ' Custom Grillz'), spec: E.lineLabel(ln), qty: 1, price: ln.subtotal, line: ln });
-    });
-    (order.services || []).forEach(sv => {
-      items.push({ name: sv.name || 'Studio Service', spec: 'Studio Service', qty: sv.qty || 1, price: sv.unitPrice || 0, serviceType: sv.type || 'custom' });
-    });
-    if (order.timelineAmount) items.push({ name: (E.LABELS.timeline[order.timeline] || 'Rush') + ' Timeline', spec: '+' + order.timelinePct + '% Timeline Surcharge', qty: 1, price: order.timelineAmount });
-    if (order.moldCost) items.push({ name: 'Dental Mold', spec: E.LABELS.mold[order.mold] || 'Mold Fee', qty: 1, price: order.moldCost });
-    applyImportedQuote({
-      clientName: dec.clientName || '',
-      clientPhone: dec.clientPhone || '',
-      notes: dec.notes || '',
-      discountAmount: order.discountAmount || 0,
-      depositAmount: order.deposit || 0,
-      items,
-    });
+    applyImportedQuote(E.quoteToInvoice({ ...dec, order }));
     showToast('Calculator code imported (' + fmt(order.total) + ' EGP)', 'success');
     return true;
   };
@@ -1966,12 +1939,10 @@ function setupServicesBar() {
 
 function applyImportedQuote(transfer) {
   if (!transfer || !Array.isArray(transfer.items)) return;
+  resetForm(); // imports start a new invoice, never overwrite an edited invoice
   pendingQuoteId = transfer.quoteId || '';
   if (transfer.clientName) {
-    const found = clients.find(c =>
-      (transfer.clientPhone && (c.phone === transfer.clientPhone || c.id === transfer.clientPhone)) ||
-      (c.name || '').toLowerCase() === transfer.clientName.toLowerCase()
-    );
+    const found = E.matchQuoteClient(clients, transfer);
     if (found) {
       selectClient(found);
     } else {
@@ -1994,18 +1965,13 @@ function applyImportedQuote(transfer) {
     spec: it.spec || '',
     qty: Number(it.qty) || 1,
     price: Number(it.price) || 0,
-    line: it.line || null,
+    line: it.line || null, serviceType: it.serviceType || '',
   }));
-  if (transfer.notes) document.getElementById('inv-notes').value = transfer.notes;
-  if (transfer.discountAmount > 0) {
-    document.getElementById('discount-val').value = transfer.discountAmount;
-    document.getElementById('discount-type').value = 'egp';
-  }
-  if (transfer.depositAmount > 0) {
-    document.getElementById('deposit-val').value = transfer.depositAmount;
-    const invoiceTotal = Number(transfer.total) || lineItems.reduce((sum, item) => sum + (Number(item.qty) || 1) * (Number(item.price) || 0), 0) - (Number(transfer.discountAmount) || 0);
-    document.getElementById('inv-status').value = Number(transfer.depositAmount) >= invoiceTotal && invoiceTotal > 0 ? 'paid' : 'partial';
-  }
+  document.getElementById('inv-notes').value = transfer.notes || '';
+  document.getElementById('discount-val').value = transfer.discountAmount || 0;
+  document.getElementById('discount-type').value = 'egp';
+  document.getElementById('deposit-val').value = 0;
+  document.getElementById('inv-status').value = 'pending';
   renderItems();
   updatePreview();
   showToast('Imported quote into Invoice Studio', 'success');
@@ -2048,7 +2014,7 @@ function setupImportQuoteModal() {
         <div class="quote-import-row">
           <div>
             <div style="font-weight:700;font-size:13px">${escHtml(q.clientName || 'Client')}</div>
-            <div style="font-size:11px;color:#888">${escHtml((q.createdAt||'').slice(0,10))} · ${escHtml(q.designLabel || '')} · <strong>${fmt(q.total || (q.order&&q.order.total) || 0)} EGP</strong></div>
+            <div style="font-size:11px;color:#888">${escHtml(String(q.createdAt?.toDate?.()?.toISOString() || q.createdAt || '').slice(0,10))} · ${escHtml(q.designLabel || '')} · <strong>${fmt(q.order?.total ?? q.total ?? 0)} EGP</strong></div>
           </div>
           <button type="button" class="add-btn" data-use-q="${escHtml(q.id)}">Import</button>
         </div>
@@ -2057,32 +2023,7 @@ function setupImportQuoteModal() {
         btn.addEventListener('click', () => {
           const q = rows.find(x => x.id === btn.dataset.useQ);
           if (!q) return;
-          const order = q.order || {};
-          const items = [];
-          (order.lines || []).forEach(l => {
-            items.push({
-              name: l.name || (E.LABELS.material[l.material] + ' Grillz'),
-              spec: E.lineLabel(l),
-              qty: 1,
-              price: Number(l.subtotal) || 0,
-              line: l,
-            });
-          });
-          (order.services || []).forEach(sv => {
-            items.push({ name: sv.name, spec: 'Studio Service', qty: Number(sv.qty)||1, price: Number(sv.unitPrice)||0 });
-          });
-          if (order.timelineAmount) items.push({ name: `${E.LABELS.timeline[order.timeline]||'Rush'} Timeline`, spec: `+${order.timelinePct||0}%`, qty: 1, price: Number(order.timelineAmount)||0 });
-          if (order.moldCost) items.push({ name: `Mold — ${E.LABELS.mold[order.mold]||order.mold}`, spec: 'Studio Mold Fee', qty: 1, price: Number(order.moldCost)||0 });
-          applyImportedQuote({
-            quoteId: q.id,
-            clientName: q.clientName || '',
-            clientPhone: q.clientPhone || '',
-            clientEmail: q.clientEmail || '',
-            notes: q.notes || '',
-            discountAmount: Number(order.discountAmount) || 0,
-            depositAmount: Number(order.deposit) || 0,
-            items,
-          });
+          applyImportedQuote(E.quoteToInvoice(q));
           close();
         });
       });
@@ -2231,7 +2172,8 @@ function buildInvoiceData() {
     clientEmail: selectedClient?.email || '',
     clientPhone: selectedClient?.phone || '',
     quoteId: pendingQuoteId || '',
-    items: lineItems.map(i => ({ name: i.name || '', spec: i.spec || '', qty: Number(i.qty)||1, price: Math.round(Number(i.price)||0) })),
+    items: lineItems.map(i => ({ name: i.name || '', spec: i.spec || '', qty: Number(i.qty)||1, price: Number(i.price)||0,
+      ...(i.line && {line:E.cleanLineSpec(i.line)}), ...(i.serviceType && {serviceType:i.serviceType}) })),
     subtotal, discount,
     discountInput: Number(document.getElementById('discount-val').value) || 0,
     discountType: document.getElementById('discount-type').value || 'egp',

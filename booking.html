@@ -818,130 +818,9 @@
       return '<div class="review-row"><span class="review-key">' + escBookingHtml(k) + '</span><span class="review-val">' + escBookingHtml(v) + '</span></div>';
     }
 
-    // ── SUBMIT ──
-    /* Claim appointment slot atomically before saving appointment record */
-    function slotDocId(dateStr, timeStr) {
-      return dateStr + '_' + String(timeStr || '').replace(/[ :]/g, '');
-    }
-
-    async function claimSlot(dateStr, timeStr) {
-      var ref = db.collection('slots').doc(slotDocId(dateStr, timeStr));
-      await db.runTransaction(async function (tx) {
-        var snap = await tx.get(ref);
-        if (snap.exists) {
-          var e = new Error('slot-taken');
-          e.code = 'slot-taken';
-          throw e;
-        }
-        tx.set(ref, { date: dateStr, time: timeStr });
-      });
-    }
-
-    async function releaseSlot(dateStr, timeStr) {
-      try { await db.collection('slots').doc(slotDocId(dateStr, timeStr)).delete(); } catch (e) {}
-    }
-
-    async function submitBooking() {
-      if (!db) { alert('System error. Please try again.'); return; }
-      var btn = document.getElementById('confirm-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Confirming…';
-
-      var name = document.getElementById('f-name').value.trim();
-      var phone = document.getElementById('f-phone').value.trim();
-      var email = document.getElementById('f-email').value.trim();
-      var notes = document.getElementById('f-notes').value.trim();
-      var phoneId = phone.replace(/\D/g, '');
-
-      /* 1) Claim slot first */
-      try {
-        await claimSlot(selectedDate, selectedTime);
-      } catch (lockErr) {
-        btn.disabled = false;
-        btn.textContent = 'Confirm Appointment';
-        if (lockErr && lockErr.code === 'slot-taken') {
-          alert('Sorry — that time was just booked by someone else.\nPlease go back and pick another time.');
-          /* Refresh slot availability */
-          try { takenSlots = {}; localStorage.removeItem(SLOT_CACHE_KEY); await loadTakenSlots(); } catch (e) {}
-          if (typeof renderTimeSlots === 'function') renderTimeSlots(selectedDate);
-        } else {
-          alert('We could not confirm your slot. Please check your connection and try again.');
-        }
-        return;
-      }
-
-      try {
-        var apptRef = await db.collection('appointments').add({
-          service: selectedServices.join(', '),
-          date: selectedDate,
-          time: selectedTime,
-          name: name,
-          phone: phone,
-          email: email,
-          notes: notes,
-          status: 'confirmed',
-          showedUp: null,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        var clientRef = db.collection('clients').doc(phoneId);
-        var clientSnap = await clientRef.get();
-        if (clientSnap.exists) {
-          await clientRef.update({
-            name: name,
-            email: email,
-            lastVisit: selectedDate,
-            totalAppointments: firebase.firestore.FieldValue.increment(1),
-            services: firebase.firestore.FieldValue.arrayUnion(...selectedServices)
-          });
-        } else {
-          await clientRef.set({
-            name: name,
-            phone: phone,
-            email: email,
-            totalAppointments: 1,
-            totalNoShows: 0,
-            firstVisit: selectedDate,
-            lastVisit: selectedDate,
-            services: selectedServices,
-            notes: '',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        }
-
-        try {
-          if (typeof emailjs === 'undefined' || !emailjs || !emailjs.send) throw new Error('emailjs unavailable');
-          await emailjs.send('service_r8fhuah', 'template_d2twd6h', {
-            to_name: name,
-            to_email: email,
-            service: selectedServices.join(', '),
-            date: selectedDate,
-            time: selectedTime,
-            notes: notes || 'None'
-          });
-        } catch(emailErr) { console.warn('EmailJS error:', emailErr); }
-
-        try {
-          await (window.EGYGZ ? EGYGZ.notify.booking({
-            name: name, phone: phone, email: email,
-            service: selectedServices.join(', '),
-            date: selectedDate, time: selectedTime, notes: notes || ''
-          }) : Promise.resolve());
-        } catch (e) { console.warn('notify skipped', e); }
-
-        document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
-        document.getElementById('step5').classList.add('active');
-        document.querySelectorAll('.step-label-item').forEach(function(l) { l.classList.add('done'); });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      } catch(err) {
-        console.error('Booking error:', err);
-        /* Roll back slot claim if booking creation fails */
-        await releaseSlot(selectedDate, selectedTime);
-        alert('Oops! There was a problem. Please try again.');
-        btn.disabled = false;
-        btn.textContent = 'Confirm Appointment';
-      }
+    // Only booking-secure.js submits: the slot and appointment must be one transaction.
+    function submitBooking() {
+      alert('Booking is not ready. Reload the page or contact the studio.');
     }
 
     // ── INIT (slots load lazily when the visitor moves to Step 2) ──
@@ -960,8 +839,8 @@
 
   <script src="/assets/booking-secure.js?v=4"></script>
   <script src="/assets/egygz-notify.js?v=3" defer></script>
-  <script src="/assets/calc-engine.js?v=8"></script>
-<script src="/assets/rates.js?v=6"></script>
+  <script src="/assets/calc-engine.js?v=9"></script>
+<script src="/assets/rates.js?v=7"></script>
   <script data-cfasync="false">
   /* Site settings: reads cached settings/site via REST and fills every [data-cfg] element. */
   (function () {

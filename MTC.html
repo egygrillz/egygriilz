@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <script type="module">
-    import { requireAuth } from '/assets/firebase-auth-gate.js';
+    import { requireAuth } from '/assets/firebase-auth-gate.js?v=2';
     try {
       await requireAuth();
       document.documentElement.classList.add('auth-ready');

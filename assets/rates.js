@@ -88,7 +88,7 @@
       var g = Number(v.goldUsdPerOz);
       var fx = Number(v.usdEgp);
       if (!inRange(g, OK_GOLD_OZT) || !inRange(fx, OK_USD_EGP)) return null;
-      return { goldUsdPerOz: g, usdEgp: fx, at: Number(v.at) || 0 };
+      return { goldUsdPerOz: g, usdEgp: fx, at: Number(v.at) || 0, stale: v.stale === true };
     } catch (e) { return null; }
   }
 
@@ -98,7 +98,7 @@
       global.localStorage.setItem(LS_KEY, JSON.stringify({
         goldUsdPerOz: state.goldUsdPerOz,
         usdEgp: state.usdEgp,
-        at: state.at,
+        at: state.at, stale: !!state.error,
       }));
     } catch (e) { /* private mode — the in-memory copy is still fine */ }
   }
@@ -136,9 +136,9 @@
       at: state.at,
       source: state.source,
       error: state.error,
-      fresh: !!state.at && (Date.now() - state.at) < TTL_MS,
+      fresh: !!state.at && !state.error && (Date.now() - state.at) < TTL_MS,
       forKarat: forKarat,
-      stale: !!state.at && (Date.now() - state.at) >= TTL_MS,
+      stale: !!state.at && (!!state.error || (Date.now() - state.at) >= TTL_MS),
     };
   }
 
@@ -146,14 +146,14 @@
    * Try the studio Worker first (server-side fetch, edge-cached, no CORS
    * question at all), then the two upstreams directly.
    */
-  function fetchViaWorker() {
-    return fetchJson(WORKER_BASE + WORKER_PATH).then(function (d) {
+  function fetchViaWorker(force) {
+    return fetchJson(WORKER_BASE + WORKER_PATH + (force ? '?refresh=1' : '')).then(function (d) {
       var g = Number(d && d.goldUsdPerOz);
       var fx = Number(d && d.usdEgp);
       if (!inRange(g, OK_GOLD_OZT) || !inRange(fx, OK_USD_EGP)) {
         throw new Error('worker returned an implausible rate');
       }
-      return { goldUsdPerOz: g, usdEgp: fx, at: Number(d.at) || Date.now(), source: 'worker' };
+      return { goldUsdPerOz: g, usdEgp: fx, at: Number(d.at) || Date.now(), source: 'worker', stale: d.stale === true };
     });
   }
 
@@ -184,10 +184,10 @@
       state.usdEgp = cached.usdEgp;
       state.at = cached.at;
       state.source = 'cache';
-      state.error = null;
+      state.error = cached.stale ? 'Last known rate' : null;
       compute();
       /* fresh enough: answer immediately, and top up quietly in the background */
-      if ((Date.now() - cached.at) < TTL_MS) {
+      if (!cached.stale && (Date.now() - cached.at) < TTL_MS) {
         notify();
         return Promise.resolve(snapshot());
       }
@@ -196,14 +196,14 @@
 
     if (inflight) return inflight;
 
-    inflight = fetchViaWorker()
+    inflight = fetchViaWorker(o.force)
       .catch(function () { return fetchDirect(); })
       .then(function (got) {
         state.goldUsdPerOz = got.goldUsdPerOz;
         state.usdEgp = got.usdEgp;
         state.at = got.at;
         state.source = got.source;
-        state.error = null;
+        state.error = got.stale ? 'Market feed returned a last known rate' : null;
         compute();
         write();
         notify();
@@ -268,7 +268,7 @@
     if (!state.at) return 'rate unavailable';
     var t = fmtTime(state.at);
     if (state.source === 'none') return 'rate unavailable';
-    if (state.error) return 'last known ' + t + ' — could not refresh';
+    if (snapshot().stale) return 'last known ' + t + (state.error ? ' — could not refresh' : '');
     return 'updated ' + t;
   }
 

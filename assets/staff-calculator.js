@@ -356,7 +356,7 @@
       calculate,
       apply: apply,
       reset: () => {
-        S.lines = []; S.services = []; S.editingId = null;
+        S.lines = []; S.services = []; S.editingId = null; S.importedDiscount = null;
         S.mixedMode = false; S.editorGroups = []; S.editingGroupId = null;
         syncMixedUi(); renderMixedGroups();
         renderLines(); renderServices(); setEditorMode('add');
@@ -892,14 +892,13 @@
       if (el('calculate')) el('calculate').addEventListener('click', calculate);
       if (el('copyResult')) el('copyResult').addEventListener('click', copyResult);
       if (el('downloadPdf')) el('downloadPdf').addEventListener('click', () => {
-        if (!S.lastQuote) calculate();
-        if (!S.lastQuote) return;
+        if (!calculate()) return; // include changes made since the last Calculate click
         if (typeof o.onPdf === 'function') o.onPdf(S.lastQuote, api);
-        else if (typeof global.downloadQuotationPdf === 'function') global.downloadQuotationPdf();
         else if (engine() && typeof engine().downloadQuotePdf === 'function') {
           engine().downloadQuotePdf(S.lastQuote, {
             clientName: el('clientName') ? el('clientName').value : '',
             notes: el('clientNotes') ? el('clientNotes').value : '',
+            studioName:global.SiteConfig?.get('studioName'), validDays:global.SiteConfig?.num('quoteValidDays'),
             code: exportCode(),
           });
           notify('PDF downloaded');
@@ -1118,7 +1117,7 @@
       if (S.rateBox) S.rateBox.classList.add('sc-hidden');
     }
 
-    function saveRate() {
+    async function saveRate() {
       const box = S.rateBox;
       if (!box) return;
       const inp = box.querySelector('[data-sc="rateInput"]');
@@ -1153,19 +1152,21 @@
       });
       renderMixedGroups();
       renderLines();
-      persist(patch);
+      const saved = await persist();
       closeRate();
       syncLive();
       fireChange();
-      notify(o.db ? 'Rate saved to the database' : 'Rate updated');
+      if (saved) notify(o.db ? 'Rate saved to the database' : 'Rate updated');
     }
 
-    async function persist(patch) {
-      if (!o.db) return;
+    async function persist() {
+      if (!o.db) return true;
       try {
         await engine().save(o.db);
+        return true;
       } catch (e) {
-        notify('Could not save the rate: ' + (e.message || e), true);
+        notify('Rate updated locally, but not saved: ' + (e.message || e), true);
+        return false;
       }
     }
 
@@ -1804,7 +1805,7 @@
         mold: el('mold') ? el('mold').value : 'none',
         depositPct: el('deposit') ? (parseInt(el('deposit').value, 10) || 0) : 0,
         services: S.services,
-        round: true,
+        round: true, discount:S.importedDiscount || null,
       };
     }
 
@@ -1845,7 +1846,7 @@
               stoneBits.push('Accent × ' + l.accent.count + ' (' + ((L.accentType || {})[l.accent.type] || '') + ' ' + money(l.accentUnit) + ' + ' + ((L.setting || {})[l.accent.setting] || '') + ' ' + l.settingUnit + ') = ' + money(l.accentCost !== undefined ? l.accentCost : l.stoneCost) + ' EGP');
             }
             if (l.full && l.full.bars) {
-              stoneBits.push('Full iced on Bars: ' + l.teeth + ' × ' + (c.barsStonesPerTooth || 400) + ' = ' + money(l.fullCost !== undefined ? l.fullCost : l.stoneCost) + ' EGP');
+              stoneBits.push('Full iced on Bars: ' + l.teeth + ' × ' + (c.barsStonesPerTooth ?? 400) + ' = ' + money(l.fullCost !== undefined ? l.fullCost : l.stoneCost) + ' EGP');
             } else if (l.full) {
               stoneBits.push('Full iced × ' + l.teeth + ' (' + ((L.accentType || {})[l.full.type] || '') + ' ' + money(l.fullUnit) + ' + ' + ((L.coverage || {})[l.full.coverage] || '') + ' ' + l.coverageUnit + ') = ' + money(l.fullCost !== undefined ? l.fullCost : l.stoneCost) + ' EGP');
             }
@@ -1874,6 +1875,7 @@
         out.push('Timeline: ' + ((L.timeline || {})[opts.timeline] || opts.timeline) + ' (+' + order.timelinePct + '%) = ' + money(order.timelineAmount) + ' EGP');
         out.push('Mold: ' + ((L.mold || {})[opts.mold] || opts.mold) + ' → ' + money(order.moldCost) + ' EGP');
         out.push('');
+        if (order.discountAmount) out.push('Discount: -' + money(order.discountAmount) + ' EGP');
         out.push('QUOTE TOTAL: ' + order.total.toLocaleString('en-US') + ' EGP');
         if (opts.depositPct) {
           out.push('Deposit (' + opts.depositPct + '%): ' + order.deposit.toLocaleString('en-US') + ' EGP');
@@ -1927,7 +1929,7 @@
         depositPct: extra.depositPct !== undefined
           ? Number(extra.depositPct) || 0
           : (el('deposit') ? (parseInt(el('deposit').value, 10) || 0) : 0),
-        discount: extra.discount || null,
+        discount: extra.discount !== undefined ? extra.discount : (S.importedDiscount || null),
         clientName: extra.clientName || (el('clientName') ? el('clientName').value : ''),
         clientPhone: extra.clientPhone || '',
         notes: extra.notes || (el('clientNotes') ? el('clientNotes').value : ''),
@@ -1968,25 +1970,8 @@
         return null;
       }
 
-      // Apply any gold / lab / natural rates embedded in the code when missing locally
-      const r = decoded.rates || {};
-      const curCfg = cfg();
-      const ratePatch = {};
-      if (r.gold && !number(curCfg.goldPrice)) ratePatch.goldPrice = r.gold;
-      if (r.labAccent && !number((curCfg.accentPrice || {}).labgrown)) {
-        ratePatch.accentPrice = Object.assign({}, curCfg.accentPrice || {}, ratePatch.accentPrice || {}, { labgrown: r.labAccent });
-      }
-      if (r.natAccent && !number((curCfg.accentPrice || {}).natural)) {
-        ratePatch.accentPrice = Object.assign({}, curCfg.accentPrice || {}, ratePatch.accentPrice || {}, { natural: r.natAccent });
-      }
-      if (r.labFull && !number((curCfg.fullPrice || {}).labgrown)) {
-        ratePatch.fullPrice = Object.assign({}, curCfg.fullPrice || {}, ratePatch.fullPrice || {}, { labgrown: r.labFull });
-      }
-      if (r.natFull && !number((curCfg.fullPrice || {}).natural)) {
-        ratePatch.fullPrice = Object.assign({}, curCfg.fullPrice || {}, ratePatch.fullPrice || {}, { natural: r.natFull });
-      }
-      if (Object.keys(ratePatch).length) E.set(ratePatch);
-
+      // Embedded rates belong to their own line. Importing a quote must not
+      // rewrite studio settings or apply its first stone price to every design.
       const pricedLines = (decoded.lines || []).map((ln) => E.calculateLine(ln));
       const pricedSvcs = (decoded.services || []).map((sv) => E.calculateService(sv));
 
@@ -2007,6 +1992,7 @@
         return decoded;
       }
 
+      S.importedDiscount = decoded.discount || null;
       S.lines = pricedLines;
       S.editingId = null;
       setEditorMode('add');
@@ -2024,12 +2010,11 @@
       if (el('mold') && decoded.mold) el('mold').value = decoded.mold;
       if (el('deposit') && decoded.depositPct !== undefined) {
         const depStr = String(decoded.depositPct || 0);
-        if (Array.from(el('deposit').options).some((op) => op.value === depStr)) {
-          el('deposit').value = depStr;
-        }
+        if (!Array.from(el('deposit').options).some(op => op.value === depStr)) el('deposit').add(new Option(depStr + '%', depStr));
+        el('deposit').value = depStr;
       }
-      if (el('clientName') && decoded.clientName) el('clientName').value = decoded.clientName;
-      if (el('clientNotes') && decoded.notes) el('clientNotes').value = decoded.notes;
+      if (el('clientName')) el('clientName').value = decoded.clientName || '';
+      if (el('clientNotes')) el('clientNotes').value = decoded.notes || '';
       renderLines();
 
       if (typeof o.onImportCode === 'function') {
@@ -2341,7 +2326,19 @@
     return { refresh: render };
   }
 
+  // The assistant has its own DB for chats, but must never fork the price list.
+  // Only a studio settings WRITE needs the separate EditX Firebase credential.
+  const studioSettingsDb = {
+    _egygzProjectId: 'egygrillz-studio',
+    async _egygzGet(...args) { return (await import('/assets/studio-db.js')).settingsDb._egygzGet(...args); },
+    async _egygzSet(...args) {
+      const {requireAuth} = await import('/assets/firebase-auth-gate.js?v=2');
+      await requireAuth();
+      return (await import('/assets/studio-db.js')).settingsDb._egygzSet(...args);
+    },
+  };
   global.StaffCalculator = {
+    studioSettingsDb,
     LEVEL_INFO,
     LEVEL_IMAGES,
     mount,

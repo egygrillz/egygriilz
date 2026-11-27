@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>EGYGRILLZ - Support Panel</title>
+    <link rel="icon" href="/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="/assets/calc-engine.js?v=8"></script>
-<script src="/assets/rates.js?v=6"></script>
-    <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=5"></script>
+        <script src="/assets/calc-engine.js?v=9"></script>
+<script src="/assets/rates.js?v=7"></script>
+    <script data-cfasync="false" src="/assets/numpad.js?v=5"></script>
+<script src="/assets/staff-calculator.js?v=6"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         // Applied before first paint so the theme never flashes.
@@ -669,9 +669,10 @@ List every rule explicitly with real numbers — the AI can only calculate corre
             _calcSettingsLoaded = true;
             try{
                 const [r] = await Promise.all([
-                    window.CalcEngine.load(db),
-                    window.SiteConfig ? window.SiteConfig.load(db) : Promise.resolve()
+                    window.CalcEngine.load(),
+                    window.SiteConfig ? window.SiteConfig.load() : Promise.resolve()
                 ]);
+                if (window.MetalRates) MetalRates.attach(window.CalcEngine);
                 if (r && r.source) console.log('[calc] settings:', r.source);
                 if (staffCalc) staffCalc.refresh();
             }catch(e){
@@ -691,23 +692,7 @@ List every rule explicitly with real numbers — the AI can only calculate corre
 
         // Official brand marks (compressed from //assets/optimized/logo_black-600.png + logo_white.png),
         // embedded so the panel, the PDF and the intake page never miss an asset.
-        const BRAND = {
-            black: "data:image/png;base64,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",
-            white: "data:image/png;base64,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",
-            favicon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAMFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABaPxwLAAAAEHRSTlMA/Cx1rU/PjgAAAAAAAAAA14dMZAAAA5dJREFUeNrtl7+PG1UQxz/7dr227oDblUig4eK7NjrF14LE+ToiJGI6EI2hQFRR+E8i8Q9cQ2/xK62VioZo4aTohBTYnILEz9x22YvtXYr33u68ZxM3lJ7G3vHOmzfzne/MGDaykY1YCfSH2hG6o68qAPq/vSS0O7l+Uz9Fzim1/igcpXkyBtddv4lwbiV0DPIVF01cXSUNIj+0ZMkBDIXBGytykfi6n4RBsZS9ZMmBSUXUxPPJ1P6SAUECLPatKvoZGGQ2vCCB+I/2LIPKjkjFYQ51Ya80BC5lQnRaZeoyexsFqKzJgZHHAK9ITQQs+sagBjoTJ+cDCB1sZiOTGwUMgOfriu7EJEcZmMfrDGIDtjKx3F1ncGmyozTM0XoiDDXYSofy7nqDb3V6lIb5ZL3Bc4ABispEtFbGQI5agvk/5S4QoZZhNnyofZ0GO4i3Ify7Ve8D/NLd4sZ0H6BqAT/O4FZ4OwOetfgsyrIsP/jhw7OzgLIsy7JsWVXCr8pjqGbuPU4Cc8+Ri8RcfQHM7vgpHEW7YebHMAEO1BzgSz/A+7Ns19cdAEwVCTDvL/PX57nKgRrFk5VdYNxZ2QOGKGbjVVB/PTNOJxLoeEIA8TZwTYS4VwBH37xM8LRVdreAWycEQArOb2oHqIvUaRvvT4ELzbgEtxCqPhCTRJLVU9OTFHCOx9FTYDZ8ct1vz7v2y3Hm1hMpoP6RSWheCQEe96B+50wQuAf16yLX4QVQlbbzBQD3/cwOxPfdBiwFUA29sMeAmnjzKhLt/js37O4EOBAuYoCPpPuP0zR9rc15mqYp8ZVG8XmapledUfdjDxY2bPU7EDy7/cByp/MQWJTObOwBuX2hBxw9ekjPKK6VQFLIKVr1xZzVZTZvmVjY6m4NOG3nZDgBbpLAYtCOtQN3dZDg7hXAhSjJw1zXneOBwl6MQp/TYGOo5htE9t3YINtgUyNbXWPQEO8tIMzgcgTcW4I9bMB5EEP12fedp7bMDDbdR8B7GX7QOuzor73CTmhDPEs1/0qaeHNdZrnAZuoeKwzOAT4VZXYKcAzw9tIK17AKoPOnuCR4a4XHc+TMtpS7yWoP9sSmu3TMknjBag9258odbLxDnYfuFsCNacu0bbyu6Hq4HMlQbDTuoHA3tSAxa5Rss47C9UDgT9RzVmyLUg5FK9DYpFdeOLyj1NuDgvTOi8d96iuu+pPLe37VN3hz8w9oIxv5/+Rf6ej4LvrCjvIAAAAASUVORK5CYII=",
-            img: null, ready: false
-        };
-        (function preloadBrand() {
-            const img = new Image();
-            img.onload = () => { try { const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0); BRAND.flat = c.toDataURL("image/png"); } catch (e) {} BRAND.ready = true; };
-            img.src = BRAND.black;
-            BRAND.img = img;
-            const link = document.createElement("link");
-            link.rel = "icon";
-            link.href = BRAND.favicon;
-            document.head.appendChild(link);
-        })();
-
+        const BRAND = { black: "/logo/logo_black.png", white: "/logo/logo_white.png" };
 
 /* ---------- repo images: local /materials, /levels, /plating manifest (0 GitHub API calls) ---------- */
 const IMG = (() => {
@@ -2079,46 +2064,6 @@ ${kb || "(not configured)"}
         // and applied on the sum of all lines, then the total is rounded UP to 50 EGP.
          
         const CE = window.CalcEngine;
-        const calcCfg = () => CE.get();
-
-        const CALC_LABELS = {
-            material: CE.LABELS.material,
-            level: CE.LABELS.level,
-            accentType: CE.LABELS.accentType,
-            setting: CE.LABELS.setting,
-            coverage: CE.LABELS.coverage,
-            plating: CE.LABELS.plating,
-            enamel: CE.LABELS.enamel,
-            engraving: CE.LABELS.engraving,
-            anodize: CE.LABELS.anodize,
-            service: CE.LABELS.service,
-            timeline: CE.LABELS.timeline,
-            mold: CE.LABELS.mold
-        };
-
-        // Design levels as shown to staff — one place to edit descriptions/examples.
-        const LEVEL_INFO = {
-            "0.5": { name: "Bars", pct: 0, desc: "Half base. Open bars / windows in the front only, visible teeth behind.", examples: ["Single bar across the front", "Bars + windows", "3-4 bars with gaps"] },
-            "1":   { name: "Solid", pct: 0, desc: "Fully solid metal, no cuts. One clean metal surface.", examples: ["Plain solid cap / full cover", "Solid front, plain sides", "Solid with mirror finish"] },
-            "2":   { name: "Open face", pct: 10, desc: "Solid base with openings cut over the face of the teeth.", examples: ["Window over the front teeth", "Centre opening + solid sides", "Solid with an open face section"] },
-            "3":   { name: "Mid detail", pct: 15, desc: "Moderate detail — lettering, simple outlines, a few cuts.", examples: ["Name or lettering", "Diamond-cut outlines", "Two-tone with simple line pattern"] },
-            "4":   { name: "Complex", pct: 25, desc: "Dense, intricate detail across most of the piece.", examples: ["Full deep engraving", "Dense diamond-cut pattern", "Multi-eyelet / many cuts"] },
-            "5":   { name: "Scorpion", pct: 40, desc: "Heavy 3D detail — sculpted shapes and deep relief.", examples: ["Scorpion or animal shape", "3D logo sculpted in metal", "Deep relief across all teeth"] },
-            "6":   { name: "Ultimate", pct: 60, desc: "Ultimate custom work — fully sculpted, multi-layer, maximum detail.", examples: ["Full custom sculpture piece", "Multi-layer 3D with cut-outs", "Anything beyond heavy detail"] }
-        };
-        const LEVEL_EXAMPLE_IMAGES = {
-            "0.5": "/levels/LEVEL%200.5.png",
-            "1": "/levels/LEVEL%201.png",
-            "2": "/levels/LEVEL%202.png",
-            "3": "/levels/LEVEL%203.png",
-            "4": "/levels/LEVEL%204.png",
-            "5": "/levels/LEVEL%205.png",
-            "6": "/levels/LEVEL%206.png"
-        };
-
-        function formatMoney(n) {
-            return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString();
-        }
 
         // ==================== THE ONE CALCULATOR ====================
         // The calculator is /assets/staff-calculator.js — the same component the
@@ -2130,50 +2075,12 @@ ${kb || "(not configured)"}
             const host = document.getElementById("scalcHost");
             if (!host || !window.StaffCalculator) return null;
             staffCalc = window.StaffCalculator.mount(host, {
-                db: db,
+                db: window.StaffCalculator.studioSettingsDb,
                 showPdf: true,
                 showInsert: true,
-                onPdf: (order) => { window._lastCalcQuote = toPdfQuote(order); downloadQuotationPdf(); },
                 onInsert: () => insertCalcResultIntoPricingChat(),
-                onChange: () => { window._lastCalcQuote = null; },
-                onCalculate: (order) => { window._lastCalcQuote = toPdfQuote(order); }
             });
             return staffCalc;
-        }
-
-        // The PDF writer was written against the old result object — keep it fed.
-        function toPdfQuote(order) {
-            const L = CE.LABELS;
-            const dep = staffCalc && staffCalc.el("deposit") ? (parseInt(staffCalc.el("deposit").value, 10) || 0) : 0;
-            const first = order.lines[0] || { level: "1", teeth: 0, plating: "none", enamel: "none", engraving: "none" };
-            const sum = (k) => order.lines.reduce((s, l) => s + (Number(l[k]) || 0), 0);
-            return {
-                lines: order.lines,
-                services: order.services,
-                servicesSubtotal: order.servicesSubtotal,
-                lineCount: order.lineCount,
-                teethTotal: order.teethTotal,
-                materialLabel: order.lineCount > 1 ? order.lineCount + " designs" : (order.lines[0] ? staffCalc.lineLabel(first) : "Services"),
-                levelLabel: (L.level || {})[first.level] || "",
-                teeth: first.teeth || 0,
-                materialTotal: sum("materialTotal"),
-                designCost: sum("designCost"),
-                stoneCost: sum("stoneCost"),
-                platingCost: sum("platingCost"),
-                plating: order.lineCount === 1 ? ((L.plating || {})[first.plating] || "—") : "—",
-                enamelCost: sum("enamelCost"),
-                enamel: order.lineCount === 1 ? ((L.enamel || {})[first.enamel] || "—") : "—",
-                engravingCost: sum("engravingCost"),
-                engraving: order.lineCount === 1 ? ((L.engraving || {})[first.engraving] || "—") : "—",
-                sub: order.linesSubtotal,
-                tlAmount: order.timelineAmount,
-                timeline: (L.timeline || {})[order.timeline] || order.timeline,
-                tlPct: order.timelinePct,
-                moldCost: order.moldCost,
-                mold: (L.mold || {})[order.mold] || order.mold,
-                total: order.total,
-                deposit: dep ? { pct: dep, amount: order.deposit } : null
-            };
         }
 
         // ==================== PRICING & STUDIO SETTINGS (database) ====================
@@ -2205,7 +2112,7 @@ ${kb || "(not configured)"}
             const host = document.getElementById("pricingSettingsHost");
             if (!host || !window.StaffCalculator) return;
             window.StaffCalculator.mountSettings(host, {
-                db: db,
+                db: window.StaffCalculator.studioSettingsDb,
                 onSaved: () => { if (staffCalc) staffCalc.refresh(); }
             });
             pricingSettingsMounted = true;
@@ -2215,243 +2122,8 @@ ${kb || "(not configured)"}
             if (!window.SiteConfig) return;
             const host = document.getElementById("studioSettingsHost");
             if (!host) return;
-            window.SiteConfig.renderSettings(host, db, () => showToast("Studio settings saved"));
+            window.SiteConfig.renderSettings(host, window.StaffCalculator.studioSettingsDb, () => showToast("Studio settings saved"));
             studioSettingsMounted = true;
-        }
-
-        // ==================== QUOTATION PDF ====================
-        function stoneDetail(line) {
-            if (line.accent) {
-                const sp = line.accent.settingPrice !== undefined ? line.accent.settingPrice : (line.settingUnit || 0);
-                const ap = line.accent.price !== undefined ? line.accent.price : (line.accentUnit || 0);
-                return `${line.accent.count}\u00d7 ${CALC_LABELS.accentType[line.accent.type]} \u00b7 ${CALC_LABELS.setting[line.accent.setting]} \u00b7 ${formatMoney(ap)} + ${formatMoney(sp)} per stone = ${formatMoney(line.stoneCost)} EGP`;
-            }
-            if (line.full && line.full.bars) {
-                return `Full iced (Bars) \u00b7 ${line.teeth} \u00d7 ${calcCfg().barsStonesPerTooth || 400} = ${formatMoney(line.stoneCost)} EGP`;
-            }
-            if (line.full) {
-                const cp = line.full.coveragePrice !== undefined ? line.full.coveragePrice : (line.coverageUnit || 0);
-                const fp = line.full.price !== undefined ? line.full.price : (line.fullUnit || 0);
-                return `Full iced \u00b7 ${CALC_LABELS.accentType[line.full.type]} \u00b7 ${CALC_LABELS.coverage[line.full.coverage]} \u00b7 ${formatMoney(fp)} + ${formatMoney(cp)} per tooth = ${formatMoney(line.stoneCost)} EGP`;
-            }
-            return "None";
-        }
-
-        // Small hexagon mark — same logo as the panel, drawn with lines so no asset needed.
-        function drawPdfLogo(doc, x, y, size) {
-            const s = size / 100;
-            const P = p => [x + p[0] * s, y + p[1] * s];
-            doc.setDrawColor(0);
-            doc.setLineWidth(1.3);
-            const hex = [[50, 5], [90, 25], [90, 65], [50, 95], [10, 65], [10, 25]];
-            hex.forEach((p, i) => {
-                const a = P(p), b = P(hex[(i + 1) % hex.length]);
-                doc.line(a[0], a[1], b[0], b[1]);
-            });
-            [[[50, 5], [50, 50]], [[50, 50], [90, 25]], [[50, 50], [10, 25]]].forEach(pair => {
-                const a = P(pair[0]), b = P(pair[1]);
-                doc.line(a[0], a[1], b[0], b[1]);
-            });
-        }
-
-        // jsPDF's built-in fonts are Latin-only: Arabic/special characters would come out
-        // as garbage. Map what we can, drop the rest, and warn staff once.
-        const PDF_CHAR_MAP = { "\u2014": "-", "\u2013": "-", "\u00b7": "-", "\u00d7": "x", "\u2019": "'", "\u2018": "'", "\u201c": '"', "\u201d": '"', "\u2026": "...", "\u2022": "-", "\u060c": ",", "\u061f": "?" };
-        let pdfStrippedChars = 0;
-        function pdfSafe(str) {
-            const src = String(str == null ? "" : str);
-            let out = "";
-            pdfStrippedChars = 0;
-            for (const ch of src) {
-                const mapped = PDF_CHAR_MAP[ch];
-                if (mapped !== undefined) { out += mapped; continue; }
-                const code = ch.codePointAt(0);
-                if ((code >= 0x20 && code <= 0x7e) || (code >= 0xa0 && code <= 0xff) || code === 0x0a) out += ch;
-                else pdfStrippedChars++;
-            }
-            return out;
-        }
-
-        function downloadQuotationPdf() {
-            const q = window._lastCalcQuote;
-            if (!q) { showToast("Calculate a quote first", true); return; }
-            if (!window.jspdf) { showToast("PDF library failed to load", true); return; }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: "pt", format: "a4" });
-            const clientName = staffCalc && staffCalc.el("clientName") ? staffCalc.el("clientName").value.trim() : "";
-            const clientNameSafe = pdfSafe(clientName).trim();   // jsPDF fonts are Latin-only
-            const notes = (staffCalc && staffCalc.el("clientNotes") ? staffCalc.el("clientNotes").value : "").trim();
-            const pageW = doc.internal.pageSize.getWidth();
-            const pageH = doc.internal.pageSize.getHeight();
-            const M = 40;
-            const T = (txt, x, y, opts) => doc.text(pdfSafe(txt), x, y, opts);
-            let fileNameSafe = true;
-            let y = 56;
-
-            // ---------- header: small logo + brand on the left, date & time on the right ----------
-            let logoDrawn = false;
-            if (BRAND.ready) {
-                try {
-                    // keep the mark's aspect ratio
-                    const iw = BRAND.img.naturalWidth || 480, ih = BRAND.img.naturalHeight || 314;
-                    const lh = 38, lw = Math.min(70, lh * (iw / ih));
-                    doc.addImage(BRAND.flat || BRAND.black, "PNG", M, y - 26, lw, lh);
-                    logoDrawn = true;
-                } catch (e) { logoDrawn = false; }
-            }
-            if (!logoDrawn) drawPdfLogo(doc, M, y - 20, 34);
-            doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(0);
-            const brandX = logoDrawn ? M + 80 : M + 46;
-            T("EGYGRILLZ", brandX, y - 6);
-            doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(130);
-            T("Beyond Jewelry.", brandX, y + 6);
-            T("Custom dental jewelry \u00b7 Cairo, Egypt", brandX, y + 16);
-            doc.setTextColor(0);
-
-            const now = new Date();
-            doc.setFontSize(9); doc.setTextColor(60);
-            T(`DATE   ${now.toLocaleDateString()}`, pageW - M, y - 10, { align: "right" });
-            T(`TIME   ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`, pageW - M, y + 2, { align: "right" });
-            doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(0);
-            T("QUOTATION", pageW - M, y + 18, { align: "right" });
-
-            y += 34;
-            doc.setDrawColor(220); doc.setLineWidth(1);
-            doc.line(M, y, pageW - M, y);
-            y += 16;
-
-            // ---------- quote header line ----------
-            doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
-            T(`Client: ${clientNameSafe || "\u2014"}`, M, y);
-            T(`Designs: ${q.lines.length}`, M + 190, y);
-            T(`Teeth total: ${q.teethTotal}`, M + 280, y);
-            T(`Timeline: ${q.timeline}${q.tlPct ? ` (+${q.tlPct}%)` : ""}`, M + 380, y);
-            y += 14;
-            doc.setFontSize(8); doc.setTextColor(130);
-            T("Prices in EGP. This quotation is an estimate \u2014 gold and diamond rates are confirmed against the day of production.", M, y);
-            doc.setTextColor(0);
-            y += 18;
-
-            const row = (label, value, opts) => {
-                const o = opts || {};
-                if (y > pageH - 90) { doc.addPage(); y = 60; }
-                if (o.section) {
-                    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
-                    T(String(label), M, y); y += 5;
-                    doc.setDrawColor(220); doc.line(M, y, pageW - M, y);
-                    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
-                    y += 14;
-                    return;
-                }
-                doc.setFont("helvetica", o.bold ? "bold" : "normal");
-                doc.setFontSize(o.size || 9.5);
-                if (o.bold) doc.setDrawColor(0);
-                T(String(label), o.indent || (M + 10), y);
-                T(String(value), pageW - M, y, { align: "right" });
-                y += o.gap || 15;
-            };
-
-            // ---------- one detailed block per design ----------
-            (q.lines || []).forEach((l, i) => {
-                // an Arabic-only design name prints as nothing, so fall back to "Design N"
-                const safeName = pdfSafe((l.name || "").trim()).trim();
-                const title = safeName || `Design ${i + 1}`;
-                row(`${i + 1}. ${title}`, "", { section: true });
-                if (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) {
-                    row("Material", l.mixedMaterials ? "Mixed Materials" : (l.material === "gold" ? `Gold ${l.karat || "18"}K` : CALC_LABELS.material[l.material]));
-                    row("Total teeth", `${l.teeth} teeth (Mixed - ${l.groups.length} tooth groups)`);
-                    l.groups.forEach((g, gi) => {
-                        const gLbl = g.label ? `${g.label}: ` : `Group ${gi + 1}: `;
-                        const gSpec = (CE && CE.groupLabel) ? CE.groupLabel(g, { includeMaterial: true }) : `${g.teeth} teeth L${g.level}`;
-                        row(`  ${gLbl}${gSpec}`, `${formatMoney(g.subtotal)} EGP`);
-                    });
-                    row("Base metal total", `${formatMoney(l.materialTotal)} EGP`);
-                    if (l.designCost) row("Complexity total", `${formatMoney(l.designCost)} EGP`);
-                    if (l.stoneCost) row("Stones total", `${formatMoney(l.stoneCost)} EGP`);
-                    if (l.platingCost) row("Plating total", `${formatMoney(l.platingCost)} EGP`);
-                    if (l.enamelCost) row("Enamel total", `${formatMoney(l.enamelCost)} EGP`);
-                    if (l.engravingCost) row("Engraving total", `${formatMoney(l.engravingCost)} EGP`);
-                    if (l.anodizeCost) row("Anodizing total", `${formatMoney(l.anodizeCost)} EGP`);
-                } else {
-                    row("Material", l.material === "gold" ? `Gold ${l.karat}K` : CALC_LABELS.material[l.material]);
-                    row("Teeth", String(l.teeth));
-                    row("Design level", `${CALC_LABELS.level[l.level]}${l.level === "0.5" ? " (half base)" : ` (+${(calcCfg().designPct || {})[l.level] || 0}%)`}`);
-                    if (l.material === "gold" && l.goldPrice) row("Gold rate used", `${formatMoney(l.goldPrice)} EGP/g`);
-                    row("Base cost", `${formatMoney(l.materialTotal)} EGP`);
-                    row("Design cost", l.designCost ? `${formatMoney(l.designCost)} EGP` : "\u2014");
-                    row("Stones", stoneDetail(l));
-                    if (l.platingCost) row("Plating", `${CALC_LABELS.plating[l.plating]} \u00b7 ${formatMoney(l.platingCost)} EGP`);
-                    if (l.enamelCost) row("Enamel", `${CALC_LABELS.enamel[l.enamel]} \u00b7 ${formatMoney(l.enamelCost)} EGP`);
-                    if (l.engravingCost) row("Engraving", `${CALC_LABELS.engraving[l.engraving]} \u00b7 ${formatMoney(l.engravingCost)} EGP`);
-                    if (l.anodizeCost) row("Anodizing", `${CALC_LABELS.anodize[l.anodize]} \u00b7 ${formatMoney(l.anodizeCost)} EGP`);
-                }
-                row("Set subtotal", `${formatMoney(l.subtotal)} EGP`, { bold: true, gap: 20 });
-            });
-
-            if ((q.services || []).length) {
-                row("Studio services", "", { section: true });
-                q.services.forEach(sv => {
-                    row(`${sv.name}${sv.qty > 1 ? " x" + sv.qty : ""}`, `${formatMoney(sv.subtotal)} EGP`, { indent: M });
-                });
-                row("Services subtotal", `${formatMoney(q.servicesSubtotal)} EGP`, { bold: true, gap: 20 });
-            }
-
-            // ---------- totals ----------
-            row("Quote totals", "", { section: true });
-            if ((q.lines || []).length) row(q.lines.length > 1 ? `Subtotal (${q.lines.length} designs)` : "Designs subtotal", `${formatMoney(q.sub)} EGP`, { indent: M });
-            if (q.servicesSubtotal) row("Services subtotal", `${formatMoney(q.servicesSubtotal)} EGP`, { indent: M });
-            row(`Timeline \u2014 ${q.timeline}${q.tlPct ? ` (+${q.tlPct}%)` : " (no surcharge)"}`, `${formatMoney(q.tlAmount)} EGP`, { indent: M });
-            row(`Mold \u2014 ${q.mold}`, `${formatMoney(q.moldCost)} EGP`, { indent: M });
-            y += 6;
-
-            if (y > pageH - 130) { doc.addPage(); y = 60; }
-            doc.setDrawColor(0); doc.setLineWidth(1);
-            doc.line(M, y, pageW - M, y);
-            y += 26;
-            doc.setFont("helvetica", "bold"); doc.setFontSize(14);
-            T("TOTAL", M, y);
-            T(`${q.total.toLocaleString()} EGP`, pageW - M, y, { align: "right" });
-            y += 24;
-
-            if (q.deposit) {
-                doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-                T(`Deposit (${q.deposit.pct}%) to start production`, M + 10, y);
-                T(`${formatMoney(q.deposit.amount)} EGP`, pageW - M, y, { align: "right" });
-                y += 15;
-                T("Balance before delivery / pickup", M + 10, y);
-                T(`${formatMoney(q.total - q.deposit.amount)} EGP`, pageW - M, y, { align: "right" });
-                y += 18;
-            }
-
-            // ---------- notes ----------
-            if (notes) {
-                if (y > pageH - 150) { doc.addPage(); y = 60; }
-                doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-                T("Notes", M, y); y += 14;
-                doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-                doc.splitTextToSize(pdfSafe(notes), pageW - 2 * M - 10).forEach(line => {
-                    if (y > pageH - 60) { doc.addPage(); y = 60; }
-                    T(line, M + 10, y); y += 12;
-                });
-            }
-
-            // ---------- footer on every page ----------
-            const pages = doc.internal.getNumberOfPages();
-            doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(150);
-            for (let p = 1; p <= pages; p++) {
-                doc.setPage(p);
-                T("egygrillz.com \u00b7 @egygrillz \u00b7 booking: egygrillz.com/booking", M, pageH - 26);
-                T(`Page ${p} of ${pages}`, pageW - M, pageH - 26, { align: "right" });
-            }
-
-            if (pdfStrippedChars > 0) {
-                showToast("Some Arabic / special characters can't be printed on the PDF — shown in Latin only", true);
-            }
-
-            const safeFile = clientName.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
-            const filename = `EGYGRILLZ-Quotation${safeFile ? "-" + safeFile : ""}.pdf`;
-            doc.save(filename);
         }
 
         function insertCalcResultIntoPricingChat() {
