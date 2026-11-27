@@ -11,6 +11,12 @@
     .gum-line { fill:none; stroke:currentColor; stroke-width:1; opacity:0.07; }
     .midline { stroke:currentColor; stroke-width:1; stroke-dasharray:2 6; opacity:0.12; }
   </style>
+  <defs>
+    <linearGradient id="metal-chrome" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="#4c5962"/><stop offset="12%" stop-color="#dce2e5"/><stop offset="27%" stop-color="#7f8b92"/><stop offset="43%" stop-color="#fbfdfe"/><stop offset="57%" stop-color="#9da8ae"/><stop offset="75%" stop-color="#e1e6e9"/><stop offset="100%" stop-color="#46535b"/></linearGradient>
+    <linearGradient id="metal-silver" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="#6e777c"/><stop offset="12%" stop-color="#f4f6f7"/><stop offset="27%" stop-color="#adb5b9"/><stop offset="43%" stop-color="#ffffff"/><stop offset="57%" stop-color="#8e999f"/><stop offset="75%" stop-color="#edf0f1"/><stop offset="100%" stop-color="#626c71"/></linearGradient>
+    <linearGradient id="metal-gold" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="#78520c"/><stop offset="12%" stop-color="#d5a83c"/><stop offset="27%" stop-color="#f5df91"/><stop offset="43%" stop-color="#fff5cb"/><stop offset="57%" stop-color="#b98216"/><stop offset="75%" stop-color="#f4d270"/><stop offset="100%" stop-color="#714a0a"/></linearGradient>
+    <linearGradient id="metal-titanium" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="#35495b"/><stop offset="12%" stop-color="#92a8b9"/><stop offset="27%" stop-color="#d6e0e7"/><stop offset="43%" stop-color="#f5f8fa"/><stop offset="57%" stop-color="#7f99ad"/><stop offset="75%" stop-color="#c0d0db"/><stop offset="100%" stop-color="#304356"/></linearGradient>
+  </defs>
   <text class="arch-label" x="450" y="40" text-anchor="middle">Upper</text>
   <text class="arch-label" x="450" y="496" text-anchor="middle">Lower</text>
   <line class="midline" x1="450" y1="58" x2="450" y2="462"/>
