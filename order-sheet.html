@@ -344,7 +344,7 @@
       const id=Number(path.dataset.tooth),selected=state.selectedTeeth.includes(id),strokes=inkTeeth.has(id),rawMaterial=active?.materials?.[id]||state.toothMaterials[id],material=rawMaterial?materialForGroup(rawMaterial):'',finish=[...state.groups].reverse().find(g=>g.layerId===active?.id&&(g.teeth||[]).includes(id))?.productionEffect;
       path.classList.toggle('is-selected',selected);path.classList.toggle('has-ink',strokes);path.dataset.material=material&&MATERIALS[material]?material:'';
       path.setAttribute('aria-label',`Tooth ${id}${material?` · ${MATERIALS[material]?.label||material}`:''}${strokes?' · has sketch':''}`);path.setAttribute('aria-pressed',String(selected));path.setAttribute('tabindex','0');path.setAttribute('role','button');
-      path.style.fill=material&&MATERIALS[material]?`url(#metal-${material})`:(selected?'#f0eee8':'#fff');path.style.fillOpacity=material?'1':(selected?'.9':'.96');path.style.stroke=material&&MATERIALS[material]?MATERIALS[material].edge:'';path.style.strokeWidth=material?'1.55':'';path.style.filter=finish==='emboss'?'drop-shadow(0 1px 1px #0005)':'';
+      path.style.fill=material&&MATERIALS[material]?`url(#metal-${material})`:(selected?'#f0eee8':'#fff');path.style.fillOpacity=material?'1':(selected?'.9':'.96');path.style.stroke=material&&MATERIALS[material]?MATERIALS[material].edge:'';path.style.strokeWidth=material?'1.55':'';path.style.filter=material?(finish==='emboss'?'drop-shadow(0 1.5px 1.2px #0007)':'drop-shadow(0 1px 1px #0004)'):'';
     });
     $('#chart-stage-inner').classList.toggle('drawing',['draw','pave','laser','emboss'].includes(state.tool));$('#chart-stage-inner').classList.toggle('interacting',state.tool!=='select');
     $$('.material-chip').forEach(chip=>chip.classList.toggle('active',chip.dataset.material===selectedMaterial()));
@@ -364,9 +364,18 @@
   function pointOnTooth(event){const p=svgPoint(event);if(!p)return null;for(const path of svgChart.querySelectorAll('[data-tooth]')){try{if(path.isPointInFill(p))return {tooth:Number(path.dataset.tooth),x:p.x,y:p.y};}catch(e){}}return null;}
   function layerMaterial(layerId,tooth){const layer=state.designLayers.find(l=>l.id===layerId);return layer?.materials?.[tooth]||state.toothMaterials[tooth]||null;}
   function darkenHex(color,amount=.42){const n=parseInt(color.slice(1),16),r=Math.max(0,Math.round(((n>>16)&255)*(1-amount))),g=Math.max(0,Math.round(((n>>8)&255)*(1-amount))),b=Math.max(0,Math.round((n&255)*(1-amount)));return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');}
-  function strokeMaterial(st){return materialKeyForLayerTooth(st.designId,st.tooth)||st.material||selectedMaterial()||'chrome';}
+  function strokeMaterial(st){return st.material||materialKeyForLayerTooth(st.designId,st.tooth)||selectedMaterial()||'chrome';}
   function strokeColor(st){if(st.effect==='laser')return '#20a8a2';const group=[...state.groups].reverse().find(g=>g.layerId===st.designId&&(g.teeth||[]).map(Number).includes(Number(st.tooth))),plating=String(state.editor.plating&&state.editor.plating!=='None'?state.editor.plating:group?.plating||'None').toLowerCase(),finish=PLATING_INK[plating],m=strokeMaterial(st),base=finish||MATERIALS[m]?.ink||NEUTRAL_INK;return st.effect==='emboss'||group?.productionEffect==='emboss'?darkenHex(base):base;}
-  function metallicStrokeGradient(ctx,st){const points=st.points||[],material=strokeMaterial(st),stops=METAL_STOPS[material]||METAL_STOPS.chrome;if(!points.length)return MATERIALS[material]?.ink||NEUTRAL_INK;const bounds=points.reduce((b,p)=>({minX:Math.min(b.minX,p.x),maxX:Math.max(b.maxX,p.x),minY:Math.min(b.minY,p.y),maxY:Math.max(b.maxY,p.y)}),{minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity}),{minX,maxX,minY,maxY}=bounds,emboss=st.effect==='emboss'||state.groups.some(g=>g.layerId===st.designId&&(g.teeth||[]).map(Number).includes(Number(st.tooth))&&g.productionEffect==='emboss'),horizontal=(maxX-minX)>=(maxY-minY),g=horizontal?ctx.createLinearGradient(minX,(minY+maxY)/2,maxX===minX?minX+1:maxX,(minY+maxY)/2):ctx.createLinearGradient((minX+maxX)/2,minY,(minX+maxX)/2,maxY===minY?minY+1:maxY);stops.forEach((color,i)=>g.addColorStop(i/(stops.length-1),emboss?darkenHex(color,.22):color));return g;}
+  function metallicStrokeGradient(ctx,st){
+    const points=st.points||[],material=strokeMaterial(st),stops=METAL_STOPS[material]||METAL_STOPS.chrome;
+    if(!points.length)return MATERIALS[material]?.ink||NEUTRAL_INK;
+    const first=points[0],last=points[points.length-1],bounds=points.reduce((b,p)=>({minX:Math.min(b.minX,p.x),maxX:Math.max(b.maxX,p.x),minY:Math.min(b.minY,p.y),maxY:Math.max(b.maxY,p.y)}),{minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity});
+    let dx=last.x-first.x,dy=last.y-first.y,length=Math.hypot(dx,dy);
+    if(length<2){if(bounds.maxX-bounds.minX>=bounds.maxY-bounds.minY){dx=1;dy=0;}else{dx=0;dy=1;}length=1;}
+    const nx=dy/length,ny=-dx/length,cx=(bounds.minX+bounds.maxX)/2,cy=(bounds.minY+bounds.maxY)/2,halfWidth=Math.max(1,(Number(st.width)||4)*.62),emboss=st.effect==='emboss'||state.groups.some(g=>g.layerId===st.designId&&(g.teeth||[]).map(Number).includes(Number(st.tooth))&&g.productionEffect==='emboss'),g=ctx.createLinearGradient(cx-nx*halfWidth,cy-ny*halfWidth,cx+nx*halfWidth,cy+ny*halfWidth);
+    stops.forEach((color,i)=>g.addColorStop(i/(stops.length-1),emboss?darkenHex(color,.22):color));
+    return g;
+  }
   function getGemSprite(cut,color){
     const key=`${cut}:${color}`,cached=gemSpriteCache.get(key);if(cached)return cached.canvas||null;
     const entry={canvas:null};gemSpriteCache.set(key,entry);const option=GEM_CUTS.find(x=>x[0]===cut)||GEM_CUTS[0],img=new Image();entry.loading=true;
@@ -506,7 +515,7 @@
       if(state.tool==='ice'){if(toothPoint)fillToothWithGems(toothPoint.tooth);return;}
       if(!['draw','pave','laser','emboss'].includes(state.tool))return;
       const clipToTooth=!$('#free-draw').checked,point=clipToTooth?toothPoint:coords;if(!point)return;
-      e.preventDefault();canvas.setPointerCapture(e.pointerId);const layer=activeLayer(),tooth=point.tooth||pointInAnyTooth(point.x,point.y)||state.selectedTeeth[0]||0;if(tooth)layer.teeth=[...new Set([...(layer.teeth||[]),tooth])];activeStroke={tooth,designId:layer.id,material:materialKeyForLayerTooth(layer.id,tooth)||selectedMaterial(),kind:state.tool,effect:state.tool==='laser'?'laser':state.tool==='emboss'?'emboss':'standard',clipToTooth,width:Number($('#brush-size').value)||2,points:[{x:point.x,y:point.y}]};renderInk();
+      e.preventDefault();canvas.setPointerCapture(e.pointerId);const layer=activeLayer(),tooth=point.tooth||pointInAnyTooth(point.x,point.y)||state.selectedTeeth[0]||0;if(tooth)layer.teeth=[...new Set([...(layer.teeth||[]),tooth])];activeStroke={tooth,designId:layer.id,material:selectedMaterial()||materialKeyForLayerTooth(layer.id,tooth),kind:state.tool,effect:state.tool==='laser'?'laser':state.tool==='emboss'?'emboss':'standard',clipToTooth,width:Number($('#brush-size').value)||2,points:[{x:point.x,y:point.y}]};renderInk();
     });
     canvas.addEventListener('pointermove',e=>{
       if(draggingGemId&&canvas.hasPointerCapture(e.pointerId)){const p=svgCoordFromEvent(e),gem=state.gems.find(x=>x.id===draggingGemId);if(p&&gem){gem.x=p.x;gem.y=p.y;renderInk();}return;}
