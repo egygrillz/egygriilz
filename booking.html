@@ -61,7 +61,7 @@
           }).catch(function () {});
         }
       }
-      if (n === 4) renderReview();
+      if (n === 4) { renderReview(); if(window.EGYGZ && EGYGZ.notify) EGYGZ.notify.prepareBookingAlert(); }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -469,7 +469,7 @@
     <div class="step-panel" id="step4">
       <h1 class="page-heading">Review</h1>
       <p class="page-sub">Confirm your appointment details</p>
-      <div class="review-card" id="review-card"></div>
+      <div class="review-card" id="review-card"></div><p id="booking-alert-note" role="status"></p><div id="booking-alert-widget"></div>
       <div class="btn-row">
         <button class="btn-ghost" onclick="goStep(3)">← Back</button>
         <button class="btn-primary" id="confirm-btn" onclick="submitBooking()">Confirm Appointment</button>
@@ -481,7 +481,7 @@
       <div class="success-wrap">
         <div class="check-circle"><i class="fas fa-check"></i></div>
         <h2>Request Received</h2>
-        <p>Thank you for choosing EGYGRILLZ.<br>We will contact you shortly to confirm your appointment.</p>
+        <p>Thank you for choosing EGYGRILLZ.<br>We will contact you shortly to confirm your appointment.</p><p id="booking-alert-result" role="status"></p>
       </div>
     </div>
 
@@ -837,8 +837,8 @@
     });
   </script>
 
-  <script src="/assets/booking-secure.js?v=4"></script>
-  <script src="/assets/egygz-notify.js?v=3" defer></script>
+  <script src="/assets/booking-secure.js?v=5"></script>
+  <script src="/assets/egygz-notify.js?v=4" defer></script>
   <script src="/assets/calc-engine.js?v=9"></script>
 <script src="/assets/rates.js?v=7"></script>
   <script data-cfasync="false">

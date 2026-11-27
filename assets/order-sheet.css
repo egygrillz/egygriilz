@@ -753,3 +753,230 @@
     display: none !important;
   }
 }
+/* The drawing table spans the available viewport, including on tablets. The
+   other three steps retain their two-column desk and compact summary rail. */
+@media screen {
+  body[data-workspace='design'] .app-shell {
+    --inset: max(clamp(14px, 4vw, 64px), calc((100% - 1320px) / 2));
+    max-width: none;
+    padding-inline: 0;
+  }
+  body[data-workspace='design']
+    :is(
+      .app-shell > :not(.workbench, #print-sheet),
+      .stage-actions,
+      #step-design > .card:not(#design-canvas-card),
+      .work-rail
+    ) {
+    margin-inline: var(--inset);
+  }
+  body[data-workspace='design'] .workbench {
+    display: block;
+  }
+  body[data-workspace='design'] .work-rail {
+    width: auto;
+    position: static;
+    margin-block-start: 20px;
+  }
+  #step-design {
+    color: #26241f;
+  }
+  #step-design .micro-label,
+  #enamel-dialog .micro-label {
+    color: #84682d;
+  }
+  #step-design .card-head h2 {
+    margin-top: 3px;
+  }
+  #design-canvas-card {
+    border-inline: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #design-canvas-card > .card-head {
+    padding-inline: var(--inset);
+    background: #faf8f2;
+  }
+  #design-canvas-card > .card-body {
+    padding: 0 0 16px;
+  }
+  #design-canvas-card > .card-body > :not(.chart-viewport) {
+    margin-inline: var(--inset);
+  }
+  #design-canvas-card .chart-viewport {
+    width: 100%;
+    min-height: 0;
+    max-height: 72vh;
+    border: 1px solid #d8d4ca;
+    border-inline: 0;
+    border-radius: 0;
+    background: #fbfaf7;
+  }
+  #chart-stage-inner {
+    transition: none;
+  }
+  #step-design .chart-toolbar {
+    background: #f8f7f2;
+    border-color: #dcd8cd;
+    flex-wrap: wrap;
+  }
+  #step-design .chart-tool.active,
+  #step-design .material-chip.active,
+  #step-design .btn-primary,
+  #enamel-dialog .btn-primary {
+    background: #25241f;
+    color: #fff;
+    border-color: #25241f;
+  }
+  #step-design .gem-cut,
+  #step-design .gem-color,
+  #step-design .gem-selection-preview,
+  #step-design :is(.gem-cut, .gem-color).active {
+    background: #fff;
+    color: #292820;
+  }
+  #step-design .gem-cut.active,
+  #step-design .gem-color.active {
+    border-color: #98742d;
+    box-shadow: 0 0 0 1px #98742d;
+  }
+  #step-design .gem-cut img,
+  #step-design .gem-selection-preview img {
+    filter: none;
+    background: #fff;
+    mix-blend-mode: normal;
+  }
+  #step-design .gem-tools,
+  #step-design .design-session-bar {
+    background: #faf9f5;
+  }
+  #step-design .chart-tool:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+  #step-design .material-chip:disabled {
+    cursor: default;
+  }
+  .detail-row {
+    min-width: 0;
+    border: 1px solid #d9d5c9;
+    border-radius: 8px;
+    padding: 12px 16px 18px;
+    margin: 0 0 14px;
+  }
+  .detail-row legend {
+    padding: 0 6px;
+    color: #746039;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 155px), 1fr));
+    gap: 12px;
+  }
+  .detail-grid label,
+  #palette-inputs label {
+    display: grid;
+    gap: 6px;
+    color: #554f43;
+    font-size: 12px;
+  }
+  .detail-grid :is(select, input) {
+    width: 100%;
+    padding: 10px;
+    min-height: 42px;
+    background: #fff;
+    border: 1px solid #cdc9bd;
+    border-radius: 5px;
+  }
+  .detail-effect {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #ded9cd;
+    display: grid;
+    gap: 7px;
+  }
+  .detail-effect span {
+    font-size: 12px;
+    color: #625b50;
+    overflow-wrap: anywhere;
+  }
+  .colour-chip {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+    border: 1px solid #777;
+    border-radius: 50%;
+    background: var(--colour);
+    margin-inline-end: 0.35em;
+  }
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  #enamel-dialog {
+    margin: auto;
+    border: 1px solid #c7bdab;
+    border-radius: 12px;
+    padding: 24px;
+    color: #272521;
+    max-width: min(440px, calc(100% - 24px));
+    max-height: 85vh;
+    overflow: auto;
+  }
+  #enamel-dialog::backdrop {
+    background: #17191380;
+  }
+  #enamel-dialog h2 {
+    font:
+      500 28px Georgia,
+      serif;
+    margin: 5px 0 10px;
+  }
+  #enamel-dialog p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 10px 0;
+  }
+  #palette-inputs {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 7px;
+    margin: 14px 0;
+  }
+  #palette-inputs input {
+    width: 100%;
+    height: 35px;
+    padding: 2px;
+    border: 1px solid #d3cebf;
+    background: white;
+  }
+}
+
+@media screen {
+  body[data-workspace='design'] {
+    --studio-green: #322d22;
+    background: #f8f7f2;
+  }
+  #step-design .chart-toolgroup {
+    flex-wrap: wrap;
+  }
+  #step-design .chart-toolbar,
+  #step-design .design-layer-tools {
+    box-shadow: none;
+  }
+  #step-design .design-layer-tools .map-hint {
+    margin-inline-end: auto;
+  }
+}
+@media screen and (min-width: 950px) {
+  body[data-workspace='design'] .work-rail {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}

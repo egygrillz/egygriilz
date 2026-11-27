@@ -1,6 +1,15 @@
 // Browser fixture for the two legacy compat panels.
 if (!globalThis.firebase) {
-  const user = { uid: 'demo-staff', email: 'studio@example.test', getIdToken: async () => 'fake' };
+  const user = {
+    uid: 'demo-staff',
+    email: 'admin@egygrillz.com',
+    get emailVerified() {
+      return localStorage.__testDenied !== '1';
+    },
+    reload: async () => {},
+    sendEmailVerification: async () => {},
+    getIdToken: async () => 'fake',
+  };
   const auth = () => ({
     currentUser: user,
     onAuthStateChanged(cb) {
@@ -21,7 +30,12 @@ if (!globalThis.firebase) {
       orderBy: () => r,
       limit: () => r,
       startAfter: () => r,
-      get: async () => {
+      get: async (opts) => {
+        if (['appointments', 'clients'].includes(col) && localStorage.__testDenied === '1') {
+          if (id === 'editx-access-probe-v1' && opts?.source !== 'server')
+            throw new Error('Expected a private server probe');
+          throw Object.assign(new Error('Fixture denied'), { code: 'permission-denied' });
+        }
         const tbl = JSON.parse(localStorage.__fixture)[col] || {};
         if (id) return { id, exists: !!tbl[id], data: () => tbl[id] };
         const docs = Object.entries(tbl).map(([id, d]) => ({ id, exists: true, data: () => d }));

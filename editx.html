@@ -10,6 +10,7 @@
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
   <script data-cfasync="false" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
 
@@ -36,6 +37,7 @@
       document.querySelectorAll('[data-page="'+name+'"]').forEach(function(n){n.classList.add('active');});
       document.getElementById('topbar-title').textContent=pageTitle(name);
       closeSidebar();
+      document.getElementById('data-status').hidden=true;
       if(name==='overview') loadOverview();
       if(name==='appointments'){ loadAppointments(); if(db) loadReminderTemplates(); }
       if(name==='clients') loadClients();
@@ -59,8 +61,8 @@
       } catch(e){ parts.push('Auth: unavailable'); }
       try {
         if (db) {
-          await db.collection('settings').doc('pricing').get();
-          parts.push('Firestore: connected');
+          await db.collection('appointments').doc('editx-access-probe-v1').get({source:'server'});
+          parts.push('Private studio reads: allowed');
         } else {
           parts.push('Firestore: not initialized');
         }
@@ -148,6 +150,10 @@
     body{font-family:'Arimo',sans-serif;background:#f4f4f2;color:#000;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;}
 
     /* ‑‑ LOGIN ‑‑ */
+    body[data-studio-access="locked"] > :is(#app,.modal-overlay,.confirm-overlay,.drawer-overlay,.sidebar-overlay,.drawer,#inv-pdf-overlay,.toast){display:none!important}
+    #login-screen [hidden],#data-status[hidden]{display:none!important}
+    #login-screen:has(#access-actions:not([hidden])) .form-group{display:none}
+    #data-status{background:#fff9ea;border:1px solid #d3c394;padding:10px 14px;font-size:13px}
     #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:transparent;}
     .login-wrap{background:var(--glass-2);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border:1px solid var(--line);border-radius:var(--r);padding:52px 44px;box-shadow:var(--shadow-l);}
     .login-wrap{max-width:420px;width:100%;padding:0 24px;}
@@ -875,7 +881,7 @@
 </style>
   <link rel="canonical" href="https://egygrillz.com/editx">
 </head>
-<body>
+<body data-studio-access="locked">
 
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
@@ -889,7 +895,8 @@
       <label class="form-label">Password</label>
       <input type="password" class="form-input" id="pw-input" placeholder="••••••••••••••••" autocomplete="current-password">
     </div>
-    <div class="err-msg" id="pw-err"></div>
+    <div class="err-msg" id="pw-err" role="status" aria-live="polite"></div>
+    <div id="access-actions" hidden><button class="btn-muted2" id="verify-access" hidden>Send verification email</button> <button class="btn-black" id="retry-access">Retry access</button> <button class="btn-muted2" onclick="logout()">Sign out</button></div>
     <button class="btn-black" style="width:100%;" id="login-btn" onclick="doLogin()">Enter</button>
   </div>
 </div>
@@ -928,7 +935,7 @@
         <span class="topbar-title" id="topbar-title">Overview</span>
       </div>
 
-      <div class="content">
+      <div class="content"><p id="data-status" role="alert" hidden></p>
 
         <!-- OVERVIEW -->
         <div class="panel active" id="panel-overview">
@@ -998,7 +1005,8 @@
               <div class="search-box"><i class="fas fa-search"></i><input placeholder="Search…" oninput="filterAppts(this.value)"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-              <button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" onclick="sendAllTomorrow()"><i class="fas fa-envelope-open-text"></i> Reminders for tomorrow</button>
+              <button class="btn-black" style="width:auto;padding:9px 18px;font-size:10px;" id="telegram-reminder" onclick="sendTomorrowToTelegram()"><i class="fas fa-paper-plane"></i> Tomorrow → Studio Telegram</button>
+              <button class="btn-muted2" onclick="sendAllTomorrow()">Open client Gmail reminders</button><span id="telegram-reminder-status" role="status"></span>
               <button class="btn-muted2" onclick="loadAppointments()"><i class="fas fa-rotate"></i> Refresh</button>
             </div>
             <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Name / Phone</th><th>Service</th><th>Showed Up</th><th>Status</th><th>Reminder</th><th>Actions</th></tr></thead><tbody id="appt-tbody"></tbody></table></div>
@@ -1839,7 +1847,7 @@
       console.warn('AppCheck not activated (optional):', acErr && acErr.message);
     }
     db = firebase.firestore();
-    try { db.enablePersistence({ synchronizeTabs: true }).catch(function(){}); } catch (pe) {}
+    // Private dashboard reads are kept in memory only.
   } catch(e) { console.error('Firebase init failed:', e); }
 
   /* Timezone-safe local YYYY-MM-DD formatter (no Date.prototype mutation) */
@@ -1880,7 +1888,7 @@
     /* older SDK / rules without aggregation: fall back to a bounded page */
     try {
       var snap = await db.collection(name).limit(500).get();
-      return snap.size;
+      return snap.size < 500 ? snap.size : null;
     } catch (e) { return null; }
   }
   function countClients() { return countCollection('clients'); }
@@ -1890,7 +1898,7 @@
   async function syncClientCounter() {
     if (!db) return 0;
     var n = await countClients();
-    if (!Number.isFinite(Number(n))) return 0;  /* null = unreadable, leave the stored value alone */
+    if (n == null || !Number.isFinite(Number(n))) return null;  /* null = unreadable, leave the stored value alone */
     try {
       await db.collection('stats').doc('summary').set({
         totalClients: Number(n),
@@ -1926,56 +1934,162 @@
     }
   })();
 
-  /* Auto-login: reuse active Firebase Auth session */
-  window.addEventListener('load', function () {
+  // Authentication is not authorization. Test private server reads (of deliberately
+  // nonexistent sentinel documents), never a public settings doc or an offline cache.
+  var accessGeneration = 0,
+    openedUid = '',
+    authorizedUid = '';
+  function accessMessage(text, user, verify) {
+    document.body.dataset.studioAccess = 'locked';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.querySelectorAll('.modal-overlay').forEach(function (m) {
+      m.classList.remove('open', 'show');
+      m.style.display = '';
+    });
+    document.getElementById('access-actions').hidden = !user;
+    document.getElementById('verify-access').hidden = !verify;
+    document.getElementById('login-btn').hidden = !!user;
+    document.getElementById('pw-err').textContent = text;
+  }
+  function readFailure(err) {
+    return /permission-denied|unauthenticated/.test((err && err.code) || '')
+      ? 'permission'
+      : /quota|resource-exhausted/.test((err && err.code) || '')
+        ? 'quota'
+        : 'network';
+  }
+  function blockAccess(user, err) {
+    authorizedUid = '';
+    localStorage.removeItem('eq_staff_in');
+    invalidate();
+    stopAllListeners();
+    var unverified = user && user.email === 'admin@egygrillz.com' && !user.emailVerified;
+    var reason = readFailure(err),
+      msg =
+        reason === 'permission'
+          ? unverified
+            ? 'Verify the admin email below, open the link from Firebase, then retry access.'
+            : 'Private reads denied. Check the published rules and App Check in egygrillz-studio. Use the verified admin address, or a trusted UID / staff claim.'
+          : reason === 'quota'
+            ? 'Firestore quota reached. Check studio project usage, then retry.'
+            : 'Cannot reach the studio database. Check your connection and retry.';
+    accessMessage(
+      'Signed in as ' + (user.email || user.uid) + ' · UID ' + user.uid + ' · egygrillz-studio. ' + msg,
+      user,
+      reason === 'permission' && unverified,
+    );
+  }
+  async function reconcileStudioAccess(user, refresh) {
+    var turn = ++accessGeneration;
+    if (!user || (openedUid && openedUid !== user.uid)) {
+      authorizedUid = '';
+      invalidate();
+      stopAllListeners();
+      localStorage.removeItem('eq_staff_in');
+      accessMessage('', user, false);
+      if (openedUid) {
+        location.reload();
+      }
+      return;
+    }
+    accessMessage('Checking studio access…', user, false);
+    try {
+      if (refresh && user.reload) await user.reload();
+      await user.getIdToken(true);
+      await Promise.all(
+        ['appointments', 'clients'].map(function (c) {
+          return db.collection(c).doc('editx-access-probe-v1').get({ source: 'server' });
+        }),
+      );
+    } catch (err) {
+      if (turn === accessGeneration) blockAccess(user, err);
+      return;
+    }
+    if (turn !== accessGeneration || firebase.auth().currentUser?.uid !== user.uid) return;
+    if (openedUid && !authorizedUid) {
+      location.reload();
+      return;
+    }
+    document.body.dataset.studioAccess = 'ready';
+    openedUid = authorizedUid = user.uid;
+    localStorage.setItem('eq_staff_in', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    initApp();
+    if (Date.now() - Number(localStorage.getItem('eq_slots_sync') || 0) > 20 * 60 * 60 * 1000) {
+      localStorage.setItem('eq_slots_sync', String(Date.now()));
+      setTimeout(function () {
+        if (authorizedUid === user.uid) syncSlots();
+      }, 4000);
+    }
+  }
+  function dataReadFailed(area, err) {
+    var u = firebase.auth().currentUser;
+    if (!u) return;
+    if (readFailure(err) === 'permission') {
+      ++accessGeneration;
+      blockAccess(u, err);
+      return;
+    }
+    var banner = document.getElementById('data-status');
+    banner.hidden = false;
+    banner.textContent =
+      area +
+      ' could not be loaded. ' +
+      (readFailure(err) === 'quota' ? 'Firestore quota reached.' : 'Check your connection.') +
+      ' Reopen the panel to retry.';
+  }
+  document.getElementById('retry-access').onclick = function () {
+    var u = firebase.auth().currentUser;
+    if (u) reconcileStudioAccess(u, true);
+  };
+  document.getElementById('verify-access').onclick = async function () {
+    var u = firebase.auth().currentUser;
+    if (!u || u.email !== 'admin@egygrillz.com') return;
+    this.disabled = true;
+    try {
+      await u.sendEmailVerification();
+      document.getElementById('pw-err').textContent =
+        'Verification email sent. Open the Firebase link for ' + u.email + ', then retry access.';
+    } catch (e) {
+      document.getElementById('pw-err').textContent =
+        'Could not send verification (' +
+        (e.code || 'network') +
+        '). Retry later or authorize the account UID in the studio rules.';
+    } finally {
+      this.disabled = false;
+    }
+  };
+  window.addEventListener('DOMContentLoaded', function () {
+    invalidate();
+    localStorage.removeItem('egygz_mould_orders_v1');
+    localStorage.removeItem('egygz_moulds_key');
     try {
       firebase.auth().onAuthStateChanged(function (u) {
-        if (!u) { localStorage.removeItem('eq_staff_in'); return; }
-        if (document.getElementById('app').style.display === 'block') return;
-        localStorage.setItem('eq_staff_in', '1');
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        initApp();
-        /* syncSlots reads appointments & slots; run at most once per 20h automatically */
-        try {
-          var lastSync = Number(localStorage.getItem('eq_slots_sync') || 0);
-          if (Date.now() - lastSync > 20 * 60 * 60 * 1000) {
-            localStorage.setItem('eq_slots_sync', String(Date.now()));
-            setTimeout(function(){ try { syncSlots(); } catch (e) {} }, 4000);
-          }
-        } catch (e) {}
+        reconcileStudioAccess(u, false);
       });
-    } catch (e) {}
+    } catch (e) {
+      accessMessage('Firebase unavailable. Check the connection, then reload EditX.', null, false);
+    }
   });
-
 
   /* Read cache to minimize redundant Firestore reads across tab switches */
   var _readCache = {};
   var _CACHE_MS = 60 * 1000;
 
   async function cachedGet(key, fn) {
+    if (!authorizedUid) throw new Error('Studio access required');
     var hit = _readCache[key];
-    if (hit && (Date.now() - hit.at) < _CACHE_MS) return hit.val;
-    try {
-      var val = await fn();
-      _readCache[key] = { at: Date.now(), val: val };
-      try {
-        localStorage.setItem('egygz_cache_' + key, JSON.stringify({ at: Date.now(), val: val }));
-      } catch (e) {}
-      return val;
-    } catch (err) {
-      try {
-        var raw = localStorage.getItem('egygz_cache_' + key);
-        if (raw) {
-          var c = JSON.parse(raw);
-          console.warn('[editx] live read failed, using saved copy from', new Date(c.at).toLocaleString());
-          showToast('Showing saved data — database is unavailable right now.', '');
-          return c.val;
-        }
-      } catch (e) {}
-      throw err;
-    }
+    if (hit && Date.now() - hit.at < _CACHE_MS) return hit.val;
+    var uid = authorizedUid;
+    var val = await fn();
+    if (uid !== authorizedUid) throw new Error('Studio session changed');
+    _readCache[key] = { at: Date.now(), val: val };
+    return val;
   }
+
   function invalidate(prefix) {
     Object.keys(_readCache).forEach(function (k) {
       if (!prefix || k.indexOf(prefix) === 0) delete _readCache[k];
@@ -2144,7 +2258,7 @@
             .where('date', '>=', windowStart)
             .orderBy('date', 'asc')
             .limit(250)
-            .get();
+            .get({source:'server'});
           var out = [];
           snap.forEach(function(d){ out.push(Object.assign({id:d.id},d.data())); });
           return out;
@@ -2163,11 +2277,10 @@
              real number comes from a count() aggregation — one read, no
              document bodies. The counter is only a fallback. */
           var real = await countClients();
-          if (Number.isFinite(Number(real))) {
+          if (real != null && Number.isFinite(Number(real))) {
             summary.totalClients = Number(real);
             summary._counted = true;
-          } else if (!Number.isFinite(Number(summary.totalClients))) {
-            summary.totalClients = 0;
+          } else if (summary.totalClients == null || !Number.isFinite(Number(summary.totalClients))) {
             summary._partial = true;
           }
           return summary;
@@ -2193,7 +2306,7 @@
       document.getElementById('st-showed').textContent = showed;
       document.getElementById('st-noshow').textContent = noshow;
       document.getElementById('st-unread').textContent = unread;
-      document.getElementById('st-clients').textContent = clientsCount;
+      document.getElementById('st-clients').textContent = summary._partial ? '—' : clientsCount;
       document.getElementById('st-today').textContent = todayCount;
       document.getElementById('st-week').textContent = weekCount;
       document.getElementById('st-month').textContent = monthCount;
@@ -2240,7 +2353,7 @@
       // Init calendar
       initCalendar(appts);
 
-    } catch(e){ console.error('Overview error:', e); }
+    } catch(e){ dataReadFailed('Overview',e); }
   }
 
   function watchUnreadCount() {
@@ -2280,7 +2393,7 @@
     try {
       var q = db.collection('appointments').orderBy('date','desc').limit(APPT_PAGE_SIZE);
       if (append && _apptCursor) q = q.startAfter(_apptCursor);
-      var snap = await q.get();
+      var snap = await q.get({source:'server'});
       var rows = [];
       snap.forEach(function(d){ rows.push(Object.assign({id:d.id},d.data())); });
       _apptCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : _apptCursor;
@@ -2294,7 +2407,7 @@
       }
       renderAppts();
       _syncApptMoreBtn();
-    } catch(e){ console.error('Appointments error:', e); }
+    } catch(e){ allAppts=[];_apptCursor=null;_apptHasMore=false;document.getElementById('appt-tbody').replaceChildren();_syncApptMoreBtn();dataReadFailed('Appointments',e); }
     finally { _apptLoading = false; }
   }
 
@@ -2773,6 +2886,40 @@
   }
 
   
+  async function sendTomorrowToTelegram() {
+    var btn = document.getElementById('telegram-reminder'),
+      status = document.getElementById('telegram-reminder-status');
+    if (
+      btn.disabled ||
+      !confirm('Send tomorrow’s Cairo appointments to the studio Telegram chat? This does not message clients.')
+    )
+      return;
+    btn.disabled = true;
+    status.textContent = 'Sending…';
+    try {
+      var r = await studioWorkerJSON('/api/remind', {}),
+        d = r.data || {};
+      if (!r.ok || !d.ok) {
+        var why = d.error || 'HTTP ' + r.status;
+        status.textContent =
+          'Not delivered' +
+          (d.sent ? ' in full (' + d.sent + '/' + d.parts + ' parts sent)' : '') +
+          ' · ' +
+          why +
+          '. ' +
+          (/permission|unauthorized|401|sign-in/.test(why)
+            ? 'Retry studio access.'
+            : 'Check Worker and bot settings.');
+        return;
+      }
+      status.textContent = 'Sent to studio Telegram · ' + d.date + ' · ' + d.found + ' appointment(s).';
+    } catch (e) {
+      status.textContent = 'Delivery unconfirmed. Check the studio chat and Worker before retrying.';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   function sendAllTomorrow(kind){
     var t = new Date(); t.setDate(t.getDate()+1);
     var tomorrow = localISODate(t);
@@ -3016,16 +3163,11 @@
     if(!db || _clientLoading) return;
     _clientLoading = true;
     try {
-      var snap;
-      try {
-        var q = db.collection('clients').orderBy('lastVisit', 'desc').limit(CLIENT_PAGE_SIZE);
-        if (append && _clientCursor) q = q.startAfter(_clientCursor);
-        snap = await q.get();
-      } catch (orderErr) {
-        var q2 = db.collection('clients').limit(CLIENT_PAGE_SIZE);
-        if (append && _clientCursor) q2 = q2.startAfter(_clientCursor);
-        snap = await q2.get();
-      }
+      // orderBy('lastVisit') silently omits legacy and manually added clients
+      // without that field. Document ID ordering includes every profile and is stable for paging.
+      var q = db.collection('clients').limit(CLIENT_PAGE_SIZE);
+      if (append && _clientCursor) q=q.startAfter(_clientCursor);
+      var snap=await q.get({source:'server'});
       var rows = [];
       snap.forEach(function(d){ rows.push(Object.assign({id:d.id},d.data())); });
       _clientCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : _clientCursor;
@@ -3039,7 +3181,7 @@
       }
       renderClients(allClients);
       _syncClientMoreBtn();
-    } catch(e){ console.error('Clients error:', e); }
+    } catch(e){ allClients=[];_clientCursor=null;_clientHasMore=false;document.getElementById('clients-grid').replaceChildren();_syncClientMoreBtn();dataReadFailed('Clients',e); }
     finally { _clientLoading = false; }
   }
 
@@ -3271,7 +3413,7 @@
     try {
       var q = db.collection('messages').orderBy('createdAt','desc').limit(MSG_PAGE_SIZE);
       if (append && _msgCursor) q = q.startAfter(_msgCursor);
-      var snap = await q.get();
+      var snap = await q.get({source:'server'});
       var rows = [];
       snap.forEach(function(d){ rows.push(Object.assign({id:d.id},d.data())); });
       _msgCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : _msgCursor;
@@ -3285,7 +3427,7 @@
       }
       renderMsgList();
       if (!_msgHasMore) _recountLocalUnread();
-    } catch(e){ console.error('Messages error:', e); }
+    } catch(e){ dataReadFailed('Messages',e); }
     finally { _msgLoading = false; }
   }
 
@@ -4930,7 +5072,7 @@
 </script>
 
 
-<script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <script data-cfasync="false" src="assets/calc-engine.js?v=9"></script>
 <script src="/assets/rates.js?v=7"></script>
 <script data-cfasync="false" src="assets/crops.js?v=3"></script>
@@ -6292,7 +6434,7 @@
   }
 
   /* LOCAL persistence allows sibling studio iframes (quotes/invoices) to share Firebase Auth */
-  try { firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
+  try { firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){}); } catch (e) {}
 
   // ‑‑ Login / logout with Firebase Auth ‑‑
   window.doLogin = async function () {
@@ -6307,19 +6449,11 @@
     try {
       await firebase.auth().signInWithEmailAndPassword(email, pass);
       setLockout({ attempts: 0, until: 0 });
-      localStorage.setItem('eq_staff_in', '1');
-      document.getElementById('pw-err').textContent = '';
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      initApp();
-      try {
-        var lastS = Number(localStorage.getItem('eq_slots_sync') || 0);
-        if (Date.now() - lastS > 20 * 60 * 60 * 1000) {
-          localStorage.setItem('eq_slots_sync', String(Date.now()));
-          setTimeout(function(){ try { syncSlots(); } catch (e) {} }, 3500);
-        }
-      } catch (se) {}
+      // The auth observer opens EditX only after private reads succeed.
     } catch (e) {
+      if (!['auth/wrong-password','auth/user-not-found','auth/invalid-credential','auth/invalid-email','auth/invalid-login-credentials'].includes(e.code)) {
+        document.getElementById('pw-err').textContent='Could not sign in ('+(e.code || 'connection unavailable')+'). Check the connection and the studio Firebase project.';return;
+      }
       var d = getLockout();
       d.attempts = (d.attempts || 0) + 1;
       var left = MAX_ATTEMPTS - d.attempts;
@@ -6336,14 +6470,8 @@
   };
 
   window.logout = function () {
-    _appInitialized = false;
-    stopAllListeners();
-    try { firebase.auth().signOut(); } catch (e) {}
-    localStorage.removeItem('eq_staff_in');
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-    document.getElementById('pw-input').value = '';
-    document.getElementById('pw-err').textContent = '';
+    ++accessGeneration;authorizedUid='';stopAllListeners();invalidate();localStorage.removeItem('eq_staff_in');accessMessage('',null,false);
+    document.getElementById('pw-input').value='';firebase.auth().signOut().then(function(){location.reload();}).catch(function(){accessMessage('Sign-out failed. Reload and retry.',firebase.auth().currentUser,false);});
   };
 
   // ‑‑ Reconcile public "slots" with future appointments only (throttled + queued) ‑‑
@@ -6403,7 +6531,7 @@
      MOULD ORDERS — approve · Gmail payment link · delivered
      ════════════════════════════════════════════════════════════════════ */
 
-  var WORKER_BASE = localStorage.getItem('egygz_worker') || 'https://egygillz-api.egygrillz.workers.dev';
+  var WORKER_BASE = 'https://egygillz-api.egygrillz.workers.dev';
   var MOULD_STATUS_LABEL = { pending: 'Pending', approved: 'Approved', delivered: 'Delivered' };
   var MOULD_TEMPLATE_DEFAULT = {
     subject: 'Your EGYGRILLZ mould kit — payment link',
@@ -6508,29 +6636,23 @@
     return '';
   }
 
-  async function mouldWorkerJSON(path, body, allowPrompt) {
-    var headers = { 'Content-Type': 'application/json' };
-    try {
-      var mk = localStorage.getItem('egygz_moulds_key');
-      if (mk) headers['X-Moulds-Key'] = mk;
-    } catch (e) {}
-    var tok = await staffIdToken();
-    if (tok) headers['Authorization'] = 'Bearer ' + tok;
+  async function studioWorkerJSON(path, body) {
+    var tok = authorizedUid && (await staffIdToken());
+    if (!tok) return { status: 401, ok: false, data: { error: 'sign-in-required' } };
+    var headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok };
     var ctrl = new AbortController();
-    var tmr = setTimeout(function () { ctrl.abort(); }, 15000);
+    var tmr = setTimeout(function () {
+      ctrl.abort();
+    }, 15000);
     try {
       var opts = { method: body ? 'POST' : 'GET', headers: headers, signal: ctrl.signal };
       if (body) opts.body = JSON.stringify(body);
       var r = await fetch(WORKER_BASE + path, opts);
       var data = null;
-      try { data = await r.json(); } catch (e) { data = null; }
-      if (r.status === 401 && allowPrompt !== false && !tok) {
-        try { localStorage.removeItem('egygz_moulds_key'); } catch (e) {}
-        var entered = window.prompt('Enter your MOULDS_KEY (configured in Cloudflare Worker secrets).\nSaved on this device only:');
-        if (entered && entered.trim()) {
-          try { localStorage.setItem('egygz_moulds_key', entered.trim()); } catch (e) {}
-          return mouldWorkerJSON(path, body, false);
-        }
+      try {
+        data = await r.json();
+      } catch (e) {
+        data = null;
       }
       return { status: r.status, ok: r.ok, data: data };
     } finally {
@@ -6541,32 +6663,14 @@
   /* one order's fields, via the Worker — status, payment link */
   async function mouldWorkerUpdate(id, fields) {
     if (fields.status) {
-      var r = await mouldWorkerJSON('/api/moulds/status', { id: id, status: fields.status });
+      var r = await studioWorkerJSON('/api/moulds/status', { id: id, status: fields.status });
       if (r.ok && r.data && r.data.ok) return true;
     }
     if (fields.paymentLink) {
-      var a = await mouldWorkerJSON('/api/moulds/approve', { id: id, paymentLink: fields.paymentLink });
+      var a = await studioWorkerJSON('/api/moulds/approve', { id: id, paymentLink: fields.paymentLink });
       if (a.ok && a.data && a.data.ok) return true;
     }
     return false;
-  }
-
-  /* ── last good list, kept on this device ────────────────────────────────
-     Firestore's free plan stops answering when the day's reads are gone
-     (HTTP 429). The panel then shows this copy instead of an empty screen. */
-  var MOULD_CACHE_KEY = 'egygz_mould_orders_v1';
-
-  function readMouldCache() {
-    try {
-      var o = JSON.parse(localStorage.getItem(MOULD_CACHE_KEY) || 'null');
-      return (o && Array.isArray(o.orders)) ? o : null;
-    } catch (e) { return null; }
-  }
-
-  function writeMouldCache(orders) {
-    try {
-      localStorage.setItem(MOULD_CACHE_KEY, JSON.stringify({ at: Date.now(), orders: orders }));
-    } catch (e) { /* private mode / full storage — cost nothing */ }
   }
 
   function setMouldNote(html) {
@@ -6584,18 +6688,6 @@
     var box = document.getElementById('mould-list');
     if (!box) return;
 
-    /* Reuse recent device cache within 90s when switching tabs (press Refresh for force=true) */
-    if (!force) {
-      var recent = readMouldCache();
-      if (recent && recent.at && (Date.now() - recent.at) < 90 * 1000 && Array.isArray(recent.orders)) {
-        mouldOrders = recent.orders;
-        setMouldNote('');
-        renderMouldOrders();
-        updateMouldBadge();
-        return;
-      }
-    }
-
     box.innerHTML = '<p class="ph-sub" style="padding:20px 0;">Loading orders…</p>';
     setMouldNote('');
 
@@ -6603,9 +6695,9 @@
     var failure = '';
     var quota = false;
 
-    /* 1) ask the Worker (works with no browser credentials) */
+    /* 1) ask the Worker as the signed-in Firebase caller */
     try {
-      var w = await mouldWorkerJSON('/api/moulds/orders?limit=60' + (force ? '&force=1' : ''));
+      var w = await studioWorkerJSON('/api/moulds/orders?limit=60' + (force ? '&force=1' : ''));
       if (w.ok && w.data && w.data.ok && Array.isArray(w.data.orders)) {
         list = w.data.orders;
       } else if (w.status === 404) {
@@ -6618,8 +6710,7 @@
         else failure = 'Worker: ' + why;
         if (why === 'permission-denied' || why === 'firestore-403') {
           failure += ' — the database refuses to let this account read mould_orders. ' +
-                     'Publish firestore.rules (it already lists admin@egygrillz.com in staffEmails()), ' +
-                     'or add this account there, then redeploy.';
+                     'Verify the admin email or authorize its trusted UID and publish the studio rules.';
         }
       }
     } catch (e) {
@@ -6631,9 +6722,9 @@
       try {
         var snap;
         try {
-          snap = await db.collection('mould_orders').orderBy('createdAt', 'desc').limit(120).get();
+          snap = await db.collection('mould_orders').orderBy('createdAt', 'desc').limit(120).get({source:'server'});
         } catch (orderErr) {
-          snap = await db.collection('mould_orders').limit(120).get();
+          snap = await db.collection('mould_orders').limit(120).get({source:'server'});
         }
         list = snap.docs.map(function (doc) {
           var data = doc.data() || {};
@@ -6648,22 +6739,7 @@
     }
 
     if (!list) {
-      var cached = readMouldCache();
-      if (cached && cached.orders.length) {
-        mouldOrders = cached.orders;
-        mouldOrders.sort(function (a, b) {
-          var da = mouldCreatedAt(a), db_ = mouldCreatedAt(b);
-          return (db_ ? db_.getTime() : 0) - (da ? da.getTime() : 0);
-        });
-        setMouldNote('<div class="mould-warn"><i class="fas fa-clock-rotate-left"></i><div><strong>Showing the list saved on this device</strong>' +
-          ' — ' + escHtml(new Date(cached.at).toLocaleString('en-GB')) + '.<br>' +
-          escHtml(failure || 'The database is not answering right now.') +
-          '<br><small>Buttons will try again and save when the database is back.</small></div></div>');
-        renderMouldOrders();
-        updateMouldBadge();
-        return;
-      }
-
+      mouldOrders=[]; updateMouldBadge();
       var who = 'not signed in';
       var uid = '';
       try {
@@ -6677,17 +6753,15 @@
         '<div style="margin-top:16px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto;font-size:12px;line-height:1.9;color:#6b6b6b;">' +
         '<strong style="color:#1f1f1f;">How to fix it</strong><br>' +
         '1 — Firebase → Firestore → Rules: paste <code>firestore.rules</code> from this repository and Publish. ' +
-        'It already allows <code>admin@egygrillz.com</code> to read <code>mould_orders</code>; ' +
-        'add any other studio address to <code>staffEmails()</code> in the same file.' +
+        'Use the verified <code>admin@egygrillz.com</code> account, or its trusted UID / claim.' +
         (who && who !== 'not signed in' ? ' This dashboard is signed in as <code>' + escHtml(who) + '</code>.' : '') +
         (uid ? ' (UID <code>' + escHtml(uid) + '</code>.)' : '') +
         '<br>2 — Then deploy the current Worker (see <code>STUDIO-ORDERS.md</code>) and reload: ' +
-        'the Worker reads the list for you, so the browser never needs database access at all.' +
+        'manual dashboard requests read as the signed-in studio user.' +
         '</div></div>';
       return;
     }
 
-    writeMouldCache(list);
     mouldOrders = list;
     mouldOrders.sort(function (a, b) {
       var da = mouldCreatedAt(a), db_ = mouldCreatedAt(b);
@@ -6964,7 +7038,7 @@
 
     /* the Worker writes with the studio's own credentials — try it first */
     try {
-      var wr = await mouldWorkerJSON('/api/moulds/approve', { id: id, paymentLink: link });
+      var wr = await studioWorkerJSON('/api/moulds/approve', { id: id, paymentLink: link });
       saved = !!(wr.ok && wr.data && wr.data.ok);
     } catch (e) { saved = false; }
 
@@ -6997,7 +7071,6 @@
     o.status = 'approved';
     o.approvedAt = now;
     o.statusUpdatedAt = now;
-    writeMouldCache(mouldOrders);
     renderMouldOrders();
     updateMouldBadge();
     showToast('Approved — Gmail is open, press Send', 'success');
@@ -7007,7 +7080,7 @@
     var now = new Date().toISOString();
     var ok = false;
     try {
-      var r = await mouldWorkerJSON('/api/moulds/status', { id: id, status: status });
+      var r = await studioWorkerJSON('/api/moulds/status', { id: id, status: status });
       ok = !!(r.ok && r.data && r.data.ok);
     } catch (e) { ok = false; }
 
@@ -7026,8 +7099,7 @@
       target.status = status;
       target.statusUpdatedAt = now;
       if (status === 'delivered') target.deliveredAt = now;
-      writeMouldCache(mouldOrders);
-    }
+      }
     renderMouldOrders();
     updateMouldBadge();
     showToast(okMessage, 'success');

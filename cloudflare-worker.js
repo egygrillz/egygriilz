@@ -14,7 +14,8 @@ import './assets/calc-engine.js';
  *    STAFF_PASSWORD      required
  *    TELEGRAM_BOT_TOKEN  required
  *    TELEGRAM_CHAT_ID    required
- *    CRON_SECRET         optional
+ *    TELEGRAM_WEBHOOK_SECRET required only for webhook mode
+ *    CRON_SECRET         optional; required for operator-only HTTP calls
  *    PDF_KEY             optional
  *
  *  Check it works:  GET /api/telegram/check
@@ -326,13 +327,27 @@ const FS_BASE = `https://firestore.googleapis.com/v1/projects/${FS_PROJECT}/data
 
 /* ─────────────────────────── dates ─────────────────────────── */
 
-const TZ_OFFSET_MS = 2 * 60 * 60 * 1000;                 // Cairo = UTC+2, no DST
-
-/** YYYY-MM-DD for "now + n days" in Cairo */
-function cairoDay(n = 0, now = new Date()) {
-  const d = new Date(now.getTime() + TZ_OFFSET_MS);
+// Do calendar arithmetic on the Cairo *date*, not on an assumed UTC offset.
+const cairoClock = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Africa/Cairo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+function cairoParts(now) {
+  return Object.fromEntries(cairoClock.formatToParts(now).map((p) => [p.type, p.value]));
+}
+function shiftDay(iso, n) {
+  const d = new Date(iso + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
+}
+function cairoDay(n = 0, now = new Date()) {
+  const { year, month, day } = cairoParts(now);
+  return shiftDay(`${year}-${month}-${day}`, n);
 }
 
 /** "Sunday 16 November" — readable, no locale surprises */
@@ -496,7 +511,7 @@ function fsErrorText(err) {
     case 'permission-denied':
     case 'firestore-403':
       return 'The database is refusing to let me read.\n'
-        + 'Firestore -> Rules: ensure isStaff() includes this Firebase Auth user UID.';
+        + 'Verify admin@egygrillz.com or authorize its trusted UID / claim in the published studio rules.';
     case 'not-found':
     case 'firestore-404':
       return 'Firestore cannot find that. Check the project id is egygrillz-studio.';
@@ -538,8 +553,9 @@ async function fsQuery(env, structuredQuery, fetchImpl = fetch) {
     const t = await r.text().catch(() => '');
     return { ok: false, error: fsCause(r.status), detail: t.slice(0, 160), rows: [] };
   }
-  const json = await r.json().catch(() => []);
-  const rows = (Array.isArray(json) ? json : []).filter(x => x && x.document).map(x => x.document);
+  const json = await r.json().catch(() => null);
+  if (!Array.isArray(json) || json.some(row=>!row || row.error)) return {ok:false,error:'invalid-query-response',rows:[]};
+  const rows = json.filter(x => x.document).map(x => x.document);
   return { ok: true, rows };
 }
 
@@ -599,7 +615,7 @@ function isoCacheClear(prefix) {
 async function fetchCollection(env, name, fetchImpl = fetch, maxRows = 120) {
   if (!env.FIREBASE_API_KEY) return { ok: false, error: 'no-firebase-key', rows: [] };
   const ck = `col:${name}:${maxRows}`;
-  const cached = isoCacheGet(ck, fetchImpl);
+  const cached = !env.REQ_TOKEN && isoCacheGet(ck, fetchImpl);
   if (cached) return cached;
   const q = {
     from: [{ collectionId: String(name) }],
@@ -613,7 +629,7 @@ async function fetchCollection(env, name, fetchImpl = fetch, maxRows = 120) {
   }
   if (!res.ok) return { ok: false, error: res.error, rows: [] };
   const out = { ok: true, rows: res.rows };
-  isoCacheSet(ck, out, 60 * 1000, fetchImpl);
+  if (!env.REQ_TOKEN) isoCacheSet(ck, out, 60 * 1000, fetchImpl);
   return out;
 }
 
@@ -866,7 +882,7 @@ function buildTopServices(month) {
 function buildSlots(appts, fromIso) {
   const days = [];
   for (let i = 0; i < 7; i++) {
-    const iso = cairoDay(i, new Date(Date.parse(fromIso + 'T00:00:00Z') - TZ_OFFSET_MS));
+    const iso = shiftDay(fromIso,i);
     days.push(iso);
   }
   const lines = ['CAPACITY — NEXT 7 DAYS', LINE, `${padL('Day', 14)}  ${padL('Booked', 6)}   Load`];
@@ -902,8 +918,8 @@ function buildUnsent(tomorrowAppts) {
 /* ─────────────────────────── monthly report ─────────────────────────── */
 
 /** Full report for a month. `back` = 1 means last month. */
-async function monthlyReport(env, back, fetchImpl = fetch) {
-  const now = new Date(Date.now() + TZ_OFFSET_MS);
+async function monthlyReport(env, back, fetchImpl = fetch, at = new Date()) {
+  const now = new Date(cairoDay(0,at)+'T00:00:00Z');
   const y = now.getUTCFullYear();
   const m = now.getUTCMonth() - (back || 1);
   const first = new Date(Date.UTC(y, m, 1));
@@ -2076,7 +2092,7 @@ async function fetchMouldOrders(env, opts = {}, fetchImpl = fetch) {
   const st = opts.status || 'all';
   const lim = Math.max(1, Math.min(200, opts.limit || 40));
   const ck = `moulds:${st}:${lim}`;
-  if (!opts.force) {
+  if (!opts.force && !env.REQ_TOKEN) {
     const cached = isoCacheGet(ck, fetchImpl);
     if (cached) return cached;
   }
@@ -2101,7 +2117,7 @@ async function fetchMouldOrders(env, opts = {}, fetchImpl = fetch) {
   if (st !== 'all') orders = orders.filter(o => o.status === st);
   orders.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   const out = { ok: true, orders };
-  isoCacheSet(ck, out, 60 * 1000, fetchImpl);
+  if (!env.REQ_TOKEN) isoCacheSet(ck, out, 60 * 1000, fetchImpl);
   return out;
 }
 
@@ -2602,7 +2618,7 @@ async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
     const cb = update.callback_query;
     const chatId = cb.message && cb.message.chat && cb.message.chat.id;
     const allowed = String(env.TELEGRAM_CHAT_ID || '').trim();
-    if (allowed && String(chatId) !== allowed) {
+    if (!allowed || String(chatId) !== allowed) {
       await tgCall('answerCallbackQuery', { callback_query_id: cb.id, text: 'This bot is private.' }, env, fetchImpl)
         .catch(() => ({}));
       return { ok: true, denied: true };
@@ -2630,6 +2646,7 @@ async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
     await sendReport(`YOUR CHAT ID\n\n${chatId}\n\nUse this in TELEGRAM_CHAT_ID.`, env, chatId, fetchImpl);
     return { ok: true, chatId };
   }
+  if (!allowed) return {ok:false,error:'studio-chat-not-configured'};
   const out = await runCommand(text, env, fetchImpl);
 
   // runCommand may hand back a PDF to upload instead of text
@@ -2666,7 +2683,7 @@ async function pollTelegram(env, fetchImpl = fetch) {
     if (hasWebhook) return { ok: true, skipped: 'webhook-active' };
   } catch (e) { /* continue with polling */ }
   try {
-    const r = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUpdates?timeout=0&limit=50&allowed_updates=message,callback_query`, { method: 'GET' });
+    const r = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUpdates?timeout=0&limit=50&allowed_updates=${encodeURIComponent(JSON.stringify(['message','edited_message','callback_query']))}`, { method: 'GET' });
     const d = await r.json().catch(() => ({}));
     if (!d.ok) return { ok: false, error: d.description };
     const updates = d.result || [];
@@ -2882,7 +2899,7 @@ function formatReminderDigest(appts, date) {
 /* ───────────────────────── channels ───────────────────────── */
 
 async function sendTelegram(text, env, fetchImpl = fetch) {
-  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return { channel: 'telegram', ok: false, skipped: true };
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return { channel: 'telegram', ok: false, skipped: true, error:'telegram-not-configured' };
   const r = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -2893,7 +2910,8 @@ async function sendTelegram(text, env, fetchImpl = fetch) {
     }),
   });
   const d = await r.json().catch(() => ({}));
-  return { channel: 'telegram', ok: r.ok && d.ok !== false, status: r.status };
+  const ok=r.ok && d.ok===true;
+  return {channel:'telegram',ok,status:r.status,...(!ok && {error:`telegram-${d.error_code || r.status || 'rejected'}`})};
 }
 
 async function sendNtfy(text, title, env, fetchImpl = fetch) {
@@ -3159,188 +3177,39 @@ function clientEmailHTML(d) {
     .replace(/\{\{time\}\}/g, esc(d.time || '—'));
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  EMAILJS (server-side) — uses EmailJS Private Key for scheduled reminders
- *  (EmailJS -> Account -> General -> API Keys).
- *  Secrets: EMAILJS_PRIVATE_KEY
- *  Vars  : EMAILJS_SERVICE_ID (service_r8fhuah)
- *          EMAILJS_PUBLIC_KEY  (rvcNsK9pAj-jhd9RE)
- *          EMAILJS_REMINDER_TEMPLATE
- * ═══════════════════════════════════════════════════════════════════════════ */
-async function sendViaEmailJS(templateId, params, env, fetchImpl = fetch) {
-  if (!env.EMAILJS_PRIVATE_KEY) return { channel: 'emailjs', ok: false, skipped: true };
-  if (!templateId) return { channel: 'emailjs', ok: false, skipped: true, error: 'no-template' };
-
-  const r = await fetchImpl('https://api.emailjs.com/api/v1.0/email/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id: env.EMAILJS_SERVICE_ID || 'service_r8fhuah',
-      template_id: templateId,
-      user_id: env.EMAILJS_PUBLIC_KEY || 'rvcNsK9pAj-jhd9RE',
-      accessToken: env.EMAILJS_PRIVATE_KEY,
-      template_params: params,
-    }),
-  });
-  const txt = await r.text().catch(() => '');
-  return { channel: 'emailjs', ok: r.ok, status: r.status, error: r.ok ? undefined : txt.slice(0, 200) };
-}
-
-function formatReminderText(appt = {}) {
-  return [
-    `Dear ${appt.name || 'there'},`,
-    '',
-    'This is a friendly reminder of your EGYGRILLZ appointment tomorrow.',
-    '',
-    `Service: ${appt.service || '—'}`,
-    `Date:    ${appt.date || '—'}`,
-    `Time:    ${appt.time || '—'}`,
-    '',
-    'Location: Smart Smile Dental Clinic, 38 Abou Bakr El-Sdeek, Heliopolis, Floor 5, Apt 504, Cairo',
-    '',
-    'If you need to reschedule, kindly reply to this email or message us on Instagram @egygrillz.',
-    '',
-    'EGYGRILLZ Studio',
-  ].join('\n');
-}
-
-function reminderEmailHTML(appt = {}) {
-  return `<div style="font-family:Georgia,serif;color:#1a1a1a;max-width:560px;margin:0 auto;padding:28px;line-height:1.7;">`
-    + `<div style="font-size:20px;letter-spacing:4px;text-transform:uppercase;margin-bottom:18px;border-bottom:1px solid #e6e6e6;padding-bottom:12px;">EGYGRILLZ</div>`
-    + `<p>Dear ${esc(appt.name || 'there')},</p>`
-    + `<p>This is a friendly reminder of your appointment tomorrow at our Heliopolis studio.</p>`
-    + `<table style="width:100%;border-collapse:collapse;margin:18px 0;font-family:Arial,sans-serif;font-size:13px;">`
-    + `<tr><td style="padding:8px 0;color:#888;width:90px;">Service</td><td style="padding:8px 0;font-weight:bold;">${esc(appt.service || '—')}</td></tr>`
-    + `<tr><td style="padding:8px 0;color:#888;">Date</td><td style="padding:8px 0;">${esc(appt.date || '—')}</td></tr>`
-    + `<tr><td style="padding:8px 0;color:#888;">Time</td><td style="padding:8px 0;">${esc(appt.time || '—')}</td></tr>`
-    + `<tr><td style="padding:8px 0;color:#888;">Studio</td><td style="padding:8px 0;">Smart Smile Clinics · 38 Abou Bakr El-Sdeek, Heliopolis (Fl 5, Apt 504)</td></tr>`
-    + `</table>`
-    + `<p style="font-size:12px;color:#777;">Need to reschedule? Simply reply to this email or message @egygrillz.</p>`
-    + `</div>`;
-}
-
-/** Send reminder via EmailJS */
-async function sendReminderTo(appt, env, f) {
-  const params = {
-    to_name: appt.name || 'there',
-    to_email: appt.email,
-    name: appt.name || 'there',
-    email: appt.email,
-    service: appt.service || '—',
-    date: appt.date || '—',
-    time: appt.time || '—',
-    message: formatReminderText(appt),
-    subject: 'Reminder — your EGYGRILLZ appointment is tomorrow',
-    html: reminderEmailHTML(appt),
-  };
-  return sendViaEmailJS(env.EMAILJS_REMINDER_TEMPLATE || 'template_reminder', params, env, f);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  REMINDERS — called once a day by a Cloudflare Cron Trigger at 10:00 UTC
- *  (= 12:00 Cairo). Reads Firestore REST (no SDK needed on Workers), finds
- *  every appointment dated TOMORROW, and emails each client.
- *
- *  Secrets needed:  FIREBASE_API_KEY (the same public web key),
- *                   EMAILJS_PRIVATE_KEY (EmailJS → Account → API Keys)
- *  Optional:        ALERT_EMAIL (a summary copy for the owner)
- * ═══════════════════════════════════════════════════════════════════════════ */
-const FIRESTORE_PROJECT = 'egygrillz-studio';
-
-function cairoTomorrow() {
-  // Cairo is UTC+2 (no DST since 2023) → midnight Cairo = 22:00 UTC yesterday
-  const now = new Date();
-  const cairo = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-  cairo.setUTCDate(cairo.getUTCDate() + 1);
-  return cairo.toISOString().slice(0, 10);
-}
-
-async function fetchTodaysAppointments(env, fetchImpl = fetch) {
-  if (!env.FIREBASE_API_KEY) return { ok: false, error: 'no-firebase-key', appts: [] };
-  const base = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents`;
-  const body = {
-    structuredQuery: {
-      from: [{ collectionId: 'appointments' }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: 'date' },
-          op: 'EQUAL',
-          value: { stringValue: cairoTomorrow() },
-        },
-      },
-    },
-  };
-  const r = await fetchImpl(`${base}:runQuery?key=${env.FIREBASE_API_KEY}`, {
-    method: 'POST',
-    headers: await fsHeaders(env, fetchImpl),
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) {
-    const t = await r.text().catch(() => '');
-    return { ok: false, error: `firestore-${r.status}`, detail: t.slice(0, 200), appts: [] };
+/** The studio chat receives the digest. No client email is sent or marked sent.
+ * Browser calls always query as the caller; only cron or an authenticated operator
+ * may use the Worker's staff identity. Never return appointment rows or token URLs. */
+async function sendTelegramDigest(env, at = new Date()) {
+  const f = env.fetchImpl || fetch,
+    date = cairoDay(1, at);
+  if (!env.FIREBASE_API_KEY) return { ok: false, date, error: 'no-firebase-key' };
+  const token = env.REQ_TOKEN || (await staffToken(env, f));
+  if (!token) return { ok: false, date, error: 'staff-login-required' };
+  let result = await fetchDay({ ...env, REQ_TOKEN: token }, date, f);
+  // A bot isolate may still hold the ID token issued before the owner verified
+  // their email. Refresh once. NEVER escalate a dashboard request to bot auth.
+  if (
+    !env.REQ_TOKEN &&
+    ['permission-denied', 'firestore-401'].includes(result.error) &&
+    _token.value === token
+  ) {
+    _token.expires = 0;
+    const fresh = await staffToken(env, f);
+    if (fresh) result = await fetchDay({ ...env, REQ_TOKEN: fresh }, date, f);
   }
-  const rows = await r.json().catch(() => []);
-  const appts = [];
-  for (const row of rows) {
-    const doc = row && row.document;
-    if (!doc) continue;
-    const f = doc.fields || {};
-    const val = (k) => (f[k] && (f[k].stringValue ?? '')) || '';
-    appts.push({
-      id: (doc.name || '').split('/').pop(),
-      name: val('name'), phone: val('phone'), email: val('email'),
-      service: val('service'), date: val('date'), time: val('time'),
-    });
+  if (!result.ok) return { ok: false, date, error: result.error };
+  const appts = result.appts
+    .filter((a) => !/^cancelled$|^canceled$/i.test(a.status))
+    .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+  const chunks = chunkText(formatReminderDigest(appts, date));
+  let sent = 0;
+  for (const part of chunks) {
+    const r = await sendTelegram(part, env, f).catch(() => ({ ok: false, error: 'telegram-unreachable' }));
+    if (!r.ok) return { ok: false, date, found: appts.length, sent, parts: chunks.length, error: r.error };
+    sent++;
   }
-  return { ok: true, appts, date: cairoTomorrow() };
-}
-
-/** Send tomorrow's appointment summary to Telegram (manual or Cron) */
-async function sendTelegramDigest(env) {
-  const f = env.fetchImpl || fetch;
-  const date = cairoTomorrow();
-  const res = await fetchTodaysAppointments(env, f);
-  if (!res.ok) {
-    const msg = `EGYGRILLZ reminders failed\nReason: ${res.error || 'unknown'}\nDate: ${date}`;
-    await sendTelegram(msg, env, f).catch(() => {});
-    return json({ ok: false, error: res.error, date }, 500);
-  }
-  const text = formatReminderDigest(res.appts, date);
-  const r = await sendTelegram(text, env, f).catch(e => ({ ok: false, error: String(e) }));
-  return json({ ok: !!r.ok, date, found: res.appts.length, telegram: !!r.ok, error: r.error });
-}
-
-async function sendReminders(env) {
-  const f = env.fetchImpl || fetch;
-  const today = cairoTomorrow();
-  const res = await fetchTodaysAppointments(env, f);
-  if (!res.ok) {
-    return json({ ok: false, error: res.error, detail: res.detail, date: today }, 500);
-  }
-  if (!res.appts.length) {
-    return json({ ok: true, date: today, found: 0, sent: 0, skipped: 0 });
-  }
-
-  const results = [];
-  for (const a of res.appts) {
-    if (!a.email) { results.push({ id: a.id, email: false, reason: 'no-email' }); continue; }
-    const r = await sendReminderTo(a, env, f).catch(e => ({ ok: false, error: String(e) }));
-    results.push({ id: a.id, email: r.ok, status: r.status, error: r.error });
-  }
-
-  const sent = results.filter(r => r.email).length;
-
-  // optional summary to the owner
-  if (env.ALERT_EMAIL) {
-    const summary = `EGYGRILLZ reminders sent: ${sent}/${res.appts.length} for ${today}`;
-    await sendViaEmailJS(env.EMAILJS_SUMMARY_TEMPLATE || env.EMAILJS_REMINDER_TEMPLATE, {
-      to_name: 'EGYGRILLZ', to_email: env.ALERT_EMAIL,
-      name: 'EGYGRILLZ', service: '—', date: today, time: '—',
-      message: summary, subject: 'Daily reminders summary',
-    }, env, f).catch(() => {});
-  }
-
-  return json({ ok: true, date: today, found: res.appts.length, sent, results });
+  return { ok: true, date, found: appts.length, sent, parts: chunks.length, telegram: true };
 }
 
 /* ───────────────────────── handler ───────────────────────── */
@@ -3348,24 +3217,29 @@ async function sendReminders(env) {
 export default {
   /** Cron Trigger — daily 12:00 Cairo time + 1-min Telegram polling */
   async scheduled(event, env = {}, ctx = {}) {
-    const work = (async () => {
-      // Every minute: poll incoming Telegram bot updates
-      const bot = await pollTelegram(env).catch(e => ({ ok: false, error: String(e) }));
-      // First day of month at 12:00 Cairo time: send previous month's report
-      const cairoNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
-      if (cairoNow.getUTCDate() === 1 && cairoNow.getUTCHours() === 12 && cairoNow.getUTCMinutes() === 0) {
-        const report = await monthlyReport(env, 1).catch(e => 'Report failed: ' + e);
-        await sendReport(report, env, env.TELEGRAM_CHAT_ID).catch(() => {});
+    const at = new Date(event?.scheduledTime ?? Date.now()),
+      { hour, minute, day } = cairoParts(at);
+    const noon = hour === '12' && minute === '00',
+      f = env.fetchImpl || fetch;
+    const work = Promise.all([
+      pollTelegram(env, f).catch(() => ({ ok: false, error: 'poll-failed' })),
+      noon ? sendTelegramDigest(env, at) : { skipped: true },
+      noon && day === '01'
+        ? monthlyReport(env, 1, f, at)
+            .then((text) => sendReport(text, env, env.TELEGRAM_CHAT_ID, f))
+            .catch(() => ({ ok: false }))
+        : null,
+    ]).then(([bot, digest]) => {
+      if (noon) console[digest.ok ? 'log' : 'error']('[cron] appointment digest', JSON.stringify(digest));
+      if (noon && !digest.ok) {
+        if (digest.sent) event.noRetry?.(); // never replay the entire digest after a confirmed partial send
+        throw new Error('Appointment digest: ' + digest.error);
       }
-      let digest = { skipped: true };
-      if (cairoNow.getUTCHours() === 12 && cairoNow.getUTCMinutes() === 0) {
-        digest = await sendTelegramDigest(env).catch(e => ({ ok: false, error: String(e) }));
-      }
-      console.log('[cron] bot', JSON.stringify(bot), 'digest', JSON.stringify(digest));
       return { bot, digest };
-    })();
+    });
     if (ctx && ctx.waitUntil) ctx.waitUntil(work);
     return work;
+
   },
 
   async fetch(req, env = {}, ctx = {}) {
@@ -3436,6 +3310,7 @@ export default {
     if (url.pathname === '/api/health') {
       return json({
         ok: true,
+        turnstileSiteKey: env.TURNSTILE_SITE_KEY || '',
         channels: {
           telegram: !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID),
           ntfy: !!env.NTFY_TOPIC,
@@ -3448,7 +3323,7 @@ export default {
         endpoints: {
           health: '/api/health',
           rates: 'GET /api/rates',
-          telegram_digest: '/api/remind',
+          telegram_digest: 'POST /api/remind',
           telegram_bot: 'POST /api/telegram',
           pdf: 'POST /api/pdf',
           moulds_order: 'POST /api/moulds/order',
@@ -3465,7 +3340,7 @@ export default {
     if (url.pathname === '/api/telegram') {
       const secret = env.TELEGRAM_WEBHOOK_SECRET || '';
       const given = req.headers.get('X-Telegram-Bot-Api-Secret-Token') || '';
-      if (secret && given !== secret) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      if (!secret || given !== secret) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
       if (req.method !== 'POST') return json({ ok: true, hint: 'POST here from Telegram' }, 200, { origin });
       let update;
       try { update = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
@@ -3476,8 +3351,10 @@ export default {
     /* ── register the webhook (call once after deploying) ── */
     if (url.pathname === '/api/telegram/setup') {
       const secret = env.CRON_SECRET || '';
-      const given = url.searchParams.get('key') || '';
-      if (secret && given !== secret) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      const given = req.headers.get('X-Cron-Key') || '';
+      if(req.method!=='POST') return json({ok:false,error:'use-post'},405,{origin});
+      if (!secret || given !== secret) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      if(!env.TELEGRAM_WEBHOOK_SECRET)return json({ok:false,error:'webhook-secret-required'},503,{origin});
       const host = url.host;
       const f = env.fetchImpl || fetch;
       await clearWebhook(env, f).catch(() => {});
@@ -3495,13 +3372,21 @@ export default {
     }
 
     if (url.pathname === '/api/remind') {
-      const secret = env.CRON_SECRET || '';
-      const given = url.searchParams.get('key') || req.headers.get('X-Cron-Key') || '';
-      if (secret && given !== secret) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
-      // Reminders are sent manually from /editx; Cron sends tomorrow's digest to Telegram only
-      return sendTelegramDigest(env);
+      if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
+      if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
+      const caller = envAsCaller(env, req);
+      const operator = !!env.CRON_SECRET && req.headers.get('X-Cron-Key') === env.CRON_SECRET;
+      if (!caller.REQ_TOKEN && !operator) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      const result = await sendTelegramDigest(caller);
+      const status = result.ok
+        ? 200
+        : result.error === 'permission-denied'
+          ? 403
+          : result.error === 'firestore-401'
+            ? 401
+            : 502;
+      return json(result, status, { origin });
     }
-
 
     /* GET /api/telegram/check — verify bot access to Firestore */
     if (url.pathname === '/api/telegram/check') {
@@ -3524,7 +3409,7 @@ export default {
         const t = await r.text().catch(()=> '');
         return json({ ok:false, step:'read', status:r.status,
           message: r.status === 403
-            ? 'Signed in, but the rules still refuse. The staff UID in isStaff() does not match this account.'
+            ? 'Signed in, but private reads are denied. Verify the admin email or trusted UID/claim, the published studio rules and App Check settings.'
             : 'Firestore said ' + r.status,
           detail: t.slice(0,200) }, 200, { origin });
       }
@@ -3691,7 +3576,7 @@ export default {
          of the MOULDS_KEY — that is what /editx sends. */
       const callerEnv = envAsCaller(env, req);
       const hasCaller = !!callerEnv.REQ_TOKEN;
-      if (key && given !== key && !hasCaller) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      if ((!key || given !== key) && !hasCaller) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
 
       const limit = Math.max(1, Math.min(200, parseInt(url.searchParams.get('limit') || '60', 10) || 60));
       const status = clean(url.searchParams.get('status') || '', 20).toLowerCase();
@@ -3712,7 +3597,7 @@ export default {
       const key = env.MOULDS_KEY || '';
       const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
       const callerEnv = envAsCaller(env, req);
-      if (key && given !== key && !callerEnv.REQ_TOKEN) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      if ((!key || given !== key) && !callerEnv.REQ_TOKEN) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
 
       let body;
       try { body = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }
@@ -3743,7 +3628,7 @@ export default {
       const key = env.MOULDS_KEY || '';
       const given = req.headers.get('X-Moulds-Key') || url.searchParams.get('key') || '';
       const callerEnv = envAsCaller(env, req);
-      if (key && given !== key && !callerEnv.REQ_TOKEN) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
+      if ((!key || given !== key) && !callerEnv.REQ_TOKEN) return json({ ok: false, error: 'unauthorized' }, 401, { origin });
 
       let body;
       try { body = await req.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400, { origin }); }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import '../assets/calc-engine.js';
 import '../assets/order-pricing.js';
+import '../assets/order-design.js';
 import worker from '../cloudflare-worker.js';
 const E = globalThis.CalcEngine;
 beforeEach(() => E.reset());
@@ -59,7 +60,7 @@ test('Marten: four quoted subtotals, two A4 pages, ruled total on page two', () 
 
 test('FDI, mixed materials, partial ice and hand-set stones are priced once', () => {
   const base = { layerId: 'A', name: 'Set A', level: '1 Solid' };
-  const { order, issues } = build({
+  const legacy = state({
     groups: [
       {
         ...base,
@@ -78,6 +79,8 @@ test('FDI, mixed materials, partial ice and hand-set stones are priced once', ()
       { designId: 'A', tooth: 11, kind: 'accent', stoneType: 'CZ', cut: 'round', sizeMm: 1 },
     ],
   });
+  OrderDesign.migrateLegacy(legacy);
+  const { order, issues } = build(legacy);
   assert.deepEqual(issues, []);
   assert.equal(order.lineCount, 1);
   assert.equal(order.teethTotal, 3);
@@ -193,6 +196,7 @@ test('Telegram /pdf serves the saved quotation with identical bytes, not current
     FIREBASE_API_KEY: 'demo',
     TELEGRAM_CHAT_ID: '1',
     TELEGRAM_BOT_TOKEN: 'demo',
+    TELEGRAM_WEBHOOK_SECRET: 'fixture',
     fetchImpl: async (url, opts) => {
       if (url.includes(':runQuery')) return Response.json([{ document: saved }]);
       if (url.includes('/quotes/sample?')) return Response.json(saved);
@@ -206,6 +210,7 @@ test('Telegram /pdf serves the saved quotation with identical bytes, not current
   };
   const request = new Request('https://studio.invalid/api/telegram', {
     method: 'POST',
+    headers: { 'X-Telegram-Bot-Api-Secret-Token': 'fixture' },
     body: JSON.stringify({ message: { chat: { id: 1 }, text: '/pdf Marten' } }),
   });
   const res = await worker.fetch(request, env);
@@ -288,6 +293,7 @@ test('Worker reports issued zeros, studio rounding/deposit, and compares only sa
     FIREBASE_API_KEY: 'test',
     TELEGRAM_CHAT_ID: '1',
     TELEGRAM_BOT_TOKEN: 'test',
+    TELEGRAM_WEBHOOK_SECRET: 'fixture',
     fetchImpl: async (url, opts) => {
       if (url.includes(':runQuery')) {
         const col = JSON.parse(opts.body).structuredQuery.from[0].collectionId;
@@ -315,6 +321,7 @@ test('Worker reports issued zeros, studio rounding/deposit, and compares only sa
     await worker.fetch(
       new Request('https://studio.invalid/api/telegram', {
         method: 'POST',
+        headers: { 'X-Telegram-Bot-Api-Secret-Token': 'fixture' },
         body: JSON.stringify({ message: { chat: { id: 1 }, text } }),
       }),
       env,
