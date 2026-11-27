@@ -1,3 +1,9 @@
 
 # local canvas/dom test harness, not part of the site
 .sandbox/
+
+# Local test tools and Firebase emulator logs (never deployed)
+/tests/node_modules/
+/.firebase/
+/firebase-debug.log
+/firestore-debug.log

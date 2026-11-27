@@ -8,7 +8,7 @@
  *  All pricing numbers live in Firestore -> settings/pricing.
  *  Studio & booking settings live in Firestore -> settings/site.
  * ═══════════════════════════════════════════════════════════════════════════ */
-(function (global) {
+(function createCalcEngine(global) {
   'use strict';
 
   const FIRESTORE_PROJECT = 'egygrillz-studio';
@@ -740,12 +740,15 @@
     /* Totals always land on a whole EGP (and on the studio's rounding step
        when one is configured) so no quotation, invoice or catalogue card can
        ever print a figure like 21,898.62. */
-    const total = o.round !== false
+    const calculatedTotal = o.round !== false
       ? roundUpTo(preRound, roundTo > 1 ? roundTo : 1)
       : money(preRound);
 
-    const depositPct = Number(o.depositPct) || 0;
-    const deposit = Math.round(total * depositPct / 100);
+    const hasAmount = v => v != null && v !== '' && Number.isFinite(Number(v)) && Number(v) >= 0;
+    const agreed = hasAmount(o.agreedTotal), depositManual = hasAmount(o.depositAmount);
+    const total = agreed ? money(o.agreedTotal) : calculatedTotal;
+    const depositPct = Math.max(0, Math.min(100, Number(o.depositPct) || 0));
+    const deposit = depositManual ? Math.min(total, money(o.depositAmount)) : money(total * depositPct / 100);
 
     return {
       lines: priced,
@@ -761,6 +764,7 @@
       moldCost: money(moldCost),
       discountAmount: money(discountAmount),
       preRound: money(preRound),
+      ...(agreed && {calculatedTotal}), ...(depositManual && {depositManual}),
       total: money(total),
       depositPct,
       deposit: money(deposit),
@@ -815,8 +819,8 @@
     if (order.moldCost) out.push(`Mold (${L.mold[order.mold]}): ${fmt(order.moldCost)} ${S.currency}`);
     if (order.discountAmount) out.push(`Discount: -${fmt(order.discountAmount)} ${S.currency}`);
     out.push(`TOTAL: ${fmt(order.total)} ${S.currency}`);
-    if (order.depositPct) {
-      out.push(`Deposit (${order.depositPct}%): ${fmt(order.deposit)} ${S.currency}`);
+    if (order.depositPct || order.depositManual) {
+      out.push(`${order.depositManual ? 'Agreed deposit due' : `Deposit (${order.depositPct}%)`}: ${fmt(order.deposit)} ${S.currency}`);
       out.push(`Balance before delivery: ${fmt(order.balance)} ${S.currency}`);
     }
     if (o.includeCode) {
@@ -955,16 +959,16 @@
                      pear: 'a', radiant: 'd', heart: 'h', marquee: 'm', marquise: 'm',
                      baguette: 'b', taperedbaguette: 't' };
   const CODE_CUT_R = flipMap(CODE_CUT);
-  const CODE_SET_R = flipMap(CODE_SET);
-  const CODE_COV = { standardpave: 's', honeycomb: 'h', micro: 'i', baguette: 'b' };
+  const CODE_SET_R = {...flipMap(CODE_SET), p:'twoprong', b:'bezelfull'};
+  const CODE_COV = { standardpave: 's', honeycomb: 'h', micro: 'i', baguette: 'b', frenchpave:'f', micropave:'m', channel:'c', invisible:'v' };
   const CODE_COV_R = flipMap(CODE_COV);
-  const CODE_PL = { yellowgold: 'py', whitegold: 'pw', rosegold: 'pr', blackrhodium: 'pb', silverplating: 'ps' };
+  const CODE_PL = { yellowgold: 'py', whitegold: 'pw', rosegold: 'pr', blackrhodium: 'pb', blackgold:'pk', silverplating: 'ps' };
   const CODE_PL_R = flipMap(CODE_PL);
-  const CODE_EN = { '1color': 'e1', '2color': 'e2', '3plus': 'e3' };
+  const CODE_EN = { '1color': 'e1', '2color': 'e2', '3plus': 'e3', single:'es', multi:'em', master:'ex' };
   const CODE_EN_R = flipMap(CODE_EN);
   const CODE_EG = { small: 'vs', medium: 'vm', large: 'vl' };
   const CODE_EG_R = flipMap(CODE_EG);
-  const CODE_AN = { single: 'ns', dual: 'nd', rainbow: 'nr' };
+  const CODE_AN = { single: 'ns', dual: 'nd', rainbow: 'nr', multi:'nm' };
   const CODE_AN_R = flipMap(CODE_AN);
   const CODE_TL = { rush: 'tr', emergency: 'te' };
   const CODE_TL_R = flipMap(CODE_TL);
@@ -972,13 +976,13 @@
   const CODE_MD_R = flipMap(CODE_MD);
   const CODE_SVC = {
     impression: 'i', consultation: 'c', toothgem: 'g', polishing: 'p',
-    deepclean: 'b', repair: 'r', resize: 'e', remake: 'w', custom: 'x',
+    fitting:'f', shipping:'s', deepclean: 'b', repair: 'r', resize: 'e', remake: 'w', custom: 'x',
   };
   const CODE_SVC_R = flipMap(CODE_SVC);
 
   function fmtRateTok(n) {
     const v = Math.round((Number(n) || 0) * 100) / 100;
-    return v > 0 ? String(v) : '';
+    return String(v >= 0 ? v : 0);
   }
 
   /** `^<cut><size>` on a stone token — omitted when it is the plain default.
@@ -1008,7 +1012,7 @@
       matTok = 'g' + (c.karat || '18');
       const gp = Number(c.goldPrice || 0);
       if (gp > 0 && gp !== state.lastGoldRate) {
-        matTok += '@' + fmtRateTok(gp);
+        matTok += '@' + fmtRateTok(gp).replace('.', 'p');
         state.lastGoldRate = gp;
       }
     }
@@ -1019,8 +1023,8 @@
       /* both tokens are emitted when a tooth group is iced out AND accented */
       if (c.accent && c.accent.count > 0) {
         let at = 'a' + c.accent.count + (CODE_STYPE[c.accent.type] || 'c') + (CODE_SET[c.accent.setting] || 'f');
-        if ((c.accent.type === 'labgrown' || c.accent.type === 'natural') && Number(c.accent.price) > 0) {
-          at += '@' + fmtRateTok(c.accent.price);
+        if ((c.accent.type === 'labgrown' || c.accent.type === 'natural') && c.accent.price != null) {
+          at += '@' + fmtRateTok(c.accent.price).replace('.', 'p');
         }
         /* cut & size ride as a suffix only when they are not the default,
            so an ordinary round 1 mm stone keeps the short code it always had */
@@ -1031,8 +1035,8 @@
         toks.push('fb');
       } else if (c.full) {
         let ft = 'f' + (CODE_STYPE[c.full.type] || 'm') + (CODE_COV[c.full.coverage] || 's');
-        if ((c.full.type === 'labgrown' || c.full.type === 'natural') && Number(c.full.price) > 0) {
-          ft += '@' + fmtRateTok(c.full.price);
+        if ((c.full.type === 'labgrown' || c.full.type === 'natural') && c.full.price != null) {
+          ft += '@' + fmtRateTok(c.full.price).replace('.', 'p');
         }
         ft += stoneSuffix(c.full);
         toks.push(ft);
@@ -1046,7 +1050,7 @@
   }
 
   function decodeGroupToken(rawTok, state) {
-    const parts = String(rawTok || '').toLowerCase().split('.').filter(Boolean);
+    const parts = String(rawTok || '').toLowerCase().split('.').filter(Boolean).map(t => t.replace(/@(\d+)p(\d+)/, '@$1.$2'));
     if (parts.length < 2) return null;
     const mPart = parts[0];
     let material = 'chrome';
@@ -1133,7 +1137,7 @@
       if (tk[0] === 'f' && allowsStones(material)) {
         const sfx = readStoneSuffix(tk);
         const core = tk.split('^')[0];
-        const fm = core.match(/^f([cmln])([shib])(?:@(\d+(?:\.\d+)?))?$/);
+        const fm = core.match(/^f([cmln])([shibfmcv])(?:@(\d+(?:\.\d+)?))?$/);
         if (fm) {
           if (g.level === '0.5') {
             g.full = { bars: true };
@@ -1546,338 +1550,197 @@
 
   /* ───────────── zero-dependency branded client/staff PDF builder ───────────── */
 
-  function pdfClean(str) {
-    return String(str == null ? '' : str)
-      .replace(/[\u2018\u2019]/g, "'")
-      .replace(/[\u201C\u201D]/g, '"')
-      .replace(/[\u2013\u2014]/g, '-')
-      .replace(/\u00B7|\u2022/g, ' - ')
-      .replace(/\u00D7/g, 'x')
-      .replace(/\u2192/g, '->')
-      .replace(/\u00E9/g, 'e')
-      .replace(/[^\x20-\x7E]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+  // Standard PDF fonts are Latin. Preserve Arabic names in readable transliteration
+  // rather than silently dropping a client or emitting broken WinAnsi glyphs.
+  const pdfArabic = Object.fromEntries(Array.from('ءآأؤإئابتثجحخدذرزسشصضطظعغفقكلمنهويىة٠١٢٣٤٥٦٧٨٩،؟',
+    (ch, i) => [ch, "' aa a w i y a b t th j h kh d dh r z s sh s d t z a gh f q k l m n h w y a a 0 1 2 3 4 5 6 7 8 9 , ?".split(' ')[i]]));
+  function pdfClean(value) {
+    return String(value ?? '').normalize('NFKC').replace(/[\u0600-\u06ff]/g, c => pdfArabic[c] || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+      .replace(/[–—]/g, '-').replace(/[·•]/g, ' - ').replace(/×/g, 'x').replace(/[^\S ]+/g, ' ').replace(/[^ -~]/g, '').trim();
+  }
+  const pdfEsc = s => pdfClean(s).replace(/[\\()]/g, '\\$&');
+  function quotePdfFilename(meta = {}) {
+    const stem = meta.filename || ['EGYGRILLZ-Quotation', pdfClean(meta.clientName || meta.id)].filter(Boolean).join('-');
+    return (pdfClean(stem).replace(/\.pdf$/i, '').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 110) || 'EGYGRILLZ-Quotation') + '.pdf';
   }
 
-  function pdfEsc(str) {
-    return pdfClean(str).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  // Issued quotations are snapshots: a later change to the gold rate or studio
+  // settings must not change the document downloaded from history or the bot.
+  function savedQuoteOrder(quote) {
+    const o = quote && (quote.order || quote);
+    if (!o || !Number.isFinite(o.total)) return null;
+    const lines = o.lines || [], services = o.services || [];
+    if (!Array.isArray(lines) || !Array.isArray(services) || !(lines.length || services.length) ||
+        [...lines, ...services].some(i => !Number.isFinite(i?.subtotal))) return null;
+    const sum = (arr, field) => arr.reduce((n, x) => n + (Number(x[field]) || 0), 0);
+    return { linesSubtotal: sum(lines, 'subtotal'), servicesSubtotal: sum(services, 'subtotal'),
+      teethTotal: sum(lines, 'teeth'), ...o, lines, services };
   }
 
-  function pdfWrap(text, maxChars) {
-    const clean = pdfClean(text);
-    if (!clean) return [];
-    if (clean.length <= maxChars) return [clean];
-    const words = clean.split(' ');
-    const lines = [];
-    let cur = '';
-    words.forEach((w) => {
-      if (!cur) {
-        cur = w.slice(0, maxChars);
-      } else if ((cur + ' ' + w).length <= maxChars) {
-        cur += ' ' + w;
-      } else {
-        lines.push(cur);
-        cur = w.slice(0, maxChars);
-      }
-    });
-    if (cur) lines.push(cur);
-    return lines;
+  // An estimate describes money DUE, not money received. Both invoice studios
+  // consume these exact issued amounts rather than re-pricing individual teeth.
+  function matchQuoteClient(clients, q) {
+    const phone = s => String(s || '').replace(/\D/g,'').replace(/^(?:0020|20)(?=1\d{9}$)/, '0');
+    const normal = s => String(s || '').trim().toLowerCase();
+    const digits = phone(q.clientPhone), email = normal(q.clientEmail), name = normal(q.clientName);
+    const matches = clients.filter(c => digits ? (phone(c.phone) === digits || c.id === digits)
+      : email ? normal(c.email) === email : name && normal(c.name) === name);
+    return matches.length === 1 ? matches[0] : null;
+  }
+  function quoteToInvoice(q) {
+    const order = savedQuoteOrder(q);
+    if (!order) return null;
+    const items = order.lines.map(l => ({ name: l.name || (LABELS.material[l.material] || 'Custom') + ' Grillz',
+      spec: (l.groups || [l]).map(g => [g.label, lineLabel(g), (g.toothIds || []).join(', '),
+        g.accent && `${g.accent.cut || 'round'} ${g.accent.size || 1} mm, ${LABELS.setting[g.accent.setting] || g.accent.setting}`,
+        g.full && !g.full.bars && LABELS.coverage[g.full.coverage]].filter(Boolean).join(' / ')).join(' ; '),
+      qty: 1, price: l.subtotal, line: l }));
+    order.services.forEach(s => items.push({ name: s.name, spec: s.notes || 'Studio service', qty: s.qty, price: s.unitPrice, serviceType: s.type }));
+    if (order.timelineAmount) items.push({ name: LABELS.timeline[order.timeline] + ' timeline', spec: `+${order.timelinePct}%`, qty: 1, price: order.timelineAmount });
+    if (order.moldCost) items.push({ name: 'Mold', spec: LABELS.mold[order.mold], qty: 1, price: order.moldCost });
+    let discountAmount = Number(order.discountAmount) || 0;
+    const gap = order.total - (items.reduce((n,i) => n + money(i.qty * i.price), 0) - discountAmount);
+    if (gap > 0) items.push({ name: order.calculatedTotal != null ? 'Agreed price adjustment' : 'Rounding adjustment', spec: '', qty: 1, price: gap });
+    if (gap < 0) discountAmount -= gap;
+    return { quoteId: q.id || '', clientName: q.clientName || '', clientPhone: q.clientPhone || '', clientEmail: q.clientEmail || '',
+      notes: [q.orderNo, q.notes, order.deposit ? `Deposit due: ${fmt(order.deposit)} ${order.currency || 'EGP'}.` : ''].filter(Boolean).join('\n'),
+      items, total: order.total, discountAmount, depositDue: order.deposit || 0, depositAmount: 0 };
   }
 
-  /**
-   * Build a genuine A4 EGYGRILLZ Bespoke Estimate PDF (Uint8Array).
-   * Works everywhere (offline, mobile Safari, Chrome, WhatsApp webview) with zero external libs.
-   */
-  function buildQuotePdfBytes(rawOrder, meta) {
-    const m = meta || {};
-    const order = (rawOrder && typeof rawOrder.total === 'number' && Array.isArray(rawOrder.lines))
-      ? rawOrder
-      : calculateOrder((rawOrder && rawOrder.lines) || [], rawOrder || {});
-    const cur = order.currency || S.currency || 'EGP';
-    const studioName = pdfClean(m.studioName || 'EGYGRILLZ') || 'EGYGRILLZ';
-    const W = 595.28, H = 841.89, ML = 42, MR = 42, CW = W - ML - MR;
-    const cName = pdfClean(m.clientName || '') || '—';
-    const cPhone = pdfClean(m.clientPhone || '');
-    const cNotes = pdfClean(m.notes || '');
-    const lines = Array.isArray(order.lines) ? order.lines : [];
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const dateObj = m.date ? new Date(m.date) : now;
-    const dateStr = Number.isNaN(dateObj.getTime())
-      ? pdfClean(m.date)
-      : `${pad(dateObj.getDate())}/${pad(dateObj.getMonth() + 1)}/${dateObj.getFullYear()}`;
-    const timeStr = pdfClean(m.time || `${pad(now.getHours())}:${pad(now.getMinutes())}`);
-    const code = pdfClean(m.code || '');
+  // Same reconciled rows on the estimate screen, Quotes and the issued PDF.
+  function quoteTotalRows(order) {
+    const autoTotal = order.calculatedTotal ?? order.total;
+    const rounding = autoTotal - order.linesSubtotal - order.servicesSubtotal - (order.timelineAmount || 0) - (order.moldCost || 0) + (order.discountAmount || 0);
+    const adj = order.total - autoTotal;
+    const rows = [[`Subtotal (${order.lines.length} designs)`, order.linesSubtotal]];
+    if (order.services.length) rows.push(['Additional services', order.servicesSubtotal]);
+    rows.push([`Timeline - ${L.timeline[order.timeline] || 'Standard'}${order.timelinePct ? ' (+'+order.timelinePct+'%)' : ' (no surcharge)'}`, order.timelineAmount || 0]);
+    rows.push(['Mold - ' + (L.mold[order.mold] || 'None'), order.moldCost || 0]);
+    if (order.discountAmount) rows.push(['Discount', -order.discountAmount]);
+    if (rounding) rows.push(['Rounding adjustment', rounding]);
+    if (adj) rows.push(['Agreed price adjustment', adj]);
+    return rows;
+  }
 
-    const pages = [];
-    let cmds = [];
-    let y = H;
-    const f2 = (n) => Number(n).toFixed(2);
-    const push = (s) => cmds.push(s);
-    const rectFill = (x, topY, w, h, r, g, b) => {
-      push(`${f2(r)} ${f2(g)} ${f2(b)} rg ${f2(x)} ${f2(topY - h)} ${f2(w)} ${f2(h)} re f`);
-    };
-    const hLine = (x1, x2, py, r, g, b, lw) => {
-      push(`${f2(lw || 0.5)} w ${f2(r)} ${f2(g)} ${f2(b)} RG ${f2(x1)} ${f2(py)} m ${f2(x2)} ${f2(py)} l S`);
-    };
-    const textAt = (txt, x, py, font, size, r, g, b) => {
-      const value = pdfEsc(txt);
-      if (value) push(`BT /${font} ${f2(size)} Tf ${f2(r)} ${f2(g)} ${f2(b)} rg 1 0 0 1 ${f2(x)} ${f2(py)} Tm (${value}) Tj ET`);
-    };
-    const textRight = (txt, rightX, py, font, size, r, g, b) => {
-      const clean = pdfClean(txt);
-      if (!clean) return;
-      const approxW = clean.length * size * (font === 'F2' || font === 'F4' ? 0.54 : 0.50);
-      textAt(clean, Math.max(ML, rightX - approxW), py, font, size, r, g, b);
-    };
-    const moneyText = (n) => (Number(n) > 0 ? `${fmt(n)} ${cur}` : '-');
-    const matText = (line) => line.material === 'gold'
-      ? `Gold ${line.karat || '18'}K`
-      : (L.material[line.material] || line.material || '—');
-    const levelText = (line) => {
-      const lv = String(line.level || '1');
-      const name = L.level[lv] || `Level ${lv}`;
-      const pct = Number(line.designPct) || 0;
-      return `${name} (+${pct}%)`;
-    };
-    const stoneText = (line) => {
-      const parts = [];
-      if (line.accent && Number(line.accent.count) > 0) {
-        const type = L.accentType[line.accent.type] || line.accent.type || 'Stone';
-        const setting = L.setting[line.accent.setting] || line.accent.setting || 'Flush';
-        parts.push(`${line.accent.count} ${type} accent, ${setting}`);
+  // Adobe Helvetica metrics (ASCII, thousandths of an em). Amounts are flush
+  // right even when they contain narrow digits/punctuation or bold glyphs.
+  const pdfWidths = [
+    [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584],
+    [278, 333, 474, 556, 556, 889, 722, 238, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 333, 333, 584, 584, 584, 611, 975, 722, 722, 722, 722, 667, 611, 778, 722, 278, 556, 722, 611, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 333, 278, 333, 584, 556, 333, 556, 611, 556, 611, 556, 333, 611, 611, 278, 278, 556, 278, 889, 611, 611, 611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584],
+  ];
+  const pdfWidth = (s, size, bold) => Array.from(s).reduce((w, ch) => w + (pdfWidths[bold ? 1 : 0][ch.charCodeAt(0) - 32] || 500), 0) * size / 1000;
+  function pdfWrap(value, width, size, bold = false) {
+    const out = []; let line = '';
+    for (const word of pdfClean(value).split(' ')) {
+      if (line && pdfWidth(line + ' ' + word, size, bold) > width) { out.push(line); line = ''; }
+      if (line) line += ' ';
+      for (const ch of word) {
+        if (line && pdfWidth(line + ch, size, bold) > width) { out.push(line); line = ''; }
+        line += ch;
       }
-      if (line.full) {
-        if (line.full.bars || String(line.level) === '0.5') parts.push('Full coverage bars');
-        else {
-          const type = L.accentType[line.full.type] || line.full.type || 'Diamond';
-          const cover = L.coverage[line.full.coverage] || line.full.coverage || '';
-          parts.push(`Full coverage ${type}${cover ? `, ${cover}` : ''}`);
-        }
-      }
-      return parts.length ? parts.join(' / ') : 'None';
-    };
-    const drawPageHeader = (first) => {
-      cmds = [];
-      rectFill(0, H, W, H, 1, 1, 1);
-      if (first) {
-        textAt(studioName, ML, H - 46, 'F2', 23, 0.06, 0.06, 0.06);
-        textAt('Beyond Jewelry.', ML, H - 63, 'F1', 9, 0.45, 0.45, 0.45);
-        textAt('Custom dental jewelry - Cairo, Egypt', ML, H - 79, 'F1', 8, 0.45, 0.45, 0.45);
-        textRight('DATE   ' + dateStr, W - MR, H - 44, 'F1', 9, 0.22, 0.22, 0.22);
-        textRight('TIME   ' + timeStr, W - MR, H - 59, 'F1', 9, 0.22, 0.22, 0.22);
-        textRight('QUOTATION', W - MR, H - 80, 'F2', 12, 0.06, 0.06, 0.06);
-        hLine(ML, W - MR, H - 99, 0.82, 0.82, 0.82, 0.8);
-        y = H - 122;
-      } else {
-        textAt(studioName, ML, H - 38, 'F2', 16, 0.06, 0.06, 0.06);
-        textRight('QUOTATION - CONTINUED', W - MR, H - 38, 'F2', 9, 0.25, 0.25, 0.25);
-        hLine(ML, W - MR, H - 52, 0.82, 0.82, 0.82, 0.7);
-        y = H - 74;
-      }
-    };
-    const finishPage = () => {
-      hLine(ML, W - MR, 43, 0.87, 0.87, 0.87, 0.5);
-      textAt('egygrillz.com  -  @egygrillz  -  booking: egygrillz.com/booking.html', ML, 29, 'F1', 7.2, 0.55, 0.55, 0.55);
-      pages.push(cmds.join('\n'));
-    };
-    const need = (height) => {
-      if (y - height < 61) {
-        finishPage();
-        drawPageHeader(false);
-      }
-    };
-    const drawRow = (label, value, opts) => {
-      const o = opts || {};
-      const indent = Number(o.indent) || 0;
-      const font = o.bold ? 'F2' : 'F1';
-      const color = o.bold ? 0.12 : 0.25;
-      const size = o.size || 8.8;
-      const left = pdfWrap(label, 44);
-      const right = pdfWrap(String(value == null ? '' : value), 43);
-      const rows = Math.max(1, left.length, right.length);
-      need(rows * 13 + 2);
-      if (o.rule) hLine(ML + indent, W - MR, y + 5, 0.84, 0.84, 0.84, 0.45);
-      for (let i = 0; i < rows; i++) {
-        textAt(left[i] || '', ML + indent, y, font, size, color, color, color);
-        textRight(right[i] || '', W - MR, y, font, size, color, color, color);
-        y -= 13;
-      }
-    };
-    const sectionTitle = (title, sub) => {
-      need(34);
-      textAt(title, ML, y, 'F2', 10.5, 0.10, 0.10, 0.10);
-      if (sub) textRight(sub, W - MR, y, 'F2', 9, 0.20, 0.20, 0.20);
-      y -= 7;
-      hLine(ML, W - MR, y, 0.82, 0.82, 0.82, 0.65);
-      y -= 14;
-    };
-
-    drawPageHeader(true);
-    // Compact quotation summary, mirroring the supplied reference.
-    textAt('Client: ' + cName, ML, y, 'F1', 8.6, 0.12, 0.12, 0.12);
-    textAt('Designs: ' + lines.length, ML + 190, y, 'F1', 8.6, 0.12, 0.12, 0.12);
-    textAt('Teeth total: ' + (order.teethTotal || 0), ML + 290, y, 'F1', 8.6, 0.12, 0.12, 0.12);
-    textRight('Timeline: ' + (L.timeline[order.timeline] || 'Standard'), W - MR, y, 'F1', 8.6, 0.12, 0.12, 0.12);
-    y -= 18;
-    if (cPhone) {
-      textAt('Phone: ' + cPhone, ML, y, 'F1', 8.1, 0.35, 0.35, 0.35);
-      y -= 14;
     }
-    pdfWrap('Prices in ' + cur + '. This quotation is an estimate - gold and diamond rates are confirmed against the day of production.', 112)
-      .forEach((line) => { need(12); textAt(line, ML, y, 'F1', 7.7, 0.48, 0.48, 0.48); y -= 11; });
-    y -= 5;
+    if (line) out.push(line);
+    return out;
+  }
 
-    lines.forEach((line, index) => {
-      const givenName = pdfClean(line.name || '');
-      const title = /^design\s+\d+$/i.test(givenName)
-        ? givenName
-        : `Design ${index + 1}${givenName ? ': ' + givenName : ''}`;
-      need(44);
-      sectionTitle(`${index + 1}. ${title}`, '');
-      const mixed = line.isMixed && Array.isArray(line.groups) && line.groups.length > 1;
-      if (!mixed) {
-        const toothSuffix = Array.isArray(line.toothIds) && line.toothIds.length
-          ? ` (${line.toothIds.join(', ')})` : '';
-        drawRow('Material', matText(line));
-        drawRow('Teeth', `${line.teeth || 1}${toothSuffix}`);
-        drawRow('Design level', levelText(line));
-        drawRow('Base cost', moneyText(line.materialTotal));
-        drawRow('Design cost', moneyText(line.designCost));
-        drawRow('Stones', stoneText(line) === 'None' ? 'None' : `${stoneText(line)} - ${moneyText(line.stoneCost)}`);
-        if (line.plating && line.plating !== 'none') {
-          drawRow('Plating', `${L.plating[line.plating] || line.plating} - ${moneyText(line.platingCost)}`);
-        }
-        if (line.enamel && line.enamel !== 'none') drawRow('Enamel', `${L.enamel[line.enamel] || line.enamel} - ${moneyText(line.enamelCost)}`);
-        if (line.engraving && line.engraving !== 'none') drawRow('Engraving', `${L.engraving[line.engraving] || line.engraving} - ${moneyText(line.engravingCost)}`);
-        if (line.anodize && line.anodize !== 'none') drawRow('Anodize', `${L.anodize[line.anodize] || line.anodize} - ${moneyText(line.anodizeCost)}`);
-        drawRow('Design subtotal', `${fmt(line.subtotal)} ${cur}`, { bold: true, rule: true });
-      } else {
-        drawRow('Material', line.mixedMaterials ? 'Mixed materials' : matText(line));
-        drawRow('Teeth total', String(line.teeth || 0));
-        let toothCursor = 0;
-        line.groups.forEach((group, groupIndex) => {
-          const count = Math.max(1, Math.round(Number(group.teeth) || 1));
-          const optionalRows = (group.enamel && group.enamel !== 'none' ? 1 : 0)
-            + (group.engraving && group.engraving !== 'none' ? 1 : 0)
-            + (group.anodize && group.anodize !== 'none' ? 1 : 0);
-          const estimatedGroupHeight = 30 + count * (12 + (7 + optionalRows) * 13 + 3);
-          if (y - estimatedGroupHeight < 61 && y < H - 100) {
-            finishPage();
-            drawPageHeader(false);
-            sectionTitle(`${index + 1}. ${title} (continued)`, '');
-          }
-          const ids = Array.isArray(group.toothIds) && group.toothIds.length
-            ? group.toothIds.slice(0, count)
-            : (Array.isArray(line.toothIds) ? line.toothIds.slice(toothCursor, toothCursor + count) : []);
-          toothCursor += count;
-          const groupName = group.label ? `Group ${groupIndex + 1}: ${group.label}` : `Group ${groupIndex + 1}`;
-          need(28);
-          textAt(groupName, ML + 8, y, 'F2', 8.8, 0.22, 0.22, 0.22);
-          y -= 14;
-          const componentRows = [
-            ['Base cost', Number(group.materialTotal) || 0],
-            ['Design cost', Number(group.designCost) || 0],
-            ['Stones', Number(group.stoneCost) || 0],
-            ['Plating', Number(group.platingCost) || 0],
-            ['Enamel', Number(group.enamelCost) || 0],
-            ['Engraving', Number(group.engravingCost) || 0],
-            ['Anodize', Number(group.anodizeCost) || 0],
-          ];
-          const split = componentRows.map((row) => {
-            const total = Math.round(Number(row[1]) || 0);
-            const each = Math.floor(total / count);
-            const remainder = total - each * count;
-            return Array.from({ length: count }, (_, toothIndex) => each + (toothIndex < remainder ? 1 : 0));
-          });
-          const toothTotals = Array.from({ length: count }, (_, toothIndex) =>
-            split.reduce((sum, shares) => sum + shares[toothIndex], 0));
-          const difference = Math.round(Number(group.subtotal) || 0) - toothTotals.reduce((sum, n) => sum + n, 0);
-          if (difference && toothTotals.length) toothTotals[toothTotals.length - 1] += difference;
-          const groupMaterial = group.material === 'gold'
-            ? `Gold ${group.karat || '18'}K`
-            : (L.material[group.material] || group.material || '—');
-          const groupLevel = levelText(group);
-          const groupStone = stoneText(group);
-          const rowsForTooth = (ti) => {
-            const toothId = ids[ti] || `Tooth ${ti + 1}`;
-            const prices = split.map((shares) => shares[ti]);
-            if (ti === count - 1 && difference) prices[prices.length - 1] += difference;
-            textAt(`Tooth ${toothId}`, ML + 16, y, 'F2', 8.2, 0.18, 0.18, 0.18);
-            textRight(`${fmt(toothTotals[ti])} ${cur}`, W - MR, y, 'F2', 8.2, 0.18, 0.18, 0.18);
-            y -= 12;
-            drawRow('Material', groupMaterial, { indent: 24, size: 7.8 });
-            drawRow('Design level', groupLevel, { indent: 24, size: 7.8 });
-            drawRow('Base cost', moneyText(prices[0]), { indent: 24, size: 7.8 });
-            drawRow('Design cost', moneyText(prices[1]), { indent: 24, size: 7.8 });
-            drawRow('Stones', groupStone === 'None' ? 'None' : `${groupStone} - ${moneyText(prices[2])}`, { indent: 24, size: 7.8 });
-            if (group.plating && group.plating !== 'none') {
-              drawRow('Plating', `${L.plating[group.plating] || group.plating} - ${moneyText(prices[3])}`, { indent: 24, size: 7.8 });
-            }
-            if (group.enamel && group.enamel !== 'none') drawRow('Enamel', `${L.enamel[group.enamel] || group.enamel} - ${moneyText(prices[4])}`, { indent: 24, size: 7.8 });
-            if (group.engraving && group.engraving !== 'none') drawRow('Engraving', `${L.engraving[group.engraving] || group.engraving} - ${moneyText(prices[5])}`, { indent: 24, size: 7.8 });
-            if (group.anodize && group.anodize !== 'none') drawRow('Anodize', `${L.anodize[group.anodize] || group.anodize} - ${moneyText(prices[6])}`, { indent: 24, size: 7.8 });
-            drawRow('Tooth subtotal', `${fmt(toothTotals[ti])} ${cur}`, { bold: true, indent: 24, size: 7.8 });
-            y -= 3;
-          };
-          for (let ti = 0; ti < count; ti++) rowsForTooth(ti);
-          drawRow('Group subtotal', `${fmt(group.subtotal)} ${cur}`, { bold: true, indent: 8, rule: true });
-          y -= 5;
+  /** The one A4 quotation layout, used for browser downloads, uploads and Worker bytes. */
+  function buildQuotePdfBytes(rawOrder, meta = {}) {
+    const m = meta;
+    const order = savedQuoteOrder(rawOrder) || calculateOrder(rawOrder?.lines || [], rawOrder || {});
+    const { lines, services } = order, cur = order.currency || 'EGP';
+    const amt = n => fmt(n) + ' ' + cur;
+    const issued = m.date || m.createdAt;
+    const when = new Date(issued?.toDate?.() || issued || Date.now());
+    const stamp = Number.isFinite(when.getTime()) ? when : new Date();
+    const date = stamp.toLocaleDateString('en-GB', { timeZone: 'Africa/Cairo' });
+    const time = m.time || stamp.toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit' });
+    const W = 595.28, H = 841.89, M = 40, R = W - M, bottom = H - 56;
+    const f2 = n => Number(n).toFixed(2);
+    const pages = [[]]; let ops = pages[0], y = 0;
+    function text(value, x, top, size = 9.5, bold = false, right = false, gray = 0) {
+      const str = pdfClean(value);
+      if (right) x -= pdfWidth(str, size, bold);
+      if (str) ops.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${gray} g 1 0 0 1 ${f2(x)} ${f2(H-top)} Tm (${pdfEsc(str)}) Tj ET`);
+    }
+    const rule = (top, dark = false) => ops.push(`${dark ? '0' : '0.86'} G 1 w ${M} ${f2(H-top)} m ${f2(R)} ${f2(H-top)} l S`);
+    const need = h => { if (y + h > bottom) { ops = []; pages.push(ops); y = 54; } };
+    function title(label) {
+      const wrapped = pdfWrap(label, R-M, 10.5, true);
+      need(24 + wrapped.length * 14);
+      wrapped.forEach(t => { text(t, M, y, 10.5, true); y += 14; });
+      rule(y - 9); y += 5;
+    }
+    function row(label, value, bold = false, indent = 10) {
+      const left = pdfWrap(label, 215-indent, 9.5, bold), right = pdfWrap(value, R-M-225, 9.5, bold);
+      for (let i = 0; i < Math.max(left.length, right.length); i++) {
+        need(15); text(left[i], M+indent, y, 9.5, bold); text(right[i], R, y, 9.5, bold, true); y += 15;
+      }
+    }
+    function paragraph(value, size, gray) {
+      pdfWrap(value, R-M, size).forEach(t => { need(12); text(t, M, y, size, false, false, gray); y += 12; });
+    }
+    // The studio's interlocking mark (logo/logo_black.png), as vector outlines.
+    ops.push(`q 0 g 0.314 0 0 -0.297 ${M} ${f2(H-30)} cm 0 44 m 27 0 l 74 0 l 74 15 l 35 15 l 18 44 l 65 104 l 83 81 l 75 71 l 60 71 l 60 56 l 81 56 l 102 81 l 65 128 l h f 111 0 m 158 0 l 185 44 l 120 128 l 94 96 l 104 83 l 120 104 l 167 44 l 150 15 l 111 15 l h f 79 0 m 93 15 l 106 0 l 106 16 l 100 23 l 100 40 l 93 50 l 85 40 l 85 23 l 79 16 l h f 102 56 m 125 56 l 125 71 l 110 71 l 104 79 l 94 67 l h f Q`);
+    text(m.studioName || 'EGYGRILLZ', M+80, 50, 15, true);
+    text('Beyond Jewelry.', M+80, 62, 8, false, false, 0.48);
+    text('Custom dental jewelry - Cairo, Egypt', M+80, 72, 8, false, false, 0.48);
+    text('DATE   ' + date, R, 46, 9, false, true, 0.22);
+    text('TIME   ' + time, R, 58, 9, false, true, 0.22);
+    text('QUOTATION', R, 74, 11, true, true); rule(90);
+    y = 106;
+    const nameLines = pdfWrap('Client: ' + (pdfClean(m.clientName) || '-'), 180, 9.5);
+    text(nameLines[0], M, y);
+    text('Designs: ' + lines.length, M+190, y); text('Teeth total: ' + order.teethTotal, M+280, y);
+    text('Timeline: ' + (L.timeline[order.timeline] || 'Standard'), M+380, y);
+    y += 14;
+    nameLines.slice(1).forEach(t => { need(14); text(t, M, y); y += 14; });
+    const contact = [m.clientPhone, m.clientEmail].filter(Boolean).join('  /  ');
+    if (contact) paragraph(contact, 8, 0.35);
+    paragraph(`Prices in ${cur}. This quotation is an estimate - gold and diamond rates are confirmed against the day of production.`, 8, 0.48);
+    y += 6;
+    function details(g) {
+      const stone = [];
+      if (g.accent) stone.push(`${g.accent.count} x ${L.accentType[g.accent.type] || g.accent.type}, ${L.setting[g.accent.setting] || g.accent.setting}, ${g.accent.cut || 'round'} ${g.accent.size || 1} mm`);
+      if (g.full) stone.push(g.full.bars ? 'Full coverage bars' : `Full ${L.accentType[g.full.type] || g.full.type}, ${L.coverage[g.full.coverage] || g.full.coverage}, ${g.full.cut || 'round'} ${g.full.size || 1} mm`);
+      row('Material', g.material === 'gold' ? `Gold ${g.karat}K` : L.material[g.material] || g.material);
+      row('Teeth', `${g.teeth}${g.toothIds?.length ? ' (' + g.toothIds.join(', ') + ')' : ''}`);
+      row('Design level', `${L.level[g.level] || g.level} (+${g.designPct || 0}%)`);
+      if (g.material === 'gold' && g.goldPrice) row('Gold rate used', amt(g.goldPrice) + '/g');
+      row('Base cost', amt(g.materialTotal)); row('Design cost', g.designCost ? amt(g.designCost) : '-');
+      row('Stones', stone.length ? stone.join(' / ') + ' - ' + amt(g.stoneCost) : 'None');
+      for (const [k, label] of [['plating','Plating'],['enamel','Enamel'],['engraving','Engraving'],['anodize','Anodizing']]) {
+        if (g[k] && g[k] !== 'none') row(label, `${L[k][g[k]] || g[k]} - ${amt(g[k+'Cost'])}`);
+      }
+    }
+    lines.forEach((l, i) => {
+      title(`${i+1}. ${pdfClean(l.name) || 'Design ' + (i+1)}`);
+      if (l.groups?.length > 1) {
+        l.groups.forEach((g, j) => {
+          need(48); row(`Group ${j+1}`, g.label || '', true); details(g); row('Group subtotal', amt(g.subtotal), true);
         });
-        drawRow('Design subtotal', `${fmt(line.subtotal)} ${cur}`, { bold: true, rule: true });
-      }
-      y -= 7;
+      } else details(l);
+      row('Design subtotal', amt(l.subtotal), true); y += 5;
     });
-
-    if ((order.services || []).length) {
-      sectionTitle('Additional services', '');
-      order.services.forEach((service) => {
-        const label = service.name + (service.qty > 1 ? ` (x${service.qty})` : '');
-        drawRow(label, `${fmt(service.subtotal)} ${cur}`);
-      });
+    if (services.length) {
+      title('Additional services');
+      services.forEach(s => { row(`${s.name} (x${s.qty || 1})`, amt(s.subtotal)); if (s.notes) paragraph(s.notes, 8, 0.4); }); y += 5;
     }
-
-    const statedTotal = (Number(order.linesSubtotal) || 0) + (Number(order.servicesSubtotal) || 0)
-      + (Number(order.timelineAmount) || 0) + (Number(order.moldCost) || 0)
-      - (Number(order.discountAmount) || 0);
-    const rounding = Math.round((Number(order.total) || 0) - statedTotal);
-    const sumRows = 3 + (order.servicesSubtotal ? 1 : 0) + (order.discountAmount ? 1 : 0) + (rounding ? 1 : 0);
-    need(34 + sumRows * 13 + 44);
-    sectionTitle('Quote totals', '');
-    drawRow(`Subtotal (${lines.length} designs)`, `${fmt(order.linesSubtotal || 0)} ${cur}`);
-    if (order.servicesSubtotal) drawRow('Additional services', `${fmt(order.servicesSubtotal)} ${cur}`);
-    const timelineLabel = L.timeline[order.timeline] || 'Standard';
-    drawRow(`Timeline - ${timelineLabel}${order.timelineAmount ? ` (+${order.timelinePct}%)` : ' (no surcharge)'}`,
-      `${fmt(order.timelineAmount || 0)} ${cur}`);
-    const moldLabel = L.mold[order.mold] || order.mold || 'None';
-    drawRow(`Mold - ${moldLabel}`, `${fmt(order.moldCost || 0)} ${cur}`);
-    if (order.discountAmount) drawRow('Discount', `-${fmt(order.discountAmount)} ${cur}`);
-    if (rounding) drawRow('Rounding adjustment', `${rounding > 0 ? '+' : '-'}${fmt(Math.abs(rounding))} ${cur}`);
-    need(44);
-    rectFill(ML, y + 8, CW, 31, 0.08, 0.08, 0.08);
-    textAt('TOTAL', ML + 12, y - 11, 'F2', 10, 1, 1, 1);
-    textRight(`${fmt(order.total)} ${cur}`, W - MR - 12, y - 11, 'F2', 12, 1, 1, 1);
-    y -= 43;
-
-    if (cNotes) {
-      y -= 3;
-      sectionTitle('Notes', '');
-      pdfWrap(cNotes, 100).forEach((line) => { need(12); textAt(line, ML, y, 'F1', 8.2, 0.25, 0.25, 0.25); y -= 11; });
+    // Match the reference: let the breakdown finish before breaking for the total band.
+    title('Quote totals'); quoteTotalRows(order).forEach(([k,v]) => row(k,amt(v),false,0));
+    need(48); y += 6; rule(y, true); y += 26; text('TOTAL', M, y, 14, true); text(amt(order.total), R, y, 14, true, true); y += 24;
+    if (order.depositPct || order.deposit || order.depositManual) {
+      row(order.depositManual ? 'Agreed deposit due' : `Deposit (${order.depositPct}%) to start production`, amt(order.deposit));
+      row('Balance before delivery / pickup', amt(order.balance));
     }
-    if (code) {
-      need(38);
-      y -= 4;
-      textAt('Design code: ' + code, ML, y, 'F1', 6.8, 0.48, 0.48, 0.48);
-      y -= 12;
-    }
-
-    finishPage();
-    const totalPages = pages.length;
-    pages.forEach((stream, index) => {
-      const label = `Page ${index + 1} of ${totalPages}`;
-      const approxW = label.length * 7.2 * 0.5;
-      pages[index] += `\nBT /F1 7.20 Tf 0.55 0.55 0.55 rg 1 0 0 1 ${f2(W - MR - approxW)} 29 Tm (${pdfEsc(label)}) Tj ET`;
+    if (m.notes) { y += 4; title('Notes'); paragraph(m.notes, 9, 0.2); }
+    if (m.validDays > 0) paragraph(`Valid for ${m.validDays} days from the date of issue.`, 8, 0.45);
+    if (m.code) paragraph('Design code: ' + m.code, 7, 0.45);
+    pages.forEach((page, i) => {
+      ops = page;
+      text('egygrillz.com - @egygrillz - booking: egygrillz.com/booking.html', M, H-26, 8, false, false, 0.56);
+      text(`Page ${i+1} of ${pages.length}`, R, H-26, 8, false, true, 0.56);
+      pages[i] = page.join('\n');
     });
 
     const enc = (str) => {
@@ -1918,8 +1781,7 @@
     if (typeof Blob !== 'function' || typeof document === 'undefined') return bytes;
     const blob = new Blob([bytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
-    const fname = (pdfClean(m.filename || m.id || 'EGYGRILLZ-Estimate').replace(/[^A-Za-z0-9_-]+/g, '-') || 'EGYGRILLZ-Estimate')
-      .replace(/\.pdf$/i, '') + '.pdf';
+    const fname = quotePdfFilename(m);
     const a = document.createElement('a');
     a.href = url;
     a.download = fname;
@@ -2051,15 +1913,20 @@
       .finally(() => clearTimeout(timer));
   }
 
-  async function fetchSettingsRest(docId, opts) {
-    if (!docId || typeof docId !== 'string') return null;
+  async function restSettings(docId, opts) {
+    const defaults = { data: null, source: 'defaults' };
+    if (!docId || typeof docId !== 'string') return defaults;
+    const fallback = () => {
+      const data = readSettingsCache(docId, true, FIRESTORE_PROJECT);
+      return data ? { data, source: 'stale-cache' } : defaults;
+    };
     const force = !!(opts && opts.force);
     if (!force) {
       const fresh = readSettingsCache(docId, false, FIRESTORE_PROJECT);
-      if (fresh) return fresh;
+      if (fresh) return { data: fresh, source: 'cache' };
     }
     if (isQuotaPaused() && !force) {
-      return readSettingsCache(docId, true, FIRESTORE_PROJECT);
+      return fallback();
     }
     const flightKey = 'rest:' + docId;
     if (_inflight[flightKey]) return _inflight[flightKey];
@@ -2067,21 +1934,21 @@
     _inflight[flightKey] = (async () => {
       try {
         const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/settings/${encodeURIComponent(docId)}?key=${FIRESTORE_KEY}`;
-        const r = await fetchWithTimeout(url, { cache: 'default' }, FETCH_TIMEOUT_MS);
+        const r = await fetchWithTimeout(url, { cache: force ? 'no-store' : 'default' }, FETCH_TIMEOUT_MS);
         if (r.status === 429) {
           markQuotaPaused();
-          return readSettingsCache(docId, true, FIRESTORE_PROJECT);
+          return fallback();
         }
-        if (r.status === 404) return null;
-        if (!r.ok) return readSettingsCache(docId, true, FIRESTORE_PROJECT);
+        if (r.status === 404) return defaults;
+        if (!r.ok) return fallback();
         const doc = await r.json().catch(() => null);
-        if (!doc || !doc.fields) return null;
+        if (!doc || !doc.fields) return defaults;
         const out = {};
         for (const k of Object.keys(doc.fields)) out[k] = decodeFirestoreValue(doc.fields[k]);
         writeSettingsCache(docId, out, FIRESTORE_PROJECT);
-        return out;
+        return { data: out, source: 'rest' };
       } catch (e) {
-        return readSettingsCache(docId, true, FIRESTORE_PROJECT);
+        return fallback();
       } finally {
         delete _inflight[flightKey];
       }
@@ -2089,6 +1956,9 @@
 
     return _inflight[flightKey];
   }
+
+  // Public API retained for site settings readers which only need the data.
+  async function fetchSettingsRest(docId, opts) { return (await restSettings(docId, opts)).data; }
 
   async function load(db, opts) {
     const force = !!(opts && opts.force);
@@ -2127,10 +1997,10 @@
               return { ok: true, source: 'firestore' };
             }
             if (proj !== FIRESTORE_PROJECT) {
-              const pub = await fetchSettingsRest(SETTINGS_DOC, { force });
-              if (pub) {
-                apply(pub);
-                return { ok: true, source: 'rest' };
+              const pub = await restSettings(SETTINGS_DOC, { force });
+              if (pub.data) {
+                apply(pub.data);
+                return { ok: true, source: pub.source };
               }
             }
             return { ok: true, source: 'defaults' };
@@ -2141,20 +2011,17 @@
               apply(stale);
               return { ok: true, source: 'stale-cache' };
             }
-            const restFallback = await fetchSettingsRest(SETTINGS_DOC);
-            if (restFallback) {
-              apply(restFallback);
-              return { ok: true, source: 'rest' };
+            const restFallback = await restSettings(SETTINGS_DOC, { force });
+            if (restFallback.data) {
+              apply(restFallback.data);
+              return { ok: true, source: restFallback.source };
             }
             return { ok: false, error: String((dbErr && dbErr.message) || dbErr), source: 'defaults' };
           }
         }
-        const data = await fetchSettingsRest(SETTINGS_DOC, { force });
-        if (data) {
-          apply(data);
-          return { ok: true, source: 'rest' };
-        }
-        return { ok: true, source: 'defaults' };
+        const result = await restSettings(SETTINGS_DOC, { force });
+        if (result.data) apply(result.data);
+        return { ok: true, source: result.source };
       } catch (e) {
         if (isQuotaErr(e)) markQuotaPaused();
         const stale = readSettingsCache(SETTINGS_DOC, true, proj)
@@ -2193,16 +2060,22 @@
     LABELS,
     SHORT_LEVEL,
     get, set, reset, apply, onChange,
+    // Concurrent Worker requests must never share mutable pricing settings.
+    withSettings(settings) {
+      const scope = {}; createCalcEngine(scope);
+      scope.CalcEngine.set(settings);
+      return scope.CalcEngine;
+    },
     calculateLine, calculateService, calculateOrder, describeOrder,
     lineLabel, groupLabel, cleanLineSpec, cleanGroupSpec, cleanToothIds,
     encodeCode, encodeLineCode, decodeCode, extractCode,
-    buildQuotePdfBytes, downloadQuotePdf,
+    buildQuotePdfBytes, downloadQuotePdf, quotePdfFilename, savedQuoteOrder, quoteToInvoice, quoteTotalRows, matchQuoteClient,
     basePerTooth, allowsStones, money, fmt, roundPrice, roundUpTo, syncServiceDefaults,
     cleanCut, cleanSize, cutPctOf, sizeFactorOf, stoneUnitPrice, CUTS, SIZE_PRESETS,
-    load, save, fetchSettingsRest,
+    load, save, fetchSettingsRest, restSettings,
     readSettingsCache, writeSettingsCache, clearSettingsCache,
     dbReadSettings, dbWriteSettings, dbProjectId,
-    isQuotaPaused, markQuotaPaused, isQuotaErr, fetchWithTimeout,
+    isQuotaPaused, markQuotaPaused, isQuotaErr, fetchWithTimeout, decodeFirestoreValue,
     SETTINGS_DOC,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : window);
@@ -2248,8 +2121,6 @@ const SITE_DEFAULTS = {
 
   /* Quotations */
   quoteValidDays: 14,
-  quoteDepositDefaultPct: 50,
-  quoteRoundTo: 50,
 
   /* General */
   vatPct: 0,
@@ -2281,8 +2152,6 @@ const SITE_LABELS = {
   reminderHour: 'Reminder hour (24h)',
   reminderDaysBefore: 'Remind days before',
   quoteValidDays: 'Quote valid (days)',
-  quoteDepositDefaultPct: 'Default deposit %',
-  quoteRoundTo: 'Round totals to',
   vatPct: 'VAT %',
   workingDays: 'Working days (1=Mon)',
   openHour: 'Opens at',
@@ -2294,7 +2163,7 @@ const SITE_GROUPS = [
   { id:'booking',  title:'Booking', keys:['impressionPrice','impressionMinutes','gemFromPrice','consultPrice','consultMinutes','pickupMinutes','fittingMinutes','bookingSlotMinutes','cancelFreeHours','bookingLeadDays','maxBookingsPerDay'] },
   { id:'moulds',   title:'Mould kit', keys:['mouldPerArch','mouldDeliveryFee'] },
   { id:'hours',    title:'Working hours', keys:['openHour','closeHour','workingDays'] },
-  { id:'quotes',   title:'Quotations', keys:['quoteValidDays','quoteDepositDefaultPct','quoteRoundTo','vatPct'] },
+  { id:'quotes',   title:'Quotations', keys:['quoteValidDays','vatPct'] },
   { id:'auto',     title:'Automatic', keys:['reminderHour','reminderDaysBefore'] },
 ];
 
@@ -2367,12 +2236,13 @@ const SiteConfig = {
     const force = !!(opts && opts.force);
     const canDb = !!(db && E && (typeof db.collection === 'function' || typeof db._egygzGet === 'function'));
     const proj = canDb ? E.dbProjectId(db) : 'egygrillz-studio';
+    this.source = 'defaults';
 
     try {
       if (E && !force) {
         const cached = E.readSettingsCache(SITE_DOC, false, proj);
         if (cached) {
-          Object.assign(this.data, cached);
+          Object.assign(this.data, cached); this.source = 'cache';
           if (E.syncServiceDefaults) E.syncServiceDefaults(this.data);
           this._loaded = true;
           this.apply(typeof document !== 'undefined' ? document : null);
@@ -2384,7 +2254,7 @@ const SiteConfig = {
         try {
           const res = await E.dbReadSettings(db, SITE_DOC);
           if (res.exists && res.data) {
-            Object.assign(this.data, res.data);
+            Object.assign(this.data, res.data); this.source = 'firestore';
             E.writeSettingsCache(SITE_DOC, res.data, proj);
           } else if (proj !== 'egygrillz-studio') {
             const pub = await E.fetchSettingsRest(SITE_DOC, { force });
@@ -2393,16 +2263,17 @@ const SiteConfig = {
         } catch (dbErr) {
           if (E.isQuotaErr(dbErr)) E.markQuotaPaused();
           const stale = E.readSettingsCache(SITE_DOC, true, proj) || await E.fetchSettingsRest(SITE_DOC);
-          if (stale) Object.assign(this.data, stale);
+          if (stale) { Object.assign(this.data, stale); this.source = 'stale-cache'; }
         }
-      } else if (E && E.fetchSettingsRest) {
-        const data = await E.fetchSettingsRest(SITE_DOC, { force });
+      } else if (E) {
+        const {data, source} = await E.restSettings(SITE_DOC, { force });
+        this.source = source;
         if (data) Object.assign(this.data, data);
       }
     } catch (e) {
       if (E) {
         const stale = E.readSettingsCache(SITE_DOC, true, proj) || E.readSettingsCache(SITE_DOC, true, 'egygrillz-studio');
-        if (stale) Object.assign(this.data, stale);
+        if (stale) { Object.assign(this.data, stale); this.source = 'stale-cache'; }
       }
     }
     if (E && E.syncServiceDefaults) E.syncServiceDefaults(this.data);

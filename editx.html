@@ -904,6 +904,7 @@
         <button class="nav-item active" data-page="overview" onclick="showPage('overview')"><i class="fas fa-chart-bar"></i> Overview</button>
         <button class="nav-item" data-page="appointments" onclick="showPage('appointments')"><i class="fas fa-calendar-check"></i> Appointments</button>
         <button class="nav-item" data-page="clients" onclick="showPage('clients')"><i class="fas fa-users"></i> Clients</button>
+        <a class="nav-item" href="/order-sheet.html"><i class="fas fa-clipboard-list"></i> Order Sheet</a>
         <button class="nav-item" data-page="invoices" onclick="showPage('invoices')"><i class="fas fa-receipt"></i> Invoices</button>
         <button class="nav-item" data-page="messages" onclick="showPage('messages')"><i class="fas fa-envelope"></i> Messages <span class="badge" id="unread-badge" style="display:none">0</span></button>
         <button class="nav-item" data-page="moulds" onclick="showPage('moulds')"><i class="fas fa-tooth"></i> Moulds <span class="badge" id="mould-pending-badge" style="display:none">0</span></button>
@@ -1710,7 +1711,7 @@
   <div class="modal" style="max-width:640px;">
     <div class="modal-header"><h2 id="client-modal-name">Client</h2><button class="modal-close" onclick="closeClientModal()">×</button></div>
     <div class="modal-body" id="client-modal-body"></div>
-    <div class="modal-footer"><button class="btn-muted2" onclick="closeClientModal()">Close</button><button class="btn-outline-sm" onclick="createInvoiceForClientFromModal()"><i class="fas fa-receipt"></i> Invoice</button><button class="btn-black" id="client-edit-btn" onclick="editClientFromModal()">Edit</button><button class="btn-del-confirm" id="client-del-btn" onclick="deleteClientFromModal()">Delete</button></div>
+    <div class="modal-footer"><button class="btn-muted2" onclick="closeClientModal()">Close</button><button class="btn-outline-sm" onclick="openOrderForClient()">Order sheet</button><button class="btn-outline-sm" onclick="createInvoiceForClientFromModal()"><i class="fas fa-receipt"></i> Invoice</button><button class="btn-black" id="client-edit-btn" onclick="editClientFromModal()">Edit</button><button class="btn-del-confirm" id="client-del-btn" onclick="deleteClientFromModal()">Delete</button></div>
   </div>
 </div>
 
@@ -2021,7 +2022,8 @@
     loadConfig();
     /* live pricing rates: every design price is computed from these */
     if (window.CalcEngine) {
-      Promise.resolve(window.CalcEngine.load(db)).then(function(){
+      Promise.all([CalcEngine.load(db), SiteConfig.load(db)]).then(function(){
+        if (window.MetalRates) MetalRates.attach(CalcEngine);
         if (typeof renderUnifiedInventory === 'function' && Object.keys(cache || {}).length) renderUnifiedInventory();
       }).catch(function(){});
       if (typeof window.CalcEngine.onChange === 'function') {
@@ -3054,6 +3056,13 @@
     grid.innerHTML = list.map(function(c){
       return '<div class="client-card" data-cid="'+escAttr(c.id)+'" onclick="openClientModal(this.dataset.cid)">'+'<div class="client-name">'+escHtml(c.name||'Unknown')+'</div>'+'<div class="client-phone">'+escHtml(c.phone||'')+'</div>'+'<div class="client-stats"><div class="client-stat"><span class="client-stat-val">'+(Number(c.totalAppointments)||0)+'</span><span class="client-stat-lbl">Appts</span></div><div class="client-stat"><span class="client-stat-val">'+(Number(c.totalNoShows)||0)+'</span><span class="client-stat-lbl">No Shows</span></div></div></div>';
     }).join('');
+  }
+
+  function openOrderForClient() {
+    // Client IDs can be phone numbers. Pass the lookup key in this tab only, never in a URL.
+    try { sessionStorage.setItem('egygz_order_client', _viewingClientId); }
+    catch { showToast('Browser storage is unavailable; search the client on the order sheet.', 'error'); return; }
+    location.assign('/order-sheet.html?from=editx');
   }
 
   async function openClientModal(id) {
@@ -4922,11 +4931,11 @@
 
 
 <script data-cfasync="false" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script data-cfasync="false" src="assets/calc-engine.js?v=5"></script>
-<script src="/assets/rates.js?v=6"></script>
+<script data-cfasync="false" src="assets/calc-engine.js?v=9"></script>
+<script src="/assets/rates.js?v=7"></script>
 <script data-cfasync="false" src="assets/crops.js?v=3"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script data-cfasync="false" src="assets/staff-calculator.js?v=5"></script>
+<script data-cfasync="false" src="assets/staff-calculator.js?v=6"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
 <script data-cfasync="false">
@@ -5306,7 +5315,7 @@
   function strVal(id) { var e = el(id); return e ? String(e.value || '').trim() : ''; }
 
   function calcTotals() {
-    var subtotal = lineItems.reduce(function (s, i) { return s + (Number(i.qty) || 0) * (Number(i.price) || 0); }, 0);
+    var subtotal = lineItems.reduce(function (s, i) { return s + Math.round((Number(i.qty) || 0) * (Number(i.price) || 0)); }, 0);
     var discVal = numVal('inv-discount-val');
     var discType = el('inv-discount-type') ? el('inv-discount-type').value : 'egp';
     var discount = discType === 'pct' ? subtotal * discVal / 100 : discVal;
@@ -5428,58 +5437,23 @@
   }
 
   /* ───────────── quote import ───────────── */
-  function transferFromQuote(q) {
-    var E = CE();
-    var order = q.order || {};
-    var items = [];
-    (order.lines || []).forEach(function (l) {
-      items.push({
-        name: l.name || (E ? E.LABELS.material[l.material] + ' Grillz' : 'Custom Grillz'),
-        spec: E ? E.lineLabel(l) : '',
-        qty: 1,
-        price: Number(l.subtotal) || 0
-      });
-    });
-    (order.services || []).forEach(function (sv) {
-      items.push({ name: sv.name || 'Studio Service', spec: 'Studio Service', qty: Number(sv.qty) || 1, price: Number(sv.unitPrice) || 0 });
-    });
-    if (order.timelineAmount) items.push({ name: 'Rush Timeline', spec: 'Order Timeline Surcharge', qty: 1, price: Number(order.timelineAmount) || 0 });
-    if (order.moldCost) items.push({ name: 'Mold Fee', spec: 'Studio Mold Fee', qty: 1, price: Number(order.moldCost) || 0 });
-    return {
-      quoteId: q.id || '',
-      clientName: q.clientName || '',
-      clientPhone: q.clientPhone || '',
-      clientEmail: q.clientEmail || '',
-      notes: q.notes || '',
-      discountAmount: Number(order.discountAmount) || 0,
-      depositAmount: Number(order.deposit) || 0,
-      items: items
-    };
-  }
-
   function applyImportedQuote(transfer) {
     if (!transfer || !Array.isArray(transfer.items)) { toast('Nothing to import', 'error'); return; }
+    resetForm(); // never apply another client's quote to an edited invoice
     pendingQuoteId = transfer.quoteId || '';
     if (transfer.clientName) {
-      var found = invClients.find(function (c) {
-        return (transfer.clientPhone && (c.phone === transfer.clientPhone || String(c.id) === String(transfer.clientPhone)))
-          || String(c.name || '').toLowerCase() === String(transfer.clientName).toLowerCase();
-      });
+      var found = window.CalcEngine.matchQuoteClient(invClients, transfer);
       if (found) selectClient(found);
       else selectClient({ id: transfer.clientPhone || transfer.clientName, name: transfer.clientName, phone: transfer.clientPhone || '', email: transfer.clientEmail || '' });
     }
     lineItems = transfer.items.map(function (it) {
       return { id: Date.now() + Math.random(), name: it.name || '', spec: it.spec || '', qty: Number(it.qty) || 1, price: Number(it.price) || 0, line: it.line || null, serviceType: it.serviceType || '' };
     });
-    if (transfer.notes && el('inv-notes')) el('inv-notes').value = transfer.notes;
-    if (transfer.discountAmount > 0) {
-      if (el('inv-discount-val')) el('inv-discount-val').value = transfer.discountAmount;
-      if (el('inv-discount-type')) el('inv-discount-type').value = 'egp';
-    }
-    if (transfer.depositAmount > 0) {
-      if (el('inv-deposit-val')) el('inv-deposit-val').value = transfer.depositAmount;
-      if (el('inv-status')) el('inv-status').value = 'partial';
-    }
+    el('inv-notes').value = transfer.notes || '';
+    el('inv-discount-val').value = transfer.discountAmount || 0;
+    el('inv-discount-type').value = 'egp';
+    el('inv-deposit-val').value = 0;
+    el('inv-status').value = 'pending';
     renderItems();
     updatePreview();
     toast('Quote imported', 'success');
@@ -5504,14 +5478,14 @@
       box.innerHTML = quotes.map(function (q, i) {
         return '<div class="inv-quote-import-row">' +
           '<div><div style="font-size:12px;font-weight:600;">' + esc(q.clientName || 'Quote') + '</div>' +
-          '<div style="font-size:10px;color:#999;">' + esc(q.designLabel || '') + ' · ' + money(q.total || 0) + '</div></div>' +
+          '<div style="font-size:10px;color:#999;">' + esc(q.designLabel || '') + ' · ' + money(q.order?.total ?? q.total ?? 0) + '</div></div>' +
           '<button type="button" class="btn-outline-sm" data-q="' + i + '">Import</button></div>';
       }).join('');
       box.querySelectorAll('[data-q]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var q = quotes[parseInt(btn.dataset.q, 10)];
           if (!q) return;
-          applyImportedQuote(transferFromQuote(q));
+          applyImportedQuote(window.CalcEngine.quoteToInvoice(q));
           if (modal) modal.classList.remove('open');
         });
       });
@@ -5541,7 +5515,8 @@
       clientPhone: selectedClient ? (selectedClient.phone || '') : '',
       quoteId: pendingQuoteId || '',
       items: lineItems.map(function (i) {
-        return { name: i.name || '', spec: i.spec || '', qty: Number(i.qty) || 1, price: Number(i.price) || 0 };
+        return Object.assign({ name: i.name || '', spec: i.spec || '', qty: Number(i.qty) || 1, price: Number(i.price) || 0 },
+          i.line ? {line:window.CalcEngine.cleanLineSpec(i.line)} : {}, i.serviceType ? {serviceType:i.serviceType} : {});
       }),
       subtotal: t.subtotal, discount: t.discount,
       discountInput: Number(el('inv-discount-val') && el('inv-discount-val').value) || 0,
@@ -6124,24 +6099,7 @@
         services: dec.services || [],
         discount: dec.discount || null
       });
-      var items = [];
-      (order.lines || []).forEach(function (ln) {
-        var bm = ln.mixedMaterials ? 'Mixed Materials' : (ln.material === 'gold' ? ('Gold ' + (ln.karat || '18') + 'K') : (E.LABELS.material[ln.material] || 'Custom'));
-        items.push({ name: ln.name || (bm + ' Custom Grillz'), spec: E.lineLabel(ln), qty: 1, price: ln.subtotal, line: ln });
-      });
-      (order.services || []).forEach(function (sv) {
-        items.push({ name: sv.name || 'Studio Service', spec: 'Studio Service', qty: sv.qty || 1, price: sv.unitPrice || 0, serviceType: sv.type || 'custom' });
-      });
-      if (order.timelineAmount) items.push({ name: (E.LABELS.timeline[order.timeline] || 'Rush') + ' Timeline', spec: '+' + order.timelinePct + '% Timeline Surcharge', qty: 1, price: order.timelineAmount });
-      if (order.moldCost) items.push({ name: 'Dental Mold', spec: E.LABELS.mold[order.mold] || 'Mold Fee', qty: 1, price: order.moldCost });
-      applyImportedQuote({
-        clientName: dec.clientName || '',
-        clientPhone: dec.clientPhone || '',
-        notes: dec.notes || '',
-        discountAmount: order.discountAmount || 0,
-        depositAmount: order.deposit || 0,
-        items: items
-      });
+      applyImportedQuote(E.quoteToInvoice(Object.assign({}, dec, { order: order })));
       toast('Code imported · ' + money(order.total), 'success');
     });
 
@@ -6652,7 +6610,7 @@
         list = w.data.orders;
       } else if (w.status === 404) {
         failure = 'The Cloudflare Worker deployed right now is an older version — it has no /api/moulds/orders. ' +
-                  'Paste cloudflare-worker.js in the Cloudflare dashboard, then reload this page.';
+                  'Deploy the current Worker (see STUDIO-ORDERS.md), then reload this page.';
       } else {
         var why = (w.data && w.data.error) || ('HTTP ' + w.status);
         /* the currently deployed Worker may still answer 502 "firestore-429" */
@@ -6723,7 +6681,7 @@
         'add any other studio address to <code>staffEmails()</code> in the same file.' +
         (who && who !== 'not signed in' ? ' This dashboard is signed in as <code>' + escHtml(who) + '</code>.' : '') +
         (uid ? ' (UID <code>' + escHtml(uid) + '</code>.)' : '') +
-        '<br>2 — Then paste the current <code>cloudflare-worker.js</code> into Cloudflare and reload: ' +
+        '<br>2 — Then deploy the current Worker (see <code>STUDIO-ORDERS.md</code>) and reload: ' +
         'the Worker reads the list for you, so the browser never needs database access at all.' +
         '</div></div>';
       return;

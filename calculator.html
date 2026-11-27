@@ -361,10 +361,10 @@ footer p{font-size:11px;color:var(--faint);}
   <p data-i18n="footer_note">Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.</p>
 </footer>
 
-<script src="/assets/calc-engine.js?v=8"></script>
+<script src="/assets/calc-engine.js?v=9"></script>
 <script src="/assets/numpad.js?v=5"></script>
 <script src="/assets/grillz-renderer.js?v=5"></script>
-<script src="/assets/rates.js?v=6"></script>
+<script src="/assets/rates.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -441,7 +441,7 @@ footer p{font-size:11px;color:var(--faint);}
       gold_rate_refreshing: 'Refreshing rates…', refresh: 'Refresh',
       add_set: '+ Add Another Set',
       sum_title: 'Your Estimate', sum_sub: 'Live studio pricing — EGP',
-      sum_total: 'Total', sum_deposit: 'Full payment required (100%)', sum_balance: 'Remaining after full payment',
+      sum_total: 'Total', sum_deposit: 'Payment due before production', sum_balance: 'Remaining balance', discount: 'Discount', rounding: 'Rounding',
       sum_code: 'Your design code', sum_code_hint: 'Send this code to EGYGRILLZ or paste it in any calculator to load this exact design.',
       btn_pdf: 'Download PDF Estimate', btn_copy_code: 'Copy Code', btn_share: 'Copy Share Link',
       btn_book: 'Book Appointment', btn_contact: 'Send to Studio',
@@ -514,7 +514,7 @@ footer p{font-size:11px;color:var(--faint);}
       gold_rate_refreshing: 'جاري تحديث الأسعار…', refresh: 'تحديث',
       add_set: '+ إضافة طقم آخر',
       sum_title: 'تقديرك', sum_sub: 'أسعار الاستوديو المباشرة — جنيه',
-      sum_total: 'الإجمالي', sum_deposit: 'الدفع الكامل مطلوب (100٪)', sum_balance: 'المتبقي بعد الدفع الكامل',
+      sum_total: 'الإجمالي', sum_deposit: 'المطلوب قبل بدء التصنيع', sum_balance: 'الرصيد المتبقي', discount: 'الخصم', rounding: 'تقريب السعر',
       sum_code: 'كود التصميم الخاص بك', sum_code_hint: 'أرسل هذا الكود إلى EGYGRILLZ أو الصقه في أي حاسبة لتحميل هذا التصميم بالضبط.',
       btn_pdf: 'تحميل تقدير PDF', btn_copy_code: 'نسخ الكود', btn_share: 'نسخ رابط المشاركة',
       btn_book: 'احجز موعدك', btn_contact: 'أرسل للاستوديو',
@@ -724,7 +724,10 @@ footer p{font-size:11px;color:var(--faint);}
   }
 
   const state = {
-    sets: [newSet()],
+    sets: [newSet()], services: [], discount: null,
+    // Keep the existing public production-payment policy on NEW estimates. A
+    // shared code carries its own terms; appointment deposits are separate.
+    depositPct: 100,
     timeline: 'standard',
     mold: 'none',
     clientName: '',
@@ -771,7 +774,7 @@ footer p{font-size:11px;color:var(--faint);}
       };
       if (st.accentType === 'labgrown' || st.accentType === 'natural') {
         const p = parseFloat(st.accentPrice);
-        if (Number.isFinite(p) && p > 0) { a.price = p; a.customPrice = p; }
+        if (Number.isFinite(p) && p >= 0) { a.price = p; a.customPrice = p; }
       }
       out.accent = a;
     }
@@ -782,7 +785,7 @@ footer p{font-size:11px;color:var(--faint);}
       };
       if (st.fullType === 'labgrown' || st.fullType === 'natural') {
         const p = parseFloat(st.fullPrice);
-        if (Number.isFinite(p) && p > 0) { f.price = p; f.customPrice = p; }
+        if (Number.isFinite(p) && p >= 0) { f.price = p; f.customPrice = p; }
       }
       out.full = f;
     }
@@ -792,7 +795,7 @@ footer p{font-size:11px;color:var(--faint);}
   function groupSpec(g, setMaterial) {
     const out = {
       material: g.material || setMaterial || 'silver',
-      teeth: clamp(parseInt(g.teeth, 10) || 1, 1, 16),
+      teeth: clamp(parseInt(g.teeth, 10) || 1, 1, 32),
       level: String(g.level || '1'),
       plating: g.plating || 'none',
       enamel: g.enamel || 'none',
@@ -805,6 +808,7 @@ footer p{font-size:11px;color:var(--faint);}
       if (gp > 0) out.goldPrice = gp;
     }
     Object.assign(out, stonesSpec(g.stones || newStones(), out.material, out.level));
+    if (g.toothIds?.length === out.teeth) out.toothIds = E().cleanToothIds(g.toothIds);
     if (g.label && String(g.label).trim()) out.label = String(g.label).trim().slice(0, 40);
     return out;
   }
@@ -815,7 +819,7 @@ footer p{font-size:11px;color:var(--faint);}
       const line = {
         material: groups[0] ? groups[0].material : s.material,
         teeth: groups.reduce((a, g) => a + g.teeth, 0),
-        level: 'mixed', isMixed: true, groups,
+        level: 'mixed', isMixed: true, groups, name:s.name || '',
       };
       const selectedTeeth = E() ? E().cleanToothIds(s.toothIds || []) : [];
       if (selectedTeeth.length) line.toothIds = selectedTeeth;
@@ -825,7 +829,7 @@ footer p{font-size:11px;color:var(--faint);}
     }
     const tids = E() ? E().cleanToothIds(s.toothIds || []) : (s.toothIds || []);
     const line = {
-      material: s.material,
+      name:s.name || '', material: s.material,
       teeth: clamp(tids.length || 6, 1, 32),
       level: String(s.level || '1'),
       plating: s.plating || 'none',
@@ -845,16 +849,19 @@ footer p{font-size:11px;color:var(--faint);}
 
   function buildLines() { return state.sets.map(setLine); }
 
+  function orderOptions() {
+    return {timeline:state.timeline, mold:state.mold, services:state.services, discount:state.discount, depositPct:state.depositPct};
+  }
   function calcOrder() {
     if (!E()) return null;
     if (usesGold() && !(goldRateForLine() > 0)) return null;
-    return E().calculateOrder(buildLines(), { timeline: state.timeline, mold: state.mold, depositPct: 100 });
+    return E().calculateOrder(buildLines(), orderOptions());
   }
 
   function currentCode() {
     if (!E()) return '';
     return E().encodeCode({
-      lines: buildLines(), timeline: state.timeline, mold: state.mold, depositPct: 100,
+      lines: buildLines(), ...orderOptions(),
       clientName: state.clientName, clientPhone: state.clientPhone, notes: state.notes,
     }) || '';
   }
@@ -1070,7 +1077,7 @@ footer p{font-size:11px;color:var(--faint);}
     const at = 'data-index="' + i + '" data-group="' + gi + '"';
     const attrs = 'data-scope="group" ' + at;
     let html = '<div class="group-card"><div class="group-head"><div class="group-title">' + esc(t('group_n')) + ' ' + (gi + 1) + '</div><input class="group-label-inp" type="text" maxlength="40" value="' + esc(g.label || '') + '" placeholder="' + esc(t('group_label_ph')) + '" data-scope="group" ' + at + ' data-field="label">' + (gi > 0 ? '<button type="button" class="group-remove" data-act="remove-group" ' + at + ' aria-label="Remove group"><i class="fa-solid fa-xmark"></i></button>' : '') + '</div>';
-    html += '<div class="g-grid">' + fieldHtml(t('group_teeth'), 'number', g.teeth, attrs + ' data-field="teeth"', '', 1, 16) + '</div>';
+    html += '<div class="g-grid">' + fieldHtml(t('group_teeth'), 'number', g.teeth, attrs + ' data-field="teeth"', '', 1, 32) + '</div>';
     html += '<div style="margin-top:16px">' + renderMaterial(g, i, gi) + '</div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('group_level')) + '</div>' + renderLevelWheel(g.level, i, gi) + '</div>';
     html += '<div class="finish-block"><div class="fb-t">' + esc(t('step4_t')) + '</div>' + renderStones(g.stones, g.material, g.level, i, gi) + '</div>';
@@ -1146,10 +1153,17 @@ footer p{font-size:11px;color:var(--faint);}
       const label = E().lineLabel(line) || (t('set_n') + ' ' + (i + 1));
       html += '<div class="sum-line"><span class="sl-name">' + esc((t('set_n') + ' ' + (i + 1) + ' · ' + label)) + '</span><span class="sl-price">' + esc(fmt(line.subtotal || 0)) + ' EGP</span></div>' + groupPriceRows(line, i);
     });
+    order.services.forEach(service => {
+      html += '<div class="sum-line"><span class="sl-name">' + esc(service.name) + ' × ' + service.qty + '</span><span class="sl-price">' + esc(fmt(service.subtotal)) + ' EGP</span></div>';
+    });
     if (order.timelineAmount) html += '<div class="sum-line"><span class="sl-name">' + esc(t('timeline')) + ' (' + order.timelinePct + '%)</span><span class="sl-price">' + esc(fmt(order.timelineAmount)) + ' EGP</span></div>';
     if (order.moldCost) html += '<div class="sum-line"><span class="sl-name">' + esc(t('mold')) + '</span><span class="sl-price">' + esc(fmt(order.moldCost)) + ' EGP</span></div>';
+    const round = order.total - order.linesSubtotal - order.servicesSubtotal - order.timelineAmount - order.moldCost + order.discountAmount;
+    for (const [key, amount] of [['discount', -order.discountAmount], ['rounding', round]]) {
+      if (amount) html += '<div class="sum-line"><span>' + esc(t(key)) + '</span><span>' + esc(fmt(amount)) + ' EGP</span></div>';
+    }
     html += '</div><div class="sum-total-row"><span class="sum-total-lbl">' + esc(t('sum_total')) + '</span><span class="sum-total">' + esc(fmt(order.total)) + '<span class="curr">EGP</span></span></div>';
-    html += '<div class="sum-dep"><span>' + esc(t('sum_deposit')) + '</span><b>' + esc(fmt(order.deposit)) + ' EGP</b></div><div class="sum-dep"><span>' + esc(t('sum_balance')) + '</span><b>' + esc(fmt(order.balance)) + ' EGP</b></div>';
+    html += '<div class="sum-dep"><span>' + esc(t('sum_deposit')) + ' (' + order.depositPct + '%)</span><b>' + esc(fmt(order.deposit)) + ' EGP</b></div><div class="sum-dep"><span>' + esc(t('sum_balance')) + '</span><b>' + esc(fmt(order.balance)) + ' EGP</b></div>';
     html += '<div class="sum-code"><div class="sc-lbl">' + esc(t('sum_code')) + '</div><div class="sc-val" id="summary-code">' + esc(code || '—') + '</div></div><div class="sum-note">' + esc(t('sum_code_hint')) + '</div>';
     html += '<div class="sum-btns"><button class="btn-gold" type="button" data-act="pdf"><i class="fa-solid fa-file-pdf"></i> ' + esc(t('btn_pdf')) + '</button><div class="btn-row"><button class="btn-line" type="button" data-act="copy-code"><i class="fa-solid fa-copy"></i> ' + esc(t('btn_copy_code')) + '</button><button class="btn-line" type="button" data-act="share"><i class="fa-solid fa-link"></i> ' + esc(t('btn_share')) + '</button></div><div class="btn-row"><a class="btn-line" href="/booking"><i class="fa-regular fa-calendar-check"></i> ' + esc(t('btn_book')) + '</a><a class="btn-line" id="contact-link" href="/contact?code=' + encodeURIComponent(code) + '"><i class="fa-regular fa-paper-plane"></i> ' + esc(t('btn_contact')) + '</a></div></div><div class="sum-note">' + esc(t('sum_note')) + '</div>';
     $('#summary').innerHTML = html;
@@ -1215,9 +1229,10 @@ footer p{font-size:11px;color:var(--faint);}
     const field = el.dataset.field;
     const obj = stateObject(null, scope, idx, gi);
     if (!obj || !field) return;
-    if (field === 'teeth' || field === 'accentCount') obj[field] = clamp(parseInt(el.value, 10) || 1, 1, field === 'teeth' ? 16 : 999);
-    else if (field === 'accentPrice' || field === 'fullPrice') obj[field] = el.value;
-    else obj[field] = el.value;
+    const dest = field in (obj.stones || {}) ? obj.stones : obj;
+    if (field === 'teeth' || field === 'accentCount') dest[field] = clamp(parseInt(el.value, 10) || 1, 1, field === 'teeth' ? 32 : 999);
+    else dest[field] = el.value;
+    if (field === 'teeth') delete obj.toothIds;
     if (scope === 'group' && field === 'material') obj.material = el.value;
     render();
   }
@@ -1227,41 +1242,28 @@ footer p{font-size:11px;color:var(--faint);}
     return slice;
   }
 
+  function restoredGroup(g) {
+    const a = g.accent, f = g.full, stones = newStones();
+    if (a) Object.assign(stones, {accent:true, accentCount:a.count, accentType:a.type, setting:a.setting,
+      accentCut:a.cut, accentSize:a.size, accentPrice:a.customPrice ?? a.price ?? ''});
+    if (f) Object.assign(stones, {full:true, fullType:f.type, coverage:f.coverage, fullCut:f.cut,
+      fullSize:f.size, fullPrice:f.customPrice ?? f.price ?? ''});
+    stones.mode = stonesMode(stones);
+    return {...newGroup(g.material), ...g, stones, toothIds:E().cleanToothIds(g.toothIds || [])};
+  }
   function useDecoded(decoded) {
-    if (!decoded || !Array.isArray(decoded.lines) || !decoded.lines.length) return false;
-    const nextSets = decoded.lines.map((line) => {
-      const groups = Array.isArray(line.groups) ? line.groups : null;
-      if (groups && groups.length) {
-        const ng = groups.map((g) => {
-          const mat = g.material || line.material || 'silver';
-          return Object.assign(newGroup(), g, {
-            material: mat, karat: String(g.karat || line.karat || '18'),
-            teeth: clamp(parseInt(g.teeth, 10) || 1, 1, 16), level: String(g.level || '1'),
-            stones: Object.assign(newStones(),
-              g.accent ? { accent:true, mode:'accent', accentCount:g.accent.count, accentType:g.accent.type, setting:g.accent.setting, accentPrice:g.accent.customPrice || g.accent.price || '' } : {},
-              g.full ? { full:true, mode:'full', fullType:g.full.type || 'moissanite', coverage:g.full.coverage || 'standardpave', fullPrice:g.full.customPrice || g.full.price || '' } : {},
-              (g.accent && g.full) ? { mode:'both' } : {}),
-            plating: g.plating || line.plating || 'none', enamel:g.enamel || line.enamel || 'none', engraving:g.engraving || line.engraving || 'none', anodize:g.anodize || 'none',
-          });
-        });
-        const mixedTeeth = E().cleanToothIds(line.toothIds || []);
-        if (!mixedTeeth.length) mixedTeeth.push(...toothPreset(clamp(Number(line.teeth) || 6, 1, 32)));
-        return Object.assign(newSet(), { mode:'mixed', material:line.material || groups[0].material, groups:ng, toothIds:mixedTeeth });
-      }
-      const mat = line.material || 'silver';
-      const st = newStones();
-      if (line.accent) Object.assign(st, { accent:true, mode:'accent', accentCount:line.accent.count || 4, accentType:line.accent.type || 'cz', setting:line.accent.setting || 'flush', accentPrice:line.accent.customPrice || line.accent.price || '' });
-      if (line.full) Object.assign(st, { full:true, mode:'full', fullType:line.full.type || 'moissanite', coverage:line.full.coverage || 'standardpave', fullPrice:line.full.customPrice || line.full.price || '' });
-      if (line.accent && line.full) st.mode = 'both';
-      let toothIds = E().cleanToothIds(line.toothIds || []);
-      if (!toothIds.length) toothIds = toothPreset(clamp(Number(line.teeth) || 6, 1, 32));
-      return Object.assign(newSet(), {
-        mode:'uniform', material:mat, karat:String(line.karat || '18'), toothIds, level:String(line.level || '1'), stones:st,
-        plating:line.plating || 'none', enamel:line.enamel || 'none', engraving:line.engraving || 'none', anodize:line.anodize || 'none',
-      });
+    if (!decoded || !(decoded.lines?.length || decoded.services?.length)) return false;
+    state.sets = (decoded.lines || []).map(line => {
+      const mixed = !!line.groups?.length;
+      const ids = E().cleanToothIds(line.toothIds || []);
+      return {...newSet(), ...restoredGroup(line), mode:mixed ? 'mixed' : 'uniform',
+        groups:mixed ? line.groups.map(restoredGroup) : [],
+        toothIds:ids.length ? ids : toothPreset(clamp(Number(line.teeth) || 1, 1, 32))};
     });
-    state.sets = nextSets;
-    openSetIndexes = new Set([state.sets.length - 1]);
+    openSetIndexes = new Set(state.sets.length ? [state.sets.length - 1] : []);
+    state.services = decoded.services || [];
+    state.discount = decoded.discount || null;
+    state.depositPct = decoded.depositPct ?? 100;
     state.timeline = decoded.timeline || 'standard';
     state.mold = decoded.mold || 'none';
     state.clientName = decoded.clientName || '';
@@ -1287,7 +1289,7 @@ footer p{font-size:11px;color:var(--faint);}
     if (!order || !E()) return;
     E().downloadQuotePdf(order, {
       code: currentCode(), clientName: state.clientName, clientPhone: state.clientPhone,
-      notes: state.notes, title: 'EGYGRILLZ Bespoke Estimate',
+      notes: state.notes, studioName:SiteConfig.get('studioName'), validDays:SiteConfig.num('quoteValidDays'),
     });
     showToast(t('pdf_done'));
   }
@@ -1480,7 +1482,7 @@ footer p{font-size:11px;color:var(--faint);}
     if (el.matches('[data-field]')) {
       const scope = el.dataset.scope || 'set';
       const obj = stateObject(null, scope, Number(el.dataset.index), el.dataset.group == null ? null : Number(el.dataset.group));
-      if (obj) obj[el.dataset.field] = el.value;
+      if (obj) (el.dataset.field in (obj.stones || {}) ? obj.stones : obj)[el.dataset.field] = el.value;
       updateSummaryOnly();
     }
   });
@@ -1502,15 +1504,15 @@ footer p{font-size:11px;color:var(--faint);}
   }
 
   if (E() && typeof E().load === 'function') {
-    E().load(null).then(() => {
+    Promise.all([E().load(null), SiteConfig.load(null)]).then(() => {
       const R = window.MetalRates;
       if (R && R.goldEgpPerGram24() > 0) E().set({ goldPrice: R.goldEgpPerGram24() });
-      render();
+      // Resolve service prices against studio settings before decoding a link.
+      const params = new URLSearchParams(location.search);
+      const incoming = params.get('c') || params.get('code');
+      if (!incoming || !loadCode(incoming)) render();
     }).catch(() => {});
   }
-  const params = new URLSearchParams(location.search);
-  const incoming = params.get('c') || params.get('code');
-  if (incoming) loadCode(incoming);
 })();
 
 </script>

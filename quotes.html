@@ -12,7 +12,6 @@
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 
 <!-- Firebase loaded inside the module at matching SDK version (10.12.0) -->
-<script data-cfasync="false" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
@@ -364,6 +363,12 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
               </select>
             </label>
           </div>
+          <details id="agreedFields" style="margin-top:12px"><summary>Agreed pricing (optional)</summary>
+            <div class="grid g2" style="margin-top:8px">
+              <label class="f"><span>Agreed total · EGP</span><input class="inp" id="agreedTotal" type="number" min="0" placeholder="Use calculator total"></label>
+              <label class="f"><span>Agreed deposit due · EGP</span><input class="inp" id="agreedDeposit" type="number" min="0" placeholder="Use deposit percentage"></label>
+            </div>
+          </details>
           <label class="f" style="margin-top:14px">
             <span>Notes on the quote</span>
             <textarea class="inp" id="quoteNotes" rows="3" placeholder="Anything the client should know"></textarea>
@@ -447,25 +452,14 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 <div class="toast" id="toast"></div>
 
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=5"></script>
+<script src="/assets/staff-calculator.js?v=6"></script>
 <script type="module">
 /* ══════════════════════════════════════════════════════════════════
    1. AUTH
    ══════════════════════════════════════════════════════════════════ */
-import { requireAuth, signOut as fbSignOut, firebaseApp } from '/assets/firebase-auth-gate.js';
-
-/* Same Firebase SDK version as firebase-auth-gate.js (10.12.0) so auth state shares cleanly. */
-await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js');
-const firebase = window.firebase;
-const FIREBASE_CFG = {
-  apiKey: "AIzaSyDg8i3Bk1LVvScITFL1rDd5NSa0B5TjBZk",
-  authDomain: "egygrillz-studio.firebaseapp.com",
-  projectId: "egygrillz-studio",
-  storageBucket: "egygrillz-studio.firebasestorage.app",
-  messagingSenderId: "1022362401463",
-  appId: "1:1022362401463:web:fec76b9c73e24d9cfeeb32"
-};
+import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js?v=2';
+import { db, settingsDb } from '/assets/studio-db.js';
+import { doc, collection, getDoc, getDocs, query, limit, orderBy, startAfter, updateDoc, deleteDoc, setDoc, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Stops here until the admin signs in — requireAuth() shows its own overlay.
 let USER = null;
@@ -483,13 +477,10 @@ document.querySelectorAll('[data-logout]').forEach(function (el) {
 /* ══════════════════════════════════════════════════════════════════
    2. FIREBASE + ENGINE
    ══════════════════════════════════════════════════════════════════ */
-const db = firebase.apps.length ? firebase.firestore() : firebase.initializeApp(FIREBASE_CFG).firestore();
-try { db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
-
 // load the engine as a classic script (it attaches to window.CalcEngine)
 await new Promise((res, rej) => {
   const s = document.createElement('script');
-  s.src = '/assets/calc-engine.js?v=8';
+  s.src = '/assets/calc-engine.js?v=9';
   s.onload = res; s.onerror = rej;
   document.head.appendChild(s);
 });
@@ -499,7 +490,7 @@ const E = window.CalcEngine;
 await new Promise((res) => {
   if (window.MetalRates) return res();
   const s = document.createElement('script');
-  s.src = '/assets/rates.js?v=6';
+  s.src = '/assets/rates.js?v=7';
   s.onload = res; s.onerror = res;
   document.head.appendChild(s);
 });
@@ -512,9 +503,10 @@ if (window.MetalRates) {
 }
 
 const [settingsLoad] = await Promise.all([
-  E.load(db).catch(err => ({ ok: false, error: err })),
-  window.SiteConfig ? window.SiteConfig.load(db).catch(() => {}) : Promise.resolve(),
+  E.load(settingsDb).catch(err => ({ ok: false, error: err })),
+  window.SiteConfig ? window.SiteConfig.load(settingsDb).catch(() => {}) : Promise.resolve(),
 ]);
+if (window.MetalRates?.goldEgpPerGram24() > 0) E.set({goldPrice:MetalRates.goldEgpPerGram24()});
 if (!settingsLoad || !settingsLoad.ok) console.warn('[quotes] settings fallback:', settingsLoad && settingsLoad.error);
 function validDays() {
   const n = window.SiteConfig ? Number(window.SiteConfig.num('quoteValidDays')) : 0;
@@ -565,7 +557,7 @@ async function loadClients(force){
     } catch (e) {}
   }
   try {
-    const snap = await db.collection('clients').orderBy('lastVisit', 'desc').limit(120).get();
+    const snap = await getDocs(query(collection(db, 'clients'), orderBy('lastVisit', 'desc'), limit(120)));
     const list = [];
     snap.forEach(doc => {
       const d = doc.data() || {};
@@ -580,7 +572,7 @@ async function loadClients(force){
     if (list.length) {
       CLIENTS = list;
     } else {
-      const aSnap = await db.collection('appointments').orderBy('date', 'desc').limit(100).get();
+      const aSnap = await getDocs(query(collection(db, 'appointments'), orderBy('date', 'desc'), limit(100)));
       const map = new Map();
       aSnap.forEach(doc => {
         const d = doc.data() || {};
@@ -637,7 +629,7 @@ function mountQuoteCalculator(){
   const host = $('scQuoteCalc');
   if (!host || !window.StaffCalculator) return null;
   QUOTE_CALC = window.StaffCalculator.mount(host, {
-    db: db,
+    db: settingsDb,
     parts: { lines: true, editor: true, services: false, order: false, result: false },
     onChange: (lines) => { LINES = lines; recalc(); },
     getExtraCodeData: () => {
@@ -655,6 +647,11 @@ function mountQuoteCalculator(){
       };
     },
     onImportCode: (decoded, pricedLines, pricedSvcs) => {
+      CURRENT_QUOTE_ID = null; // a shared spec starts a draft; never overwrite the last client's quote
+      $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Save quote';
+      $('clientPick').value = $('clientEmail').value = '';
+      $('agreedTotal').value = $('agreedDeposit').value = ''; $('agreedFields').open = false;
+      $('discountVal').value = ''; $('discountType').value = 'egp';
       LINES = Array.isArray(pricedLines) ? pricedLines : [];
       if (Array.isArray(pricedSvcs)) {
         SERVICES = pricedSvcs.map(sv => ({ type: sv.type || 'custom', name: sv.name, qty: sv.qty || 1, unitPrice: sv.unitPrice || 0 }));
@@ -667,9 +664,9 @@ function mountQuoteCalculator(){
         $('discountVal').value = decoded.discount.value;
         $('discountType').value = decoded.discount.type === 'pct' ? 'pct' : 'egp';
       }
-      if (decoded.clientName && !$('clientName').value.trim()) $('clientName').value = decoded.clientName;
-      if (decoded.clientPhone && !$('clientPhone').value.trim()) $('clientPhone').value = decoded.clientPhone;
-      if (decoded.notes && !$('quoteNotes').value.trim()) $('quoteNotes').value = decoded.notes;
+      $('clientName').value = decoded.clientName || '';
+      $('clientPhone').value = decoded.clientPhone || '';
+      $('quoteNotes').value = decoded.notes || '';
       recalc();
     }
   });
@@ -785,10 +782,16 @@ function recalc(){
     mold: $('mold').value,
     depositPct: Number($('depositPct').value) || 0,
     services: SERVICES,
+    agreedTotal: $('agreedTotal').value, depositAmount: $('agreedDeposit').value,
     discount,
   });
 
   $('totalVal').innerHTML = `${fmt(LAST.total)} <small>${esc(LAST.currency)}</small>`;
+  const agreedDue = $('agreedDeposit');
+  agreedDue.max = LAST.total;
+  if (!$('agreedTotal').validity.valid || !agreedDue.validity.valid) {
+    LAST = null; $('totalVal').textContent = '—'; $('totalSub').textContent = 'Use a non-negative whole-EGP total and a deposit no higher than the total.'; $('breakdown').textContent = ''; return;
+  }
   const S = E.get();
   const goldMissing = LINES.some(l => {
     const gs = Array.isArray(l.groups) ? l.groups : [l];
@@ -802,15 +805,10 @@ function recalc(){
     ? '<span style="color:var(--rose)"><i class="fas fa-triangle-exclamation"></i> Live gold rate unavailable — retrying</span>'
     : `${LAST.lineCount} design(s)${LAST.services.length ? ` · ${LAST.services.length} service(s)` : ''} · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}${rateTag}`;
 
-  const rows = [];
-  if (LAST.lines.length) rows.push(['Designs subtotal', `${fmt(LAST.linesSubtotal)} EGP`]);
-  if (LAST.servicesSubtotal) rows.push(['Services subtotal', `${fmt(LAST.servicesSubtotal)} EGP`]);
-  if (LAST.timelineAmount) rows.push([`Timeline (${E.LABELS.timeline[LAST.timeline]} +${LAST.timelinePct}%)`, `${fmt(LAST.timelineAmount)} EGP`]);
-  if (LAST.moldCost) rows.push([`Mold (${E.LABELS.mold[LAST.mold]})`, `${fmt(LAST.moldCost)} EGP`]);
-  if (LAST.discountAmount) rows.push(['Discount', `-${fmt(LAST.discountAmount)} EGP`]);
+  const rows = E.quoteTotalRows(LAST).map(([label, amount]) => [esc(label), `${fmt(amount)} ${esc(LAST.currency)}`]);
   rows.push(['<strong>Total</strong>', `<strong>${fmt(LAST.total)} EGP</strong>`]);
-  if (LAST.depositPct) {
-    rows.push([`Deposit (${LAST.depositPct}%)`, `${fmt(LAST.deposit)} EGP`]);
+  if (LAST.depositPct || LAST.depositManual) {
+    rows.push([LAST.depositManual ? 'Agreed deposit due' : `Deposit (${LAST.depositPct}%)`, `${fmt(LAST.deposit)} EGP`]);
     rows.push(['Balance before delivery', `${fmt(LAST.balance)} EGP`]);
   }
   $('breakdown').innerHTML = rows.map(([k,v]) =>
@@ -818,7 +816,7 @@ function recalc(){
   ).join('');
 }
 
-['timeline','mold','depositPct','discountVal','discountType'].forEach(id => {
+['timeline','mold','depositPct','discountVal','discountType','agreedTotal','agreedDeposit'].forEach(id => {
   $(id).addEventListener('change', recalc);
   $(id).addEventListener('input', recalc);
 });
@@ -826,6 +824,7 @@ function recalc(){
 $('newQuoteBtn').addEventListener('click', () => {
   CURRENT_QUOTE_ID = null;
   LINES = []; SERVICES = [];
+  $('agreedTotal').value = $('agreedDeposit').value = ''; $('agreedFields').open = false;
   $('clientPick').value = '';
   $('clientName').value = '';
   $('clientPhone').value = '';
@@ -833,6 +832,7 @@ $('newQuoteBtn').addEventListener('click', () => {
   $('quoteNotes').value = '';
   $('discountVal').value = '';
   $('discountType').value = 'egp';
+  $('timeline').value = 'standard'; $('mold').value = 'none'; $('depositPct').value = E.get().depositPct;
   $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Save quote';
   if (QUOTE_CALC) QUOTE_CALC.reset();
   syncLines();
@@ -878,9 +878,8 @@ async function loadQuotes(append){
   const moreBtn = ensureQuotesMoreBtn();
   if (append && moreBtn) { moreBtn.disabled = true; moreBtn.textContent = 'Loading…'; }
   try {
-    let q = db.collection('quotes').orderBy('createdAt','desc').limit(QUOTES_PAGE_SIZE);
-    if (append && QUOTES_CURSOR) q = q.startAfter(QUOTES_CURSOR);
-    const snap = await q.get();
+    const after = append && QUOTES_CURSOR ? [startAfter(QUOTES_CURSOR)] : [];
+    const snap = await getDocs(query(collection(db, 'quotes'), orderBy('createdAt','desc'), ...after, limit(QUOTES_PAGE_SIZE)));
     const rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
     QUOTES_CURSOR = snap.docs.length ? snap.docs[snap.docs.length - 1] : QUOTES_CURSOR;
     QUOTES_HAS_MORE = snap.docs.length === QUOTES_PAGE_SIZE;
@@ -906,7 +905,8 @@ async function loadQuotes(append){
   renderMonth();
 }
 
-function quoteTotal(q){ return q.total || (q.order && q.order.total) || 0; }
+function quoteDate(q) { return q.createdAt?.toDate?.() || new Date(q.createdAt || 0); }
+function quoteTotal(q){ return q.order?.total ?? q.total ?? 0; }
 
 function quoteDesignLabel(q){
   if (q.designLabel) return q.designLabel;
@@ -930,7 +930,8 @@ function renderQuotes(){
   $('quotesBody').innerHTML = list.map(x => {
     const st = x.status || 'draft';
     const badge = { draft:'b-draft', sent:'b-sent', accepted:'b-accepted', declined:'b-declined' }[st] || 'b-draft';
-    const date = (x.createdAt || '').slice(0,10);
+    const issued = quoteDate(x);
+    const date = x.createdAt && Number.isFinite(+issued) ? issued.toISOString().slice(0,10) : '';
     const design = quoteDesignLabel(x);
     return `<tr data-q="${esc(x.id)}">
       <td>${esc(date)}</td>
@@ -960,7 +961,7 @@ $('quotesBody').addEventListener('change', async (e) => {
   const id = sel.dataset.status;
   const nextStatus = sel.value;
   try {
-    await db.collection('quotes').doc(id).update({
+    await updateDoc(doc(db, 'quotes', id), {
       status: nextStatus,
       updatedAt: new Date().toISOString(),
     });
@@ -973,74 +974,14 @@ $('quotesBody').addEventListener('change', async (e) => {
   }
 });
 
-function buildInvoiceTransferFromQuote(q){
-  const order = q.order || {};
-  const items = [];
-  (order.lines || []).forEach(l => {
-    const label = l.name ? `${l.name} (${E.lineLabel(l)})` : E.lineLabel(l);
-    items.push({
-      id: 'q_' + Math.random().toString(36).slice(2, 8),
-      name: l.name || (E.LABELS.material[l.material] + ' Grillz'),
-      spec: E.lineLabel(l),
-      qty: 1,
-      price: Number(l.subtotal) || 0,
-      line: l,
-    });
-  });
-  (order.services || []).forEach(sv => {
-    items.push({
-      id: 'sv_' + Math.random().toString(36).slice(2, 8),
-      name: sv.name,
-      spec: 'Studio Service',
-      qty: Number(sv.qty) || 1,
-      price: Number(sv.unitPrice) || 0,
-    });
-  });
-  if (order.timelineAmount) {
-    items.push({
-      id: 'tl_' + Math.random().toString(36).slice(2, 8),
-      name: `${E.LABELS.timeline[order.timeline] || 'Rush'} Timeline (+${order.timelinePct || 0}%)`,
-      spec: 'Order Timeline Surcharge',
-      qty: 1,
-      price: Number(order.timelineAmount) || 0,
-    });
-  }
-  if (order.moldCost) {
-    items.push({
-      id: 'md_' + Math.random().toString(36).slice(2, 8),
-      name: `Mold — ${E.LABELS.mold[order.mold] || order.mold}`,
-      spec: 'Studio Mold Fee',
-      qty: 1,
-      price: Number(order.moldCost) || 0,
-    });
-  }
-  const transfer = {
-    quoteId: q.id || '',
-    clientName: q.clientName || '',
-    clientPhone: q.clientPhone || '',
-    clientEmail: q.clientEmail || '',
-    notes: q.notes || '',
-    discountAmount: Number(order.discountAmount) || 0,
-    depositAmount: Number(order.deposit) || 0,
-    items,
-    total: Number(order.total || q.total) || 0,
-    createdAt: new Date().toISOString(),
-  };
-  return transfer;
-}
-
 function convertQuoteToInvoice(q){
   if (!q || (!((q.order && q.order.lines && q.order.lines.length) || (q.order && q.order.services && q.order.services.length)))) {
     return toast('Add at least one design or service first', true);
   }
-  const transfer = buildInvoiceTransferFromQuote(q);
-  try { localStorage.setItem('egygz_pending_invoice_from_quote', JSON.stringify(transfer)); } catch (e) {}
-  if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: 'egygz:openInvoiceFromQuote', payload: transfer }, window.location.origin);
-    toast('Opening Invoice Studio with quote...');
-    return;
-  }
-  window.location.href = 'invoice';
+  const transfer = E.quoteToInvoice(q);
+  if (!transfer) return toast('No issued amounts on this quotation', true);
+  try { localStorage.setItem('egygz_pending_invoice_from_quote', JSON.stringify(transfer)); } catch { return toast('Could not transfer the quotation. Check browser storage.', true); }
+  window.location.assign('/invoice.html');
 }
 
 $('toInvoiceBtn').addEventListener('click', () => {
@@ -1057,34 +998,38 @@ $('toInvoiceBtn').addEventListener('click', () => {
   });
 });
 
+function openQuote(q) {
+  if (!q) return;
+  CURRENT_QUOTE_ID = q.id;
+  $('clientName').value = q.clientName || '';
+  $('clientPhone').value = q.clientPhone || '';
+  $('clientEmail').value = q.clientEmail || '';
+  LINES = (q.lines || q.order?.lines || []).map(l => Object.assign({ mode: 'none', anodize: 'none' }, l));
+  SERVICES = Array.isArray(q.services) ? q.services.map(s => Object.assign({}, s)) :
+    (q.order && Array.isArray(q.order.services) ? q.order.services.map(s => Object.assign({}, s)) : []);
+  $('timeline').value = (q.order && q.order.timeline) || 'standard';
+  $('mold').value = (q.order && q.order.mold) || 'none';
+  $('depositPct').value = (q.order && q.order.depositPct) ?? E.get().depositPct;
+  $('discountVal').value = (q.discount && q.discount.value) || '';
+  $('discountType').value = (q.discount && q.discount.type) || 'egp';
+  $('agreedTotal').value = q.order?.calculatedTotal != null ? q.order.total : '';
+  $('agreedDeposit').value = q.order?.depositManual ? q.order.deposit : '';
+  $('agreedFields').open = $('agreedTotal').value !== '' || $('agreedDeposit').value !== '';
+  $('quoteNotes').value = q.notes || '';
+  $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Update quote';
+  syncLines();
+  renderServices();
+  toast('Quote opened');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 $('quotesBody').addEventListener('click', async (e) => {
   const open = e.target.closest('[data-open]');
   const inv = e.target.closest('[data-inv]');
   const pdf = e.target.closest('[data-pdf]');
   const rm = e.target.closest('[data-rm]');
 
-  if (open) {
-    const q = QUOTES.find(x => x.id === open.dataset.open);
-    if (!q) return;
-    CURRENT_QUOTE_ID = q.id;
-    $('clientName').value = q.clientName || '';
-    $('clientPhone').value = q.clientPhone || '';
-    $('clientEmail').value = q.clientEmail || '';
-    LINES = (q.lines || []).map(l => Object.assign({ mode: 'none', anodize: 'none' }, l));
-    SERVICES = Array.isArray(q.services) ? q.services.map(s => Object.assign({}, s)) :
-      (q.order && Array.isArray(q.order.services) ? q.order.services.map(s => Object.assign({}, s)) : []);
-    $('timeline').value = (q.order && q.order.timeline) || 'standard';
-    $('mold').value = (q.order && q.order.mold) || 'none';
-    $('depositPct').value = (q.order && q.order.depositPct) ?? E.get().depositPct;
-    $('discountVal').value = (q.discount && q.discount.value) || '';
-    $('discountType').value = (q.discount && q.discount.type) || 'egp';
-    $('quoteNotes').value = q.notes || '';
-    $('saveBtn').innerHTML = '<i class="fas fa-floppy-disk"></i> Update quote';
-    syncLines();
-    renderServices();
-    toast('Quote opened');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  if (open) openQuote(QUOTES.find(x => x.id === open.dataset.open));
 
   if (inv) {
     const q = QUOTES.find(x => x.id === inv.dataset.inv);
@@ -1099,7 +1044,7 @@ $('quotesBody').addEventListener('click', async (e) => {
   if (rm) {
     if (!confirm('Delete this quote?')) return;
     try {
-      await db.collection('quotes').doc(rm.dataset.rm).delete();
+      await deleteDoc(doc(db, 'quotes', rm.dataset.rm));
       QUOTES = QUOTES.filter(x => x.id !== rm.dataset.rm);
       if (CURRENT_QUOTE_ID === rm.dataset.rm) CURRENT_QUOTE_ID = null;
       renderQuotes(); renderMonth();
@@ -1132,6 +1077,7 @@ $('saveBtn').addEventListener('click', async () => {
     services: SERVICES,
     discount: dVal > 0 ? { value: dVal, type: $('discountType').value } : null,
     order: LAST,
+    validDays: validDays(), studioName: SiteConfig.get('studioName'),
     total: LAST.total,
     notes: $('quoteNotes').value.trim(),
     designLabel: [
@@ -1146,12 +1092,12 @@ $('saveBtn').addEventListener('click', async () => {
 
   try {
     if (CURRENT_QUOTE_ID) {
-      await db.collection('quotes').doc(CURRENT_QUOTE_ID).set(payload, { merge: true });
+      await updateDoc(doc(db, 'quotes', CURRENT_QUOTE_ID), payload); // replace the whole order snapshot
       const idx = QUOTES.findIndex(x => x.id === CURRENT_QUOTE_ID);
       if (idx > -1) QUOTES[idx] = Object.assign({ id: CURRENT_QUOTE_ID }, payload);
       toast('Quote updated');
     } else {
-      const ref = await db.collection('quotes').add(payload);
+      const ref = await addDoc(collection(db, 'quotes'), payload);
       CURRENT_QUOTE_ID = ref.id;
       QUOTES.unshift(Object.assign({ id: ref.id }, payload));
       toast('Quote saved');
@@ -1172,7 +1118,7 @@ $('saveBtn').addEventListener('click', async () => {
 function renderMonth(){
   const now = new Date();
   const m = QUOTES.filter(q => {
-    const d = new Date(q.createdAt || 0);
+    const d = quoteDate(q);
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   });
   const acc = m.filter(q => q.status === 'accepted');
@@ -1189,183 +1135,12 @@ function renderMonth(){
 /* ══════════════════════════════════════════════════════════════════
    8. PDF
    ══════════════════════════════════════════════════════════════════ */
-const PDF_MAP = { '\u2014':'-', '\u2013':'-', '\u00b7':'-', '\u00d7':'x', '\u2019':"'", '\u2018':"'", '\u201c':'"', '\u201d':'"', '\u2026':'...', '\u2022':'-', '\u060c':',', '\u061f':'?' };
-function pdfSafe(str){
-  let out = '';
-  for (const ch of String(str == null ? '' : str)) {
-    if (PDF_MAP[ch] !== undefined) { out += PDF_MAP[ch]; continue; }
-    const c = ch.codePointAt(0);
-    if ((c >= 0x20 && c <= 0x7e) || (c >= 0xa0 && c <= 0xff) || c === 0x0a) out += ch;
-  }
-  return out;
-}
-
-function makePdf(q){
-  if (!window.jspdf) return toast('PDF library failed to load', true);
-  const order = q.order || LAST;
-  if (!order) return toast('Nothing to print', true);
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const W = doc.internal.pageSize.getWidth();
-  const H = doc.internal.pageSize.getHeight();
-  const M = 44;
-  const GOLD = [176, 141, 79];
-  let y = 60;
-  const text = (t, x, yy, o) => doc.text(pdfSafe(t), x, yy, o);
-
-  /* header */
-  doc.setFillColor(251, 250, 247); doc.rect(0, 0, W, H, 'F');
-  doc.setFillColor(...GOLD); doc.rect(0, 0, W, 6, 'F');
-
-  doc.setFont('times', 'bold'); doc.setFontSize(22);
-  doc.setTextColor(43,43,43);
-  text('EGYGRILLZ', M, y);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-  doc.setTextColor(140,140,140);
-  text('CUSTOM GRILLZ STUDIO', M, y + 14);
-  text('Inside Smart Smile Clinics - 38 Abou Bakr El-Sdeek, Heliopolis', M, y + 26);
-  text('Floor 5, Apt 504 - Cairo', M, y + 37);
-
-  doc.setFontSize(11); doc.setTextColor(43,43,43);
-  doc.setFont('times','bold');
-  text('QUOTATION', W - M, y, { align: 'right' });
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(140,140,140);
-  text(new Date(q.createdAt || Date.now()).toISOString().slice(0,10), W - M, y + 14, { align: 'right' });
-  if (q.id) text('No. ' + String(q.id).slice(-8).toUpperCase(), W - M, y + 26, { align: 'right' });
-
-  y += 60;
-  doc.setDrawColor(230,228,222); doc.line(M, y, W - M, y);
-  y += 26;
-
-  /* client */
-  doc.setFontSize(7); doc.setTextColor(150,150,150);
-  text('PREPARED FOR', M, y);
-  y += 13;
-  doc.setFontSize(12); doc.setTextColor(43,43,43); doc.setFont('times','bold');
-  text(q.clientName || 'Client', M, y);
-  y += 14;
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110,110,110);
-  if (q.clientPhone) { text(q.clientPhone, M, y); y += 12; }
-  if (q.clientEmail) { text(q.clientEmail, M, y); y += 12; }
-
-  y += 12;
-  doc.setDrawColor(230,228,222); doc.line(M, y, W - M, y);
-  y += 22;
-
-  /* designs */
-  doc.setFontSize(7); doc.setTextColor(150,150,150);
-  text('DESIGN', M, y); text('DETAILS', M + 200, y); text('AMOUNT', W - M, y, { align: 'right' });
-  y += 8;
-  doc.setDrawColor(240,238,232); doc.line(M, y, W - M, y);
-  y += 16;
-
-  (order.lines || []).forEach((l, i) => {
-    const groups = (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) ? l.groups : null;
-    if (y > H - (groups ? 170 + groups.length * 12 : 170)) { doc.addPage(); y = 60; }
-    doc.setFontSize(9); doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
-    text(l.name ? ('Set ' + (i+1) + ': ' + l.name.slice(0, 14)) : ('Set ' + (i+1)), M, y);
-    doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
-    const headLabel = groups
-      ? `${l.mixedMaterials ? 'Mixed Materials' : (l.material === 'gold' ? 'Gold ' + (l.karat || '18') + 'K' : (E.LABELS.material[l.material] || l.material))} - ${l.teeth} teeth (Mixed, ${groups.length} groups)`
-      : E.lineLabel(l);
-    const parts = doc.splitTextToSize(pdfSafe(headLabel), W - M * 2 - 175);
-    text(parts[0] || '', M + 96, y);
-    doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
-    text(fmt(l.subtotal) + ' ' + order.currency, W - M, y, { align: 'right' });
-    y += 13;
-    if (groups) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(95,95,95);
-      groups.forEach((g, gi) => {
-        if (y > H - 110) { doc.addPage(); y = 60; }
-        const pre = g.label ? (g.label + ': ') : ('#' + (gi + 1) + ': ');
-        const gTxt = pdfSafe('- ' + pre + (E.groupLabel ? E.groupLabel(g, { includeMaterial: true }) : (g.teeth + 'T L' + g.level)));
-        const gParts = doc.splitTextToSize(gTxt, W - M * 2 - 180);
-        text(gParts[0] || '', M + 96, y);
-        text(fmt(g.subtotal) + ' ' + order.currency, W - M, y, { align: 'right' });
-        y += 11;
-      });
-    }
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
-    const detail = `${l.teeth} teeth - material ${fmt(l.materialTotal)}` +
-      (l.designCost ? ` - complexity ${fmt(l.designCost)}` : '') +
-      (l.stoneCost ? ` - stones ${fmt(l.stoneCost)}` : '') +
-      (l.platingCost ? ` - plating ${fmt(l.platingCost)}` : '') +
-      (l.enamelCost ? ` - enamel ${fmt(l.enamelCost)}` : '') +
-      (l.engravingCost ? ` - engraving ${fmt(l.engravingCost)}` : '') +
-      (l.anodizeCost ? ` - anodize ${fmt(l.anodizeCost)}` : '');
-    text(detail, M + 96, y);
-    y += 16;
-  });
-
-  if ((order.services || []).length) {
-    order.services.forEach((sv, i) => {
-      if (y > H - 170) { doc.addPage(); y = 60; }
-      doc.setFontSize(9); doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
-      text('Service ' + (i+1), M, y);
-      doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
-      text(`${sv.name}${sv.qty > 1 ? ' x' + sv.qty : ''}`, M + 78, y);
-      doc.setTextColor(43,43,43); doc.setFont('helvetica','bold');
-      text(fmt(sv.subtotal) + ' ' + order.currency, W - M, y, { align: 'right' });
-      y += 16;
-    });
-  }
-
-  /* totals */
-  y += 6;
-  doc.setDrawColor(230,228,222); doc.line(M, y, W - M, y);
-  y += 20;
-
-  const right = W - M;
-  const left = W - M - 190;
-  const kv = (k, v, bold) => {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.setFontSize(bold ? 10 : 8.5);
-    doc.setTextColor(bold ? 43 : 120, bold ? 43 : 120, bold ? 43 : 120);
-    text(k, left, y);
-    doc.setTextColor(43,43,43);
-    text(v, right, y, { align: 'right' });
-    y += bold ? 18 : 14;
-  };
-
-  if (order.linesSubtotal) kv('Designs subtotal', fmt(order.linesSubtotal) + ' ' + order.currency);
-  if (order.servicesSubtotal) kv('Services subtotal', fmt(order.servicesSubtotal) + ' ' + order.currency);
-  if (order.timelineAmount) kv('Timeline ' + (E.LABELS.timeline[order.timeline]||'') + ' (+' + order.timelinePct + '%)', fmt(order.timelineAmount) + ' ' + order.currency);
-  if (order.moldCost) kv('Mold ' + (E.LABELS.mold[order.mold]||''), fmt(order.moldCost) + ' ' + order.currency);
-  if (order.discountAmount) kv('Discount', '-' + fmt(order.discountAmount) + ' ' + order.currency);
-
-  doc.setFillColor(251, 248, 240);
-  doc.rect(left - 10, y - 13, right - left + 10 + M - M, 26, 'F');
-  doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(176,141,79);
-  text('TOTAL', left, y + 4);
-  text(fmt(order.total) + ' ' + order.currency, right, y + 4, { align: 'right' });
-  y += 30;
-
-  if (order.depositPct) {
-    kv('Deposit (' + order.depositPct + '%)', fmt(order.deposit) + ' ' + order.currency);
-    kv('Balance before delivery', fmt(order.balance) + ' ' + order.currency);
-  }
-
-  /* notes */
-  if (q.notes) {
-    y += 10;
-    doc.setFontSize(7); doc.setTextColor(150,150,150);
-    text('NOTES', M, y); y += 12;
-    doc.setFontSize(8.5); doc.setTextColor(80,80,80);
-    doc.splitTextToSize(pdfSafe(q.notes), W - M*2).forEach(line => { text(line, M, y); y += 11; });
-  }
-
-  /* footer */
-  doc.setFontSize(7); doc.setTextColor(175,175,175);
-  text(`This quotation is valid for ${validDays()} days. Prices are confirmed once the deposit is paid.`, M, H - 44);
-  text('EGYGRILLZ - egygrillz.com', W - M, H - 44, { align: 'right' });
-
-  const safeClient = pdfSafe(q.clientName || 'client').replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'client';
-  const fname = 'EGYGRILLZ-Quote-' + safeClient + '-' + new Date().toISOString().slice(0,10) + '.pdf';
-
-  if (q.returnBlob) return { blob: doc.output('blob'), name: fname };
-
-  doc.save(fname);
+function makePdf(q) {
+  const order = E.savedQuoteOrder(q);
+  if (!order) return toast('No priced items on this quote', true);
+  const meta = { ...q, date: q.createdAt, validDays: q.validDays ?? validDays(), studioName: q.studioName || SiteConfig.get('studioName') };
+  if (q.returnBlob) return { blob: new Blob([E.buildQuotePdfBytes(order, meta)], { type: 'application/pdf' }), name: E.quotePdfFilename(meta) };
+  E.downloadQuotePdf(order, meta);
   toast('PDF downloaded');
 }
 
@@ -1482,6 +1257,17 @@ mountQuoteCalculator();
 renderServices();
 recalc();
 await Promise.allSettled([loadClients(), loadQuotes()]);
+const requestedId = new URLSearchParams(location.search).get('id');
+if (requestedId && /^[a-zA-Z0-9_-]{1,128}$/.test(requestedId)) {
+  try {
+    let q = QUOTES.find(x => x.id === requestedId);
+    if (!q) { // May be older than the bounded history page.
+      const snap = await getDoc(doc(db,'quotes',requestedId));
+      if (snap.exists()) {q = {...snap.data(), id:snap.id}; QUOTES.unshift(q); renderQuotes();}
+    }
+    if (q) openQuote(q); else toast('That quotation no longer exists', true);
+  } catch { toast('Could not open that quotation. Check studio permissions.', true); }
+}
 </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ rules_version = '2';
  *  read what.
  *
  *  Deploy it with:
- *      firebase deploy --only firestore:rules
+ *      firebase deploy --only firestore:rules --project egygrillz-studio
  *  …or paste the whole file into
  *      Firebase console → Firestore Database → Rules → Publish
  *
@@ -18,60 +18,37 @@ rules_version = '2';
  *  below (or be granted the `staff` custom claim).
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function signedIn() {
-  return request.auth != null;
-}
-
-/* Staff = custom claim `staff: true`, OR one of the studio email addresses
-   below, OR one of the extra UIDs.
-
-   Email is listed first on purpose: the dashboard signs in with a real
-   Firebase Auth account, so the studio address is already in the token and
-   nothing has to be looked up in the console. Add or remove studio accounts
-   in this one list and redeploy.
-
-   `request.auth.token.email` is set by Firebase Auth and cannot be forged by
-   the client, so this is as strong as a UID list. */
-function staffEmails() {
-  return [
-    'admin@egygrillz.com',
-    'studio@egygrillz.com',
-    'egygrillz@gmail.com',
-  ];
-}
-
-/* Only used for accounts that should have access without the studio email
-   (rarely needed — leave empty unless you have one). */
-function staffUids() {
-  return [
-    /* 'REPLACE_WITH_A_UID', */
-  ];
-}
-
-function isStaff() {
-  return signedIn() && (
-    request.auth.token.staff == true ||
-    request.auth.token.admin == true ||
-    staffEmails().hasAny([request.auth.token.email]) ||
-    staffUids().hasAny([request.auth.uid])
-  );
-}
-
-/* Anyone may look at the public catalogue & pricing that the website shows. */
-function publicRead() {
-  return true;
-}
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Use a staff/admin custom claim or an explicitly trusted Auth UID.
+    // Email fallback requires verification. Missing claims must not throw.
+    function isStaff() {
+      return request.auth != null && (
+        request.auth.token.get('staff', false) == true ||
+        request.auth.token.get('admin', false) == true ||
+        request.auth.uid in staffUids() || (
+          request.auth.token.get('email_verified', false) == true &&
+          request.auth.token.get('email', '') in [
+            'admin@egygrillz.com', 'studio@egygrillz.com', 'egygrillz@gmail.com'
+          ]
+        )
+      );
+    }
+    function staffUids() {
+      // Add trusted Firebase Auth UIDs here for staff or the Worker account.
+      return [];
+    }
 
     /* ── public, read-only content ─────────────────────────────────────── */
     match /settings/{docId} {
-      allow read: if publicRead();
-      allow write: if isStaff();
+      allow get: if docId in ['pricing', 'site', 'schedule', 'catalog', 'banners', 'crops', 'visibility'];
+      allow read, write: if isStaff();
     }
 
     /* ── studio data: staff only ───────────────────────────────────────── */
+    function bookingIdMatches(id, data) {
+      return id == data.date + '_' + data.time.replace('[ :]', '');
+    }
     match /appointments/{docId} {
       /*
        * Public bookings must be paired atomically with their slot claim.
@@ -79,7 +56,7 @@ service cloud.firestore {
        * prevents a client from claiming a slot without also recording the
        * appointment (or creating an appointment without reserving the slot).
        */
-      allow create: if request.resource.data.keys().hasAll([
+      allow create: if isStaff() || request.resource.data.keys().hasAll([
           'service', 'date', 'time', 'name', 'phone', 'email', 'notes',
           'status', 'showedUp', 'createdAt'
         ])
@@ -87,6 +64,8 @@ service cloud.firestore {
           'service', 'date', 'time', 'name', 'phone', 'email', 'notes',
           'status', 'showedUp', 'createdAt'
         ])
+        && request.resource.data.showedUp == null
+        && request.resource.data.createdAt == request.time
         && request.resource.data['name'] is string
         && request.resource.data['name'].size() > 0
         && request.resource.data['name'].size() <= 100
@@ -101,9 +80,10 @@ service cloud.firestore {
         && request.resource.data['date'] is string
         && request.resource.data['date'].matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
         && request.resource.data['time'] is string
-        && request.resource.data['time'].matches('(0?[1-9]|1[0-2]):[0-5][0-9] [AP]M')
+        && request.resource.data['time'].matches('(0[1-9]|1[0-2]):[0-5][0-9] [AP]M')
         && request.resource.data['status'] == 'confirmed'
-        && existsAfter(/databases/$(database)/documents/slots/$(docId))
+        && bookingIdMatches(docId, request.resource.data)
+        && !exists(/databases/$(database)/documents/slots/$(docId))
         && getAfter(/databases/$(database)/documents/slots/$(docId)).data['date'] == request.resource.data['date']
         && getAfter(/databases/$(database)/documents/slots/$(docId)).data['time'] == request.resource.data['time'];
       allow read, update, delete: if isStaff();
@@ -116,13 +96,14 @@ service cloud.firestore {
      */
     match /slots/{docId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['date', 'time'])
+      allow create: if isStaff() || request.resource.data.keys().hasOnly(['date', 'time'])
         && request.resource.data.keys().hasAll(['date', 'time'])
         && request.resource.data['date'] is string
         && request.resource.data['date'].matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
         && request.resource.data['time'] is string
-        && request.resource.data['time'].matches('(0?[1-9]|1[0-2]):[0-5][0-9] [AP]M')
-        && existsAfter(/databases/$(database)/documents/appointments/$(docId))
+        && request.resource.data['time'].matches('(0[1-9]|1[0-2]):[0-5][0-9] [AP]M')
+        && bookingIdMatches(docId, request.resource.data)
+        && !exists(/databases/$(database)/documents/appointments/$(docId))
         && getAfter(/databases/$(database)/documents/appointments/$(docId)).data['date'] == request.resource.data['date']
         && getAfter(/databases/$(database)/documents/appointments/$(docId)).data['time'] == request.resource.data['time'];
       allow update, delete: if isStaff();
@@ -131,17 +112,30 @@ service cloud.firestore {
     match /clients/{docId} {
       /* the booking page creates its own client record; reading the client
          list back (names, phones, visit history) stays staff-only */
-      allow create: if true;
-      allow update, read, delete: if isStaff();
+      allow create: if isStaff() || request.resource.data.keys().hasOnly([
+          'name', 'phone', 'email', 'totalAppointments', 'totalNoShows',
+          'firstVisit', 'lastVisit', 'services', 'notes', 'createdAt'
+        ]) && request.resource.data.name is string && request.resource.data.name.size() <= 100
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 40
+        && request.resource.data.email is string && request.resource.data.email.size() <= 254
+        && request.resource.data.totalAppointments == 1 && request.resource.data.totalNoShows == 0
+        && docId.matches('[0-9]{8,40}')
+        && docId == request.resource.data.phone.replace('[^0-9]', '')
+        && request.resource.data.firstVisit is string
+        && request.resource.data.firstVisit.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.firstVisit == request.resource.data.lastVisit
+        && request.resource.data.services is list && request.resource.data.notes == ''
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isStaff();
     }
 
     match /invoices/{docId} {
       allow read, write: if isStaff();
     }
 
+    // The public calculator downloads locally. Only the studio issues/saves quotes.
     match /quotes/{docId} {
-      allow create: if true;
-      allow read, update, delete: if isStaff();
+      allow read, write: if isStaff();
     }
 
     match /design_templates/{docId} {
@@ -175,9 +169,7 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
-    /* Everything not named above stays closed. */
-    match /{document=**} {
-      allow read, write: if isStaff();
-    }
+    // Local order drafts and signatures have no public or cloud collection.
+    // Paths not explicitly matched above are denied by default.
   }
 }

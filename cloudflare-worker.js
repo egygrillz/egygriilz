@@ -1,5 +1,7 @@
+import './assets/calc-engine.js';
+
 /* ═══════════════════════════════════════════════════════════════════════════
- *  EGYGRILLZ — CLOUDFLARE WORKER  (single file, paste into the dashboard)
+ *  EGYGRILLZ — CLOUDFLARE WORKER  (module entry; see STUDIO-ORDERS.md for single-file paste)
  *  ---------------------------------------------------------------------------
  *  1. Telegram bot — schedule, clients, money, invoices, quotes, PDF files
  *  2. Instant alerts — new booking, new message
@@ -239,214 +241,6 @@ class PdfDoc {
   }
 }
 
-/* ─────────────────────────── quotation ─────────────────────────── */
-
-const money = (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-/**
- * Build a quotation PDF.
- * @param {object} q  { clientName, clientPhone, clientEmail, notes, createdAt, id, order, lines }
- * @param {object} opt { studioName, address[], validDays }
- */
-function buildQuotePdf(q, opt = {}) {
-  const doc = new PdfDoc();
-  const M = 46;
-  const Wd = A4.w - M * 2;
-  const order = q.order || { lines: [], linesSubtotal: 0, total: 0 };
-  const lines = order.lines || q.lines || [];
-  const cur = order.currency || 'EGP';
-  const studio = opt.studioName || 'EGYGRILLZ';
-  const address = opt.address || [
-    'Inside Smart Smile Clinics',
-    '38 Abou Bakr EL-Sdeek, Heliopolis',
-    'Floor 5, Apt 504 - Cairo, Egypt',
-  ];
-
-  doc.meta.title = `${studio} - Quotation`;
-  doc.meta.subject = q.clientName || '';
-
-  const p = doc.current;
-  let y = 0;
-
-  /* ── header band ── */
-  p.rect(0, 0, A4.w, 112, '#1f1f1f');
-  p.text(studio, M, 46, { size: 21, serif: true, bold: true, color: '#ffffff' });
-  p.text('CUSTOM GRILLZ STUDIO', M, 62, { size: 7, color: '#bdbdbd' });
-  address.forEach((l, i) => p.text(l, M, 74 + i * 9.5, { size: 7, color: '#9a9a9a' }));
-
-  p.text('QUOTATION', A4.w - M, 44, { size: 13, serif: true, bold: true, color: '#ffffff', align: 'right' });
-  const dateStr = new Date(q.createdAt || Date.now()).toISOString().slice(0, 10);
-  p.text(dateStr, A4.w - M, 62, { size: 8, color: '#bdbdbd', align: 'right' });
-  if (q.id) p.text('No. ' + String(q.id).slice(-8).toUpperCase(), A4.w - M, 74, { size: 8, color: '#bdbdbd', align: 'right' });
-
-  y = 146;
-
-  /* ── client ── */
-  p.text('PREPARED FOR', M, y, { size: 7, color: '#9a9a9a' });
-  y += 16;
-  p.text(q.clientName || 'Client', M, y, { size: 13, serif: true, bold: true });
-  y += 15;
-  if (q.clientPhone) { p.text(q.clientPhone, M, y, { size: 8.5, color: '#555555' }); y += 12; }
-  if (q.clientEmail) { p.text(q.clientEmail, M, y, { size: 8.5, color: '#555555' }); y += 12; }
-
-  /* ── table header ── */
-  y += 14;
-  p.rect(M, y - 11, Wd, 22, '#f3f3f3');
-  p.text('DESIGN', M + 8, y + 3, { size: 7, color: '#6b6b6b' });
-  p.text('DETAILS', M + 190, y + 3, { size: 7, color: '#6b6b6b' });
-  p.text('AMOUNT', A4.w - M - 8, y + 3, { size: 7, color: '#6b6b6b', align: 'right' });
-  y += 26;
-
-  /* ── designs ── */
-  lines.forEach((l, i) => {
-    const groups = (l && Array.isArray(l.groups) && l.groups.length > 1) ? l.groups : null;
-    const estH = 38 + (groups ? groups.length * 12 : 0);
-    if (y > A4.h - Math.max(150, estH + 90)) {
-      doc.createPage();
-      y = 70;
-    }
-    const label = (l && l.name ? `${l.name}  -  ` : '') + lineLabel(l);
-    const detail = designDetail(l);
-
-    doc.current.text(`${i + 1}.`, M + 8, y, { size: 9, bold: true });
-    doc.current.text(label, M + 26, y, { size: 9 });
-    doc.current.text(money(l.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 9, bold: true, align: 'right' });
-    y += 12;
-    if (groups) {
-      groups.forEach((g, gi) => {
-        if (y > A4.h - 110) { doc.createPage(); y = 70; }
-        const gPrefix = g.label ? `${g.label}: ` : `Group ${gi + 1}: `;
-        doc.current.text(`- ${gPrefix}${lineLabel(g)}`, M + 32, y, { size: 7.6, color: '#4a4a4a' });
-        doc.current.text(money(g.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 7.6, color: '#6b6b6b', align: 'right' });
-        y += 11;
-      });
-    }
-    if (detail) {
-      doc.current.text(detail, M + 26, y, { size: 7.2, color: '#8a8a8a' });
-      y += 11;
-    }
-    y += 4;
-    doc.current.line(M + 8, y, A4.w - M - 8, y, '#eeeeee', 0.4);
-    y += 12;
-  });
-
-  const services = order.services || q.services || [];
-  if (!lines.length && !services.length) {
-    doc.current.text('No designs or services on this quotation.', M + 8, y, { size: 9, color: '#8a8a8a' });
-    y += 24;
-  }
-
-  services.forEach((s, idx) => {
-    if (y > A4.h - 190) {
-      doc.createPage();
-      y = 70;
-    }
-    const label = (s.name || s.type || 'Studio Service') + (Number(s.qty) > 1 ? ` (x${s.qty})` : '');
-    doc.current.text(`${lines.length + idx + 1}.`, M + 8, y, { size: 9, bold: true });
-    doc.current.text(label, M + 26, y, { size: 9 });
-    doc.current.text(money(s.subtotal) + ' ' + cur, A4.w - M - 8, y, { size: 9, bold: true, align: 'right' });
-    y += 12;
-    if (s.notes) {
-      doc.current.text(String(s.notes), M + 26, y, { size: 7.2, color: '#8a8a8a' });
-      y += 11;
-    }
-    y += 4;
-    doc.current.line(M + 8, y, A4.w - M - 8, y, '#eeeeee', 0.4);
-    y += 12;
-  });
-
-  /* ── totals ── */
-  if (y > A4.h - 150) { doc.createPage(); y = 70; }
-  y += 4;
-  const left = A4.w - M - 210;
-  const right = A4.w - M - 8;
-
-  const kv = (k, v, bold) => {
-    doc.current.text(k, left, y, { size: bold ? 10 : 8.5, bold, color: bold ? '#1f1f1f' : '#6b6b6b' });
-    doc.current.text(v, right, y, { size: bold ? 10 : 8.5, bold, align: 'right' });
-    y += bold ? 18 : 13;
-  };
-
-  kv('Lines subtotal', money(order.linesSubtotal) + ' ' + cur);
-  if (order.servicesSubtotal) kv('Services subtotal', money(order.servicesSubtotal) + ' ' + cur);
-  if (order.timelineAmount) kv(`Timeline (+${order.timelinePct || 0}%)`, money(order.timelineAmount) + ' ' + cur);
-  if (order.moldCost) kv('Mold', money(order.moldCost) + ' ' + cur);
-  if (order.discountAmount) kv('Discount', '-' + money(order.discountAmount) + ' ' + cur);
-
-  y += 2;
-  doc.current.rect(left - 10, y - 13, right - left + 18, 28, '#1f1f1f');
-  doc.current.text('TOTAL', left, y + 4, { size: 11, serif: true, bold: true, color: '#ffffff' });
-  doc.current.text(money(order.total) + ' ' + cur, right, y + 4, { size: 12, bold: true, color: '#ffffff', align: 'right' });
-  y += 34;
-
-  const depPct = Number(order.depositPct) || 0;
-  if (depPct) {
-    kv(`Deposit (${depPct}%)`, money(order.deposit) + ' ' + cur);
-    kv('Balance before delivery', money(order.balance) + ' ' + cur);
-  }
-
-  /* ── notes ── */
-  if (q.notes) {
-    if (y > A4.h - 110) { doc.createPage(); y = 70; }
-    y += 8;
-    doc.current.text('NOTES', M, y, { size: 7, color: '#9a9a9a' });
-    y += 13;
-    y = doc.current.para(q.notes, M, y, Wd, { size: 8.5, color: '#4a4a4a', lineHeight: 12 });
-  }
-
-  /* ── footer on every page ── */
-  const validDays = opt.validDays || 14;
-  doc.pages.forEach((pg, i) => {
-    pg.line(M, A4.h - 52, A4.w - M, A4.h - 52, '#e4e4e4', 0.5);
-    pg.text(`This quotation is valid for ${validDays} days. Prices are confirmed once the deposit is paid.`, M, A4.h - 38, { size: 7, color: '#9a9a9a' });
-    pg.text(`${studio} - egygrillz.com`, A4.w - M, A4.h - 38, { size: 7, color: '#9a9a9a', align: 'right' });
-    if (doc.pages.length > 1) {
-      pg.text(`${i + 1} / ${doc.pages.length}`, A4.w / 2, A4.h - 38, { size: 7, color: '#c0c0c0', align: 'center' });
-    }
-  });
-
-  return doc.build();
-}
-
-/** Short human label for a design or service line (uniform or mixed-teeth set) */
-function lineLabel(l) {
-  if (l && l.kind === 'service') {
-    const qty = Number(l.teeth) > 1 ? ` (${l.teeth}x)` : '';
-    return `${l.serviceLabel || l.service || 'Studio Service'}${qty}`;
-  }
-  if (l && Array.isArray(l.groups) && l.groups.length > 1) {
-    const gs = l.groups;
-    const totalT = Number(l.teeth) || gs.reduce((s, g) => s + (Number(g.teeth) || 0), 0);
-    const mKey = (g) => g.material === 'gold' ? `Gold ${g.karat || '18'}K` : String(g.material || '');
-    const m0 = mKey(gs[0]);
-    const mixedMat = gs.some((g) => mKey(g) !== m0);
-    const head = mixedMat ? `Mixed Materials` : m0;
-    return `${head} / ${totalT} teeth / mixed (${gs.length} tooth groups)`;
-  }
-  const mat = l.material === 'gold' ? `Gold ${l.karat || '18'}K` : String(l.material || '');
-  const bits = [`${mat} / ${l.teeth || 0} ${(Number(l.teeth) === 1) ? 'tooth' : 'teeth'} / level ${l.level || '1'}`];
-  if (l.accent && l.accent.count) bits.push(`${l.accent.count}x ${l.accent.type || ''}`.trim());
-  if (l.full && l.full.bars) bits.push('full coverage bars');
-  else if (l.full) bits.push(`full coverage ${l.full.type || ''}`.trim());
-  if (l.plating && l.plating !== 'none' && l.plating !== 'mixed') bits.push(String(l.plating));
-  if (l.anodize && l.anodize !== 'none' && l.anodize !== 'mixed') bits.push('anodize ' + l.anodize);
-  if (l.enamel && l.enamel !== 'none' && l.enamel !== 'mixed') bits.push('enamel ' + l.enamel);
-  if (l.engraving && l.engraving !== 'none' && l.engraving !== 'mixed') bits.push('engraving ' + l.engraving);
-  return bits.join('  -  ');
-}
-
-function designDetail(l) {
-  const bits = [];
-  if (l.materialTotal) bits.push(`metal ${money(l.materialTotal)}`);
-  if (l.designCost) bits.push(`design ${money(l.designCost)}`);
-  if (l.stoneCost) bits.push(`stones ${money(l.stoneCost)}`);
-  if (l.platingCost) bits.push(`plating ${money(l.platingCost)}`);
-  if (l.anodizeCost) bits.push(`anodizing ${money(l.anodizeCost)}`);
-  if (l.enamelCost) bits.push(`enamel ${money(l.enamelCost)}`);
-  if (l.engravingCost) bits.push(`engraving ${money(l.engravingCost)}`);
-  return bits.join('   ');
-}
-
 /* ─────────────────────────── simple report ─────────────────────────── */
 
 /** A4 report from a plain multi-line text — used for the monthly digest */
@@ -529,7 +323,6 @@ function buildTextPdf(title, body, opt = {}) {
 
 const FS_PROJECT = 'egygrillz-studio';
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${FS_PROJECT}/databases/(default)/documents`;
-const FS_DOC = FS_BASE;
 
 /* ─────────────────────────── dates ─────────────────────────── */
 
@@ -826,41 +619,21 @@ async function fetchCollection(env, name, fetchImpl = fetch, maxRows = 120) {
 
 /** invoice / quote doc → flat object */
 function mapInvoice(doc) {
-  const f = (doc && doc.fields) || {};
-  const itemVals = (f.items && f.items.arrayValue && f.items.arrayValue.values) || [];
-  const itemsSum = Array.isArray(itemVals)
-    ? itemVals.reduce((sum, entry) => {
-        const mf = (entry && entry.mapValue && entry.mapValue.fields) || {};
-        const qty = Number(fsVal(mf.qty)) || 1;
-        const unit = parsePrice(fsVal(mf.price)) || parsePrice(fsVal(mf.subtotal)) || parsePrice(fsVal(mf.amount));
-        return sum + (parsePrice(fsVal(mf.total)) || (qty * unit));
-      }, 0)
-    : 0;
-  const total = parsePrice(fsVal(f.total)) || parsePrice(fsVal(f.amount)) || parsePrice(fsVal(f.subtotal)) || itemsSum;
-  const lines = (Array.isArray(itemVals) ? itemVals : []).map((entry) => {
-    const mf = (entry && entry.mapValue && entry.mapValue.fields) || {};
-    return {
-      name: String(fsVal(mf.name) || fsVal(mf.label) || ''),
-      spec: String(fsVal(mf.spec) || ''),
-      qty: Number(fsVal(mf.qty)) || 1,
-      price: parsePrice(fsVal(mf.price)) || parsePrice(fsVal(mf.subtotal)) || 0,
-      subtotal: parsePrice(fsVal(mf.total)) || 0,
-      materialTotal: parsePrice(fsVal(mf.materialTotal)) || 0,
-      level: String(fsVal(mf.level) || ''),
-      calc: (mf.calc && mf.calc.mapValue) ? mf.calc.mapValue.fields : null,
-    };
-  });
+  const d = globalThis.CalcEngine.decodeFirestoreValue({mapValue:doc});
+  const lines = (Array.isArray(d.items) ? d.items : []).map(i => ({
+    name: String(i.name || i.label || ''), spec: String(i.spec || ''),
+    qty: Number(i.qty) || 1, price: parsePrice(i.price ?? i.subtotal ?? i.amount),
+    total: i.total == null ? null : parsePrice(i.total),
+    // Never infer a design from an invoice description or a saved amount.
+    design: i.line || i.calc || (i.material && i.teeth ? i : null),
+  }));
+  const itemSum = lines.reduce((sum, i) => sum + (i.total ?? i.qty * i.price), 0);
   return {
-    id: (doc.name || '').split('/').pop(),
-    lines,
-    clientName: String(fsVal(f.clientName) || fsVal(f.client) || fsVal(f.name) || ''),
-    phone: String(fsVal(f.clientPhone) || fsVal(f.phone) || ''),
-    email: String(fsVal(f.clientEmail) || fsVal(f.email) || ''),
-    total: Number(total) || 0,
-    status: String(fsVal(f.status) || 'draft'),
-    paid: toBool(fsVal(f.paid)) === true || String(fsVal(f.status) || '') === 'paid',
-    date: String(fsVal(f.date) || fsVal(f.createdAt) || fsVal(f.updatedAt) || ''),
-    createdAt: String(fsVal(f.createdAt) || ''),
+    id: (doc.name || '').split('/').pop(), lines,
+    clientName: String(d.clientName || d.client || d.name || ''), phone: String(d.clientPhone || d.phone || ''),
+    email: String(d.clientEmail || d.email || ''), total: parsePrice(d.order?.total ?? d.total ?? d.amount ?? d.subtotal ?? itemSum),
+    status: String(d.status || 'draft'), paid: toBool(d.paid) === true || d.status === 'paid',
+    date: String(d.date || d.createdAt || d.updatedAt || ''), createdAt: String(d.createdAt || ''),
   };
 }
 
@@ -1355,37 +1128,13 @@ async function findQuote(arg, env, fetchImpl = fetch) {
 
 /** Read the raw quote document (we need order + lines, not the flat map) */
 async function rawQuote(id, env, fetchImpl = fetch) {
-  // try every read path we have before giving up
-  const urls = [
-    `${FS_DOC}/quotes/${encodeURIComponent(id)}?key=${env.FIREBASE_API_KEY}`,
-  ];
-  let doc = null;
-  for (const u of urls) {
-    try {
-      const r = await fetchImpl(u, { method: 'GET', headers: await fsHeaders(env, fetchImpl) });
-      if (!r.ok) continue;
-      const d = await r.json().catch(() => null);
-      if (d && d.fields) { doc = d; break; }
-    } catch (e) { /* next */ }
-  }
-  if (!doc) return null;
-  const val = (f) => {
-    if (!f) return undefined;
-    if (f.stringValue !== undefined) return f.stringValue;
-    if (f.integerValue !== undefined) return Number(f.integerValue);
-    if (f.doubleValue !== undefined) return Number(f.doubleValue);
-    if (f.booleanValue !== undefined) return f.booleanValue;
-    if (f.mapValue) {
-      const o = {};
-      for (const [k, v] of Object.entries(f.mapValue.fields || {})) o[k] = val(v);
-      return o;
-    }
-    if (f.arrayValue) return (f.arrayValue.values || []).map(val);
-    return undefined;
-  };
-  const out = { id };
-  for (const [k, v] of Object.entries(doc.fields)) out[k] = val(v);
-  return out;
+  try {
+    const r = await fetchImpl(`${FS_BASE}/quotes/${encodeURIComponent(id)}?key=${env.FIREBASE_API_KEY}`,
+      { method:'GET', headers:await fsHeaders(env, fetchImpl) });
+    if (!r.ok) return null;
+    const doc = await r.json();
+    return doc.fields ? { ...globalThis.CalcEngine.decodeFirestoreValue({mapValue:doc}), id } : null;
+  } catch { return null; }
 }
 
 /** /pdf <name> — send the quotation as a real PDF file */
@@ -1400,30 +1149,16 @@ async function sendQuoteFile(arg, env, fetchImpl = fetch) {
   const raw = await rawQuote(found.quote.id, env, fetchImpl);
   if (!raw) return 'Could not open that quote document.';
 
-  const [pricing, siteMeta] = await Promise.all([
-    loadPricing(env, fetchImpl),
-    loadMouldPrices(env, fetchImpl),
-  ]);
-  const order = recalcOrder(raw.order || { lines: [], total: 0 }, pricing, raw.discount);
-  order.currency = (pricing && pricing.currency) || raw.currency || 'EGP';
-
-  const bytes = buildQuotePdf({
-    id: raw.id,
-    clientName: raw.clientName,
-    clientPhone: raw.clientPhone,
-    clientEmail: raw.clientEmail,
-    notes: raw.notes,
-    createdAt: raw.createdAt,
-    order,
-  }, {
-    studioName: (siteMeta && siteMeta.studioName) || (pricing && pricing.studioName) || 'EGYGRILLZ',
-    validDays: (siteMeta && siteMeta.quoteValidDays) || 14,
-  });
-
-  const safeName = asciiName(raw.clientName || 'client');
+  const engine = globalThis.CalcEngine;
+  const order = engine.savedQuoteOrder(raw);
+  if (!order) return 'No priced order was saved on that quotation.';
+  const site = await loadMouldPrices(env, fetchImpl);
+  const meta = { clientName: raw.clientName, clientPhone: raw.clientPhone, clientEmail: raw.clientEmail,
+    date: raw.createdAt, notes: raw.notes, id: raw.id, studioName: raw.studioName || site?.studioName,
+    validDays: raw.validDays ?? site?.quoteValidDays ?? 14 };
   return {
-    pdf: bytes,
-    filename: `EGYGRILLZ-Quote-${safeName}-${String(raw.createdAt || new Date().toISOString()).slice(0, 10)}.pdf`,
+    pdf: engine.buildQuotePdfBytes(order, meta),
+    filename: engine.quotePdfFilename(meta),
     caption: `<b>Quotation</b>\n${escTg(raw.clientName || '')}\n${num(order.total)} ${order.currency || 'EGP'}`,
     _quote: raw,
   };
@@ -1440,7 +1175,6 @@ async function sendReportFile(env, fetchImpl = fetch) {
   };
 }
 
-const asciiName = (s) => String(s || 'client').replace(/[^\w\-]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'client';
 const escTg = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** "send the quote of ahmed" -> returns the quote + PDF */
@@ -1614,7 +1348,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
       const pricing = await loadPricingSettings(env, fetchImpl);
       const driftOf = (inv) => (inv.lines || []).reduce((n, l) => {
         const re = recalcInvoiceLine(l, pricing);
-        return re ? n + Math.abs(re.price - (l.price || 0)) : n;
+        return re == null ? n : n + Math.abs(re - l.price) * l.qty;
       }, 0);
       const lines = ['INVOICES', LINE, `${list.length} saved`, ''];
       list.slice(0, 20).forEach((inv, i) => {
@@ -1950,24 +1684,16 @@ async function runCommand(text, env, fetchImpl = fetch) {
         '',
         'LINES (saved → live calculator)',
       ];
-      let drift = 0;
-      (inv.lines || []).forEach((l) => {
-        const re = recalcInvoiceLine(l, pricing);
-        const label = l.name || l.spec || 'line';
-        if (re && Math.abs(re.price - (l.price || 0)) > 0.5) {
-          drift += Math.abs(re.price - (l.price || 0));
-          lines.push(`  ⚠ ${pad(label, 20)} ${padL(num(l.price), 7)} → ${padL(num(re.price), 7)} EGP  (L${l.level || '?'} · ${re.designPct}%)`);
-        } else {
-          lines.push(`  ✓ ${pad(label, 20)} ${padL(num(l.price), 7)} EGP`);
-        }
+      let delta = 0, compared = 0;
+      (inv.lines || []).forEach(l => {
+        const live = recalcInvoiceLine(l, pricing), label = pad(l.name || l.spec || 'line', 20);
+        if (live == null) { lines.push(`  ${label} ${num(l.price)} EGP (saved only)`); return; }
+        compared++;
+        delta += (live - l.price) * l.qty;
+        lines.push(`  ${label} ${num(l.price)} → ${num(live)} EGP × ${l.qty}`);
       });
-      lines.push(LINE);
-      if (drift) {
-        lines.push(`Live calculator rates would change this invoice by ${num(drift)} EGP.`);
-        lines.push('Re-open it in /invoice to re-price it with the current rates.');
-      } else {
-        lines.push('Every line matches the live calculator rates.');
-      }
+      lines.push(LINE, compared ? `${compared} comparable design line(s); difference: ${num(delta)} EGP. Issued invoice unchanged.`
+        : 'Saved amounts only. No design with complete, verifiable pricing to compare.');
       return lines.join('\n');
     }
 
@@ -1975,7 +1701,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
     case '/rates': {
       const p = await loadPricingSettings(env, fetchImpl);
       const lines = ['CALCULATOR — LIVE RATES', LINE];
-      lines.push(`Gold rate:   ${p.goldPrice ? num(p.goldPrice) + ' EGP/g 24K (live market)' : 'unavailable — feeds unreachable'}`);
+      lines.push(`Gold rate:   ${p.goldPrice ? num(p.goldPrice) + (p.marketLive ? ' EGP/g 24K (live market)' : ' EGP/g 24K (stored, not live)') : 'unavailable — feeds unreachable'}`);
       if (p.karatWeights && Object.keys(p.karatWeights).length) {
         const kw = Object.entries(p.karatWeights).map(([k, v]) => `${k}k=${v}g`).join(' · ');
         lines.push(`Gold wt/t:   ${kw}`);
@@ -1990,6 +1716,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
       }
       lines.push('', `Rounding:   ${p.roundTo} EGP`);
       lines.push(`Deposit:    ${p.depositPct}%`);
+      if (!p.studioLoaded) lines.push('Studio settings unavailable. Showing calculator defaults.');
       if (p.updatedAt) lines.push(`Updated:    ${String(p.updatedAt).slice(0, 16).replace('T', ' ')}`);
       lines.push('', 'Change them in /editx → Settings or /staff-panel-x7k2 → Settings.');
       return lines.join('\n');
@@ -2218,7 +1945,7 @@ async function saveVisibility(env, hidden, fetchImpl = fetch) {
   }
 }
 
-/** Read the pricing settings so the PDF matches the calculator (cached 5m per isolate) */
+/** Read pricing for the live rates reports (cached 5m per isolate) */
 async function loadPricing(env, fetchImpl = fetch) {
   const cached = isoCacheGet('settings:pricing', fetchImpl);
   if (cached !== undefined) return cached;
@@ -2229,125 +1956,13 @@ async function loadPricing(env, fetchImpl = fetch) {
     const doc = await r.json().catch(() => null);
     // settings/pricing may not exist yet — the calculator's defaults cover that
     if (!doc || !doc.fields) return null;
-    const out = {};
-    for (const [k, v] of Object.entries(doc.fields)) {
-      if (v.mapValue) {
-        out[k] = {};
-        for (const [k2, v2] of Object.entries(v.mapValue.fields || {})) {
-          out[k][k2] = v2.integerValue !== undefined ? Number(v2.integerValue)
-            : v2.doubleValue !== undefined ? Number(v2.doubleValue)
-            : v2.stringValue !== undefined ? v2.stringValue : null;
-        }
-      } else if (v.integerValue !== undefined) out[k] = Number(v.integerValue);
-      else if (v.doubleValue !== undefined) out[k] = Number(v.doubleValue);
-      else if (v.stringValue !== undefined) out[k] = v.stringValue;
-    }
+    const out = globalThis.CalcEngine.decodeFirestoreValue({mapValue:doc});
     isoCacheSet('settings:pricing', out, 5 * 60 * 1000, fetchImpl);
     return out;
   } catch (e) {
     return null;
   }
 }
-
-/** Recalculate an order from its raw lines + services + anodize + discount (mirrors CalcEngine) */
-function recalcOrder(rawOrder, pricing, fallbackDiscount) {
-  if (!rawOrder || (!Array.isArray(rawOrder.lines) && !Array.isArray(rawOrder.services))) return rawOrder;
-  const pt = Object.assign({ '0.5':0,'1':0,'2':10,'3':15,'4':25,'5':40,'6':60 }, (pricing && pricing.designPct) || {});
-  const tlPct = Object.assign({ standard:0, rush:25, emergency:50 }, (pricing && pricing.timelinePct) || {});
-  const mold = Object.assign({ none:0, normalperarch:200, digitalfullmouth:1500 }, (pricing && pricing.moldFlat) || {});
-  const roundTo = Math.max(1, Number(pricing && pricing.roundTo) || 50);
-
-  const recalcSingle = (src) => {
-    const g = Object.assign({}, src);
-    const mat = Number(g.materialTotal) || 0;
-    const pct = Number(pt[g.level] || 0);
-    g.designPct = pct;
-    const designCost = mat * (pct / 100);
-    g.designCost = Math.round(designCost);
-    const raw = mat
-      + designCost
-      + (Number(g.stoneCost) || 0)
-      + (Number(g.platingCost) || 0)
-      + (Number(g.enamelCost) || 0)
-      + (Number(g.engravingCost) || 0)
-      + (Number(g.anodizeCost) || 0);
-    g.subtotal = Math.round(raw);
-    return { g, raw, designCost };
-  };
-
-  const lines = (Array.isArray(rawOrder.lines) ? rawOrder.lines : []).map(l => {
-    if (l && Array.isArray(l.groups) && l.groups.length > 1) {
-      const line = Object.assign({}, l);
-      let rawSum = 0;
-      let designSum = 0;
-      const groups = l.groups.map((grp) => {
-        const res = recalcSingle(grp);
-        rawSum += res.raw;
-        designSum += res.designCost;
-        return res.g;
-      });
-      const sum = (k) => groups.reduce((acc, g) => acc + (Number(g[k]) || 0), 0);
-      line.isMixed = true;
-      line.groups = groups;
-      line.teeth = sum('teeth');
-      line.materialTotal = sum('materialTotal');
-      line.designCost = Math.round(designSum);
-      line.designPct = line.materialTotal > 0 ? Math.round((designSum / line.materialTotal) * 1000) / 10 : 0;
-      line.stoneCost = sum('stoneCost');
-      line.platingCost = sum('platingCost');
-      line.enamelCost = sum('enamelCost');
-      line.engravingCost = sum('engravingCost');
-      line.anodizeCost = sum('anodizeCost');
-      line.subtotal = Math.round(rawSum);
-      return line;
-    }
-    return recalcSingle(l).g;
-  });
-
-  const services = Array.isArray(rawOrder.services) ? rawOrder.services : [];
-  const servicesSubtotal = services.length
-    ? services.reduce((sum, sv) => sum + Math.round((Number(sv.subtotal) || ((Number(sv.qty) || 1) * (Number(sv.unitPrice) || 0)))), 0)
-    : (Number(rawOrder.servicesSubtotal) || 0);
-
-  const linesSubtotal = lines.reduce((n, l) => n + l.subtotal, 0);
-  const pct = Number(tlPct[rawOrder.timeline] || 0);
-  const tlAmount = Math.round(linesSubtotal * pct / 100);
-  const moldCost = rawOrder.mold !== undefined && mold[rawOrder.mold] !== undefined
-    ? Number(mold[rawOrder.mold] || 0)
-    : (Number(rawOrder.moldCost) || 0);
-  const preDiscount = linesSubtotal + tlAmount + moldCost + servicesSubtotal;
-
-  let discountAmount = 0;
-  const disc = rawOrder.discount || fallbackDiscount;
-  if (disc && Number(disc.value) > 0) {
-    discountAmount = disc.type === 'pct'
-      ? Math.round(preDiscount * Math.min(100, Number(disc.value)) / 100)
-      : Math.min(preDiscount, Math.round(Number(disc.value)));
-  } else if (Number(rawOrder.discountAmount) > 0) {
-    discountAmount = Math.min(preDiscount, Math.round(Number(rawOrder.discountAmount)));
-  }
-
-  const net = Math.max(0, preDiscount - discountAmount);
-  const total = net > 0 ? Math.ceil(net / roundTo) * roundTo : 0;
-  const depPct = Number(rawOrder.depositPct) || 0;
-  const deposit = Math.round(total * depPct / 100);
-
-  return Object.assign({}, rawOrder, {
-    lines,
-    services,
-    linesSubtotal,
-    servicesSubtotal,
-    timelinePct: pct,
-    timelineAmount: tlAmount,
-    moldCost,
-    discountAmount,
-    total,
-    depositPct: depPct,
-    deposit,
-    balance: total - deposit,
-  });
-}
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
  *  MOULD KIT ORDERS  (Get Your Moulds)
@@ -2749,14 +2364,14 @@ async function findMouldOrder(env, needle, fetchImpl = fetch) {
  * The market pair, from the two free feeds. Used by /api/rates and by the
  * Telegram bot's /rates so the bot can never print a stored, stale figure.
  */
-async function fetchLiveRates() {
+async function fetchLiveRates(fetchImpl = fetch) {
   const GRAMS_PER_OZT = 31.1034768;
   const inRange = (n, lo, hi) => Number.isFinite(n) && n >= lo && n <= hi;
   const getJson = async (u) => {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 8000);
     try {
-      const r = await fetch(u, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+      const r = await fetchImpl(u, { signal: ctl.signal, headers: { Accept: 'application/json' } });
       if (!r.ok) throw new Error(u + ' → HTTP ' + r.status);
       return await r.json();
     } finally { clearTimeout(t); }
@@ -2776,33 +2391,28 @@ async function fetchLiveRates() {
 /** live calculator rates, in a shape the bot can print */
 async function loadPricingSettings(env, fetchImpl = fetch) {
   const p = await loadPricing(env, fetchImpl);
-  /* the market always wins over whatever was stored; if the feeds are down we
-     fall back to the stored figure rather than failing the whole command */
   let live = 0;
-  try { live = (await fetchLiveRates()).egpPerGram24; } catch (e) { live = 0; }
-  return {
-    goldPrice: Math.round(live > 0 ? live : (Number(p && p.goldPrice) || 0)),
-    karatWeights: (p && (p.goldGramsPerTooth || p.karatWeights)) || { '10': 0.35, '14': 0.35, '18': 0.34, '21': 0.34, '22': 0.33 },
-    designPct: Object.assign({ '0.5': 0, '1': 0, '2': 10, '3': 15, '4': 25, '5': 40, '6': 60 }, (p && p.designPct) || {}),
-    materialBase: Object.assign({ chrome: 1000, titanium: 2800, silver: 1600 }, (p && p.materialBase) || {}),
-    anodizeFlat: Object.assign({ none: 0, single: 300, dual: 350, multi: 450 }, (p && (p.anodize || p.anodizeFlat)) || {}),
-    roundTo: Number(p && p.roundTo) || 50,
-    depositPct: Number(p && p.depositPct) || 50,
-    updatedAt: String((p && p.updatedAt) || ''),
-  };
+  try { live = (await fetchLiveRates(fetchImpl)).egpPerGram24; } catch {}
+  const calculator = globalThis.CalcEngine.withSettings({...p, ...(live > 0 && {goldPrice:live})});
+  const settings = calculator.get();
+  return {...settings, calculator, marketLive:live > 0, studioLoaded:!!p, updatedAt:p?.updatedAt,
+    karatWeights:settings.goldGramsPerTooth, anodizeFlat:settings.anodize};
 }
 
-/** recalculate one invoice line with the live calculator rates */
+/** Compare only saved, reproducible designs. Never change the issued invoice. */
 function recalcInvoiceLine(line, pricing) {
-  if (!line) return null;
-  const level = String(line.level || '');
-  if (level === 'mixed') return null;
-  const materialTotal = Number(line.materialTotal) || 0;
-  if (!materialTotal) return null;
-  const pct = Number((pricing.designPct || {})[level] || 0);
-  const designCost = Math.round(materialTotal * pct / 100);
-  const extras = (Number(line.stoneCost) || 0) + (Number(line.platingCost) || 0) + (Number(line.enamelCost) || 0) + (Number(line.engravingCost) || 0) + (Number(line.anodizeCost) || 0);
-  return { materialTotal, level, designPct: pct, designCost, price: Math.round(materialTotal + designCost + extras) };
+  if (!pricing.studioLoaded || !line.design) return null;
+  const spec = pricing.calculator.cleanLineSpec(line.design);
+  if (!spec || !(line.design.material || line.design.groups?.length)) return null;
+  for (const g of spec.groups || [spec]) {
+    if (g.material === 'gold' && !pricing.marketLive) return null;
+    for (const [stone, table] of [[g.accent,pricing.accentPrice],[g.full,pricing.fullPrice]]) {
+      if (stone && !stone.bars && table[stone.type] == null && stone.customPrice == null) return null;
+    }
+    delete g.goldPrice; // comparison uses the live market, not yesterday's saved rate
+  }
+  delete spec.goldPrice;
+  return pricing.calculator.calculateLine(spec).subtotal;
 }
 
 /* ─────────────────────────── telegram plumbing ─────────────────────────── */
@@ -3786,31 +3396,8 @@ export default {
       }
 
       const GRAMS_PER_OZT = 31.1034768;
-      const inRange = (n, lo, hi) => Number.isFinite(n) && n >= lo && n <= hi;
-
-      const getJson = async (u) => {
-        const ctl = new AbortController();
-        const t = setTimeout(() => ctl.abort(), 8000);
-        try {
-          const r = await fetch(u, { signal: ctl.signal, headers: { Accept: 'application/json' } });
-          if (!r.ok) throw new Error(u + ' → HTTP ' + r.status);
-          return await r.json();
-        } finally { clearTimeout(t); }
-      };
-
       try {
-        const [goldDoc, fxDoc] = await Promise.all([
-          getJson('https://api.gold-api.com/price/XAU'),
-          getJson('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json'),
-        ]);
-        const goldUsdPerOz = Number(goldDoc && (goldDoc.price != null ? goldDoc.price : goldDoc.ask));
-        const usdEgp = Number(fxDoc && fxDoc.usd && fxDoc.usd.egp);
-
-        /* A feed returning 0 or nonsense must not reach a price. */
-        if (!inRange(goldUsdPerOz, 100, 20000)) throw new Error('implausible gold price ' + goldUsdPerOz);
-        if (!inRange(usdEgp, 1, 500)) throw new Error('implausible USD/EGP ' + usdEgp);
-
-        const egpPerGram24 = (goldUsdPerOz / GRAMS_PER_OZT) * usdEgp;
+        const { goldUsdPerOz, usdEgp, egpPerGram24 } = await fetchLiveRates();
         const body = {
           ok: true,
           goldUsdPerOz,
