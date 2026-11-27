@@ -123,9 +123,9 @@ try {
   assert.equal(await $('#quote-pdf-btn').isDisabled(), true);
   await $('#apply-design').click();
   let s = await state();
-  assert.equal(s.groups.length, 2);
+  assert.equal(s.groups.length, 0);
   assert.equal(s.designLayers.length, 1);
-  const original = s.groups[1];
+  assert.equal(await $('#design-review-card').isVisible(), false);
   await $('[data-tool="draw"]').click();
   await $('path[data-tooth="11"]').scrollIntoViewIfNeeded();
   const pos = await $('path[data-tooth="11"]').boundingBox();
@@ -134,9 +134,16 @@ try {
   await page.mouse.move(pos.x + pos.width / 2 + 5, pos.y + pos.height / 2 + 4, { steps: 4 });
   await page.mouse.up();
   assert.equal((await state()).ink.length, 1);
-  await $('[data-action="edit-group"]').first().click();
-  await $('#complexity').selectOption('2 Open face');
   await $('#apply-design').click();
+  assert.equal(
+    await $('[data-detail="engraving"], [data-detail="diamondType"], [data-detail="accentType"]').count(),
+    0,
+  );
+  await $('#save-design-details').click();
+  const original = (await state()).groups[1];
+  await $('[data-action="edit-group"]').first().click();
+  await $('[data-detail="level"][data-row="11"]').selectOption('2 Open face');
+  await $('#save-design-details').click();
   s = await state();
   assert.deepEqual(s.groups[1], original);
   assert.equal(s.ink.length, 1);
@@ -328,6 +335,8 @@ try {
   await $('[data-material="gold"]').click();
   await tooth(11);
   await $('#apply-design').click();
+  await $('#apply-design').click();
+  await $('#save-design-details').click();
   await wait(
     () =>
       document.querySelector('#order-warning').textContent.includes('gold rate unavailable') ||

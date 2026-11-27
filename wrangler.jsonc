@@ -1,0 +1,8 @@
+{
+  // Existing studio Worker. Keep secrets and per-environment variables in Cloudflare.
+  "name": "egygillz-api",
+  "main": "cloudflare-worker.js",
+  "compatibility_date": "2026-11-01",
+  "keep_vars": true,
+  "triggers": { "crons": ["* * * * *"] }
+}

@@ -8,7 +8,8 @@
 <title>Client Order Sheet | EGYGRILLZ</title>
 <script src="/assets/calc-engine.js?v=9"></script>
 <script src="/assets/rates.js?v=7"></script>
-<script src="/assets/order-pricing.js?v=1"></script>
+<script src="/assets/order-design.js?v=1"></script>
+<script src="/assets/order-pricing.js?v=2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -95,7 +96,7 @@
 .gem-selection-preview{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;margin:6px 0 8px;padding:6px 10px;border:1px solid #e6e4dd;border-radius:9px;background:#fff}.gem-selection-preview[hidden]{display:none}.gem-selection-preview img,.gem-preview-fallback{width:38px;height:38px;object-fit:contain}.gem-preview-fallback{display:block;clip-path:polygon(50% 0,100% 25%,82% 100%,18% 100%,0 25%);background:linear-gradient(135deg,#fff 0%,var(--gem-color) 34%,#fff 50%,var(--gem-color) 72%,#555 100%)}.gem-selection-preview span{font:500 12px 'Playfair Display',serif;color:#45443f}
 .diamond-options{margin:7px 0 10px;padding:8px 10px;border:1px solid #e8e8e4;border-radius:9px;background:#fbfbfa}.diamond-options[hidden]{display:none}.diamond-options>summary{cursor:pointer;font-size:11px;font-weight:700;color:#555}.free-draw-toggle input{accent-color:#111}.gem-cut.active img{filter:brightness(1.2)}
 </style>
-<link rel="stylesheet" href="/assets/order-sheet.css?v=1">
+<link rel="stylesheet" href="/assets/order-sheet.css?v=2">
 </head>
 <body>
 <div class="app-shell">
@@ -128,69 +129,53 @@
 </div>
 <div class="step-panel" id="step-design" data-panel="design" hidden>
 <section class="card" id="design-details-card">
-        <div class="card-head"><div><h2>Design details</h2><p>Choose the material and finish. Use Mix for teeth that need different specifications.</p></div><span class="step-label">02</span></div>
+        <div class="card-head"><div><span class="micro-label">DESIGN ATELIER &nbsp; / &nbsp; 01</span><h2>Set up your design</h2><p>Give this piece a name, choose its material, then select its teeth on the chart.</p></div><span class="step-label">02</span></div>
         <div class="card-body">
           <div class="design-session-bar">
             <label class="design-session-name">Design name<input id="group-name" data-editor="name" placeholder="e.g. Scorpion top 6"></label>
             <label>Mode<select id="design-mode" data-field="designMode"><option value="single">One design · shared details</option><option value="mix">Mix · details per tooth</option></select></label>
-            <button class="btn" type="button" id="add-design-layer">＋ Select teeth for new design</button>
+            <button class="btn" type="button" id="add-design-layer">+ Select teeth for new design</button>
           </div>
           <details class="library"><summary>Studio design library</summary><div class="saved-design-bar"><select id="saved-design-templates" aria-label="Saved designs"><option value="">Sign in to load saved designs</option></select><button class="mini-btn" type="button" disabled id="load-saved-design">Load saved design</button><button class="mini-btn" type="button" disabled id="save-current-design">Save active design</button><span id="design-template-status" role="status">Saved designs require staff sign-in.</span></div></details>
           <p id="design-mode-hint" class="map-hint"></p>
-<div class="material-palette" id="material-palette" aria-label="Select the material and finish for this design">
+<div class="material-palette" id="material-palette" aria-label="Material for this design">
             <span class="material-palette-label">Material</span><select id="material" data-editor="material" aria-label="Selected material" hidden><option value="Cobalt Chrome">Cobalt Chrome</option><option value="Sterling Silver 925">Sterling Silver 925</option><option value="Gold">Gold</option><option value="Titanium">Titanium</option></select>
             <button type="button" class="material-chip active" data-material="chrome" data-color="#aeb7bd"><i class="material-dot" style="--mat-color:#aeb7bd"></i><span>Cobalt chrome</span></button>
             <button type="button" class="material-chip" data-material="silver" data-color="#d8dce0"><i class="material-dot" style="--mat-color:#d8dce0"></i><span>Silver 925</span></button>
             <button type="button" class="material-chip" data-material="gold" data-color="#d7b35d"><i class="material-dot" style="--mat-color:#d7b35d"></i><span>Gold</span></button>
             <button type="button" class="material-chip" data-material="titanium" data-color="#778b9d"><i class="material-dot" style="--mat-color:#778b9d"></i><span>Titanium</span></button>
-            <span class="material-tip">Laser follows this finish · diamonds appear for Gold and Silver 925.</span>
+            <span class="material-tip">Gold and silver support stone placement.</span>
           </div>
-          <div class="editor-grid">
-
-            <div class="field" id="karat-field" hidden><label for="karat">Gold karat</label><select id="karat" data-editor="karat"><option>10K</option><option>14K</option><option selected>18K</option><option>21K</option><option>22K</option></select></div>
-            <div class="field" id="complexity-field"><label for="complexity">Design level</label><select id="complexity" data-editor="level"><option value="1 Solid">1 · Solid / smooth</option><option value="2 Open face">2 · Open face</option><option value="3 Mid detail">3 · Mid detail</option><option value="4 Complex">4 · Complex</option><option value="5 Scorpion">5 · Intricate</option><option value="6 Ultimate">6 · Ultimate</option><option value="0.5 Bars">0.5 · Open bars</option></select></div>
-            <div class="field" id="plating-field"><label for="plating">Plating</label><select id="plating" data-editor="plating"><option>None</option><option>Yellow gold</option><option>White gold</option><option>Rose gold</option><option>Black gold</option><option>Silver plating</option></select></div>
-            <div class="field" id="enamel-field"><label for="enamel">Enamel</label><select id="enamel" data-editor="enamel"><option>None</option><option>Single colour</option><option>Multi-colour</option><option>Master work</option></select></div>
-            <div class="field" id="engraving-field"><label for="engraving">Engraving</label><select id="engraving" data-editor="engraving"><option>None</option><option>Small</option><option>Medium</option><option>Large</option></select></div>
-            <div class="field wide" id="stone-mode-field"><label for="stone-mode">Stones / diamonds</label><select id="stone-mode" data-editor="stoneMode"><option value="none">No stones</option><option value="accent">Accent stones</option><option value="full">Full diamond coverage</option><option value="both">Full coverage + accents</option></select></div>
-          </div>
-          <div class="stone-fields" id="accent-fields" hidden>
-            <div class="field"><label for="accent-type">Accent stone type</label><select id="accent-type" data-editor="accentType"><option>CZ</option><option>Moissanite</option><option>Lab-grown diamond</option><option>Natural diamond</option></select></div>
-            <div class="field"><label for="setting">Setting style</label><select id="setting" data-editor="setting"><option>Flush</option><option>2-Prong</option><option>3-Prong</option><option>4-Prong</option><option>6-Prong</option><option>Bezel full</option><option>Bezel half</option><option>Bar setting</option><option>Channel</option></select></div>
-            <div class="field"><label for="accent-count">Accent count</label><input id="accent-count" data-editor="accentCount" type="number" min="1" max="999" value="4" inputmode="numeric"></div>
-            <div class="field" id="accent-rate-wrap" hidden><label for="accent-rate">Unlisted stone · EGP per stone</label><input id="accent-rate" data-editor="accentCustomPrice" type="number" min="0" placeholder="Required for an unpriced stone"></div>
-          </div>
-          <div class="stone-fields" id="full-fields" hidden>
-            <div class="field"><label for="diamond-type">Diamond type</label><select id="diamond-type" data-editor="diamondType"><option>Moissanite</option><option>CZ</option><option>Lab-grown diamond</option><option>Natural diamond</option></select></div>
-            <div class="field"><label for="coverage">Coverage / setting</label><select id="coverage" data-editor="coverage"><option>Standard pavé</option><option>French pavé</option><option>Micro-pavé</option><option>Channel</option><option>Invisible</option></select></div>
-            <div class="field" id="full-rate-wrap" hidden><label for="full-rate">Unlisted stone · EGP per tooth</label><input id="full-rate" data-editor="fullCustomPrice" type="number" min="0" placeholder="Required for an unpriced stone"></div><div class="field"><label for="stone-notes">Stone notes</label><input id="stone-notes" data-editor="stoneNotes" placeholder="Cut, size, colour or other preference"></div>
-          </div>
-
         </div>
       </section>
 <section class="card" id="design-canvas-card">
-        <div class="card-head"><div><h2>Design canvas</h2><p>Select teeth on the FDI chart, add the design, then sketch on its layer.</p></div><span class="section-tag">FDI CHART</span></div>
+        <div class="card-head"><div><span class="micro-label">DESIGN ATELIER &nbsp; / &nbsp; 02</span><h2>Drawing table</h2><p>Each design has its own layer. The tooth outline is your guide, not a fill.</p></div><span class="section-tag">FDI CHART</span></div>
         <div class="card-body">
           <div class="map-tools"><div class="map-hint"><span class="map-count" id="selected-count">0 selected</span> <span id="assigned-count">· 0 assigned</span></div><div class="quick-actions"><button class="mini-btn" type="button" data-action="clear-selection">Clear selection</button></div></div>
 
 
-          <p id="canvas-mode-hint" class="canvas-mode-hint">Tap teeth with a finger to select. Use a mouse or Pencil to draw after adding a design.</p>
+          <p id="canvas-mode-hint" class="canvas-mode-hint">Select teeth, then start drawing.</p>
           <div class="chart-toolbar" aria-label="Canvas tools">
-            <div class="chart-toolgroup" aria-label="Drawing modes"><button class="chart-tool" type="button" data-tool="select" aria-pressed="true">Select</button><button class="chart-tool active" type="button" id="draw-mode" data-tool="draw" aria-pressed="false">✎ Draw</button><button class="chart-tool" type="button" id="laser-mode" data-tool="laser" aria-pressed="false">✧ Laser</button><button class="chart-tool" type="button" id="laser-erase-mode" data-tool="erase" aria-pressed="false">⌫ Erase</button><button class="chart-tool" type="button" id="emboss-mode" data-tool="emboss" aria-pressed="false">▰ Emboss</button></div>
-            <label class="free-draw-toggle" for="free-draw-outside"><input id="free-draw-outside" type="checkbox"> Draw outside teeth</label><label class="brush-control" for="brush-size"><span class="brush-dot" id="brush-dot" style="--brush-size:2px"></span><span>Thickness</span><input id="brush-size" type="range" min="0.5" max="14" step="0.5" value="2" aria-label="Pencil line thickness"><span id="brush-value">2</span></label><label id="laser-style-wrap" class="laser-style-control" hidden>Laser <select id="laser-style" data-editor="laserStyle"><option value="material">Enamel fill · metal shade</option><option value="cutout">White · complete cutout</option></select></label>
-            <div class="chart-zoom"><button class="mini-btn" type="button" id="zoom-out" aria-label="Zoom out">−</button><span class="zoom-readout" id="zoom-readout">100%</span><button class="mini-btn" type="button" id="zoom-in" aria-label="Zoom in">＋</button><button class="mini-btn" type="button" id="zoom-fit">Fit</button></div>
+            <div class="chart-toolgroup" aria-label="Drawing modes"><button class="chart-tool active" type="button" id="draw-mode" data-tool="draw" aria-pressed="false">✎ Draw</button><button class="chart-tool" type="button" id="laser-mode" data-tool="laser" aria-pressed="false">Laser</button><button class="chart-tool" type="button" data-tool="enamel">Enamel fill</button><button class="chart-tool" type="button" data-tool="white">White cutout</button><button class="chart-tool" type="button" id="emboss-mode" data-tool="emboss" aria-pressed="false">▰ Emboss</button></div>
+            <label class="free-draw-toggle" for="free-draw-outside"><input id="free-draw-outside" type="checkbox"> Draw outside teeth</label><label class="brush-control" for="brush-size"><span class="brush-dot" id="brush-dot" style="--brush-size:2px"></span><span>Thickness</span><input id="brush-size" type="range" min="0.5" max="14" step="0.5" value="2" aria-label="Pencil line thickness"><span id="brush-value">2</span></label><button class="mini-btn" type="button" id="edit-palette" hidden>Edit fill colours</button>
+            <div class="chart-zoom"><button class="mini-btn" type="button" id="zoom-out" aria-label="Zoom out">−</button><span class="zoom-readout" id="zoom-readout">100%</span><button class="mini-btn" type="button" id="zoom-in" aria-label="Zoom in">+</button><button class="mini-btn" type="button" id="zoom-fit">Fit</button></div>
           </div>
 
           <div class="design-layer-tools"><div class="map-hint"><strong id="active-layer-label">Design 1</strong> · draw and add stones on this layer</div><button type="button" class="mini-btn" id="isolate-design">Isolate active design</button><div class="design-layers" id="design-layers"></div><button type="button" class="mini-btn" id="show-all-designs">View all together</button></div>
-          <div class="gem-tools" id="gem-tools" hidden><button type="button" class="mini-btn stone-action" id="place-gem-mode" data-tool="gem" data-stone-tool>Place selected diamond</button><button type="button" class="mini-btn stone-action" id="pave-mode" data-tool="pave" data-stone-tool>Pavé line</button><button type="button" class="mini-btn stone-action" id="ice-mode" data-tool="ice" data-stone-tool>Iced fill</button><label>Stone size <input id="gem-size" type="range" min="0.5" max="5" step="0.1" value="1.5"><span id="gem-size-value">1.5 mm</span></label><label>Rotate <input id="gem-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Rotate selected diamond"><span id="gem-rotation-value">0°</span></label><button type="button" class="mini-btn rotate-gem" data-rotate="-15" aria-label="Rotate diamond counterclockwise">↶ 15°</button><button type="button" class="mini-btn rotate-gem" data-rotate="15" aria-label="Rotate diamond clockwise">↷ 15°</button><label>Spacing <input id="gem-spacing" type="range" min="0.4" max="3" step="0.1" value="1"><span id="gem-spacing-value">1 mm</span></label><label>Price type <select id="gem-type"><option value="CZ">CZ</option><option value="Moissanite">Moissanite</option><option value="Lab-grown diamond">Lab-grown</option><option value="Natural diamond">Natural</option></select></label><label id="gem-rate-wrap" hidden>Unlisted unit · EGP <input type="number" min="0" id="gem-rate" placeholder="Unit price"></label><button type="button" class="mini-btn" id="delete-selected-gem" disabled>Remove selected stone</button></div>
+          <div class="gem-tools" id="gem-tools" hidden><button type="button" class="mini-btn stone-action" id="place-gem-mode" data-tool="gem" data-stone-tool>Place selected diamond</button><button type="button" class="mini-btn stone-action" id="pave-mode" data-tool="pave" data-stone-tool>Pavé line</button><button type="button" class="mini-btn stone-action" id="ice-mode" data-tool="ice" data-stone-tool>Iced fill</button><label>Stone size <input id="gem-size" type="range" min="0.5" max="5" step="0.1" value="1.5"><span id="gem-size-value">1.5 mm</span></label><label>Rotate <input id="gem-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Rotate selected diamond"><span id="gem-rotation-value">0°</span></label><button type="button" class="mini-btn rotate-gem" data-rotate="-15" aria-label="Rotate diamond counterclockwise">↶ 15°</button><button type="button" class="mini-btn rotate-gem" data-rotate="15" aria-label="Rotate diamond clockwise">↷ 15°</button><label>Spacing <input id="gem-spacing" type="range" min="0.4" max="3" step="0.1" value="1"><span id="gem-spacing-value">1 mm</span></label><button type="button" class="mini-btn" id="delete-selected-gem" disabled>Remove selected stone</button></div>
           <details class="diamond-options" id="diamond-options"><summary>Diamond cut &amp; color · optional</summary><div class="gem-selection-preview" id="gem-selection-preview" hidden aria-live="polite"></div><div class="gem-cut-rail" id="gem-cut-rail" hidden></div><div class="gem-colors" id="gem-colors" hidden aria-label="Gem color palette"></div></details>
           <div class="chart-viewport" id="chart-viewport"><div class="chart-loading" id="chart-loading" aria-live="polite">Loading tooth chart…</div><div class="chart-stage-inner" id="chart-stage-inner" hidden></div></div>
           <div id="mixed-tooth-specs" class="mixed-tooth-specs" hidden></div>
           <div class="apply-row"><span class="apply-note" id="apply-hint">Select one or more teeth to add a design group.</span><button type="button" class="btn btn-primary" id="apply-design" data-action="apply-design">Start drawing</button></div>
-          <p class="map-hint" style="margin:9px 2px 0">Preset accents and extra hand-set stones are charged separately. An iced fill is priced once per tooth.</p>
-          <div class="quick-actions" style="margin-top:12px"><button class="mini-btn" type="button" id="select-drawn">Select drawn teeth</button><button class="mini-btn" type="button" id="new-design-session">Show full chart · select another design</button><button class="mini-btn" type="button" id="undo-ink">Undo last stroke</button><span class="selected-tooth-count" id="ink-count">No sketched teeth yet</span></div>
+          <div class="quick-actions" style="margin-top:12px"><button class="mini-btn" type="button" id="discard-design" hidden>Discard unpriced layer</button><button class="mini-btn" type="button" id="undo-ink">Undo last mark</button><span class="selected-tooth-count" id="ink-count">No sketched teeth yet</span></div>
         </div>
       </section>
+<section class="card" id="design-review-card" hidden aria-labelledby="detail-heading">
+  <div class="card-head"><div><span class="micro-label">DESIGN ATELIER &nbsp; / &nbsp; 03</span><h2 id="detail-heading">Design details</h2><p id="detail-caption"></p></div></div>
+  <div class="card-body"><div id="review-fields"></div><div class="detail-actions"><button class="btn btn-primary" id="save-design-details" type="button">Apply details to estimate</button><button class="btn" id="back-to-drawing" type="button">Back to drawing</button></div></div>
+</section>
+<dialog id="enamel-dialog" aria-labelledby="palette-heading"><form method="dialog"><span class="micro-label">COLOUR STUDIO</span><h2 id="palette-heading">Enamel fill</h2><p>Choose the colours to fill a tooth. One is Single, two are Multi, and three or more are Master.</p>
+<div id="palette-inputs"></div><button class="mini-btn" id="add-colour" type="button">+ Add colour</button><p id="palette-tier" role="status"></p><div class="detail-actions"><button id="use-palette" type="submit" value="apply" class="btn btn-primary">Use this fill</button><button type="submit" value="cancel" class="btn">Cancel</button></div></form></dialog>
 <section class="card" id="design-groups-card">
         <div class="card-head"><div><h2 id="design-groups-title">Unified design</h2><p id="design-groups-help">One design specification for the selected teeth.</p></div></div>
         <div class="card-body"><div class="design-list" id="design-groups"></div></div>
@@ -255,6 +240,6 @@
   <section id="print-sheet" class="print-sheet" aria-label="Printable client order sheet" hidden></section>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script src="/assets/order-sheet.js?v=1"></script>
+<script src="/assets/order-sheet.js?v=2"></script>
 </body>
 </html>

@@ -9,9 +9,41 @@
   var ENDPOINT = 'https://egygillz-api.egygrillz.workers.dev/api/notify';
   var TIMEOUT_MS = 10000;
 
+  var widgetId, preparing;
+  // The site key is public; its matching secret never leaves the Worker. The
+  // optional challenge is presented on review, not after the booking is saved.
+  function prepareBookingAlert() {
+    var host = document.getElementById('booking-alert-widget'),
+      note = document.getElementById('booking-alert-note');
+    if (!host || preparing) return preparing;
+    preparing = (async function () {
+      var res = await fetch(new URL('/api/health', ENDPOINT), { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error('health');
+      var config = await res.json();
+      if (!config.channels || !config.channels.turnstile) return;
+      if (!config.turnstileSiteKey) throw new Error('no-site-key');
+      note.textContent = 'Complete this check for an instant studio alert.';
+      if (!global.turnstile)
+        await new Promise(function (resolve, reject) {
+          var script = document.createElement('script');
+          script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      global.turnstile.ready(function () {
+        widgetId = global.turnstile.render(host, { sitekey: config.turnstileSiteKey });
+      });
+    })().catch(function () {
+      note.textContent = 'Instant alerts may be unavailable. Your appointment can still be booked.';
+      preparing = null;
+    });
+    return preparing;
+  }
+
   function turnstileToken() {
     try {
-      return (global.turnstile && global.turnstile.getResponse && global.turnstile.getResponse()) || '';
+      return (global.turnstile && global.turnstile.getResponse && global.turnstile.getResponse(widgetId)) || '';
     } catch (e) { return ''; }
   }
 
@@ -42,6 +74,7 @@
 
   global.EGYGZ = global.EGYGZ || {};
   global.EGYGZ.notify = {
+    prepareBookingAlert:prepareBookingAlert,
     booking: function (d) { return send('booking', d); },
     message: function (d) { return send('message', d); },
     mould: function (d) { return send('mould', d); }

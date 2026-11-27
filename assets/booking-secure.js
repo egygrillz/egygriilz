@@ -216,7 +216,7 @@
 
     // 3) Notifications in parallel (EmailJS + Worker Telegram alert) — never stall confirmation
     var serviceText = selectedServices.join(', ');
-    await Promise.allSettled([
+    var notifications=await Promise.allSettled([
       (window.emailjs && typeof emailjs.send === 'function')
         ? Promise.race([
             emailjs.send('service_r8fhuah', 'template_d2twd6h', {
@@ -238,6 +238,13 @@
           })
         : Promise.resolve()
     ]);
+
+    // The transaction, not delivery of an alert, is the booking. Never ask
+    // the client to submit again if the studio bot is offline.
+    var outcome=notifications[1], result=outcome.status==='fulfilled' && outcome.value;
+    var alerted=result && Array.isArray(result.channels) && result.channels.some(function(c){return c.c==='telegram' && c.ok;});
+    var alertStatus=document.getElementById('booking-alert-result');
+    if(alertStatus && !alerted)alertStatus.textContent='Your booking is saved. Instant studio notification was not confirmed; there is no need to book again.';
 
     // 4) Success screen
     resetConfirmBtn(btn);

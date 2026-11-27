@@ -28,9 +28,7 @@ service cloud.firestore {
         request.auth.token.get('admin', false) == true ||
         request.auth.uid in staffUids() || (
           request.auth.token.get('email_verified', false) == true &&
-          request.auth.token.get('email', '') in [
-            'admin@egygrillz.com', 'studio@egygrillz.com', 'egygrillz@gmail.com'
-          ]
+          request.auth.token.get('email', '') == 'admin@egygrillz.com'
         )
       );
     }

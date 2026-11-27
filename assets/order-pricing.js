@@ -29,21 +29,6 @@
       issues = new Set(),
       designs = new Map(),
       extras = new Map();
-    const gems = new Map(),
-      ice = new Map();
-    for (const g of state.gems || []) {
-      const k = `${g.designId}:${g.tooth}`;
-      if (g.kind === 'iced') {
-        if (!ice.has(k)) ice.set(k, g);
-      } else {
-        if (!gems.has(k)) gems.set(k, []);
-        gems.get(k).push(g);
-      }
-    }
-    for (const i of state.icedTeeth || []) {
-      const k = `${i.designId}:${i.tooth}`;
-      if (i.count !== 0 && !ice.has(k)) ice.set(k, {});
-    }
     function checkRate(table, obj) {
       if (cfg[table][obj.type] == null && !supplied(obj.customPrice))
         issues.add(
@@ -53,9 +38,8 @@
     for (const g of state.groups || []) {
       const teeth = [...new Set((g.teeth || []).map(Number))];
       if (!teeth.length) continue;
-      const id = g.layerId || g.id,
-        layer = state.designLayers.find((l) => l.id === id);
-      if (!designs.has(id)) designs.set(id, { name: layer?.name || g.name || 'Design', groups: [] });
+      const id = g.layerId || g.id;
+      if (!designs.has(id)) designs.set(id, { name: g.name || 'Design', groups: [] });
       const mat = material(g.material),
         precious = engine.allowsStones(mat);
       if (mat === 'gold' && !(cfg.goldPrice > 0))
@@ -74,8 +58,7 @@
       // A group-wide accent count is applied ONCE, not once per split tooth.
       const buckets = new Map();
       for (const id of teeth) {
-        const k = `${g.layerId}:${id}`,
-          fill = ice.get(k);
+        const fill = g.pricedIce?.[id];
         const full =
           precious && (fill || ['full', 'both'].includes(g.stoneMode))
             ? {
@@ -95,7 +78,7 @@
         const spec = buckets.get(b);
         spec.teeth++;
         spec.toothIds.push(fdi(id));
-        for (const gem of precious ? gems.get(k) || [] : []) {
+        for (const gem of precious ? (g.pricedStones || []).filter((s) => Number(s.tooth) === id) : []) {
           const accent = {
             type: stone(gem.stoneType || 'CZ'),
             setting: setting(g.setting),
@@ -115,7 +98,7 @@
               color: gem.color || 'clear',
               design: g.name || 'Design',
             });
-          extras.get(batch).count++;
+          extras.get(batch).count += Math.max(1, Number(gem.count) || 1);
           extras.get(batch).teeth.add(id);
         }
       }

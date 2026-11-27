@@ -46,6 +46,7 @@
   };
 
   const MAX_STONES_PER_TOOTH = 220;
+  const toothBoxes = new Map();
   const CHART_VIEW = { x: 0, y: 84, width: 900, height: 330.6 };
   const GEM_CUTS = [
     ['round', 'Round brilliant'],
@@ -262,7 +263,42 @@
         mark.designId =
           state.designLayers.find((l) => l.teeth.includes(mark.tooth))?.id || state.activeDesignId;
     }
-    state.tool = state.tool || 'select';
+    // Hydrate v1 specs once, retaining their pricing until explicitly reviewed.
+    const oldLayers = new Set(
+      state.groups.filter((g) => !Array.isArray(g.pricedStones)).map((g) => g.layerId),
+    );
+    OrderDesign.migrateLegacy(state);
+    for (const layer of state.designLayers) {
+      const groups = state.groups.filter((g) => g.layerId === layer.id);
+      if (oldLayers.has(layer.id)) layer.legacy = true;
+      layer.mode ||= groups.length > 1 ? 'mix' : 'single';
+      if (!layer.details) {
+        layer.details = {};
+        for (const g of groups)
+          for (const t of g.teeth)
+            layer.details[layer.mode === 'mix' ? t : 'all'] = {
+              ...Object.fromEntries(
+                Object.keys(OrderDesign.defaults)
+                  .filter((k) => g[k] != null)
+                  .map((k) => [k, g[k]]),
+              ),
+            };
+      }
+      if (groups.length) layer.revision ??= OrderDesign.revision(state, layer);
+      else if (layer.teeth.length) layer.draft = true;
+    }
+    if (state.editingGroupId && !state.newDesignSelection) {
+      state.reviewLayerId = state.activeDesignId;
+      state.editingGroupId = '';
+      state.selectedTeeth = [];
+    }
+    if (!state.designLayers.find((l) => l.id === state.activeDesignId)?.teeth.length)
+      state.newDesignSelection = true;
+    state.tool = state.newDesignSelection
+      ? 'select'
+      : ['select', 'erase', undefined].includes(state.tool)
+        ? 'draw'
+        : state.tool;
     state.productionChecks = state.productionChecks || {};
   }
   normalizeDesignState();
@@ -294,7 +330,6 @@
       const k = el.dataset.editor;
       el.value = state.editor[k] == null ? '' : state.editor[k];
     });
-    syncFormExtras();
     $('#order-number-badge').textContent = state.orderNo;
     syncSignature(true);
   }
@@ -302,6 +337,7 @@
     return state.designLayers.find((l) => l.id === state.activeDesignId) || state.designLayers[0];
   }
   function visibleLayerIds() {
+    if (state.newDesignSelection && !state.showAllDesigns && !capturingPrintMap) return new Set();
     return state.showAllDesigns
       ? new Set(state.designLayers.filter((l) => l.visible !== false).map((l) => l.id))
       : new Set([state.activeDesignId]);
@@ -310,106 +346,223 @@
     const host = $('#design-layers');
     if (!host) return;
     host.innerHTML = '';
-    state.designLayers.forEach((layer, index) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className =
-        'design-layer-chip' + (layer.id === state.activeDesignId && !state.showAllDesigns ? ' active' : '');
-      button.dataset.layer = layer.id;
-      const content = document.createElement('span');
-      content.textContent = layer.name || `Design ${index + 1}`;
-      const count = document.createElement('small');
-      count.textContent = `${new Set([...(layer.teeth || []), ...(state.ink || []).filter((x) => x.designId === layer.id).map((x) => x.tooth), ...(state.gems || []).filter((x) => x.designId === layer.id).map((x) => x.tooth)]).size} teeth`;
-      button.append(content, count);
-      host.appendChild(button);
-    });
-    $('#active-layer-label').textContent = state.showAllDesigns
-      ? 'All designs together'
-      : activeLayer()?.name || 'Design layer';
+    state.designLayers
+      .filter((l) => l.teeth.length)
+      .forEach((layer, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className =
+          'design-layer-chip' + (layer.id === state.activeDesignId && !state.showAllDesigns ? ' active' : '');
+        button.dataset.layer = layer.id;
+        button.setAttribute(
+          'aria-pressed',
+          String(!state.newDesignSelection && !state.showAllDesigns && layer.id === state.activeDesignId),
+        );
+        const content = document.createElement('span');
+        content.textContent = layer.name || `Design ${index + 1}`;
+        const count = document.createElement('small');
+        count.textContent = `${layer.teeth.length} teeth${layerPending(layer) ? ' · needs review' : ''}`;
+        button.append(content, count);
+        host.appendChild(button);
+      });
+    $('#active-layer-label').textContent = state.newDesignSelection
+      ? 'New selection'
+      : state.showAllDesigns
+        ? 'All designs together'
+        : activeLayer()?.name || 'Design layer';
+    $('.design-layer-tools').hidden = !state.designLayers.some((l) => l.teeth.length);
+    $('#show-all-designs').hidden = state.designLayers.filter((l) => l.teeth.length).length < 2;
+    $('#isolate-design').hidden = state.newDesignSelection;
     $('#show-all-designs').classList.toggle('active', !!state.showAllDesigns);
     $('#show-all-designs').textContent = state.showAllDesigns ? 'Isolate active design' : 'View all together';
   }
+  const levels = [
+    '0.5 Bars',
+    '1 Solid',
+    '2 Open face',
+    '3 Mid detail',
+    '4 Complex',
+    '5 Scorpion',
+    '6 Ultimate',
+  ];
+  const platings = ['None', 'Yellow gold', 'White gold', 'Rose gold', 'Black gold', 'Silver plating'];
+  const types = ['CZ', 'Moissanite', 'Lab-grown diamond', 'Natural diamond'];
+  const options = (values, current) =>
+    values.map((v) => `<option ${v === current ? 'selected' : ''}>${esc(v)}</option>`).join('');
   function renderDesignMode() {
+    const selecting = state.newDesignSelection,
+      layer = activeLayer();
     $('#design-mode').value = state.designMode;
-    $('#design-mode-hint').textContent = state.editingGroupId
-      ? 'Editing an existing group. Use Update design to keep your changes.'
-      : state.designMode === 'mix'
-        ? 'Select teeth, then customize individual rows below the chart.'
-        : 'These details apply to every tooth in the selection.';
+    $('#design-mode').disabled = $('#group-name').disabled = !selecting;
+    $$('.material-chip').forEach((b) => (b.disabled = !selecting));
+    $('#design-mode-hint').textContent = selecting
+      ? 'Tap tooth outlines to select or deselect. The material colours your pencil, not the tooth.'
+      : `Working on ${layer.name}. Start a new selection to add another design.`;
     $('#design-groups-title').textContent = 'Added designs';
-    $('#design-groups-help').textContent = 'Only added designs are included in the order total.';
-    $('#apply-design').textContent = state.editingGroupId
-      ? 'Update design'
-      : activeLayer()?.draft
-        ? 'Apply details & price'
-        : 'Add design to order';
+    $('#design-groups-help').textContent = 'Only the applied design details below go to the calculator.';
+    $('#apply-design').disabled = selecting && !state.selectedTeeth.length;
+    $('#apply-design').textContent = selecting ? 'Start drawing →' : 'Finish drawing → Design details';
+    $('#apply-hint').textContent = selecting
+      ? 'Choose at least one tooth to open a drawing layer.'
+      : 'Done sketching? Review this layer before adding its price.';
+    $('#discard-design').hidden = selecting || !layer.draft;
+    $('[data-action="clear-selection"]').hidden = !selecting;
+    $('#undo-ink').disabled =
+      selecting || ![...state.ink, ...state.gems].some((x) => x.designId === layer.id);
     renderMixedToothSpecs();
+    renderDetailForm();
   }
   function renderMixedToothSpecs() {
     const host = $('#mixed-tooth-specs');
-    if (!host) return;
-    const ids = [...state.selectedTeeth].sort(
-      (a, b) => UPPER.concat(LOWER).indexOf(a) - UPPER.concat(LOWER).indexOf(b),
-    );
-    host.hidden = state.designMode !== 'mix' || !ids.length;
-    if (host.hidden) {
-      host.innerHTML = '';
+    host.hidden = !state.newDesignSelection || state.designMode !== 'mix' || !state.selectedTeeth.length;
+    host.innerHTML = host.hidden
+      ? ''
+      : '<p class="micro-label">Material per tooth</p><div class="detail-grid">' +
+        state.selectedTeeth
+          .map(
+            (id) =>
+              `<label>FDI ${id}<select data-mix-tooth="${id}" data-mix-field="material">${options(
+                Object.values(MATERIALS).map((m) => m.label),
+                state.pendingToothSpecs[id]?.material || state.editor.material,
+              )}</select></label>`,
+          )
+          .join('') +
+        '</div>';
+  }
+  function renderDetailForm() {
+    const layer = activeLayer(),
+      card = $('#design-review-card');
+    card.hidden = state.newDesignSelection || state.reviewLayerId !== layer.id;
+    if (card.hidden) {
+      $('#review-fields').replaceChildren();
       return;
     }
-    const materials = [
-        ['Cobalt Chrome', 'Cobalt chrome'],
-        ['Sterling Silver 925', 'Silver 925'],
-        ['Gold', 'Gold'],
-        ['Titanium', 'Titanium'],
-      ],
-      levels = [
-        '0.5 Bars',
-        '1 Solid',
-        '2 Open face',
-        '3 Mid detail',
-        '4 Complex',
-        '5 Scorpion',
-        '6 Ultimate',
-      ],
-      platings = ['None', 'Yellow gold', 'White gold', 'Rose gold', 'Black gold', 'Silver plating'],
-      enamels = ['None', 'Single colour', 'Multi-colour', 'Master work'],
-      engravings = ['None', 'Small', 'Medium', 'Large'],
-      karats = ['10K', '14K', '18K', '21K', '22K'];
-    const options = (values, current) =>
-      values
-        .map(
-          (v) =>
-            `<option value="${esc(v)}" ${String(v) === String(current) ? 'selected' : ''}>${esc(v)}</option>`,
-        )
-        .join('');
-    host.innerHTML = `<div class="mixed-tooth-title-row"><p class="mixed-tooth-title">Shared details are the defaults · customize any tooth below</p><button type="button" class="mini-btn" id="apply-mix-shared">Apply shared details to all</button></div><div class="mixed-tooth-grid"><span class="mixed-tooth-head">FDI tooth</span><span class="mixed-tooth-head">Material</span><span class="mixed-tooth-head">Level</span><span class="mixed-tooth-head">Karat</span><span class="mixed-tooth-head">Plating</span><span class="mixed-tooth-head">Enamel</span><span class="mixed-tooth-head">Engraving</span>${ids
-      .map((id) => {
-        const spec = { ...state.editor, ...(state.pendingToothSpecs[id] || {}) };
-        return `<div class="mixed-tooth-row"><strong class="mixed-tooth-id">${id}</strong><select data-mix-tooth="${id}" data-mix-field="material" aria-label="Material for tooth ${id}">${materials.map(([v, l]) => `<option value="${esc(v)}" ${spec.material === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select><select data-mix-tooth="${id}" data-mix-field="level" aria-label="Design level for tooth ${id}">${options(levels, spec.level)}</select><select data-mix-tooth="${id}" data-mix-field="karat" aria-label="Gold karat for tooth ${id}">${options(karats, spec.karat || '18K')}</select><select data-mix-tooth="${id}" data-mix-field="plating" aria-label="Plating for tooth ${id}">${options(platings, spec.plating)}</select><select data-mix-tooth="${id}" data-mix-field="enamel" aria-label="Enamel for tooth ${id}">${options(enamels, spec.enamel)}</select><select data-mix-tooth="${id}" data-mix-field="engraving" aria-label="Engraving for tooth ${id}">${options(engravings, spec.engraving)}</select></div>`;
+    const facts = OrderDesign.inspect(state, layer),
+      cfg = CalcEngine.get();
+    $('#detail-heading').textContent = layer.name + ' · Design details';
+    $('#detail-caption').textContent = layer.legacy
+      ? 'Imported specification. Applying this review replaces the original priced details with the effects currently drawn.'
+      : 'Check the finish and the effects used in this drawing. Applying these details updates the estimate.';
+    const rows = layer.mode === 'mix' ? layer.teeth.map((id) => [id, [id]]) : [['all', layer.teeth]];
+    $('#review-fields').innerHTML = rows
+      .map(([key, ids]) => {
+        const d = { ...OrderDesign.defaults, ...layer.details?.[key] },
+          marks = ids.map((id) => facts.get(id));
+        const field = (label, k, choices) =>
+          `<label>${label}<select data-detail="${k}" data-row="${key}">${options(choices, d[k])}</select></label>`;
+        const rate = (label, k) =>
+          `<label>${label}<input data-detail="${k}" data-row="${key}" type="number" min="0" step="any" required placeholder="EGP" value="${esc(d[k])}"></label>`;
+        const colors = [...new Set(marks.flatMap((m) => [...m.colors]))],
+          stones = marks.flatMap((m) => m.stones),
+          iced = ids.filter((id) => facts.get(id).ice);
+        const materials = [
+          ...new Set(ids.map((id) => MATERIALS[materialForGroup(layer.materials[id])].label)),
+        ];
+        return `<fieldset class="detail-row"><legend>FDI ${ids.join(' · ')} &nbsp; / &nbsp; ${esc(materials.join(' + '))}</legend><div class="detail-grid">${field('Design level', 'level', levels)}${field('Plating', 'plating', platings)}${materials.includes('Gold') ? field('Gold purity', 'karat', ['10K', '14K', '18K', '21K', '22K']) : ''}${marks.some((m) => m.laser) ? field('Laser engraving size', 'engraving', ['Small', 'Medium', 'Large']) : ''}</div>
+      ${colors.length ? `<div class="detail-effect"><strong>Enamel · ${OrderDesign.tier(colors.length)}</strong><span>${colors.map((c) => `<i class="colour-chip" style="--colour:${c}"></i>${c}`).join(' · ')}</span></div>` : ''}
+      ${
+        stones.length
+          ? `<div class="detail-effect"><strong>Hand-set stones · ${stones.length}</strong><span>${Object.entries(
+              stones.reduce((acc, s) => {
+                const k = [s.color || 'clear', s.cut || 'round', `${s.sizeMm || 1} mm`].join(' / ');
+                acc[k] = (acc[k] || 0) + 1;
+                return acc;
+              }, {}),
+            )
+              .map(([k, n]) => `${n} × ${esc(k)}`)
+              .join(
+                ' · ',
+              )}</span><div class="detail-grid">${field('Stone type', 'accentType', types)}${field('Setting', 'setting', ['Flush', '2-Prong', '3-Prong', '4-Prong', '6-Prong', 'Bezel full', 'Bezel half', 'Bar setting', 'Channel'])}${cfg.accentPrice[stoneKey(d.accentType)] == null ? rate('Unlisted rate · EGP per stone', 'accentCustomPrice') : ''}</div></div>`
+          : ''
+      }
+      ${iced.length ? `<div class="detail-effect"><strong>Iced coverage · FDI ${iced.join(', ')}</strong><div class="detail-grid">${field('Diamond type', 'diamondType', types)}${field('Coverage', 'coverage', ['Standard pavé', 'French pavé', 'Micro-pavé', 'Channel', 'Invisible'])}${cfg.fullPrice[stoneKey(d.diamondType)] == null && d.level !== '0.5 Bars' ? rate('Unlisted rate · EGP per tooth', 'fullCustomPrice') : ''}</div></div>` : ''}</fieldset>`;
       })
-      .join('')}</div>`;
+      .join('');
   }
-  function applySharedMixDetails() {
-    const fields = ['material', 'level', 'karat', 'plating', 'enamel', 'engraving'];
-    state.selectedTeeth.forEach((id) => {
-      state.pendingToothSpecs[id] = { ...(state.pendingToothSpecs[id] || {}) };
-      fields.forEach(
-        (key) =>
-          (state.pendingToothSpecs[id][key] =
-            state.editor[key] ||
-            {
-              material: 'Cobalt Chrome',
-              level: '1 Solid',
-              karat: '18K',
-              plating: 'None',
-              enamel: 'None',
-              engraving: 'None',
-            }[key]),
-      );
-    });
+  function reviewDesign() {
+    state.reviewLayerId = activeLayer().id;
+    renderDesignMode();
     persist();
-    renderMixedToothSpecs();
-    notify(`Shared details applied to ${state.selectedTeeth.length} teeth`);
+    $('#design-review-card').scrollIntoView({ block: 'start' });
+    $('#review-fields select')?.focus({ preventScroll: true });
+  }
+  function applyDesign() {
+    if (!state.newDesignSelection) {
+      reviewDesign();
+      return;
+    }
+    const teeth = [...state.selectedTeeth];
+    if (!teeth.length) return;
+    const name =
+      state.editor.name.trim() || `Design ${state.designLayers.filter((l) => l.teeth.length).length + 1}`;
+    const layer = {
+      id: crypto.randomUUID(),
+      name,
+      mode: state.designMode,
+      teeth,
+      details: {},
+      draft: true,
+      visible: true,
+      materials: Object.fromEntries(
+        teeth.map((t) => [
+          t,
+          materialForGroup(
+            (state.designMode === 'mix' && state.pendingToothSpecs[t]?.material) || state.editor.material,
+          ),
+        ]),
+      ),
+    };
+    state.designLayers = state.designLayers.filter((l) => l.teeth.length);
+    state.designLayers.push(layer);
+    activateLayer(layer);
+    notify('Layer ready. Sketch, or finish now for a plain design.');
+  }
+  function activateLayer(layer) {
+    state.activeDesignId = layer.id;
+    state.showAllDesigns = false;
+    state.isolateDesign = false;
+    state.newDesignSelection = false;
+    state.selectedTeeth = [];
+    state.pendingToothSpecs = {};
+    state.selectedGemId = '';
+    state.editingGroupId = '';
+    state.reviewLayerId = '';
+    state.designMode = layer.mode || 'single';
+    state.editor.name = layer.name;
+    state.editor.materialKey = materialForGroup(layer.materials[layer.teeth[0]]);
+    state.editor.material = MATERIALS[state.editor.materialKey].label;
+    syncInputs();
+    setTool('draw');
+    renderAll();
+    persist();
+  }
+  function saveDesignDetails() {
+    const layer = activeLayer();
+    if (layer.id !== state.reviewLayerId) return;
+    const invalid = $('#review-fields input:invalid');
+    if (invalid) {
+      invalid.reportValidity();
+      return;
+    }
+    if (layer.legacy && !confirm('Replace the imported pricing specification with the details shown here?'))
+      return;
+    const oldGroups = state.groups.filter((g) => g.layerId === layer.id),
+      specs = OrderDesign.compile(layer, OrderDesign.inspect(state, layer));
+    const groups = specs.map((g) => ({
+      ...g,
+      id: oldGroups.find((old) => String(old.teeth) === String(g.teeth))?.id || crypto.randomUUID(),
+      layerId: layer.id,
+    }));
+    const start = state.groups.findIndex((g) => g.layerId === layer.id);
+    state.groups = state.groups.filter((g) => g.layerId !== layer.id);
+    state.groups.splice(start < 0 ? state.groups.length : start, 0, ...groups);
+    layer.draft = false;
+    delete layer.legacy;
+    layer.revision = JSON.stringify(specs);
+    state.reviewLayerId = '';
+    renderAll();
+    persist();
+    notify('Design details applied to the estimate');
   }
   function renderProductionChecklist() {
     const checks = state.productionChecks || {},
@@ -502,7 +655,7 @@
   }
   function addProductionEffectDetails(g) {
     return {
-      laser: 'Laser enamel mark',
+      laser: 'Laser engraving / cutout',
       emboss: 'Embossed · darker raised detail',
       standard: 'Standard finish',
     }[g.productionEffect || 'standard'];
@@ -552,8 +705,7 @@
     const gold = orderUsesGold(order);
     if (gold && !window.MetalRates?.goldEgpPerGram24())
       issues.push('Live gold rate unavailable. Refresh before issuing a gold quote.');
-    if (pending || state.editingGroupId)
-      issues.push('Apply or clear the pending design before issuing documents.');
+    if (pending) issues.push('Review the drawing and apply its design details before issuing documents.');
     if (pricingSource === 'loading') issues.push('Loading studio pricing…');
     orderBlock = issues[0] || (!hasItems && 'Add a design or service first.');
     if (unverifiedPricing())
@@ -610,14 +762,13 @@
     return order;
   }
   function pendingTeeth() {
-    let count = state.selectedTeeth.length;
-    for (const layer of state.designLayers) {
-      const assigned = new Set(state.groups.filter((g) => g.layerId === layer.id).flatMap((g) => g.teeth));
-      count += layer.teeth.filter(
-        (id) => !assigned.has(id) && !(layer.id === state.activeDesignId && state.selectedTeeth.includes(id)),
-      ).length;
-    }
-    return count;
+    return (
+      state.selectedTeeth.length +
+      state.designLayers.reduce((n, l) => n + (layerPending(l) ? l.teeth.length : 0), 0)
+    );
+  }
+  function layerPending(layer) {
+    return layer.teeth.length && (layer.draft || layer.revision !== OrderDesign.revision(state, layer));
   }
   const orderUsesGold = (order) =>
     order.lines.some((l) => (l.groups || [l]).some((g) => g.material === 'gold'));
@@ -740,21 +891,11 @@
   function renderTeeth() {
     if (!capturingPrintMap) printDesignMapDirty = true;
     const assigned = assignedIds().size;
-    $('#selected-count').textContent = `${state.selectedTeeth.length} selected`;
+    $('#selected-count').textContent = state.newDesignSelection
+      ? `${state.selectedTeeth.length} selected`
+      : `FDI ${activeLayer().teeth.join(' · ')}`;
     $('#assigned-count').textContent = `· ${assigned} assigned`;
-    const draftReady = !!activeLayer()?.draft && (activeLayer()?.teeth || []).length > 0;
-    $('#apply-design').disabled = !state.selectedTeeth.length && !draftReady;
-    $('#apply-design').style.opacity = state.selectedTeeth.length || draftReady ? '1' : '.52';
-    $('#apply-design').textContent = state.editingGroupId
-      ? 'Update design'
-      : draftReady
-        ? 'Apply details & price'
-        : 'Add design to order';
-    $('#apply-hint').textContent = draftReady
-      ? 'This design is isolated and has no material yet. Draw first, then apply shared details to add its material and price.'
-      : state.selectedTeeth.length
-        ? `${state.selectedTeeth.length} ${state.selectedTeeth.length === 1 ? 'tooth' : 'teeth'} selected — ready to add to the order.`
-        : 'Select teeth to add a design.';
+    if (!capturingPrintMap) renderDesignMode();
     if (!svgChart) return;
     const visible = visibleLayerIds(),
       active = activeLayer(),
@@ -767,14 +908,7 @@
       const id = Number(path.dataset.tooth),
         selected = state.selectedTeeth.includes(id),
         strokes = inkTeeth.has(id),
-        group = [...state.groups]
-          .reverse()
-          .find((g) => g.layerId === active?.id && (g.teeth || []).map(Number).includes(id)),
-        rawMaterial = active?.draft
-          ? ''
-          : active?.materials?.[id] || group?.material || state.toothMaterials[id],
-        material = rawMaterial ? materialForGroup(rawMaterial) : '',
-        plating = group?.plating || state.editor.plating;
+        material = active?.materials?.[id] ? materialForGroup(active.materials[id]) : '';
       path.classList.toggle('is-selected', selected);
       path.classList.toggle('has-ink', strokes);
       path.classList.toggle('in-active-design', (active?.teeth || []).map(Number).includes(id));
@@ -784,14 +918,19 @@
         `Tooth ${id}${material ? ` · ${MATERIALS[material]?.label || material}` : ''}${strokes ? ' · has sketch' : ''}`,
       );
       path.setAttribute('aria-pressed', String(selected));
-      path.setAttribute('tabindex', '0');
+      path.setAttribute('tabindex', state.tool === 'select' ? '0' : '-1');
       path.setAttribute('role', 'button');
-      const flatColor = material && MATERIALS[material] ? finishColor(material, plating) : '';
-      path.style.fill = active?.draft ? '#fff' : flatColor || (selected ? '#f0eee8' : '#fff');
-      path.style.fillOpacity = material ? '1' : selected ? '.9' : '.96';
-      path.style.stroke = flatColor ? darkenHex(flatColor, 0.34) : '';
-      path.style.strokeWidth = material ? '1.2' : '';
+      path.style.fill = '#fff';
+      path.style.fillOpacity = '1';
+      const member = !state.newDesignSelection && active?.teeth.includes(id);
+      path.style.stroke = selected || member ? '#856826' : '#777872';
+      path.style.strokeWidth = selected ? '3' : member ? '2.1' : '1.15';
       path.style.filter = '';
+      const label = svgChart.querySelector(`[data-fdi-label="${id}"]`);
+      if (label) {
+        label.setAttribute('fill', selected || member ? '#856826' : '#78766e');
+        label.style.display = state.isolateDesign && !state.showAllDesigns && !member ? 'none' : '';
+      }
     });
     $('#chart-stage-inner').classList.toggle(
       'drawing',
@@ -810,10 +949,8 @@
     $('#isolate-design').textContent = state.isolateDesign ? 'Show full chart' : 'Isolate active design';
     $('#delete-selected-gem').disabled = !state.selectedGemId;
     renderDesignLayers();
-    renderMixedToothSpecs();
     renderInk();
     setTool(state.tool || 'select');
-    syncFormExtras();
   }
   function selectedMaterial() {
     return (
@@ -825,41 +962,57 @@
     );
   }
   function setTool(tool) {
+    if (tool === 'enamel' && !state.editor.palette?.length) tool = 'draw';
     if (['gem', 'pave', 'ice'].includes(tool) && !stoneToolAvailable()) {
       notify('Choose Gold or Silver 925 to add diamonds');
       tool = 'draw';
     }
     state.tool = tool;
-    state.drawMode = ['draw', 'laser', 'erase', 'emboss'].includes(tool);
+    state.drawMode = ['draw', 'laser', 'white', 'emboss', 'enamel', 'pave'].includes(tool);
+    const ready = !state.newDesignSelection,
+      stones = ready && stoneToolAvailable();
     $$('[data-tool]').forEach((b) => {
       const on = b.dataset.tool === tool;
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', String(on));
+      b.disabled = !ready;
     });
-    const stones = stoneToolAvailable();
-    $('#gem-tools').hidden = !stones;
-    $('#gem-cut-rail').hidden = !stones;
-    $('#gem-colors').hidden = !stones;
-    $('#gem-selection-preview').hidden = !stones;
-    $('#diamond-options').hidden = !stones;
-    $$('[data-stone-tool]').forEach((b) => (b.disabled = !stones));
-    $('#laser-style-wrap').hidden = tool !== 'laser';
-    const hint = $('#canvas-mode-hint');
-    if (hint)
-      hint.textContent =
-        tool === 'select'
-          ? 'Tap teeth with a finger to select. Use a mouse or Pencil to draw after adding a design.'
-          : tool === 'laser'
-            ? 'Pencil or mouse · choose enamel in the metal shade or a clean white cutout.'
-            : tool === 'erase'
-              ? 'Erase laser marks on the active design.'
-              : tool === 'emboss'
-                ? 'Add a raised, darker material detail.'
-                : tool === 'gem'
-                  ? 'Choose a cut and color, then tap with Pencil or click to place one stone.'
-                  : state.freeDraw
-                    ? 'Draw freely across and outside teeth; fingers pan and pinch to zoom.'
-                    : 'The brush stays within the teeth; turn on Draw outside teeth for free drawing.';
+    for (const id of ['gem-tools', 'gem-cut-rail', 'gem-colors', 'gem-selection-preview', 'diamond-options'])
+      $('#' + id).hidden = !stones;
+    $('#gem-cut-rail').hidden = !stones || ['ice', 'pave'].includes(tool);
+    $('#diamond-options summary').textContent = ['ice', 'pave'].includes(tool)
+      ? 'Round stones · colour'
+      : 'Diamond cut & colour';
+    $('#edit-palette').hidden = tool !== 'enamel';
+    $('.chart-toolgroup').hidden = !ready;
+    const brush = ready && ['draw', 'laser', 'white', 'emboss'].includes(tool);
+    $('.brush-control').hidden = !brush;
+    $('.free-draw-toggle').hidden = !brush;
+    $('#gem-tools')
+      .querySelectorAll('label, [data-rotate], #delete-selected-gem')
+      .forEach((el) => {
+        const id = el.querySelector('input')?.id;
+        el.hidden =
+          id === 'gem-size'
+            ? !['gem', 'ice', 'pave'].includes(tool)
+            : id === 'gem-spacing'
+              ? !['ice', 'pave'].includes(tool)
+              : tool !== 'gem' || !state.selectedGemId;
+      });
+
+    $('#canvas-mode-hint').textContent =
+      {
+        select: 'Tap the teeth for this design. Selected teeth have a gold outline.',
+        draw: 'Draw with a finger, pen or mouse. Pinch with two fingers to zoom.',
+        laser: 'Draw a dark engraved line inside the selected teeth.',
+        white: 'Draw a white cutout. Its fine grey edge stays visible on bare teeth.',
+        enamel:
+          'Tap a tooth to fill it with your palette. Tap again with a different palette to replace the fill.',
+        emboss: 'Draw a raised metal detail.',
+        gem: 'Tap a tooth to place a stone. Drag an existing stone to move it.',
+        pave: 'Draw a line of stones on gold or silver.',
+        ice: 'Tap a gold or silver tooth for a full iced setting.',
+      }[tool] || '';
     $('#chart-stage-inner').classList.toggle('drawing', state.drawMode);
     $('#chart-stage-inner').classList.toggle('interacting', tool !== 'select');
   }
@@ -872,6 +1025,7 @@
         text +
         '<canvas id="ink-layer" width="900" height="331" class="ink-layer" aria-label="Apple Pencil design canvas"></canvas>';
       svgChart = $('#teeth-chart-root');
+      measureChart();
       const layer = $('#ink-layer');
       canvasCtx = layer.getContext('2d');
       $('#chart-loading').hidden = true;
@@ -930,14 +1084,55 @@
       (canvas.height - v.height * scale) / 2 - v.y * scale,
     );
   }
+  // getBBox() is zero in a hidden step (including a draft reopened directly in
+  // Review). Measure the asset once in SVG coordinates for both screen and print.
+  function measureChart() {
+    const ns = svgChart.namespaceURI,
+      probe = document.createElementNS(ns, 'svg');
+    probe.style.cssText =
+      'position:fixed;left:-10000px;top:0;width:900px;height:331px;visibility:hidden;pointer-events:none';
+    probe.setAttribute('aria-hidden', 'true');
+    for (const path of svgChart.querySelectorAll('[data-tooth]')) {
+      const shape = document.createElementNS(ns, 'path');
+      shape.dataset.toothId = path.dataset.tooth;
+      shape.setAttribute('d', path.getAttribute('d'));
+      probe.append(shape);
+    }
+    document.body.append(probe);
+    try {
+      for (const shape of probe.children) {
+        const id = Number(shape.dataset.toothId),
+          b = shape.getBBox();
+        toothBoxes.set(id, b);
+        const t = document.createElementNS(svgChart.namespaceURI, 'text');
+        Object.entries({
+          'data-fdi-label': id,
+          x: b.x + b.width / 2,
+          y: UPPER.includes(id) ? b.y - 7 : b.y + b.height + 12,
+          'font-size': 9,
+          'text-anchor': 'middle',
+          'font-family': 'monospace',
+          fill: '#78766e',
+          'pointer-events': 'none',
+          'aria-hidden': 'true',
+        }).forEach(([k, v]) => t.setAttribute(k, v));
+        t.textContent = id;
+        svgChart.append(t);
+      }
+    } finally {
+      probe.remove();
+    }
+  }
   function resizeInk() {
     const layer = $('#ink-layer');
     if (!layer || !svgChart) return;
     const rect = svgChart.getBoundingClientRect(),
       dpr = Math.max(1, window.devicePixelRatio || 1);
     if (rect.width < 1) return;
-    layer.width = Math.round(rect.width * dpr);
-    layer.height = Math.round(rect.height * dpr);
+    // Keep a zoomed desktop/tablet canvas within the browser's backing-store limits.
+    const density = Math.min(dpr, 4096 / rect.width, 4096 / rect.height);
+    layer.width = Math.round(rect.width * density);
+    layer.height = Math.round(rect.height * density);
     layer.style.width = rect.width + 'px';
     layer.style.height = rect.height + 'px';
     canvasCtx = layer.getContext('2d');
@@ -991,13 +1186,13 @@
     return st.material || materialKeyForLayerTooth(st.designId, st.tooth) || selectedMaterial() || 'chrome';
   }
   function strokeColor(st) {
-    if (st.effect === 'laser' && st.laserStyle === 'cutout') return '#ffffff';
+    if (st.effect === 'laser') return st.laserStyle === 'cutout' ? '#ffffff' : '#393634';
     const group = [...state.groups]
         .reverse()
         .find((g) => g.layerId === st.designId && (g.teeth || []).map(Number).includes(Number(st.tooth))),
       plating = st.plating || group?.plating || state.editor.plating || 'None',
       base = finishColor(strokeMaterial(st), plating);
-    return st.effect === 'emboss' || group?.productionEffect === 'emboss' ? darkenHex(base, 0.3) : base;
+    return darkenHex(base, st.effect === 'emboss' ? 0.48 : 0.22);
   }
   function getGemSprite(cut, color) {
     const key = `${cut}:${color}`,
@@ -1036,6 +1231,7 @@
         }
         x.putImageData(image, 0, 0);
         entry.canvas = c;
+        entry.url = c.toDataURL();
         entry.loading = false;
         renderInk();
         renderGemOptions();
@@ -1084,6 +1280,30 @@
         [...svgChart.querySelectorAll('[data-tooth]')].map((path) => [Number(path.dataset.tooth), path]),
       ),
       visible = visibleLayerIds();
+    // Bucket fills sit under the strokes. Only the last fill on a layer/tooth is visible (undo reveals the previous one).
+    const fills = new Map();
+    for (const mark of state.ink)
+      if (mark.effect === 'enamel' && visible.has(mark.designId))
+        fills.set(`${mark.designId}:${mark.tooth}`, mark);
+    for (const mark of fills.values()) {
+      const path = paths.get(Number(mark.tooth)),
+        colors = (mark.colors || []).map(OrderDesign.hex).filter(Boolean);
+      if (!path || !colors.length) continue;
+      const box = toothBoxes.get(Number(mark.tooth)),
+        shape = new Path2D(path.getAttribute('d'));
+      canvasCtx.save();
+      canvasCtx.clip(shape);
+      colors.forEach((c, i) => {
+        canvasCtx.fillStyle = c;
+        canvasCtx.fillRect(
+          box.x + (i * box.width) / colors.length,
+          box.y,
+          box.width / colors.length + 0.2,
+          box.height,
+        );
+      });
+      canvasCtx.restore();
+    }
     [...(state.ink || []), activeStroke]
       .filter(Boolean)
       .filter((st) => visible.has(st.designId))
@@ -1098,15 +1318,20 @@
           clipPaths = clipIds.map((id) => paths.get(id)).filter(Boolean);
         if (st.clipToTooth !== false && !clipPaths.length) return;
         const drawingPath = new Path2D(smoothD(st.points, (q) => q.x.toFixed(2) + ' ' + q.y.toFixed(2)));
+        if (st.points.length === 1) drawingPath.lineTo(st.points[0].x + 0.01, st.points[0].y);
         const paint = () => {
           canvasCtx.lineCap = 'round';
           canvasCtx.lineJoin = 'round';
           canvasCtx.lineWidth = Number(st.width) || 4;
           canvasCtx.strokeStyle = strokeColor(st);
           canvasCtx.setLineDash([]);
-          canvasCtx.shadowColor =
-            st.effect === 'laser' && st.laserStyle === 'cutout' ? '#0006' : 'transparent';
-          canvasCtx.shadowBlur = st.effect === 'laser' && st.laserStyle === 'cutout' ? 1 : 0;
+          if (st.effect === 'laser' && st.laserStyle === 'cutout') {
+            canvasCtx.lineWidth += 1.35;
+            canvasCtx.strokeStyle = '#737571';
+            canvasCtx.stroke(drawingPath);
+            canvasCtx.lineWidth -= 1.35;
+            canvasCtx.strokeStyle = '#fff';
+          }
           canvasCtx.stroke(drawingPath);
         };
         if (st.clipToTooth === false) {
@@ -1184,15 +1409,14 @@
       sizeMm: Number($('#gem-size')?.value) || 1.5,
       cut: state.editor.diamondCut || 'round',
       color: state.editor.gemColor || 'clear',
-      stoneType: $('#gem-type')?.value || 'CZ',
-      customPrice: $('#gem-rate').value,
+
       kind,
     };
     state.gems.push(gem);
-    state.selectedGemId = gem.id;
-    $('#gem-type').value = gem.stoneType || 'CZ';
-    syncFormExtras();
-    $('#gem-rate').value = gem.customPrice ?? '';
+    // Placement keeps a brush, not a selection: choosing the next colour must not repaint the previous stone.
+    state.selectedGemId = '';
+    renderGemOptions();
+
     $('#gem-size').value = gem.sizeMm;
     $('#gem-size-value').textContent = `${Number(gem.sizeMm).toFixed(1)} mm`;
     layer.teeth = [...new Set([...(layer.teeth || []), Number(tooth)])];
@@ -1275,8 +1499,7 @@
       sizeMm: Number($('#gem-size').value) || 1.5,
       cut: kind === 'iced' || kind === 'pave' ? 'round' : state.editor.diamondCut || 'round',
       color: state.editor.gemColor || 'clear',
-      stoneType: $('#gem-type').value || 'CZ',
-      customPrice: $('#gem-rate').value,
+
       kind,
     };
     state.gems.push(gem);
@@ -1352,78 +1575,18 @@
           Math.hypot(g.x - x, g.y - y) < Math.max(7, (Number(g.sizeMm) || 1.5) * 4),
       );
   }
-  function eraseAt(point) {
-    if (!point) return;
-    const layer = activeLayer();
-    if (!layer) return;
-    const rect = svgChart.getBoundingClientRect(),
-      view = chartView(),
-      radius = Math.max(4, 12 / (rect.width / view.width || 1)),
-      distToSegment = (p, a, b) => {
-        const dx = b.x - a.x,
-          dy = b.y - a.y,
-          len = dx * dx + dy * dy,
-          t = len ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len)) : 0;
-        return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
-      };
-    let changed = false;
-    const next = [];
-    state.ink.forEach((st) => {
-      if (st.designId !== layer.id || st.effect !== 'laser' || !st.points?.length) {
-        next.push(st);
-        return;
-      }
-      const points = st.points;
-      if (points.length === 1) {
-        if (Math.hypot(points[0].x - point.x, points[0].y - point.y) <= radius + Number(st.width || 2) / 2)
-          changed = true;
-        else next.push(st);
-        return;
-      }
-      const fragments = [];
-      let current = [],
-        cut = false;
-      for (let i = 1; i < points.length; i++) {
-        const a = points[i - 1],
-          b = points[i],
-          hit = distToSegment(point, a, b) <= radius + Number(st.width || 2) / 2;
-        if (hit) {
-          cut = true;
-          changed = true;
-          if (current.length > 1) fragments.push(current);
-          current = [];
-        } else {
-          if (!current.length) current.push(a);
-          current.push(b);
-        }
-      }
-      if (!cut) {
-        next.push(st);
-        return;
-      }
-      if (current.length > 1) fragments.push(current);
-      fragments.forEach((fragment, i) =>
-        next.push({ ...st, id: `${st.id || 'laser'}-cut-${Date.now()}-${i}`, points: fragment }),
-      );
-    });
-    if (!changed) return;
-    state.ink = next;
-    persist();
-    renderTeeth();
-    renderPrint();
-  }
   function renderGemOptions() {
     const rail = $('#gem-cut-rail'),
       colors = $('#gem-colors'),
       preview = $('#gem-selection-preview');
     if (!rail || !colors) return;
-    const selectedCut = state.editor.diamondCut || 'round',
+    const selectedCut = ['ice', 'pave'].includes(state.tool) ? 'round' : state.editor.diamondCut || 'round',
       selectedColor = state.editor.gemColor || 'clear',
       cutLabel = GEM_CUTS.find((x) => x[0] === selectedCut)?.[1] || selectedCut,
       colorHex = GEM_COLORS.find((x) => x[0] === selectedColor)?.[1] || '#f6f8fb';
     rail.innerHTML = GEM_CUTS.map(
       ([id, label]) =>
-        `<button type="button" class="gem-cut ${selectedCut === id ? 'active' : ''}" data-cut="${id}" aria-pressed="${selectedCut === id}"><img src="${DIAMOND_FILE(id)}" alt="${label} diamond"><span>${label}</span></button>`,
+        `<button type="button" class="gem-cut ${selectedCut === id ? 'active' : ''}" data-cut="${id}" aria-pressed="${selectedCut === id}">${getGemSprite(id, selectedColor) ? `<img src="${gemSpriteCache.get(`${id}:${selectedColor}`).url}" alt="${label} diamond">` : `<i class="gem-preview-fallback" style="--gem-color:${colorHex}"></i>`}<span>${label}</span></button>`,
     ).join('');
     colors.innerHTML = GEM_COLORS.map(
       ([id, color]) =>
@@ -1431,10 +1594,11 @@
     ).join('');
     if (preview) {
       const sprite = getGemSprite(selectedCut, selectedColor);
-      preview.innerHTML = `${sprite ? `<img src="${sprite.toDataURL()}" alt="${esc(cutLabel)} · ${esc(colorLabel(selectedColor))} selected">` : `<i class="gem-preview-fallback" style="--gem-color:${colorHex}" aria-hidden="true"></i>`}<span>Selected · ${esc(cutLabel)} · ${esc(colorLabel(selectedColor))}</span>`;
+      preview.innerHTML = `${sprite ? `<img src="${gemSpriteCache.get(`${selectedCut}:${selectedColor}`).url}" alt="${esc(cutLabel)} · ${esc(colorLabel(selectedColor))} selected">` : `<i class="gem-preview-fallback" style="--gem-color:${colorHex}" aria-hidden="true"></i>`}<span>${state.selectedGemId ? 'Editing stone' : 'Next stone'} · ${esc(cutLabel)} · ${esc(colorLabel(selectedColor))}</span>`;
     }
   }
-  function newDesignLayer(preserveName = false) {
+  function newDesignLayer() {
+    state.reviewLayerId = '';
     state.editingGroupId = '';
     state.selectedGemId = '';
     state.selectedTeeth = [];
@@ -1442,18 +1606,12 @@
     state.isolateDesign = false;
     state.newDesignSelection = true;
     state.pendingToothSpecs = {};
-    if (!preserveName) {
-      state.editor.name = '';
-      $('#group-name').value = '';
-    }
+    state.editor.name = '';
+    $('#group-name').value = '';
     setTool('select');
     persist();
     renderAll();
-    notify(
-      preserveName
-        ? 'Select the teeth for the next batch of this grillz'
-        : 'Select the teeth for your next design',
-    );
+    notify('Select the teeth for your next design');
   }
   function svgCoordFromEvent(event) {
     const p = svgPoint(event),
@@ -1544,8 +1702,8 @@
     if (g.stoneMode === 'accent' || g.stoneMode === 'both')
       bits.push(`${g.accentCount} ${g.accentType} · ${g.setting}`);
     if (g.stoneMode === 'full' || g.stoneMode === 'both') bits.push(`Full ${g.diamondType} · ${g.coverage}`);
-    const placed = (state.gems || []).filter((x) => x.designId === g.layerId);
-    if (placed.length) bits.push('Hand-set stones');
+    if (g.pricedStones?.length)
+      bits.push(`${g.pricedStones.reduce((n, x) => n + x.count, 0)} hand-set stones`);
     bits.push(addProductionEffectDetails(g));
     if (g.stoneNotes) bits.push(g.stoneNotes);
     return bits.filter(Boolean).join(' / ');
@@ -1677,6 +1835,10 @@
         clone.classList.remove('isolate-drawn', 'isolate-design');
         clone.removeAttribute('id');
         const designToothSet = new Set(teeth);
+        clone.querySelectorAll('[data-fdi-label]').forEach((t) => {
+          if (!designToothSet.has(Number(t.dataset.fdiLabel))) t.remove();
+          else t.style.display = '';
+        });
         clone.querySelectorAll('[data-tooth]').forEach((path) => {
           if (!designToothSet.has(Number(path.dataset.tooth))) path.remove();
           else path.classList.remove('is-selected', 'drag-over');
@@ -1702,9 +1864,9 @@
       state.isolateDrawn = original.isolateDrawn;
       state.selectedTeeth = original.selectedTeeth;
       activeStroke = original.activeStroke;
+      capturingPrintMap = false;
       renderTeeth();
       renderInk();
-      capturingPrintMap = false;
     }
     if (!cards.length) return '';
     return `<section class="print-design-map"><h3 class="print-section-title">Design drawings · FDI tooth chart</h3><p class="print-design-map-note">Each design layer is shown separately. The same tooth may appear in more than one layer.</p><div class="print-design-map-grid">${cards.join('')}</div></section>`;
@@ -1767,18 +1929,12 @@
     const gemKinds = [
       ...new Map(
         (state.gems || []).map((g) => {
-          const key = [
-            g.cut || 'round',
-            g.color || 'clear',
-            g.stoneType || 'CZ',
-            Number(g.rotation) || 0,
-          ].join('|');
+          const key = [g.cut || 'round', g.color || 'clear', Number(g.rotation) || 0].join('|');
           return [
             key,
             {
               cut: g.cut || 'round',
               color: g.color || 'clear',
-              type: g.stoneType || 'CZ',
               rotation: Number(g.rotation) || 0,
             },
           ];
@@ -1786,43 +1942,21 @@
       ).values(),
     ];
     const gemPics = gemKinds
-      .map(({ cut, color, type, rotation }) => {
+      .map(({ cut, color, rotation }) => {
         const cutName = GEM_CUTS.find((x) => x[0] === cut)?.[1] || cut;
-        return `<div class="rollup-item gem-rollup"><img src="${DIAMOND_FILE(cut)}" alt=""><i style="--gem-color:${GEM_COLORS.find((x) => x[0] === color)?.[1] || '#f6f8fb'}"></i><span>${esc(colorLabel(color))} · ${esc(cutName)} · ${esc(type)} · ${esc(rotation)}°</span></div>`;
+        return `<div class="rollup-item gem-rollup"><img src="${DIAMOND_FILE(cut)}" alt=""><i style="--gem-color:${GEM_COLORS.find((x) => x[0] === color)?.[1] || '#f6f8fb'}"></i><span>${esc(colorLabel(color))} · ${esc(cutName)} · ${esc(rotation)}°</span></div>`;
       })
       .join('');
     const groupHtml = state.groups.length
       ? state.groups
           .map((g, i) => {
             const groupTeeth = (g.teeth || []).map(Number),
-              icedOut =
-                g.stoneMode === 'full' ||
-                g.stoneMode === 'both' ||
-                (state.icedTeeth || []).some(
-                  (rec) => rec.designId === g.layerId && groupTeeth.includes(Number(rec.tooth)),
-                ),
-              handSet = [
-                ...new Map(
-                  (state.gems || [])
-                    .filter(
-                      (x) =>
-                        x.designId === g.layerId && groupTeeth.includes(Number(x.tooth)) && x.kind !== 'iced',
-                    )
-                    .map((x) => {
-                      const key = [
-                        x.color || 'clear',
-                        x.cut || 'round',
-                        x.stoneType || 'CZ',
-                        Number(x.sizeMm || 1.5),
-                      ].join('|');
-                      return [
-                        key,
-                        `${x.color || 'clear'} ${GEM_CUTS.find((c) => c[0] === x.cut)?.[1] || x.cut || 'Round brilliant'} · ${x.stoneType || 'CZ'} · ${Number(x.sizeMm || 1.5).toFixed(1)} mm`,
-                      ];
-                    }),
-                ).values(),
-              ];
-            return `<article class="print-group"><div class="print-group-head"><strong>${esc(g.name || `Design group ${i + 1}`)}</strong><span>${groupTeeth.length} ${groupTeeth.length === 1 ? 'tooth' : 'teeth'} · ${groupTeeth.join(', ')}</span></div><div class="print-details"><div class="print-detail"><span>Material</span><span>${esc(g.material === 'Gold' ? `Gold ${g.karat}` : g.material)}</span></div><div class="print-detail"><span>Design level</span><span>${esc(g.level)}</span></div><div class="print-detail"><span>Plating</span><span>${esc(g.plating)}</span></div><div class="print-detail"><span>Enamel</span><span>${esc(g.enamel)}</span></div><div class="print-detail"><span>Engraving</span><span>${esc(g.engraving)}</span></div><div class="print-detail"><span>Production finish</span><span>${esc(addProductionEffectDetails(g))}</span></div>${g.stoneMode === 'accent' || g.stoneMode === 'both' ? `<div class="print-detail"><span>Accent</span><span>${esc(g.accentCount + ' × ' + g.accentType + ' · ' + g.setting)}</span></div>` : ''}${icedOut ? `<div class="print-detail"><span>Stone coverage</span><span>${esc(g.diamondType || 'Moissanite')} · ${esc(g.coverage || 'Standard pavé')}</span></div>` : ''}${handSet.length ? `<div class="print-detail"><span>Hand-set stones</span><span>${handSet.map(esc).join(' · ')}</span></div>` : ''}${g.stoneNotes ? `<div class="print-detail"><span>Stone notes</span><span>${esc(g.stoneNotes)}</span></div>` : ''}</div></article>`;
+              icedOut = ['full', 'both'].includes(g.stoneMode) || Object.keys(g.pricedIce || {}).length > 0,
+              handSet = (g.pricedStones || []).map(
+                (x) =>
+                  `${x.count || 1} × ${x.color || 'clear'} ${GEM_CUTS.find((c) => c[0] === x.cut)?.[1] || x.cut || 'Round brilliant'} · ${x.stoneType || 'CZ'} · ${Number(x.sizeMm || 1.5).toFixed(1)} mm · FDI ${x.tooth}`,
+              );
+            return `<article class="print-group"><div class="print-group-head"><strong>${esc(g.name || `Design group ${i + 1}`)}</strong><span>${groupTeeth.length} ${groupTeeth.length === 1 ? 'tooth' : 'teeth'} · ${groupTeeth.join(', ')}</span></div><div class="print-details"><div class="print-detail"><span>Material</span><span>${esc(g.material === 'Gold' ? `Gold ${g.karat}` : g.material)}</span></div><div class="print-detail"><span>Design level</span><span>${esc(g.level)}</span></div><div class="print-detail"><span>Plating</span><span>${esc(g.plating)}</span></div><div class="print-detail"><span>Enamel</span><span>${esc([g.enamel, ...(g.enamelColors || [])].join(' · '))}</span></div><div class="print-detail"><span>Engraving</span><span>${esc(g.engraving)}</span></div><div class="print-detail"><span>Production finish</span><span>${esc(addProductionEffectDetails(g))}</span></div>${g.stoneMode === 'accent' || g.stoneMode === 'both' ? `<div class="print-detail"><span>Accent</span><span>${esc(g.accentCount + ' × ' + g.accentType + ' · ' + g.setting)}</span></div>` : ''}${icedOut ? `<div class="print-detail"><span>Stone coverage</span><span>${esc(g.diamondType || 'Moissanite')} · ${esc(g.coverage || 'Standard pavé')}</span></div>` : ''}${handSet.length ? `<div class="print-detail"><span>Hand-set stones</span><span>${handSet.map(esc).join(' · ')}</span></div>` : ''}${g.stoneNotes ? `<div class="print-detail"><span>Stone notes</span><span>${esc(g.stoneNotes)}</span></div>` : ''}</div></article>`;
           })
           .join('')
       : '<div class="print-notes"><p>No design groups have been assigned yet.</p></div>';
@@ -1875,16 +2009,71 @@
       persist();
       setTool(state.tool || 'draw');
     });
+    const dialog = $('#enamel-dialog'),
+      wells = $('#palette-inputs');
+    let palette = [];
+    const readPalette = () => [...wells.querySelectorAll('input')].map((el) => el.value.toLowerCase());
+    function paletteStatus() {
+      palette = readPalette();
+      const unique = new Set(palette).size === palette.length;
+      $('#use-palette').disabled = !unique;
+      $('#palette-tier').textContent = unique
+        ? `${OrderDesign.tier(palette.length)} · ${palette.length} colour${palette.length === 1 ? '' : 's'}`
+        : 'Each colour must be different.';
+    }
+    function renderPalette() {
+      wells.innerHTML = palette
+        .map(
+          (c, i) =>
+            `<label>Colour ${i + 1}<input type="color" value="${c}"></label>${palette.length > 1 ? `<button type="button" data-remove-colour="${i}" class="mini-btn" aria-label="Remove colour ${i + 1}">−</button>` : ''}`,
+        )
+        .join('');
+      paletteStatus();
+    }
+    function chooseEnamel() {
+      palette = (state.editor.palette || ['#b32841']).map(OrderDesign.hex).filter(Boolean);
+      if (!palette.length) palette = ['#b32841'];
+      renderPalette();
+      dialog.returnValue = '';
+      dialog.showModal();
+    }
+    wells.oninput = paletteStatus;
+    wells.onclick = (e) => {
+      const b = e.target.closest('[data-remove-colour]');
+      if (b) {
+        palette.splice(Number(b.dataset.removeColour), 1);
+        renderPalette();
+      }
+    };
+    $('#add-colour').onclick = () => {
+      let next = GEM_COLORS.map((x) => x[1]).find((c) => !palette.includes(c));
+      while (!next || palette.includes(next))
+        next =
+          '#' +
+          Math.floor(Math.random() * 16777216)
+            .toString(16)
+            .padStart(6, '0');
+      palette.push(next);
+      renderPalette();
+    };
+    dialog.addEventListener('close', () => {
+      if (dialog.returnValue === 'apply') {
+        state.editor.palette = readPalette();
+        state.reviewLayerId = '';
+        state.selectedGemId = '';
+        setTool('enamel');
+        renderInk();
+        renderDesignMode();
+        persist();
+      }
+    });
+    $('#edit-palette').onclick = chooseEnamel;
     renderGemOptions();
     updateFinishSwatches();
     setTool(state.tool || 'select');
     $('#save-current-design').addEventListener('click', saveCurrentDesignTemplate);
     $('#load-saved-design').addEventListener('click', loadSelectedDesignTemplate);
     document.addEventListener('click', (e) => {
-      if (e.target.closest('#apply-mix-shared')) {
-        applySharedMixDetails();
-        return;
-      }
       const chip = e.target.closest('.material-chip');
       if (chip) {
         state.editor.materialKey = chip.dataset.material;
@@ -1909,48 +2098,25 @@
       }
       const tool = e.target.closest('[data-tool]');
       if (tool) {
+        if (tool.disabled) return;
+        if (tool.dataset.tool === 'enamel') {
+          chooseEnamel();
+          return;
+        }
+        state.reviewLayerId = '';
+        state.selectedGemId = '';
+        renderDesignMode();
         setTool(tool.dataset.tool);
-        syncFormExtras();
+        renderGemOptions();
+        renderInk();
         persist();
         if (state.tool === 'gem') $('#diamond-options').open = true;
         return;
       }
       const layerButton = e.target.closest('[data-layer]');
       if (layerButton) {
-        state.editingGroupId = '';
-        state.selectedGemId = '';
-        state.activeDesignId = layerButton.dataset.layer;
-        state.showAllDesigns = false;
-        state.isolateDesign = true;
-        state.newDesignSelection = false;
-        state.selectedTeeth = [];
-        const layer = activeLayer(),
-          group = state.groups.find((g) => g.layerId === layer.id);
-        if (group) {
-          state.editor = {
-            ...state.editor,
-            name: layer.name || group.name,
-            material: group.material,
-            materialKey: materialForGroup(group.material),
-            karat: group.karat,
-            level: group.level,
-            plating: group.plating,
-            enamel: group.enamel,
-            engraving: group.engraving,
-            productionEffect: group.productionEffect || 'standard',
-            stoneMode: group.stoneMode,
-            accentType: group.accentType,
-            setting: group.setting,
-            accentCount: group.accentCount,
-            diamondType: group.diamondType,
-            coverage: group.coverage,
-            stoneNotes: group.stoneNotes,
-          };
-          syncInputs();
-        }
-        setTool('select');
-        persist();
-        renderAll();
+        const l = state.designLayers.find((l) => l.id === layerButton.dataset.layer);
+        if (l?.teeth.length) activateLayer(l);
         return;
       }
       const cut = e.target.closest('[data-cut]');
@@ -1971,6 +2137,7 @@
         if (state.selectedGemId) {
           const gem = state.gems.find((x) => x.id === state.selectedGemId);
           if (gem) gem.color = state.editor.gemColor;
+          refreshOrder();
         }
         persist();
         renderInk();
@@ -1978,7 +2145,10 @@
         return;
       }
     });
-    let draggingGemId = null;
+    let draggingGemId = null,
+      tapAction = null,
+      dragOrigin = null,
+      drawingPointer = null;
     const canvas = $('#ink-layer'),
       viewport = $('#chart-viewport');
     svgChart.addEventListener('keydown', (e) => {
@@ -1989,44 +2159,57 @@
     });
     const activeTouches = new Map();
     let touchGesture = null;
-    viewport.addEventListener('pointerdown', (e) => {
-      if (e.pointerType !== 'touch') return;
-      e.preventDefault();
-      viewport.setPointerCapture(e.pointerId);
-      activeTouches.set(e.pointerId, {
-        x: e.clientX,
-        y: e.clientY,
-        startX: e.clientX,
-        startY: e.clientY,
-        lastX: e.clientX,
-        lastY: e.clientY,
-        moved: false,
-      });
-      if (activeTouches.size === 1) {
-        touchGesture = {
-          mode: state.tool === 'select' ? 'tap-pan' : 'pan',
+    viewport.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (e.pointerType !== 'touch') return;
+        e.preventDefault();
+        if (state.tool === 'select') viewport.setPointerCapture(e.pointerId);
+        activeTouches.set(e.pointerId, {
+          x: e.clientX,
+          y: e.clientY,
           startX: e.clientX,
           startY: e.clientY,
-          startScrollLeft: viewport.scrollLeft,
-          startScrollTop: viewport.scrollTop,
-        };
-      } else if (activeTouches.size === 2) {
-        const points = [...activeTouches.values()],
-          rect = viewport.getBoundingClientRect(),
-          cx = (points[0].x + points[1].x) / 2 - rect.left,
-          cy = (points[0].y + points[1].y) / 2 - rect.top;
-        touchGesture = {
-          mode: 'pinch',
-          distance: Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y)),
-          zoom,
-          scrollLeft: viewport.scrollLeft,
-          scrollTop: viewport.scrollTop,
-          cx,
-          cy,
-          rect,
-        };
-      }
-    });
+          lastX: e.clientX,
+          lastY: e.clientY,
+          moved: false,
+        });
+        if (activeTouches.size === 1) {
+          touchGesture = {
+            mode: state.tool === 'select' ? 'tap-pan' : 'draw',
+            startX: e.clientX,
+            startY: e.clientY,
+            startScrollLeft: viewport.scrollLeft,
+            startScrollTop: viewport.scrollTop,
+          };
+        } else if (activeTouches.size === 2) {
+          if (dragOrigin && draggingGemId)
+            Object.assign(
+              state.gems.find((g) => g.id === draggingGemId),
+              dragOrigin,
+            );
+          draggingGemId = dragOrigin = tapAction = activeStroke = drawingPointer = null;
+          renderInk();
+          for (const id of activeTouches.keys()) viewport.setPointerCapture(id);
+          e.stopPropagation();
+          const points = [...activeTouches.values()],
+            rect = viewport.getBoundingClientRect(),
+            cx = (points[0].x + points[1].x) / 2 - rect.left,
+            cy = (points[0].y + points[1].y) / 2 - rect.top;
+          touchGesture = {
+            mode: 'pinch',
+            distance: Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y)),
+            zoom,
+            scrollLeft: viewport.scrollLeft,
+            scrollTop: viewport.scrollTop,
+            cx,
+            cy,
+            rect,
+          };
+        }
+      },
+      true,
+    );
     viewport.addEventListener('pointermove', (e) => {
       if (!activeTouches.has(e.pointerId)) return;
       e.preventDefault();
@@ -2046,7 +2229,11 @@
           cy = (points[0].y + points[1].y) / 2 - rect.top;
         zoom = Math.max(0.5, Math.min(5, (touchGesture.zoom * distance) / touchGesture.distance));
         applyZoom(zoom, cx, cy);
-      } else if (activeTouches.size === 1 && (point.moved || touchGesture?.mode === 'pan')) {
+      } else if (
+        activeTouches.size === 1 &&
+        (state.tool === 'select' || touchGesture?.mode === 'pan') &&
+        point.moved
+      ) {
         viewport.scrollLeft -= dx;
         viewport.scrollTop -= dy;
       }
@@ -2088,7 +2275,8 @@
     viewport.addEventListener('pointerup', endTouch);
     viewport.addEventListener('pointercancel', endTouch);
     canvas.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'touch' || e.button !== 0 || state.tool === 'select') return;
+      if (activeTouches.size > 1 || drawingPointer != null || e.button !== 0 || state.tool === 'select')
+        return;
       if (state.newDesignSelection || !activeLayer()?.teeth.length) {
         notify('Add a design before drawing');
         return;
@@ -2096,43 +2284,60 @@
       const coords = svgCoordFromEvent(e);
       if (!coords) return;
       if (!state.freeDraw && state.isolateDesign && !pointInActiveDesignBounds(coords)) return;
-      if (state.tool === 'erase') {
-        e.preventDefault();
-        canvas.setPointerCapture(e.pointerId);
-        eraseAt(coords);
-        return;
-      }
+      drawingPointer = e.pointerId;
+      canvas.setPointerCapture(e.pointerId);
       if (state.tool === 'gem') {
         e.preventDefault();
         canvas.setPointerCapture(e.pointerId);
         let gem = gemAt(coords.x, coords.y);
         if (gem) {
           state.selectedGemId = gem.id;
-          $('#gem-type').value = gem.stoneType || 'CZ';
-          syncFormExtras();
-          $('#gem-rate').value = gem.customPrice ?? '';
+          state.editor.diamondCut = gem.cut || 'round';
+          state.editor.gemColor = gem.color || 'clear';
+
           $('#gem-size').value = gem.sizeMm;
           $('#gem-size-value').textContent = `${Number(gem.sizeMm).toFixed(1)} mm`;
           $('#gem-rotation').value = Number(gem.rotation) || 0;
           $('#gem-rotation-value').textContent = `${Number(gem.rotation) || 0}°`;
           draggingGemId = gem.id;
+          dragOrigin = { x: gem.x, y: gem.y, tooth: gem.tooth };
           renderInk();
         } else {
           const point = pointOnTooth(e);
           if (!point || !activeLayer().teeth.includes(point.tooth)) return;
-          gem = addGem(point.tooth, point.x, point.y);
-          if (!gem) return;
-          draggingGemId = gem.id;
+          tapAction = () => addGem(point.tooth, point.x, point.y);
         }
         return;
       }
       const toothPoint = pointOnTooth(e);
       if (toothPoint && !activeLayer().teeth.includes(toothPoint.tooth)) return;
-      if (state.tool === 'ice') {
-        if (toothPoint) fillToothWithGems(toothPoint.tooth);
+      if (
+        state.tool === 'pave' &&
+        (!toothPoint || !supportsStones(materialKeyForLayerTooth(activeLayer().id, toothPoint.tooth)))
+      ) {
+        notify('Pavé needs a gold or silver tooth');
         return;
       }
-      if (!['draw', 'pave', 'laser', 'emboss'].includes(state.tool)) return;
+      if (state.tool === 'ice') {
+        if (toothPoint) tapAction = () => fillToothWithGems(toothPoint.tooth);
+        return;
+      }
+      if (state.tool === 'enamel') {
+        if (toothPoint)
+          tapAction = () => {
+            state.ink.push({
+              effect: 'enamel',
+              designId: activeLayer().id,
+              tooth: toothPoint.tooth,
+              colors: [...state.editor.palette],
+              createdAt: Date.now(),
+            });
+            renderAll();
+            persist();
+          };
+        return;
+      }
+      if (!['draw', 'pave', 'laser', 'white', 'emboss'].includes(state.tool)) return;
       const point = coords;
       if (!point || (!state.freeDraw && !toothPoint)) return;
       e.preventDefault();
@@ -2155,14 +2360,14 @@
       activeStroke = {
         tooth,
         designId: layer.id,
-        material: layer.draft
-          ? selectedMaterial()
-          : tooth
-            ? materialKeyForLayerTooth(layer.id, tooth)
-            : selectedMaterial(),
-        laserStyle: state.editor.laserStyle || 'material',
+        material: materialKeyForLayerTooth(layer.id, tooth),
+        laserStyle: state.tool === 'white' ? 'cutout' : 'engrave',
         kind: state.tool,
-        effect: state.tool === 'laser' ? 'laser' : state.tool === 'emboss' ? 'emboss' : 'standard',
+        effect: ['laser', 'white'].includes(state.tool)
+          ? 'laser'
+          : state.tool === 'emboss'
+            ? 'emboss'
+            : 'standard',
         freeDraw: !!state.freeDraw,
         clipToTooth: !state.freeDraw,
         clipTeeth,
@@ -2172,6 +2377,7 @@
       renderInk();
     });
     canvas.addEventListener('pointermove', (e) => {
+      if (drawingPointer !== e.pointerId) return;
       if (draggingGemId && canvas.hasPointerCapture(e.pointerId)) {
         const p = svgCoordFromEvent(e),
           gem = state.gems.find((x) => x.id === draggingGemId);
@@ -2191,11 +2397,6 @@
         }
         return;
       }
-      if (state.tool === 'erase' && canvas.hasPointerCapture(e.pointerId)) {
-        const point = svgCoordFromEvent(e);
-        if (point) eraseAt(point);
-        return;
-      }
       if (!activeStroke || !canvas.hasPointerCapture(e.pointerId)) return;
       const evs = e.getCoalescedEvents && e.getCoalescedEvents().length ? e.getCoalescedEvents() : [e];
       evs.forEach((ev) => {
@@ -2207,11 +2408,31 @@
       renderInk();
     });
     const finish = (e) => {
-      if (e && canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      if (drawingPointer !== e.pointerId) return;
+      drawingPointer = null;
+      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      if (e.type === 'pointercancel') {
+        if (draggingGemId && dragOrigin)
+          Object.assign(
+            state.gems.find((g) => g.id === draggingGemId),
+            dragOrigin,
+          );
+        activeStroke = draggingGemId = tapAction = dragOrigin = null;
+        renderInk();
+        return;
+      }
+      if (tapAction) {
+        const fn = tapAction;
+        tapAction = null;
+        fn();
+        return;
+      }
+      dragOrigin = null;
       if (draggingGemId) {
         draggingGemId = null;
         persist();
-        renderInk();
+        renderTeeth();
+        renderGemOptions();
         renderPrint();
         refreshOrder();
         return;
@@ -2221,10 +2442,27 @@
       activeStroke = null;
       if (stroke.kind === 'pave') placePaveAlong(stroke.points, stroke.tooth);
       else {
+        if (stroke.effect === 'laser' || stroke.effect === 'emboss') {
+          const touched = new Set();
+          let prev = stroke.points[0];
+          for (const p of stroke.points) {
+            const steps = Math.max(1, Math.ceil(Math.hypot(p.x - prev.x, p.y - prev.y) / 3));
+            for (let i = 1; i <= steps; i++) {
+              const id = pointInAnyTooth(
+                prev.x + ((p.x - prev.x) * i) / steps,
+                prev.y + ((p.y - prev.y) * i) / steps,
+              );
+              if (activeLayer().teeth.includes(id)) touched.add(id);
+            }
+            prev = p;
+          }
+          stroke.touchedTeeth = [...touched];
+        }
         stroke.createdAt = Date.now();
         state.ink.push(stroke);
         persist();
         renderTeeth();
+        refreshOrder();
         renderPrint();
       }
     };
@@ -2270,22 +2508,6 @@
       'input',
       (e) => ($('#gem-spacing-value').textContent = `${Number(e.target.value).toFixed(1)} mm`),
     );
-    $('#gem-rate').addEventListener('input', (e) => {
-      selectedStoneBatch().forEach((g) => (g.customPrice = e.target.value));
-      refreshOrder();
-      persist();
-    });
-    $('#gem-type').addEventListener('change', (e) => {
-      selectedStoneBatch().forEach((g) => {
-        g.stoneType = e.target.value;
-        delete g.customPrice;
-      });
-      $('#gem-rate').value = '';
-      syncFormExtras();
-      persist();
-      renderPrint();
-      refreshOrder();
-    });
     $('#delete-selected-gem').addEventListener('click', () => {
       if (!state.selectedGemId) return;
       const selected = state.gems.find((g) => g.id === state.selectedGemId),
@@ -2310,12 +2532,29 @@
       refreshOrder();
       notify(operation ? 'Iced fill removed' : 'Stone removed');
     });
-    $('#add-design-layer').addEventListener('click', () =>
-      newDesignLayer(state.designMode === 'mix' && state.groups.length > 0),
-    );
-    $('#new-design-session').addEventListener('click', () =>
-      newDesignLayer(state.designMode === 'mix' && state.groups.length > 0),
-    );
+    $('#add-design-layer').onclick = () => {
+      if (state.newDesignSelection) {
+        $('#chart-viewport').scrollIntoView({ block: 'center' });
+        return;
+      }
+      newDesignLayer();
+      $('#group-name').focus();
+    };
+    $('#save-design-details').onclick = saveDesignDetails;
+    $('#back-to-drawing').onclick = () => {
+      state.reviewLayerId = '';
+      renderDesignMode();
+      persist();
+      $('#chart-viewport').scrollIntoView({ block: 'center' });
+    };
+    $('#discard-design').onclick = () => {
+      const l = activeLayer();
+      if (!l.draft || !confirm('Discard this unpriced drawing?')) return;
+      for (const k of ['ink', 'gems', 'icedTeeth']) state[k] = state[k].filter((x) => x.designId !== l.id);
+      state.designLayers = state.designLayers.filter((x) => x !== l);
+      normalizeDesignState();
+      newDesignLayer();
+    };
     $('#isolate-design').addEventListener('click', () => {
       state.isolateDesign = !state.isolateDesign;
       state.showAllDesigns = false;
@@ -2326,31 +2565,6 @@
       state.showAllDesigns = !state.showAllDesigns;
       persist();
       renderAll();
-    });
-    $('#select-drawn').addEventListener('click', () => {
-      const order = UPPER.concat(LOWER),
-        layer = activeLayer(),
-        ids = [
-          ...new Set([
-            ...state.ink
-              .filter((x) => x.designId === layer.id)
-              .map((x) => Number(x.tooth))
-              .filter((id) => id > 0),
-            ...state.gems
-              .filter((x) => x.designId === layer.id)
-              .map((x) => Number(x.tooth))
-              .filter((id) => id > 0),
-          ]),
-        ].sort((a, b) => order.indexOf(a) - order.indexOf(b));
-      if (!ids.length) {
-        notify('No drawn teeth or stones in this design yet');
-        return;
-      }
-      state.selectedTeeth = ids;
-      setTool('select');
-      persist();
-      renderAll();
-      notify(`${ids.length} sketched teeth selected — now choose a material`);
     });
     $('#undo-ink').addEventListener('click', () => {
       const layer = activeLayer(),
@@ -2522,29 +2736,8 @@
     renderGroups();
     renderSummary();
     renderPrint();
-    renderDesignMode();
     renderServiceRows();
     renderProductionChecklist();
-    syncFormExtras();
-  }
-  function syncFormExtras() {
-    const cfg = CalcEngine.get();
-    $('#accent-rate-wrap').hidden = cfg.accentPrice[stoneKey(state.editor.accentType)] != null;
-    $('#full-rate-wrap').hidden = cfg.fullPrice[stoneKey(state.editor.diamondType)] != null;
-    $('#gem-rate-wrap').hidden =
-      cfg[
-        state.tool === 'ice' ||
-        (state.tool === 'gem' && state.gems.find((g) => g.id === state.selectedGemId)?.kind === 'iced')
-          ? 'fullPrice'
-          : 'accentPrice'
-      ][stoneKey($('#gem-type').value)] != null;
-    $('#karat-field').hidden = state.editor.material !== 'Gold';
-    const stones = stoneToolAvailable();
-    $('#stone-mode-field').hidden = !stones;
-    $('#accent-fields').hidden =
-      !stones || !(state.editor.stoneMode === 'accent' || state.editor.stoneMode === 'both');
-    $('#full-fields').hidden =
-      !stones || !(state.editor.stoneMode === 'full' || state.editor.stoneMode === 'both');
   }
   function syncSignature(force = false) {
     const canvas = $('#signature-pad');
@@ -2625,6 +2818,9 @@
           .slice(0, 60),
         teeth: (layer.teeth || []).map(Number),
         materials: layer.materials || {},
+        mode: layer.mode,
+        details: structuredClone(layer.details),
+        legacy: !!layer.legacy,
         groups: JSON.parse(JSON.stringify(groups)),
         icedTeeth: state.icedTeeth
           .filter((x) => x.designId === layer.id)
@@ -2634,7 +2830,7 @@
         createdBy: staffUser.uid,
         updatedAt: new Date().toISOString(),
       };
-    if (!groups.length) {
+    if (!groups.length || layerPending(layer)) {
       notify('Apply the design details before saving a template');
       return;
     }
@@ -2675,6 +2871,9 @@
           name: String(source.name || 'Saved design').slice(0, 60),
           teeth,
           materials: { ...(source.materials || {}) },
+          mode: source.mode,
+          details: source.details && structuredClone(source.details),
+          legacy: !!source.legacy,
           visible: true,
         };
       state.designLayers = state.designLayers.filter((l) => l.teeth.length);
@@ -2707,19 +2906,8 @@
         state.toothMaterials[tooth] = material;
       });
       state.activeDesignId = newId;
-      state.showAllDesigns = false;
-      state.isolateDesign = true;
-      state.newDesignSelection = false;
-      state.selectedTeeth = [];
-      state.pendingToothSpecs = {};
-      state.editingGroupId = '';
-      state.selectedGemId = '';
-      $('#group-name').value = layer.name;
-      state.editor.name = layer.name;
-      setTool('draw');
-      persist();
-      renderAll();
-      refreshOrder();
+      normalizeDesignState();
+      activateLayer(activeLayer());
       notify(`Loaded “${layer.name}” as a new design layer`);
     } catch (e) {
       console.error('Load design template:', e);
@@ -2772,90 +2960,6 @@
       notify('Could not open this sheet');
     }
   }
-  function applyDesign() {
-    const current = activeLayer(),
-      editing = state.groups.find((g) => g.id === state.editingGroupId);
-    const ids = state.selectedTeeth.length
-      ? [...state.selectedTeeth]
-      : current.draft
-        ? [...current.teeth]
-        : [];
-    if (!ids.length) {
-      notify('Select at least one tooth first');
-      return;
-    }
-    let layer = editing || current.draft ? current : null;
-    if (
-      editing &&
-      ids.some((t) =>
-        state.groups.some((g) => g.layerId === layer.id && g.id !== editing.id && g.teeth.includes(t)),
-      )
-    ) {
-      notify('That tooth already belongs to another group in this design');
-      return;
-    }
-    const name = state.editor.name.trim() || editing?.name || `Design ${(currentOrder?.lineCount || 0) + 1}`;
-    if (!layer) {
-      layer = { id: crypto.randomUUID(), name, teeth: [], materials: {}, visible: true };
-      state.designLayers = state.designLayers.filter(
-        (l) => l.teeth.length || state.ink.some((st) => st.designId === l.id),
-      );
-      state.designLayers.push(layer);
-    }
-    const grouped = new Map();
-    for (const tooth of ids) {
-      const spec = { ...state.editor, ...(state.designMode === 'mix' ? state.pendingToothSpecs[tooth] : {}) };
-      const mat = materialForGroup(spec.material);
-      if (!supportsStones(mat)) {
-        if (state.gems.some((g) => g.designId === layer.id && g.tooth === tooth)) {
-          notify('Remove placed stones before changing to a base metal');
-          return;
-        }
-        spec.stoneMode = 'none';
-      }
-      const fields = [
-        'material',
-        'karat',
-        'level',
-        'plating',
-        'enamel',
-        'engraving',
-        'productionEffect',
-        'stoneMode',
-        'accentType',
-        'setting',
-        'accentCount',
-        'accentCustomPrice',
-        'fullCustomPrice',
-        'diamondType',
-        'coverage',
-        'stoneNotes',
-      ];
-      const values = Object.fromEntries(fields.filter((k) => spec[k] != null).map((k) => [k, spec[k]]));
-      const k = JSON.stringify(values);
-      if (!grouped.has(k))
-        grouped.set(k, { id: crypto.randomUUID(), layerId: layer.id, name, ...values, teeth: [] });
-      grouped.get(k).teeth.push(tooth);
-    }
-    if (editing) state.groups.splice(state.groups.indexOf(editing), 1, ...grouped.values());
-    else state.groups.push(...grouped.values());
-    layer.draft = false;
-    layer.name = name;
-    syncLayerTeeth(layer);
-    state.activeDesignId = layer.id;
-    state.editingGroupId = '';
-    state.selectedTeeth = [];
-    state.pendingToothSpecs = {};
-    state.newDesignSelection = false;
-    state.showAllDesigns = false;
-    state.isolateDesign = true;
-    state.editor.name = name;
-    $('#group-name').value = name;
-    setTool('draw');
-    renderAll();
-    persist();
-    notify(editing ? 'Design updated' : 'Design added to the estimate');
-  }
   function syncLayerTeeth(layer) {
     const groups = state.groups.filter((g) => g.layerId === layer.id);
     layer.teeth = [...new Set(groups.flatMap((g) => g.teeth))];
@@ -2875,7 +2979,9 @@
     state.groups = state.groups.filter((g) => g !== group);
     const layer = state.designLayers.find((l) => l.id === group.layerId);
     if (layer) {
+      const wasPending = layerPending(layer);
       syncLayerTeeth(layer);
+      if (!wasPending) layer.revision = OrderDesign.revision(state, layer);
       if (!layer.teeth.length) state.designLayers = state.designLayers.filter((l) => l !== layer);
     }
     state.editingGroupId = '';
@@ -2889,23 +2995,13 @@
     persist();
   }
   function editGroup(id) {
-    const g = state.groups.find((g) => g.id === id);
-    if (!g) return;
-    state.editingGroupId = id;
-    state.activeDesignId = g.layerId;
-    state.showAllDesigns = false;
-    state.isolateDesign = false;
-    state.newDesignSelection = false;
-    state.selectedTeeth = [...g.teeth];
-    state.pendingToothSpecs = {};
-    state.editor = { ...blankState().editor, ...g, materialKey: materialForGroup(g.material) };
-    setTool('select');
-    syncInputs();
-    renderAll();
-    persist();
-    $('#design-details-card').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const group = state.groups.find((g) => g.id === id),
+      layer = state.designLayers.find((l) => l.id === group?.layerId);
+    if (layer) {
+      activateLayer(layer);
+      reviewDesign();
+    }
   }
-
   function updateField(el) {
     const key = el.dataset.field;
     if (key === 'designMode') {
@@ -2936,18 +3032,24 @@
   function updateEditor(el) {
     const key = el.dataset.editor;
     state.editor[key] = el.value;
-    if (key === 'material' && el.value !== 'Gold') {
-      state.editor.karat = '18K';
-      $('#karat').value = '18K';
-    }
-    if (key === 'material') state.editor.materialKey = materialForGroup(el.value);
-    if (['material', 'plating', 'productionEffect'].includes(key)) renderTeeth();
-    else syncFormExtras();
     renderSummary();
     renderPrint();
     persist();
   }
   document.addEventListener('input', (e) => {
+    const detail = e.target.closest('[data-detail]');
+    if (detail) {
+      const l = activeLayer();
+      if (l.id !== state.reviewLayerId) return;
+      const d = (l.details[detail.dataset.row] ||= {});
+      d[detail.dataset.detail] = detail.value;
+      if (detail.dataset.detail === 'accentType') d.accentCustomPrice = '';
+      if (detail.dataset.detail === 'diamondType') d.fullCustomPrice = '';
+      if (['accentType', 'diamondType', 'level'].includes(detail.dataset.detail)) renderDetailForm();
+      refreshOrder();
+      persist();
+      return;
+    }
     const field = e.target.closest('[data-field]');
     if (field) {
       updateField(field);
@@ -2967,7 +3069,6 @@
       persist();
       renderGemOptions();
       setTool(state.tool || 'select');
-      syncFormExtras();
       renderMixedToothSpecs();
       return;
     }
@@ -3127,6 +3228,7 @@
     const i = steps.indexOf(step);
     if (i < 0) return;
     state.step = step;
+    document.body.dataset.workspace = step;
     $$('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== step));
     $$('[data-step]').forEach((b) => {
       if (b.dataset.step === step) b.setAttribute('aria-current', 'step');

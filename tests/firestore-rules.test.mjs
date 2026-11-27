@@ -123,7 +123,12 @@ test('public site settings are readable but not editable; internal settings and 
     await assertFails(setDoc(ref, {}));
   }
   await assertSucceeds(setDoc(doc(staff, 'quotes', 'q'), { total: 5000 }));
-  for (const outsider of [db, signed(), signed({ email: 'studio@egygrillz.com', email_verified: false })]) {
+  for (const outsider of [
+    db,
+    signed(),
+    signed({ email: 'admin@egygrillz.com', email_verified: false }),
+    signed({ email: 'studio@egygrillz.com', email_verified: true }),
+  ]) {
     await assertFails(getDoc(doc(outsider, 'settings', 'counters')));
     await assertFails(getDocs(collection(outsider, 'settings')));
     for (const name of ['quotes', 'clients', 'appointments', 'invoices', 'design_templates', 'mould_orders'])
@@ -136,7 +141,7 @@ test('trusted EditX & Worker identities can use the studio resources (including 
   for (const db of [
     signed({ staff: true }),
     signed({ admin: true }),
-    signed({ email: 'studio@egygrillz.com', email_verified: true }),
+    signed({ email: 'admin@egygrillz.com', email_verified: true }),
   ]) {
     for (const col of [
       'appointments',
