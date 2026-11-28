@@ -3,19 +3,48 @@ let app;
 export const initializeApp = (options) => (app = { options, name: '[DEFAULT]' });
 export const getApp = () => app;
 export const getApps = () => (app ? [app] : []);
-const user = { uid: 'demo-staff', email: 'studio@example.test' };
-export const getAuth = () => ({ currentUser: user });
-export const onAuthStateChanged = (a, cb) => {
-  setTimeout(() => cb(user), 0);
-  return () => {};
+// UI state only; the rules suite independently checks this UID with the real SDK.
+const owner = {
+  uid: 'zOmlCC3Z0qTDlciJMeCDcSDauwy2',
+  email: 'admin@egygrillz.com',
+  emailVerified: false,
+  getIdToken: async () => 'fake',
 };
-export const signOut = async () => {};
-export const signInWithEmailAndPassword = async () => ({ user });
+const other = { ...owner, uid: 'unrelated', email: 'other@example.test' };
+const auth = {
+  currentUser:
+    sessionStorage.__fixtureOther === '1'
+      ? other
+      : sessionStorage.__fixtureSignedOut === '1'
+        ? null
+        : owner,
+};
+const listeners = new Set();
+export const getAuth = () => auth;
+export const onAuthStateChanged = (a, cb) => {
+  listeners.add(cb);
+  setTimeout(() => cb(a.currentUser), 0);
+  return () => listeners.delete(cb);
+};
+export const signOut = async (a) => {
+  delete sessionStorage.__fixtureOther;
+  sessionStorage.__fixtureSignedOut = '1';
+  a.currentUser = null;
+  for (const cb of listeners) cb(null);
+};
+export const signInWithEmailAndPassword = async (a, email, password) => {
+  if (email !== owner.email || password !== 'fixture-password')
+    throw Object.assign(Error('denied'), { code: 'auth/invalid-credential' });
+  delete sessionStorage.__fixtureSignedOut;
+  a.currentUser = owner;
+  for (const cb of listeners) cb(owner);
+  return { user: owner };
+};
 export const setPersistence = async () => {};
 export const browserLocalPersistence = {};
 export const getFirestore = (app) => ({ app });
 export const collection = (db, col) => ({ col });
-export const doc = (db, col, id) => ({ col, id });
+export const doc = (db, ...parts) => ({ col: parts.slice(0, -1).join('/'), id: parts.at(-1) });
 export const query = (r) => r;
 export const limit = () => 0,
   orderBy = () => 0,
@@ -43,5 +72,30 @@ export const updateDoc = async (r, v) => put(r, v, true),
   deleteDoc = async () => {};
 export const serverTimestamp = () => 0,
   increment = () => 0,
-  getCountFromServer = async () => ({ data: () => ({ count: 1 }) }),
-  runTransaction = async () => 1;
+  getCountFromServer = async () => ({ data: () => ({ count: 1 }) });
+export const getDocFromServer = async (r) => {
+  if (r.col === 'clients' && r.id === 'editx-access-probe-v1' && sessionStorage.__fixtureOther === '1')
+    throw Object.assign(Error('Private read denied'), { code: 'permission-denied' });
+  return getDoc(r);
+};
+export const getDocsFromServer = getDocs;
+export async function runTransaction(db, fn) {
+  const writes = [];
+  const result = await fn({
+    get: getDoc,
+    set: (r, v) => writes.push([r, v, false]),
+    update: (r, v) => writes.push([r, v, true]),
+  });
+  for (const args of writes) put(...args);
+  return result;
+}
+export function onSnapshot(ref, opts, cb) {
+  const emit = () =>
+    getDoc(ref).then((s) => cb({ ...s, metadata: { fromCache: false, hasPendingWrites: false } }));
+  const timer = setTimeout(emit, 0);
+  window.addEventListener('fixture-settings', emit);
+  return () => {
+    clearTimeout(timer);
+    window.removeEventListener('fixture-settings', emit);
+  };
+}

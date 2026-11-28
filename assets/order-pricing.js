@@ -24,6 +24,25 @@
   const fdi = (id) => ['', 'UR', 'UL', 'LL', 'LR'][Math.floor(id / 10)] + String(id % 10);
   const supplied = (v) => v != null && v !== '' && Number.isFinite(Number(v)) && Number(v) >= 0;
 
+  function serviceCatalog(engine) {
+    const cfg = engine.get(),
+      labels = engine.LABELS;
+    return Object.fromEntries([
+      ...Object.entries(cfg.servicePrices)
+        .filter(([k]) => k !== 'custom')
+        .map(([k, price]) => [k, { name: labels.service[k] || k, price }]),
+      ...Object.entries(cfg.moldFlat)
+        .filter(([k]) => k !== 'none')
+        .map(([k, price]) => ['mold:' + k, { name: 'Mold — ' + (labels.mold[k] || k), price }]),
+    ]);
+  }
+  // Mold choices use the same settings/pricing.moldFlat table edited in EditX.
+  // In an issued quote they are ordinary service rows, never a second flat fee.
+  function serviceSpec(s, engine) {
+    if (!s.type?.startsWith('mold:')) return s;
+    const mold = serviceCatalog(engine)[s.type];
+    return { ...s, type: 'custom', name: s.name || mold?.name, unitPrice: s.unitPrice ?? mold?.price };
+  }
   function build(state, engine) {
     const cfg = engine.get(),
       issues = new Set(),
@@ -116,7 +135,7 @@
       }
       designs.get(id).groups.push(...buckets.values());
     }
-    const services = [...state.services];
+    const services = state.services.map((s) => serviceSpec(s, engine));
     for (const x of extras.values()) {
       const line = engine.calculateLine({ material: x.material, teeth: 1, accent: x.accent });
       services.push({
@@ -147,5 +166,5 @@
       issues.add('Enter a deposit in whole EGP between zero and the total.');
     return { order, issues: [...issues] };
   }
-  global.OrderPricing = { build };
+  global.OrderPricing = { build, serviceCatalog, serviceSpec };
 })(globalThis);

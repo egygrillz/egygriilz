@@ -5,7 +5,7 @@ import {
   getDoc,
   setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { firebaseApp } from './firebase-auth-gate.js?v=2';
+import { firebaseApp } from './firebase-auth-gate.js?v=3';
 
 export const db = getFirestore(firebaseApp());
 export const settingsDb = {

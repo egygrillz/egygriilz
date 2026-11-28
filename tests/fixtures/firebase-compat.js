@@ -1,20 +1,30 @@
 // Browser fixture for the two legacy compat panels.
 if (!globalThis.firebase) {
   const user = {
-    uid: 'demo-staff',
+    uid: localStorage.__testOwnerLogin ? 'zOmlCC3Z0qTDlciJMeCDcSDauwy2' : 'demo-staff',
     email: 'admin@egygrillz.com',
     get emailVerified() {
-      return localStorage.__testDenied !== '1';
+      return !localStorage.__testOwnerLogin && localStorage.__testDenied !== '1';
     },
     reload: async () => {},
     sendEmailVerification: async () => {},
     getIdToken: async () => 'fake',
   };
+  let active = localStorage.__testOwnerLogin ? null : user;
+  const listeners = new Set();
   const auth = () => ({
-    currentUser: user,
+    currentUser: active,
+    async signInWithEmailAndPassword(email, password) {
+      if (email !== user.email || password !== 'fixture-password')
+        throw Object.assign(Error('Fixture sign-in denied'), { code: 'auth/invalid-credential' });
+      active = user;
+      for (const cb of listeners) cb(active);
+      return { user };
+    },
     onAuthStateChanged(cb) {
-      setTimeout(() => cb(user), 0);
-      return () => {};
+      listeners.add(cb);
+      setTimeout(() => cb(active), 0);
+      return () => listeners.delete(cb);
     },
     setPersistence: async () => {},
   });
