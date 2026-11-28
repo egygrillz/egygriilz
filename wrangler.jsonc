@@ -4,5 +4,7 @@
   "main": "cloudflare-worker.js",
   "compatibility_date": "2026-11-01",
   "keep_vars": true,
+  // One trigger handles bot polling, advance appointment alerts and the Cairo-noon digest.
+  // Optional variable APPOINTMENT_LEAD_MINUTES: 5–180 (default: 60).
   "triggers": { "crons": ["* * * * *"] }
 }

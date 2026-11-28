@@ -9,10 +9,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-        <script src="/assets/calc-engine.js?v=10"></script>
+        <script src="/assets/calc-engine.js?v=12"></script>
 <script src="/assets/rates.js?v=7"></script>
     <script src="/assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=7"></script>
+<script src="/assets/staff-calculator.js?v=8"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         // Applied before first paint so the theme never flashes.
@@ -278,7 +278,7 @@
                 <div class="flex-1 overflow-y-auto p-6 space-y-5">
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
                         Fill every section so Gemini and Groq answer the same way. Upload <code>EgyGrillz_Pricing_Engine.md</code> into <strong>Pricing Calculation Rules</strong>. Multi-key API rotation is configured on the Cloudflare Worker. Settings are stored in Firestore.
-                        <span class="block mt-1.5 text-[10px] text-gray-400">Design levels used by the panel: 0.5 Bars · 1 Solid (+0%) · 2 Open face (+10%) · 3 Mid detail (+15%) · 4 Complex (+25%) · 5 Scorpion / heavy detail (+40%) · 6 Ultimate (+60%). Keep the uploaded pricing .md using these exact names.</span>
+                        <span class="block mt-1.5 text-[10px] text-gray-400">Design levels used by the panel: Bars · Solid (+0%) · Open face (+10%) · Mid detail (+15%) · Complex (+25%) · Scorpion / heavy detail (+40%) · Ultimate (+60%). Keep the uploaded pricing .md using these exact names.</span>
                     </div>
 
                     <!-- AI behaviour + client intake -->
@@ -344,7 +344,7 @@
                         </div>
                         <textarea id="settingPricingCalc" rows="6" placeholder="Example:
 - Base price per tooth: [X] EGP for chrome, [Y] EGP for solid gold
-- Design levels: 0.5 Bars (half base, no design %) / 1 Solid (+0%) / 2 Open face (+10%) / 3 Mid detail (+15%) / 4 Complex (+25%) / 5 Scorpion-heavy (+40%) / 6 Ultimate (+60%)
+- Design levels: Bars (half base, no design %) / Solid (+0%) / Open face (+10%) / Mid detail (+15%) / Complex (+25%) / Scorpion (+40%) / Ultimate (+60%)
 - A quote may contain several design lines; sum the lines, then apply the timeline %, then add the mold fee
 - Round every final total UP to the nearest 50 EGP
 - Mold kit fee: [X] EGP, refunded if client books in-studio fitting instead
@@ -819,7 +819,7 @@ We craft pieces in Cobalt Chrome, Titanium, Sterling Silver 925, and Gold (10K�
 
             materials: `Materials: Cobalt Chrome, Titanium, Sterling Silver 925, Gold (10K, 14K, 18K, 21K, 22K).
 
-Design levels (exact names): 0.5 Bars, 1 Solid, 2 Open face, 3 Mid detail, 4 Complex, 5 Scorpion / heavy detail, 6 Ultimate.
+Design levels (exact names): Bars, Solid, Open face, Mid detail, Complex, Scorpion / heavy detail, Ultimate.
 
 Stones: available on Silver and Gold only (not on Chrome or Titanium). Options: none, accent stones, or full iced. Stone types: CZ, Moissanite, Lab-Grown Diamond, Natural Diamond.
 
@@ -1023,7 +1023,7 @@ Response structure:
 
         // Level names are hardcoded here on purpose so the AI can never drift from
         // the panel's own labels, even if the uploaded pricing .md is worded differently.
-        const LEVEL_NAMES_LINE = "0.5 Bars (half base, no design %) / 1 Solid (+0%) / 2 Open face (+10%) / 3 Mid detail (+15%) / 4 Complex (+25%) / 5 Scorpion-heavy (+40%) / 6 Ultimate (+60%).";
+        const LEVEL_NAMES_LINE = "Bars (half base, no design %) / Solid (+0%) / Open face (+10%) / Mid detail (+15%) / Complex (+25%) / Scorpion (+40%) / Ultimate (+60%).";
 
         function buildPricingSystemPrompt() {
             return `${buildRestrictionsBlock()}You are the EGYGRILLZ internal pricing assistant for staff only.
@@ -1055,16 +1055,16 @@ MULTIPLE DESIGNS IN ONE QUOTE:
 - If staff paste an Exact Calculator result (lines included), treat it as verified: just restate the totals + next step. Never re-add or re-sum the lines yourself.
 
 STONE / ICED RULES (do not get confused):
-- Level 0.5 Bars: material = half base. If also full iced on Bars: stoneCost = teeth × 400 only (no diamond count, no pave table).
-- Full iced on levels 1–6: PER TOOTH = teeth × (fullPrice + coverage). Need stone type + coverage style. Do NOT ask how many diamonds.
-- Accent: per stone = count × (type + setting).
+- Bars: material = half base. A pavé line or full iced fill uses the studio’s Bars setting rate once per covered tooth. Do not charge for individual pavé stones as well. Separately placed accents are independent.
+- Full iced on non-Bars designs: PER TOOTH = teeth × (fullPrice + coverage). Need stone type + coverage style. Do NOT ask how many diamonds.
+- On other complexities a drawn pavé line uses counted accents, not the full-iced rate. Separate accent: count × per-stone price with setting.
 - Chrome and Titanium: stones not allowed.
 - Prefer the "Saved / reference quotes" table in Pricing Rules when the config matches — reuse those totals.
 
 CORRECT QUESTION ORDER (skip any step already answered):
 1. Material? (Chrome / Titanium / Silver / Gold). If Gold → karat, then today's gold EGP per gram.
 2. Number of teeth? (1–16)
-3. Design level? (0.5 Bars = half base / 1 Solid / 2 Open face / 3 Mid detail / 4 Complex / 5 Scorpion-heavy / 6 Ultimate)
+3. Design level? (Bars = half base / Solid / Open face / Mid detail / Complex / Scorpion / Ultimate)
 4. Stones mode? (None / Accent / Full iced)
    - If Accent → how many stones? → type? → setting?
    - If Full iced → stone type? → coverage style? (never ask diamond count)

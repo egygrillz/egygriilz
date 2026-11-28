@@ -313,11 +313,14 @@
       setLines: (lines) => {
         S.lines = Array.isArray(lines) ? lines.map((l) => engine().calculateLine(l)) : [];
         S.editingId = null;
-        renderLines();
+        renderLines(); renderServices();
         setEditorMode('add');
       },
       getServices: () => S.services.map((s) => Object.assign({}, s)),
-      setServices: (svc) => { S.services = Array.isArray(svc) ? svc.map((s) => Object.assign({}, s)) : []; renderServices(); },
+      setServices: (svc) => { S.services = Array.isArray(svc) ? svc.map((s) => Object.assign({}, s)) : []; renderServices(); renderLines(); },
+      // Quotes has its own ordinary-service editor. Linked settings are edited
+      // once, beneath their FDI group in the shared design editor instead.
+      studioServiceIndices: () => studioServiceIndices(deskBreakdown()),
       getOrder: () => S.lastQuote,
       getResultText: () => (el('resultText') ? el('resultText').textContent : ''),
       getLastQuote: () => S.lastQuote,
@@ -443,7 +446,7 @@
               </div>
               <div data-sc="groupsList"></div>
               <div class="sc-faint" style="margin-top:6px" data-sc="groupsEmpty">
-                Example: add <strong>2 teeth Level 4 + Iced</strong>, then add <strong>4 teeth Level 1 Plain</strong> — all priced together as one single set.
+                Example: add <strong>2 teeth Complex + iced</strong>, then add <strong>4 teeth Plain solid</strong> — all priced together as one single set.
               </div>
               <div class="sc-grp-sum sc-hidden" data-sc="groupsSum">
                 <span data-sc="groupsSumLbl">0 teeth</span>
@@ -496,13 +499,13 @@
             <div>
               <label class="sc-lbl">Design Level</label>
               <select class="sc-select" data-sc="level">
-                <option value="0.5">0.5 — Bars (half base, no design %)</option>
-                <option value="1" selected>1 — Solid (+0%)</option>
-                <option value="2">2 — Open face (+10%)</option>
-                <option value="3">3 — Mid detail (+15%)</option>
-                <option value="4">4 — Complex (+25%)</option>
-                <option value="5">5 — Scorpion / heavy detail (+40%)</option>
-                <option value="6">6 — Ultimate (+60%)</option>
+                <option value="0.5">Bars (half base, no design %)</option>
+                <option value="1" selected>Solid (+0%)</option>
+                <option value="2">Open face (+10%)</option>
+                <option value="3">Mid detail (+15%)</option>
+                <option value="4">Complex (+25%)</option>
+                <option value="5">Scorpion / heavy detail (+40%)</option>
+                <option value="6">Ultimate (+60%)</option>
               </select>
               <div class="sc-levelstrip" data-sc="levelStrip"></div>
               <button type="button" class="sc-link" style="margin-top:4px" data-sc="toggleGuide">Level guide &amp; examples</button>
@@ -565,7 +568,7 @@
             </div>
 
             <div class="sc-subcard sc-hidden" data-sc="fullWrap">
-              <div class="sc-mut sc-hidden" data-sc="fullBarsNote">Level 0.5 Bars + full iced uses a fixed 400 EGP/tooth — no type/coverage needed.</div>
+              <div class="sc-mut sc-hidden" data-sc="fullBarsNote">An iced-out bar uses the studio rate per tooth — no type/coverage needed.</div>
               <div class="sc-grid2-sm" data-sc="fullFields">
                 <div>
                   <label class="sc-lbl-lite">Type</label>
@@ -763,13 +766,13 @@
       if (lvl && c.designPct) {
         const curLvl = lvl.value || '1';
         const lvlLabels = {
-          '0.5': '0.5 — Bars (half base, no design %)',
-          '1': '1 — Solid (+' + number(c.designPct['1']) + '%)',
-          '2': '2 — Open face (+' + number(c.designPct['2']) + '%)',
-          '3': '3 — Mid detail (+' + number(c.designPct['3']) + '%)',
-          '4': '4 — Complex (+' + number(c.designPct['4']) + '%)',
-          '5': '5 — Scorpion / heavy detail (+' + number(c.designPct['5']) + '%)',
-          '6': '6 — Ultimate (+' + number(c.designPct['6']) + '%)',
+          '0.5': 'Bars (half base, no design %)',
+          '1': 'Solid (+' + number(c.designPct['1']) + '%)',
+          '2': 'Open face (+' + number(c.designPct['2']) + '%)',
+          '3': 'Mid detail (+' + number(c.designPct['3']) + '%)',
+          '4': 'Complex (+' + number(c.designPct['4']) + '%)',
+          '5': 'Scorpion / heavy detail (+' + number(c.designPct['5']) + '%)',
+          '6': 'Ultimate (+' + number(c.designPct['6']) + '%)',
         };
         lvl.innerHTML = Object.keys(lvlLabels).map((k) =>
           `<option value="${esc(k)}">${esc(lvlLabels[k])}</option>`).join('');
@@ -778,8 +781,8 @@
 
       const barsNote = el('fullBarsNote');
       if (barsNote) {
-        const barsRate = number(c.barsStonesPerTooth) || 400;
-        barsNote.textContent = 'Level 0.5 Bars + full iced uses a fixed ' + barsRate + ' EGP/tooth — no type/coverage needed.';
+        const barsRate = number(c.barsStonesPerTooth ?? 400);
+        barsNote.textContent = 'An iced-out bar uses a fixed ' + barsRate + ' EGP/tooth — no type/coverage needed.';
       }
 
       const tl = el('timeline');
@@ -1505,10 +1508,10 @@
         }
       }
       list.innerHTML = gs.map((g, i) => {
-        const lbl = g.label ? `<strong>${esc(g.label)}:</strong> ` : `<strong>#${i + 1}:</strong> `;
+        const lbl = `<strong>${esc(engine().toothHeading(g,el('name')?.value))}:</strong> `;
         const desc = engine().groupLabel
           ? esc(engine().groupLabel(g, { includeMaterial: true }))
-          : esc(`${g.teeth} teeth · L${g.level}`);
+          : esc(`${g.teeth} teeth · ${engine().levelName(g.level)}`);
         return `<div class="sc-grp-row${S.editingGroupId === i ? ' editing' : ''}">
           <div class="sc-grp-main">${lbl}${desc}</div>
           <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
@@ -1567,29 +1570,28 @@
         return name ? name + ' — ' + core : core;
       }
       const mat = line.material === 'gold' ? 'Gold ' + (line.karat || '18') + 'K' : ((L.material || {})[line.material] || line.material);
-      const core = mat + ' · ' + line.teeth + ' ' + (Number(line.teeth) === 1 ? 'tooth' : 'teeth') + ' · ' + ((L.level || {})[line.level] || line.level);
+      const core = mat + ' · ' + line.teeth + ' ' + (Number(line.teeth) === 1 ? 'tooth' : 'teeth') + ' · ' + engine().levelName(line.level);
       return name ? name + ' — ' + core : core;
     }
 
     function lineSubLabel(line) {
       if (line.isMixed && Array.isArray(line.groups) && line.groups.length > 1) {
         return line.groups.map((g) => {
-          const pre = g.label ? g.label + ': ' : '';
-          return pre + (engine().groupLabel ? engine().groupLabel(g, { includeMaterial: !!line.mixedMaterials }) : (g.teeth + 'T L' + g.level));
+          const pre = engine().toothHeading(g,line.name) + ': ';
+          return pre + (engine().groupLabel ? engine().groupLabel(g, { includeMaterial: true, omitCount:true }) : (g.teeth + 'T · ' + engine().levelName(g.level)));
         }).join('  +  ');
       }
-      const L = labels();
-      const bits = [];
-      if (line.accent) bits.push(line.accent.count + '× ' + ((L.accentType || {})[line.accent.type] || '') + ' ' + ((L.setting || {})[line.accent.setting] || ''));
-      if (line.full && line.full.bars) bits.push('Full iced (Bars @' + ((cfg().barsStonesPerTooth) || 400) + ')');
-      else if (line.full) bits.push('Full iced ' + ((L.accentType || {})[line.full.type] || '') + ' ' + ((L.coverage || {})[line.full.coverage] || ''));
-      if (line.plating && line.plating !== 'none') bits.push((L.plating || {})[line.plating]);
-      if (line.enamel && line.enamel !== 'none') bits.push('Enamel ' + (L.enamel || {})[line.enamel]);
-      if (line.engraving && line.engraving !== 'none') bits.push('Engraving ' + (L.engraving || {})[line.engraving]);
-      if (line.anodize && line.anodize !== 'none' && line.material === 'titanium') bits.push('Anodize ' + (L.anodize || {})[line.anodize]);
-      return bits.filter(Boolean).length ? bits.filter(Boolean).join(' · ') : 'Base only';
+      return engine().toothHeading(line,line.name) + ': ' + engine().groupLabel(line,{includeMaterial:true,omitCount:true});
     }
 
+    function deskBreakdown() {
+      const order = engine().calculateOrder(S.lines, {services:S.services});
+      return {order, ...engine().designBreakdown(order)};
+    }
+    function studioServiceIndices(view) {
+      const rows = parts.lines ? view.services : view.order.services;
+      return rows.map(s=>view.order.services.indexOf(s));
+    }
     function renderLines() {
       if (!parts.lines) return;
       const list = el('linesList');
@@ -1598,20 +1600,19 @@
       if (!list || !empty) return;
       badge.textContent = S.lines.length ? S.lines.length + ' line' + (S.lines.length > 1 ? 's' : '') : '';
       empty.classList.toggle('sc-hidden', S.lines.length > 0);
-      list.innerHTML = S.lines.map((line, i) => `
-        <div class="sc-line">
-          <div class="sc-between">
-            <span class="sc-line-name">${esc(lineLabel(line))}</span>
-            <span class="sc-line-price">${esc(money(line.subtotal))} EGP</span>
-          </div>
-          <div class="sc-between" style="margin-top:2px">
-            <span class="sc-line-sub">${esc(lineSubLabel(line))}</span>
-            <span style="display:flex;gap:6px;flex-shrink:0">
-              <button type="button" class="sc-link" data-edit="${i}">Edit</button>
-              <button type="button" class="sc-link sc-link-danger" data-del="${i}">Remove</button>
-            </span>
+      const view=deskBreakdown();
+      list.innerHTML = view.designs.map(({line,groups,subtotal},i)=>`
+        <div class="sc-line" data-design-row="${i}">
+          <div class="sc-between"><span class="sc-line-name">${esc(line.name || 'Design '+(i+1))}</span>
+            <span class="sc-line-price">${esc(money(subtotal))} EGP</span></div>
+          ${groups.map(({group,stones})=>`<div class="sc-line-sub" style="margin:5px 0"><strong>${esc(engine().toothHeading(group,line.name))}</strong><br>${esc(engine().groupLabel(group,{includeMaterial:true,omitCount:true}))}
+          ${stones.map(s=>`<div>${esc(s.notes)}</div>`+serviceRow(s,view.order.services.indexOf(s))).join('')}</div>`).join('')}
+          <div style="display:flex;justify-content:flex-end;gap:6px">
+            <button type="button" class="sc-link" data-edit="${i}">Edit</button>
+            <button type="button" class="sc-link sc-link-danger" data-del="${i}">Remove</button>
           </div>
         </div>`).join('');
+      wireServiceRows(list);
       list.querySelectorAll('[data-edit]').forEach((b) => {
         b.addEventListener('click', () => {
           const idx = Number(b.getAttribute('data-edit'));
@@ -1625,7 +1626,9 @@
       list.querySelectorAll('[data-del]').forEach((b) => {
         b.addEventListener('click', () => {
           const idx = Number(b.getAttribute('data-del'));
-          S.lines.splice(idx, 1);
+          const [removed] = S.lines.splice(idx, 1);
+          if(removed.designId) S.services = S.services.filter(s=>s.forDesign!==removed.designId);
+          renderServices();
           if (S.editingId === idx) { S.editingId = null; setEditorMode('add'); }
           else if (S.editingId !== null && S.editingId > idx) { S.editingId -= 1; }
           renderLines();
@@ -1651,6 +1654,14 @@
       if (!line) return;
       const wasEdit = S.editingId !== null && S.editingId !== undefined && S.lines[S.editingId];
       if (wasEdit) {
+        const old=S.lines[S.editingId];
+        if(old.designId) line.designId=old.designId;
+        if(!line.groups && !line.toothIds?.length && old.toothIds?.length===line.teeth) line.toothIds=old.toothIds.slice();
+        // A changed tooth count or base metal can invalidate an imported setting.
+        // Never silently leave an orphan charge on a different tooth/design.
+        const orphan=S.services.filter(s=>s.forDesign && s.forDesign===line.designId && !(line.groups || [line]).some(g=>engine().allowsStones(g.material) && s.forTeeth?.every(t=>g.toothIds?.includes(t))));
+        if(orphan.length && !global.confirm('These teeth or materials no longer match the linked stone settings. Remove those setting charges and update the design?')) return;
+        if(orphan.length) S.services=S.services.filter(s=>!orphan.includes(s));
         S.lines[S.editingId] = line;
         S.editingId = null;
         setEditorMode('add');
@@ -1664,7 +1675,7 @@
         syncMixedUi();
         renderMixedGroups();
       }
-      renderLines();
+      renderLines(); renderServices();
       fireChange();
       notify(wasEdit ? 'Set updated' : 'Set added to quote');
     }
@@ -1691,19 +1702,23 @@
 
     /* ───────────────────── services ───────────────────── */
 
+    function serviceRow(sv,i) {
+      return `<div class="sc-svc-row">
+        <input type="text" class="sc-input sc-input-sm sc-col6" data-sv="name" data-i="${i}" value="${esc(sv.name || '')}" aria-label="Item name" placeholder="Service name">
+        <input type="number" class="sc-input sc-input-sm sc-col2" data-sv="qty" data-i="${i}" min="1" value="${Number(sv.qty) || 1}" aria-label="Quantity" style="text-align:center">
+        <input type="number" class="sc-input sc-input-sm sc-col3" data-sv="price" data-i="${i}" min="0" value="${Number(sv.unitPrice) || 0}" aria-label="Unit price in EGP" style="text-align:right">
+        <button type="button" class="sc-del sc-col1" data-sv-del="${i}" aria-label="Remove item">×</button></div>`;
+    }
     function renderServices() {
       if (!parts.services) return;
-      const list = el('servicesList');
-      const empty = el('servicesEmpty');
-      if (!list || !empty) return;
-      empty.classList.toggle('sc-hidden', S.services.length > 0);
-      list.innerHTML = S.services.map((sv, i) => `
-        <div class="sc-svc-row">
-          <input type="text" class="sc-input sc-input-sm sc-col6" data-sv="name" data-i="${i}" value="${esc(sv.name || '')}" placeholder="Service name">
-          <input type="number" class="sc-input sc-input-sm sc-col2" data-sv="qty" data-i="${i}" min="1" value="${Number(sv.qty) || 1}" style="text-align:center">
-          <input type="number" class="sc-input sc-input-sm sc-col3" data-sv="price" data-i="${i}" min="0" value="${Number(sv.unitPrice) || 0}" style="text-align:right">
-          <button type="button" class="sc-del sc-col1" data-sv-del="${i}" title="Remove">×</button>
-        </div>`).join('');
+      const list=el('servicesList'),empty=el('servicesEmpty');
+      if(!list || !empty) return;
+      const indices=studioServiceIndices(deskBreakdown());
+      empty.classList.toggle('sc-hidden',indices.length>0);
+      list.innerHTML=indices.map(i=>serviceRow(S.services[i],i)).join('');
+      wireServiceRows(list);
+    }
+    function wireServiceRows(list) {
       list.querySelectorAll('[data-sv]').forEach((inp) => {
         inp.addEventListener('input', () => {
           const i = Number(inp.getAttribute('data-i'));
@@ -1713,13 +1728,15 @@
           if (f === 'name') sv.name = inp.value;
           if (f === 'qty') sv.qty = Math.max(1, parseInt(inp.value, 10) || 1);
           if (f === 'price') sv.unitPrice = Math.max(0, parseFloat(inp.value) || 0);
+          const row=inp.closest('[data-design-row]');
+          if(row) row.querySelector('.sc-line-price').textContent=money(deskBreakdown().designs[Number(row.dataset.designRow)].subtotal)+' EGP';
           fireChange();
         });
       });
       list.querySelectorAll('[data-sv-del]').forEach((b) => {
         b.addEventListener('click', () => {
           S.services.splice(Number(b.getAttribute('data-sv-del')), 1);
-          renderServices(); fireChange();
+          renderServices(); renderLines(); fireChange();
         });
       });
     }
@@ -1749,7 +1766,7 @@
       strip.innerHTML = Object.keys(LEVEL_INFO).map((k) => {
         const info = LEVEL_INFO[k];
         return `<button type="button" class="sc-chip${k === selected ? ' on' : ''}" data-level="${esc(k)}">
-          <span class="sc-chip-t">${esc(k)} ${esc(info.name)}</span>
+          <span class="sc-chip-t">${esc(info.name)}</span>
           <span class="sc-chip-s">${esc(levelPctLabel(k))}</span>
         </button>`;
       }).join('');
@@ -1779,7 +1796,7 @@
         return `<div class="sc-guide-card">
           <div class="sc-guide-top">
             <div style="min-width:0">
-              <p class="sc-guide-title">${esc(k)} — ${esc(info.name)}</p>
+              <p class="sc-guide-title">${esc(info.name)}</p>
               <p class="sc-guide-desc">${esc(info.desc)}</p>
             </div>
             <span class="sc-guide-pct">${esc(levelPctLabel(k))}</span>
@@ -1810,8 +1827,6 @@
     }
 
     function calculate() {
-      const L = labels();
-      const c = cfg();
       let lines = S.lines.map((l) => Object.assign({}, l));
       if (!lines.length && !S.services.length) {
         const added = buildLine();
@@ -1822,65 +1837,7 @@
       const order = engine().calculateOrder(lines, opts);
 
       if (el('resultText')) {
-        const out = [];
-        order.lines.forEach((l, i) => {
-          out.push('SET ' + (i + 1) + ': ' + lineLabel(l));
-          if (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) {
-            l.groups.forEach((g, gi) => {
-              const gHead = g.label ? (g.label + ' — ') : ('Group ' + (gi + 1) + ': ');
-              const gDesc = engine().groupLabel ? engine().groupLabel(g, { includeMaterial: true }) : (g.teeth + ' teeth · L' + g.level);
-              out.push('  [' + (gi + 1) + '] ' + gHead + gDesc + ' = ' + money(g.subtotal) + ' EGP');
-            });
-            out.push('  Material total: ' + money(l.materialTotal) + ' EGP · Complexity: +' + money(l.designCost) + ' EGP'
-              + (l.stoneCost ? ' · Stones: +' + money(l.stoneCost) + ' EGP' : '')
-              + (l.platingCost ? ' · Plating: +' + money(l.platingCost) + ' EGP' : '')
-              + (l.enamelCost ? ' · Enamel: +' + money(l.enamelCost) + ' EGP' : '')
-              + (l.engravingCost ? ' · Engraving: +' + money(l.engravingCost) + ' EGP' : '')
-              + (l.anodizeCost ? ' · Anodize: +' + money(l.anodizeCost) + ' EGP' : ''));
-          } else {
-            const materialLine = l.material === 'gold'
-              ? 'Gold ' + l.karat + 'K @ ' + l.goldPrice + ' EGP/g → base/tooth = ' + money(l.base) + ' EGP'
-              : ((L.material || {})[l.material] || l.material) + ' → base/tooth = ' + money(l.base) + ' EGP';
-            const stoneBits = [];
-            if (l.accent) {
-              stoneBits.push('Accent × ' + l.accent.count + ' (' + ((L.accentType || {})[l.accent.type] || '') + ' ' + money(l.accentUnit) + ' + ' + ((L.setting || {})[l.accent.setting] || '') + ' ' + l.settingUnit + ') = ' + money(l.accentCost !== undefined ? l.accentCost : l.stoneCost) + ' EGP');
-            }
-            if (l.full && l.full.bars) {
-              stoneBits.push('Full iced on Bars: ' + l.teeth + ' × ' + (c.barsStonesPerTooth ?? 400) + ' = ' + money(l.fullCost !== undefined ? l.fullCost : l.stoneCost) + ' EGP');
-            } else if (l.full) {
-              stoneBits.push('Full iced × ' + l.teeth + ' (' + ((L.accentType || {})[l.full.type] || '') + ' ' + money(l.fullUnit) + ' + ' + ((L.coverage || {})[l.full.coverage] || '') + ' ' + l.coverageUnit + ') = ' + money(l.fullCost !== undefined ? l.fullCost : l.stoneCost) + ' EGP');
-            }
-            const stoneLine = stoneBits.length ? stoneBits.join('  +  ') + '  →  ' + money(l.stoneCost) + ' EGP' : 'None';
-            out.push('  Material: ' + materialLine + ' → ' + money(l.materialTotal) + ' EGP');
-            out.push('  Design: ' + (l.level === '0.5' ? '0 (Bars)' : '+' + l.designPct + '% = ' + money(l.designCost) + ' EGP'));
-            out.push('  Stones: ' + stoneLine);
-            out.push('  Plating: ' + ((L.plating || {})[l.plating] || l.plating) + ' → ' + money(l.platingCost) + ' EGP');
-            out.push('  Enamel: ' + ((L.enamel || {})[l.enamel] || l.enamel) + ' → ' + money(l.enamelCost) + ' EGP');
-            out.push('  Engraving: ' + ((L.engraving || {})[l.engraving] || l.engraving) + ' → ' + money(l.engravingCost) + ' EGP');
-            if (l.anodizeCost) out.push('  Anodizing: ' + ((L.anodize || {})[l.anodize] || l.anodize) + ' → ' + money(l.anodizeCost) + ' EGP');
-          }
-          out.push('  Set subtotal: ' + money(l.subtotal) + ' EGP');
-          out.push('');
-        });
-        if (order.services.length) {
-          out.push('STUDIO SERVICES:');
-          order.services.forEach((sv) => {
-            out.push('  • ' + sv.name + ' (' + sv.qty + ' × ' + money(sv.unitPrice) + ') = ' + money(sv.subtotal) + ' EGP');
-          });
-          out.push('  Services subtotal: ' + money(order.servicesSubtotal) + ' EGP');
-          out.push('');
-        }
-        if (order.lines.length) out.push('Designs subtotal: ' + money(order.linesSubtotal) + ' EGP');
-        if (order.servicesSubtotal) out.push('Services subtotal: ' + money(order.servicesSubtotal) + ' EGP');
-        out.push('Timeline: ' + ((L.timeline || {})[opts.timeline] || opts.timeline) + ' (+' + order.timelinePct + '%) = ' + money(order.timelineAmount) + ' EGP');
-        out.push('Mold: ' + ((L.mold || {})[opts.mold] || opts.mold) + ' → ' + money(order.moldCost) + ' EGP');
-        out.push('');
-        if (order.discountAmount) out.push('Discount: -' + money(order.discountAmount) + ' EGP');
-        out.push('QUOTE TOTAL: ' + order.total.toLocaleString('en-US') + ' EGP');
-        if (opts.depositPct) {
-          out.push('Deposit (' + opts.depositPct + '%): ' + order.deposit.toLocaleString('en-US') + ' EGP');
-          out.push('Balance before delivery: ' + order.balance.toLocaleString('en-US') + ' EGP');
-        }
+        const out = [engine().describeOrder(order)];
         try {
           if (engine() && typeof engine().encodeCode === 'function') {
             const qCode = engine().encodeCode(order);
@@ -2142,13 +2099,13 @@
       ['goldKarat.22.margin', 'Margin — 22K'],
     ] },
     { id: 'levels', title: 'Design levels — surcharge %', keys: [
-      ['designPct.0.5', '0.5 Bars'],
-      ['designPct.1', '1 Solid'],
-      ['designPct.2', '2 Open face'],
-      ['designPct.3', '3 Mid detail'],
-      ['designPct.4', '4 Complex'],
-      ['designPct.5', '5 Scorpion'],
-      ['designPct.6', '6 Ultimate'],
+      ['designPct.0.5', 'Bars'],
+      ['designPct.1', 'Solid'],
+      ['designPct.2', 'Open face'],
+      ['designPct.3', 'Mid detail'],
+      ['designPct.4', 'Complex'],
+      ['designPct.5', 'Scorpion'],
+      ['designPct.6', 'Ultimate'],
     ] },
     { id: 'stones', title: 'Stones — price per stone', keys: [
       ['accentPrice.cz', 'Accent — CZ'],

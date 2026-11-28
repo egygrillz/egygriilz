@@ -171,6 +171,14 @@ try {
       assert.equal((await state()).ink.length, 0);
       await click('#zoom-fit');
     }
+    await click('[data-tool="pave"]');
+    await stroke(11, 0.2, 0.8, 0.5);
+    const rail = (await state()).gems;
+    assert.ok(rail.length >= 2);
+    assert.equal(new Set(rail.map((g) => g.operationId)).size, 1);
+    assert.equal((await state()).price, plain);
+    await click('#undo-ink');
+    assert.equal((await state()).gems.length, 0, 'one undo removes the whole line');
     await click('[data-tool="enamel"]');
     assert.ok(await $('#enamel-dialog').isVisible());
     await $('#palette-inputs input').first().fill('#cc2255');

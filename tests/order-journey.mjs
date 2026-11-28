@@ -116,7 +116,10 @@ try {
   assert.match(await $('.client-result').first().innerText(), /2026-11-11/);
   await $('.client-result').first().click();
   console.log('PASS EditX → Order, merged directory');
+  assert.equal(await $('#order-summary').isVisible(), false);
+  assert.equal(await $('.file-tools').isVisible(), true);
   await step('design');
+  assert.equal(await $('#order-summary').isVisible(), true);
   await tooth(11);
   await tooth(12);
   await $('#design-mode').selectOption('mix');
@@ -144,7 +147,7 @@ try {
   await $('#save-design-details').click();
   const original = (await state()).groups[1];
   await $('[data-action="edit-group"]').first().click();
-  await $('[data-detail="level"][data-row="11"]').selectOption('2 Open face');
+  await $('[data-detail="level"][data-row="11"]').selectOption({ label: 'Open face' });
   await $('#save-design-details').click();
   s = await state();
   assert.deepEqual(s.groups[1], original);
@@ -156,9 +159,60 @@ try {
   await $('#load-saved-design').click();
   s = await state();
   assert.equal(s.designLayers.length, 2);
+  assert.equal(s.groups.length, 2); // no price, ink or original FDI copied
+  assert.equal(s.ink.length, 1);
+  const recipe = Object.values(await table('design_templates'))[0];
+  assert.deepEqual(Object.keys(recipe).sort(), ['schema', 'name', 'slots', 'mode', 'updatedAt'].sort());
+  assert.equal(recipe.slots.length, 2);
+  assert.equal(recipe.slots[1].material, 'silver');
+  assert.deepEqual(s.designLayers.at(-1).teeth, []);
+  assert.equal(await $('#design-review-card').isVisible(), false);
+  assert.equal(await $('#apply-design').isVisible(), false);
+  async function mark(id) {
+    const shape = $(`path[data-tooth="${id}"]`);
+    await shape.scrollIntoViewIfNeeded();
+    const b = await shape.boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  }
+  await mark(41);
+  assert.equal((await state()).groups.length, 2);
+  await mark(42);
+  s = await state();
+  assert.deepEqual(s.designLayers.at(-1).teeth, [41, 42]);
   assert.equal(s.groups.length, 4);
-  assert.equal(s.ink.length, 2);
-  console.log('PASS template round trip');
+  assert.equal(s.ink.length, 3);
+  assert.equal(s.groups.at(-2).level, '2');
+  assert.equal(s.groups.at(-1).material, 'Sterling Silver 925');
+  const snapshot = () => page.evaluate(() => OrderFile.pack(window.__testSheet));
+  const before = await snapshot();
+  await mark(43);
+  await $('#extra-design-dialog').waitFor({ state: 'visible' });
+  assert.equal(await snapshot(), before);
+  await $('#extra-design-dialog [value="cancel"]').click();
+  assert.equal(await snapshot(), before);
+  assert.equal(await $('#design-groups .group-title').count(), 2); // equal names, two layers, not four headings
+  await $('[data-tool="laser"]').click();
+  await mark(41);
+  await $('#extra-design-dialog').waitFor({ state: 'visible' });
+  await page.keyboard.press('Escape');
+  assert.equal(await snapshot(), before);
+  await $('[data-tool="draw"]').click();
+  await mark(43);
+  await $('#extra-design-dialog [value="create"]').click();
+  assert.equal(await $('#extra-design-dialog').isVisible(), true);
+  await $('#extra-name').fill('Extended lower');
+  await $('#extra-design-dialog [value="create"]').click();
+  await wait(() => window.__testSheet.designLayers.at(-1).name === 'Extended lower');
+  s = await state();
+  assert.equal(s.designLayers.length, 2);
+  assert.deepEqual(s.designLayers.at(-1).teeth, [41, 42, 43]);
+  assert.equal(s.ink.length, 4);
+  assert.deepEqual(Object.values(await table('design_templates'))[0], recipe);
+  await $('#apply-design').click();
+  await $('#save-design-details').click();
+  console.log(
+    'PASS details-only recipe, new FDI bindings, whole-gesture cancel, named fork, original untouched',
+  );
   await step('pricing');
   await $('#order-service-type').selectOption('consultation');
   await $('#add-order-service').click();
@@ -176,6 +230,8 @@ try {
   assert.ok((await state()).signatureLines[0].length > 2);
   await $('#preview-sheet').click();
   assert.equal(await $('.design-layer-print').count(), 2);
+  assert.deepEqual(await $('.print-design > h4').allTextContents(), ['Top mix', 'Extended lower']);
+  assert.deepEqual(await $('.print-design').first().locator('h5').allTextContents(), ['FDI 11', 'FDI 12']);
   const inkStats = await $('.print-layer-ink').evaluateAll(async (imgs) =>
     Promise.all(
       imgs.map(async (img) => {
@@ -416,7 +472,9 @@ try {
   assert.equal(publicOrder.lines[0].accent.size, '2.5');
   assert.equal(publicOrder.lines[0].name, 'Public test');
   assert.equal(publicOrder.total, 3300);
+  assert.match(await $('#summary').innerText(), /Solid/);
   await $('#lang-ar').click();
+  assert.match(await $('#summary').innerText(), /سوليد/);
   assert.match(await $('#summary').innerText(), /المطلوب قبل بدء التصنيع \(30%\)/);
   for (const route of ['staff-panel-x7k2.html', 'staff-panel-x7k2/index.html']) {
     await nav(route);
@@ -435,6 +493,45 @@ try {
     assert.match(pdf.suggestedFilename(), /^EGYGRILLZ-Quotation/);
     assert.equal(await page.evaluate(() => window.__testPdfTotal), 2100);
   }
+  // Full order-sheet codes retain ownership/notes in BOTH web editors. Removing
+  // one design removes only its settings, even when both designs share a name.
+  const linked = await page.evaluate(() =>
+    CalcEngine.encodeCode({
+      clientName: 'Link fixture',
+      lines: [
+        { designId: 'A', name: 'Ribbons', material: 'silver', teeth: 1, toothIds: ['UR1'] },
+        { designId: 'B', name: 'Ribbons', material: 'silver', teeth: 1, toothIds: ['UL1'] },
+      ],
+      services: [
+        { type: 'custom', name: 'Fitting', unitPrice: 300, qty: 1 },
+        {
+          type: 'custom',
+          name: 'Hand-set CZ',
+          notes: 'pink pear, 2 mm',
+          forDesign: 'A',
+          forTeeth: ['UR1'],
+          unitPrice: 137,
+          qty: 2,
+        },
+      ],
+    }),
+  );
+  await nav('quotes.html?c=' + encodeURIComponent(linked));
+  await wait(() => document.querySelector('#clientName')?.value === 'Link fixture');
+  const firstRow = $('#scQuoteCalc [data-design-row="0"]');
+  assert.match(await firstRow.innerText(), /FDI 11/);
+  assert.match(await firstRow.innerText(), /pink pear/);
+  assert.equal(await $('#svcsWrap .svc-row').count(), 1);
+  assert.equal(await firstRow.locator('[data-sv="name"]').inputValue(), 'Hand-set CZ');
+  await firstRow.locator('[data-del="0"]').evaluate((b) => b.click());
+  assert.equal(await $('#scQuoteCalc [data-sv="name"]').count(), 0);
+  assert.equal(await $('#svcsWrap [data-sf="name"]').inputValue(), 'Fitting');
+  await nav('calculator.html?c=' + encodeURIComponent(linked));
+  await wait(() => document.querySelector('[data-order=clientName]')?.value === 'Link fixture');
+  assert.match(await $('#summary').innerText(), /pink pear/);
+  await $('[data-act="remove-set"][data-index="0"]').evaluate((b) => b.click());
+  assert.doesNotMatch(await $('#summary').innerText(), /pink pear|Hand-set CZ/);
+  assert.match(await $('#summary').innerText(), /Fitting/);
   console.log('PASS public Calculator and both Staff routes download with studio pricing');
   assert.deepEqual(errors, []);
 } catch (e) {

@@ -453,7 +453,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 <div class="toast" id="toast"></div>
 
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=7"></script>
+<script src="/assets/staff-calculator.js?v=8"></script>
 <script type="module">
 /* ══════════════════════════════════════════════════════════════════
    1. AUTH
@@ -481,7 +481,7 @@ document.querySelectorAll('[data-logout]').forEach(function (el) {
 // load the engine as a classic script (it attaches to window.CalcEngine)
 await new Promise((res, rej) => {
   const s = document.createElement('script');
-  s.src = '/assets/calc-engine.js?v=10';
+  s.src = '/assets/calc-engine.js?v=12';
   s.onload = res; s.onerror = rej;
   document.head.appendChild(s);
 });
@@ -632,7 +632,7 @@ function mountQuoteCalculator(){
   QUOTE_CALC = window.StaffCalculator.mount(host, {
     db: settingsDb,
     parts: { lines: true, editor: true, services: false, order: false, result: false },
-    onChange: (lines) => { LINES = lines; recalc(); },
+    onChange: (lines, services) => { LINES = lines; SERVICES = services; renderServices(false); },
     getExtraCodeData: () => {
       const dVal = Number($('discountVal').value) || 0;
       return {
@@ -655,7 +655,7 @@ function mountQuoteCalculator(){
       $('discountVal').value = ''; $('discountType').value = 'egp';
       LINES = Array.isArray(pricedLines) ? pricedLines : [];
       if (Array.isArray(pricedSvcs)) {
-        SERVICES = pricedSvcs.map(sv => ({ type: sv.type || 'custom', name: sv.name, qty: sv.qty || 1, unitPrice: sv.unitPrice || 0 }));
+        SERVICES = pricedSvcs.map(sv => ({ ...sv })); // preserve setting ownership, FDI and notes
         renderServices();
       }
       if (decoded.timeline && $('timeline')) $('timeline').value = decoded.timeline;
@@ -686,12 +686,14 @@ function syncLines(){
 }
 
 /* ── Studio services UI ── */
-function renderServices(){
+function renderServices(sync = true){
+  if(sync) QUOTE_CALC?.setServices(SERVICES);
+  const indices = QUOTE_CALC?.studioServiceIndices() || SERVICES.map((_,i)=>i);
   const S = E.get(), L = E.LABELS;
   const wrap = $('svcsWrap');
   const types = Object.keys(S.servicePrices || { custom: 0 });
-  $('svcsEmpty').style.display = SERVICES.length ? 'none' : 'block';
-  wrap.innerHTML = SERVICES.map((sv, i) => `
+  $('svcsEmpty').style.display = indices.length ? 'none' : 'block';
+  wrap.innerHTML = indices.map(i => { const sv=SERVICES[i]; return `
     <div class="svc-row" data-si="${i}">
       <label class="f"><span>Service</span>
         <select class="inp" data-sf="type">
@@ -709,7 +711,7 @@ function renderServices(){
       </label>
       <button class="btn btn-rose btn-sm" data-sdel><i class="fas fa-trash"></i></button>
     </div>
-  `).join('');
+  `; }).join('');
   recalc();
 }
 
@@ -737,6 +739,7 @@ $('svcsWrap').addEventListener('input', e => {
   if (f === 'qty') SERVICES[i].qty = Math.max(1, parseInt(e.target.value, 10) || 1);
   else if (f === 'unitPrice') SERVICES[i].unitPrice = Math.max(0, Number(e.target.value) || 0);
   else if (f === 'name') SERVICES[i].name = e.target.value;
+  QUOTE_CALC?.setServices(SERVICES);
   recalc();
 });
 $('svcsWrap').addEventListener('change', e => {
@@ -802,9 +805,10 @@ function recalc(){
   const rateTag = (RATES && RATES.goldEgpPerGram24() > 0)
     ? ` · gold ${RATES.fmtEgpPerGram()} EGP/g 24K · ${RATES.statusLine()}`
     : '';
+  const studioCount = E.designBreakdown(LAST).services.length;
   $('totalSub').innerHTML = goldMissing
     ? '<span style="color:var(--rose)"><i class="fas fa-triangle-exclamation"></i> Live gold rate unavailable — retrying</span>'
-    : `${LAST.lineCount} design(s)${LAST.services.length ? ` · ${LAST.services.length} service(s)` : ''} · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}${rateTag}`;
+    : `${LAST.lineCount} design(s)${studioCount ? ` · ${studioCount} service(s)` : ''} · ${LAST.teethTotal} teeth · deposit ${fmt(LAST.deposit)}${rateTag}`;
 
   const rows = E.quoteTotalRows(LAST).map(([label, amount]) => [esc(label), `${fmt(amount)} ${esc(LAST.currency)}`]);
   rows.push(['<strong>Total</strong>', `<strong>${fmt(LAST.total)} EGP</strong>`]);
@@ -914,7 +918,8 @@ function quoteDesignLabel(q){
   if (q.order) {
     const bits = [];
     if (q.order.lineCount) bits.push(`${q.order.lineCount} design(s)`);
-    if (q.order.services && q.order.services.length) bits.push(`${q.order.services.length} service(s)`);
+    const count = E.designBreakdown(q.order).services.length;
+    if (count) bits.push(`${count} service(s)`);
     return bits.join(' + ') || '—';
   }
   return '—';

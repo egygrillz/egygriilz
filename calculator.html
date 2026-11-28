@@ -180,10 +180,10 @@ header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,2
 .chart-caption{font-size:11px;color:var(--mut);text-align:center;margin-top:8px;}
 .arch{display:flex;gap:4px;justify-content:center;direction:ltr;}
 .arch + .arch{margin-top:14px;}
-/* Floating image selector for complexity levels — no rings or labels under images. */
+/* Named complexity choices; numeric pricing keys stay internal. */
 .level-float-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:center;gap:10px;margin:12px auto 6px;max-width:640px;}
 .level-float-item{position:relative;display:grid;place-items:center;min-width:0;min-height:104px;padding:8px;border:0;background:transparent;transition:transform .28s cubic-bezier(.2,.8,.2,1),filter .28s;}
-.level-float-item img{width:100%;max-width:78px;height:76px;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(0,0,0,.16));transition:transform .28s,filter .28s;}
+.level-float-item span{font-size:11px;font-weight:600;line-height:1.2;text-align:center;margin:3px 0 5px}.level-float-item img{width:100%;max-width:78px;height:76px;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(0,0,0,.16));transition:transform .28s,filter .28s;}
 .level-float-item:hover{transform:translateY(-7px);}
 .level-float-item.active{transform:translateY(-8px) scale(1.1);}
 .level-float-item.active img{filter:drop-shadow(0 18px 16px rgba(0,0,0,.24));}
@@ -361,7 +361,7 @@ footer p{font-size:11px;color:var(--faint);}
   <p data-i18n="footer_note">Handcrafted in Cairo, Egypt — every piece is custom-fitted to your dental impression.</p>
 </footer>
 
-<script src="/assets/calc-engine.js?v=10"></script>
+<script src="/assets/calc-engine.js?v=12"></script>
 <script src="/assets/numpad.js?v=5"></script>
 <script src="/assets/grillz-renderer.js?v=5"></script>
 <script src="/assets/rates.js?v=7"></script>
@@ -408,7 +408,7 @@ footer p{font-size:11px;color:var(--faint);}
       mode_mixed: 'Mix different teeth', mode_mixed_d: 'Different levels, stones & finishes per group.',
       group_n: 'Group', group_label_ph: 'Group name (optional)',
       add_group: '+ Add tooth group', remove: 'Remove',
-      lvl_05: 'Bar', lvl_1: 'Solid', lvl_2: 'Open face', lvl_3: 'Mid detail', lvl_4: 'Complex', lvl_5: 'Scorpion', lvl_6: 'Ultimate',
+      lvl_05: 'Bars', lvl_1: 'Solid', lvl_2: 'Open face', lvl_3: 'Mid detail', lvl_4: 'Complex', lvl_5: 'Scorpion', lvl_6: 'Ultimate',
       lvl_05_d: 'Half the solid base price. Open horizontal bars across the front; the natural teeth show through the gaps.',
       lvl_1_d: 'Fully solid metal, no cuts. One clean surface.',
       lvl_2_d: 'Solid base with openings over the face of the teeth.',
@@ -481,7 +481,7 @@ footer p{font-size:11px;color:var(--faint);}
       mode_mixed: 'مزج تصاميم مختلفة', mode_mixed_d: 'مستويات وأحجار وتشطيبات مختلفة لكل مجموعة.',
       group_n: 'مجموعة', group_label_ph: 'اسم المجموعة (اختياري)',
       add_group: '+ إضافة مجموعة أسنان', remove: 'إزالة',
-      lvl_05: 'بار', lvl_1: 'سوليد', lvl_2: 'وجه مفتوح', lvl_3: 'تفاصيل متوسطة', lvl_4: 'معقّد', lvl_5: 'عقرب', lvl_6: 'أقصى تفصيل',
+      lvl_05: 'قضبان', lvl_1: 'سوليد', lvl_2: 'وجه مفتوح', lvl_3: 'تفاصيل متوسطة', lvl_4: 'معقّد', lvl_5: 'عقرب', lvl_6: 'أقصى تفصيل',
       lvl_05_d: 'نصف سعر السوليد. قضبان أفقية مفتوحة في الأمام وتظهر الأسنان الطبيعية من الفتحات.',
       lvl_1_d: 'معدن سوليد بالكامل بدون فتحات. سطح نظيف واحد.',
       lvl_2_d: 'قاعدة سوليد مع فتحات على وجه الأسنان.',
@@ -819,7 +819,7 @@ footer p{font-size:11px;color:var(--faint);}
       const line = {
         material: groups[0] ? groups[0].material : s.material,
         teeth: groups.reduce((a, g) => a + g.teeth, 0),
-        level: 'mixed', isMixed: true, groups, name:s.name || '',
+        level: 'mixed', isMixed: true, groups, name:s.name || '', ...(s.designId && {designId:s.designId}),
       };
       const selectedTeeth = E() ? E().cleanToothIds(s.toothIds || []) : [];
       if (selectedTeeth.length) line.toothIds = selectedTeeth;
@@ -829,7 +829,7 @@ footer p{font-size:11px;color:var(--faint);}
     }
     const tids = E() ? E().cleanToothIds(s.toothIds || []) : (s.toothIds || []);
     const line = {
-      name:s.name || '', material: s.material,
+      name:s.name || '', material: s.material, ...(s.designId && {designId:s.designId}),
       teeth: clamp(tids.length || 6, 1, 32),
       level: String(s.level || '1'),
       plating: s.plating || 'none',
@@ -1068,7 +1068,7 @@ footer p{font-size:11px;color:var(--faint);}
     const items = LEVELS.map((lv) => {
       const active = lv === selected;
       const label = levelName(lv);
-      return '<button type="button" class="level-float-item' + (active ? ' active' : '') + '" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(label + '. ' + levelDesc(lv)) + '" title="' + esc(label) + '"><img src="' + LEVEL_IMG(lv) + '" alt="" loading="lazy"></button>';
+      return '<button type="button" class="level-float-item' + (active ? ' active' : '') + '" data-act="' + chooseAct + '" data-index="' + setIndex + '"' + groupAttr + ' data-value="' + lv + '" aria-pressed="' + active + '" aria-label="' + esc(label + '. ' + levelDesc(lv)) + '" title="' + esc(label) + '"><img src="' + LEVEL_IMG(lv) + '" alt="" loading="lazy"><span>' + esc(label) + '</span></button>';
     }).join('');
     return '<div class="level-float-grid" role="group" aria-label="' + esc(t('step3_t')) + '">' + items + '</div>';
   }
@@ -1130,12 +1130,11 @@ footer p{font-size:11px;color:var(--faint);}
     return html;
   }
 
-  function groupPriceRows(line, setIndex) {
-    if (!line.isMixed || !Array.isArray(line.groups)) return '';
-    return line.groups.map((g, gi) => {
-      const spec = E().groupLabel(g, { includeMaterial: true });
-      const title = (g.label ? g.label + ' · ' : (t('group_n') + ' ' + (gi + 1) + ' · ')) + spec;
-      return '<div class="sum-group"><span>' + esc(title) + '</span><span class="sl-price">' + esc(fmt(g.subtotal || 0)) + ' EGP</span></div>';
+  function groupPriceRows(design) {
+    return design.groups.map(({group:g,stones,subtotal}) => {
+      const spec=E().groupLabel(g,{includeMaterial:true,omitCount:true,levelLabel:levelName(g.level)});
+      const heading=E().toothHeading(g,design.line.name);
+      return '<div class="sum-group"><span><strong>'+esc(heading)+'</strong><br>'+esc(spec)+stones.map(s=>'<br>'+esc(s.qty+' × '+s.name+' · '+s.notes)).join('')+'</span>'+(design.groups.length>1?'<span class="sl-price">'+esc(fmt(subtotal))+' EGP</span>':'')+'</div>';
     }).join('');
   }
 
@@ -1149,11 +1148,11 @@ footer p{font-size:11px;color:var(--faint);}
       return;
     }
     let html = '<div class="sum-title">' + esc(t('sum_title')) + '</div><div class="sum-sub">' + esc(t('sum_sub')) + '</div><div class="sum-lines">';
-    order.lines.forEach((line, i) => {
-      const label = E().lineLabel(line) || (t('set_n') + ' ' + (i + 1));
-      html += '<div class="sum-line"><span class="sl-name">' + esc((t('set_n') + ' ' + (i + 1) + ' · ' + label)) + '</span><span class="sl-price">' + esc(fmt(line.subtotal || 0)) + ' EGP</span></div>' + groupPriceRows(line, i);
+    const shown=E().designBreakdown(order);
+    shown.designs.forEach((design,i)=>{
+      html += '<div class="sum-line"><span class="sl-name">'+esc(design.line.name || (t('set_n')+' '+(i+1)))+'</span><span class="sl-price">'+esc(fmt(design.subtotal))+' EGP</span></div>'+groupPriceRows(design);
     });
-    order.services.forEach(service => {
+    shown.services.forEach(service => {
       html += '<div class="sum-line"><span class="sl-name">' + esc(service.name) + ' × ' + service.qty + '</span><span class="sl-price">' + esc(fmt(service.subtotal)) + ' EGP</span></div>';
     });
     if (order.timelineAmount) html += '<div class="sum-line"><span class="sl-name">' + esc(t('timeline')) + ' (' + order.timelinePct + '%)</span><span class="sl-price">' + esc(fmt(order.timelineAmount)) + ' EGP</span></div>';
@@ -1366,11 +1365,15 @@ footer p{font-size:11px;color:var(--faint);}
     } else if (act === 'add-group') {
       s.groups.push(newGroup(s.material));
     } else if (act === 'remove-group') {
-      if (s.groups.length > 1) s.groups.splice(gi, 1);
+      if (s.groups.length > 1) {
+        const [removed]=s.groups.splice(gi,1);
+        if(s.designId) state.services=state.services.filter(sv=>sv.forDesign!==s.designId || !sv.forTeeth?.every(t=>removed.toothIds?.includes(t)));
+      }
     } else if (act === 'add-set') {
       state.sets.push(newSet());
     } else if (act === 'remove-set') {
       if (state.sets.length > 1) {
+        if(s.designId) state.services=state.services.filter(sv=>sv.forDesign!==s.designId);
         state.sets.splice(idx, 1);
         openSetIndexes = new Set(Array.from(openSetIndexes).filter((n) => n !== idx).map((n) => n > idx ? n - 1 : n));
         if (!openSetIndexes.size) openSetIndexes.add(state.sets.length - 1);
