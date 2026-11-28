@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker from '../cloudflare-worker.js';
+// Exercise the same single-file module the studio pastes in Cloudflare Dashboard.
+import worker from '../worker.js';
 const E = globalThis.CalcEngine;
 const ref = (n) => `EGZ-261127-${String(n).padStart(12, '0')}`;
 const id = ref(22),
@@ -141,7 +142,7 @@ test('outstanding pages report only issued sheets using receipts, not the reques
   assert.match(second, /End of order ledger/);
   assert.ok(lastQ.startAt);
 });
-test('exact /pdf fetches the issued snapshot by ID even outside the recent list; /sheet reports earlier email accurately', async () => {
+test('exact /pdf fetches the issued snapshot by ID even outside the recent list; /sheet describes manual drafts even on legacy quotes', async () => {
   const order = E.calculateOrder([], { services: [{ type: 'custom', name: 'Mold', unitPrice: 5000 }] }),
     q = {
       sheetId: id,
@@ -162,7 +163,7 @@ test('exact /pdf fetches the issued snapshot by ID even outside the recent list;
     assert.ok(u.pathname.endsWith('/quotes/' + id));
     return Response.json(doc('quotes', id, q));
   });
-  assert.match(await b.say('/sheet ' + id), /earlier version was submitted/);
+  assert.match(await b.say('/sheet ' + id), /prepare a draft.*press Send/i);
   assert.equal((await (await b.post('/pdf ' + id.toLowerCase())).json()).pdf, true);
   assert.deepEqual(
     new Uint8Array(await b.files[0].arrayBuffer()),
@@ -210,10 +211,11 @@ test('health reports configuration only; diagnostics never equate a failed order
   });
   const get = async (path) =>
     (await worker.fetch(new Request('https://worker.test/api/' + path), b.env)).json();
-  assert.equal((await get('health')).channels.order_email, false);
+  assert.equal((await get('health')).orderEmailMode, 'manual-draft');
   Object.assign(b.env, { RESEND_KEY: 'secret-test-key', RESEND_FROM: 'example@example.test' });
   const health = await get('health');
-  assert.equal(health.channels.order_email, true);
+  assert.equal(health.channels.order_email, undefined);
+  assert.equal(health.endpoints.order_email, undefined);
   assert.doesNotMatch(JSON.stringify(health), /secret-test-key|example@example\.test/);
   const check = await get('telegram/check');
   assert.equal(check.ok, false);

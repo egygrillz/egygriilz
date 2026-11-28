@@ -1,9 +1,8 @@
-// Real production pages + both document builders. The browser's Firebase SDK,
-// Cloudflare transport and email provider are fixtures: never contacts a client.
+// Real production pages and both document builders. Firebase and Gmail navigation
+// are intercepted: never contacts a client.
 import { chromium } from 'playwright-core';
 import { readFile, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import worker from '../cloudflare-worker.js';
 const sdk = await readFile(new URL('./fixtures/firebase-modular.mjs', import.meta.url), 'utf8');
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_EXECUTABLE || undefined,
@@ -15,8 +14,7 @@ const base = 'http://127.0.0.1:8000/',
 p.setDefaultTimeout(6500);
 const errors = [];
 p.on('pageerror', (e) => errors.push(e.message));
-let consent = true;
-p.on('dialog', (d) => (consent ? d.accept() : d.dismiss()));
+p.on('dialog', (d) => d.accept());
 await ctx.addInitScript(() => {
   if (!localStorage.__fixture)
     localStorage.__fixture = JSON.stringify({
@@ -31,70 +29,18 @@ const $ = (s) => p.locator(s),
   step = (s) => click(`[data-step="${s}"]`),
   db = () => p.evaluate(() => JSON.parse(localStorage.__fixture)),
   wait = (fn) => p.waitForFunction(fn);
-const fs = (x) =>
-  x == null
-    ? { nullValue: null }
-    : Array.isArray(x)
-      ? { arrayValue: { values: x.map(fs) } }
-      : typeof x === 'object'
-        ? { mapValue: { fields: Object.fromEntries(Object.entries(x).map(([k, v]) => [k, fs(v)])) } }
-        : typeof x === 'number'
-          ? { doubleValue: x }
-          : typeof x === 'boolean'
-            ? { booleanValue: x }
-            : { stringValue: x };
-let attempts = 0,
-  accepted = 0,
-  reject = true,
-  mail,
-  orderId;
+let orderId,
+  attempts = 0;
+const composeNavigations = [];
 await ctx.route(/^https:\/\//, async (r) => {
   const req = r.request(),
     url = req.url();
   if (url.includes('firebasejs/')) return r.fulfill({ contentType: 'application/javascript', body: sdk });
-  if (url.includes('/api/orders/')) {
-    attempts++;
-    const response = await worker.fetch(
-      new Request(url, { method: req.method(), headers: req.headers(), body: req.postDataBuffer() }),
-      {
-        RESEND_FROM: 'studio@example.test',
-        RESEND_KEY: 'fixture',
-        fetchImpl: async (u, o) => {
-          if (u.startsWith('https://api.resend.com/')) {
-            mail = JSON.parse(o.body);
-            if (reject) return Response.json({ message: 'fixture failure' }, { status: 422 });
-            accepted++;
-            return Response.json({ id: 'fixture-message' });
-          }
-          assert.equal(o.headers.Authorization, 'Bearer fake');
-          assert.ok(u.includes('/quotes/' + orderId));
-          if (o.method === 'PATCH') {
-            await p.evaluate(
-              ({ orderId, fields }) => {
-                const d = JSON.parse(localStorage.__fixture);
-                Object.assign(d.quotes[orderId], fields);
-                localStorage.__fixture = JSON.stringify(d);
-              },
-              {
-                orderId,
-                fields: globalThis.CalcEngine.decodeFirestoreValue({ mapValue: JSON.parse(o.body) }),
-              },
-            );
-            return Response.json({});
-          }
-          return Response.json({
-            fields: fs((await db()).quotes[orderId]).mapValue.fields,
-            updateTime: '2026-11-27T13:00:00Z',
-          });
-        },
-      },
-    );
-    return r.fulfill({
-      status: response.status,
-      body: await response.text(),
-      contentType: 'application/json',
-      headers: { 'Access-Control-Allow-Origin': '*' },
-    });
+  if (url.includes('/api/orders/') || url.includes('api.resend.com')) attempts++;
+  if (new URL(url).origin === 'https://mail.google.com') {
+    assert.equal(req.method(), 'GET');
+    composeNavigations.push(new URL(url));
+    return r.fulfill({ contentType: 'text/html', body: '<title>Compose (fixture)</title>' });
   }
   return r.abort();
 });
@@ -192,27 +138,46 @@ try {
   assert.ok(bytes.length > 10000);
   if (process.env.DESIGN_SCREENSHOT_DIR)
     await writeFile(process.env.DESIGN_SCREENSHOT_DIR + '/test-order.pdf', bytes);
-  consent = false;
-  await click('#email-order');
-  consent = true;
-  assert.equal(attempts, 0);
-  await click('#email-order');
-  await wait(() => document.querySelector('#mail-status').textContent.includes('rejected'));
-  assert.equal(accepted, 0);
-  assert.ok(!(await quote()).emailedVersion);
-  reject = false;
-  await click('#email-order');
-  await wait(() => document.querySelector('#mail-status').textContent.includes('accepted'));
-  assert.equal(accepted, 1);
-  assert.deepEqual(mail.to, ['order-test@example.test']);
-  assert.equal(mail.attachments.length, 2);
-  assert.deepEqual(Buffer.from(mail.attachments[0].content, 'base64'), bytes);
+  const [quotation] = await Promise.all([p.waitForEvent('download'), click('#quote-pdf-btn')]);
+  assert.match(quotation.suggestedFilename(), new RegExp('^EGYGRILLZ-Quotation-.*' + orderId + '\\.pdf$'));
+  const priced = await readFile(await quotation.path());
   assert.match(
-    Buffer.from(mail.attachments[1].content, 'base64').toString(),
+    priced.toString('latin1'),
     /Payment record.*Amount received.*5,000 EGP.*Outstanding today.*0 EGP/s,
   );
+  const [tab] = await Promise.all([ctx.waitForEvent('page'), click('#email-order')]);
+  await tab.waitForURL('https://mail.google.com/**');
+  assert.equal(await tab.evaluate(() => window.opener === null), true);
+  const draft = composeNavigations.at(-1).searchParams;
+  assert.equal(draft.get('to'), 'order-test@example.test');
+  assert.ok(draft.get('su').includes(orderId));
+  assert.ok(draft.get('body').includes(orderId));
+  assert.doesNotMatch(draft.get('body'), /order-sheet|editx|sheet=|Upper arch fitting|Bearer /);
+  await tab.close(); // closing a draft is not sending
+  assert.equal(await $('#email-order').isEnabled(), true);
+  assert.equal((await quote()).emailedVersion, undefined);
+  assert.equal((await quote()).status, 'draft');
+  await $('#delivery-email').fill('invalid');
   assert.equal(await $('#email-order').isDisabled(), true);
-  assert.equal((await quote()).emailedVersion, (await quote()).deliveryVersion);
+  assert.equal(await $('#draft-links').isVisible(), false);
+  assert.equal(await $('#draft-mailto').getAttribute('href'), null);
+  await $('#delivery-email').fill('new+address@example.test');
+  await p.evaluate(() => {
+    window.open = () => null;
+  }); // no popup permission
+  await click('#email-order');
+  await $('#draft-links').waitFor({ state: 'visible' });
+  assert.equal(
+    new URL(await $('#draft-gmail').getAttribute('href')).searchParams.get('to'),
+    'new+address@example.test',
+  );
+  assert.equal(
+    decodeURIComponent(new URL(await $('#draft-mailto').getAttribute('href')).pathname),
+    'new+address@example.test',
+  );
+  assert.equal((await quote()).clientEmail, 'new+address@example.test');
+  assert.equal(composeNavigations.length, 1);
+  assert.equal(attempts, 0, 'no order mail API/provider request');
   const stored = await db();
   assert.doesNotMatch(JSON.stringify(stored), /data:image|application\/pdf|%PDF-|JVBERi0/);
   assert.ok(
@@ -222,7 +187,7 @@ try {
     await p.evaluate(() =>
       Object.keys(localStorage)
         .filter((k) => k !== '__fixture')
-        .some((k) => k.includes('order_sheet') || localStorage[k].includes('order-test@example.test')),
+        .some((k) => k.includes('order_sheet') || localStorage[k].includes('new+address@example.test')),
     ),
     false,
   );
@@ -246,6 +211,10 @@ try {
   await click('#save-quote-btn');
   await wait(() => document.querySelector('#save-status').textContent.includes('another device'));
   assert.equal((await quote()).payments.length, 2);
+  await click('#email-order');
+  await wait(() => document.querySelector('#mail-status').textContent.includes('another device'));
+  assert.equal(await $('#draft-links').isVisible(), false);
+  assert.equal(composeNavigations.length, 1);
   await p.reload();
   await wait(() => document.querySelector('#payment-summary').textContent.includes('Settled'));
   await click('#create-proforma-btn');
@@ -286,7 +255,7 @@ try {
   assert.equal(await $('#order-number-badge').textContent(), oldId);
   assert.deepEqual(errors, []);
   console.log(
-    'PASS cloud draft → unique nameless order + quotation · EditX mold updates · receipts, overpayment, settled invoice · PDF file, actual two-attachment Worker path and safe retry · no PDF/image/device saves',
+    'PASS cloud draft → unique nameless order + quotation · EditX mold updates · receipts, overpayment, settled invoice · two real PDF downloads, Gmail draft, blocked-popup fallback and failed save · no PDF/image/device saves',
   );
 } finally {
   await browser.close();

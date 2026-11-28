@@ -244,7 +244,7 @@ test('both cloud sheet documents are private and can be saved atomically with th
 });
 
 test(
-  'Auth + Firestore emulators: real password sign-in, Worker reads and two-document send as the caller',
+  'Auth + Firestore emulators: real password sign-in, private Worker reads and the retired client email route',
   { skip: !process.env.FIREBASE_AUTH_EMULATOR_HOST },
   async () => {
     const authHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
@@ -289,7 +289,6 @@ test(
     });
     await save.commit();
     const messages = [],
-      emails = [],
       tokens = new Map();
     const env = {
       FIREBASE_API_KEY: 'demo',
@@ -298,8 +297,6 @@ test(
       TELEGRAM_CHAT_ID: '42',
       TELEGRAM_WEBHOOK_SECRET: 'fixture',
       TELEGRAM_BOT_TOKEN: 'fixture',
-      RESEND_KEY: 'fixture',
-      RESEND_FROM: 'studio@example.test',
       fetchImpl: async (url, init) => {
         const u = new URL(url);
         if (u.hostname === 'identitytoolkit.googleapis.com') {
@@ -320,10 +317,6 @@ test(
         if (u.hostname === 'api.telegram.org') {
           messages.push(JSON.parse(init.body));
           return Response.json({ ok: true });
-        }
-        if (u.hostname === 'api.resend.com') {
-          emails.push(JSON.parse(init.body));
-          return Response.json({ id: 'test-email' });
         }
         throw Error('Unexpected service in local-only test');
       },
@@ -357,12 +350,9 @@ test(
     assert.match(await cmd('/outstanding'), /1 outstanding of 1 checked on this page · 4,150 EGP/);
     assert.match(await cmd('/receipts ' + id), /Cash · 850 EGP/);
     assert.equal((await check({ ...env, STAFF_EMAIL: accounts[1][1] })).error, 'permission-denied');
-    assert.equal((await mail(accounts[1][0])).status, 403);
-    assert.equal(emails.length, 0);
-    assert.deepEqual(await (await mail(ownerUid)).json(), { ok: true, recorded: true });
-    assert.deepEqual(emails[0].to, ['recipient@example.test']);
-    assert.equal(emails[0].attachments.length, 2);
-    assert.equal((await getDoc(quote)).data().emailedVersion, version);
-    assert.match(await cmd('/sheet ' + id), /accepted by provider \(current version\)/);
+    assert.equal((await mail(accounts[1][0])).status, 410);
+    assert.equal((await mail(ownerUid)).status, 410);
+    assert.equal((await getDoc(quote)).data().emailedVersion, undefined);
+    assert.match(await cmd('/sheet ' + id), /prepare a draft.*press Send/i);
   },
 );
