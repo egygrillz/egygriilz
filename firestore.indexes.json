@@ -33,5 +33,7 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    { "collectionGroup": "data", "fieldPath": "sheetJson", "indexes": [] }
+  ]
 }

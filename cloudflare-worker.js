@@ -3,7 +3,7 @@ import './assets/calc-engine.js';
 /* ═══════════════════════════════════════════════════════════════════════════
  *  EGYGRILLZ — CLOUDFLARE WORKER  (module entry; see STUDIO-ORDERS.md for single-file paste)
  *  ---------------------------------------------------------------------------
- *  1. Telegram bot — schedule, clients, money, invoices, quotes, PDF files
+ *  1. Telegram bot — schedule, clients, studio orders, receipts, invoices, quotation PDFs
  *  2. Instant alerts — new booking, new message
  *  3. Automatic — daily 12:00 tomorrow summary, 1st of month full report
  *  4. PDF generator — real PDF files, no dependencies
@@ -17,6 +17,7 @@ import './assets/calc-engine.js';
  *    TELEGRAM_WEBHOOK_SECRET required only for webhook mode
  *    CRON_SECRET         optional; required for operator-only HTTP calls
  *    PDF_KEY             optional
+ *    RESEND_KEY / RESEND_FROM required only for sending both order PDFs by email
  *
  *  Check it works:  GET /api/telegram/check
  *  Cron Trigger:    * * * * *
@@ -508,10 +509,12 @@ function fsErrorText(err) {
       return 'I am not connected to the database yet.\n'
         + 'In Cloudflare open your Worker -> Settings -> Variables and Secrets,\n'
         + 'add FIREBASE_API_KEY, paste the Firebase web key, then Save and Deploy.';
+    case 'staff-login-required':
+      return 'Check STAFF_EMAIL, STAFF_PASSWORD and the studio web API key in Cloudflare. The bot could not sign in to egygrillz-studio.';
     case 'permission-denied':
     case 'firestore-403':
       return 'The database is refusing to let me read.\n'
-        + 'Verify admin@egygrillz.com or authorize its trusted UID / claim in the published studio rules.';
+        + 'Use the registered studio account and publish the rules with its UID to egygrillz-studio. The listed owner does not need email verification. If already published, check App Check.';
     case 'not-found':
     case 'firestore-404':
       return 'Firestore cannot find that. Check the project id is egygrillz-studio.';
@@ -644,11 +647,15 @@ function mapInvoice(doc) {
     design: i.line || i.calc || (i.material && i.teeth ? i : null),
   }));
   const itemSum = lines.reduce((sum, i) => sum + (i.total ?? i.qty * i.price), 0);
+  const total = parsePrice(d.order?.total ?? d.total ?? d.amount ?? d.subtotal ?? itemSum);
+  const paid = toBool(d.paid) === true || d.status === 'paid';
+  // Invoice.deposit is money collected; a quote's order.deposit is only a request.
+  const received = paid ? total : Math.min(total, Math.max(0, Number(d.deposit) || 0));
   return {
     id: (doc.name || '').split('/').pop(), lines,
     clientName: String(d.clientName || d.client || d.name || ''), phone: String(d.clientPhone || d.phone || ''),
-    email: String(d.clientEmail || d.email || ''), total: parsePrice(d.order?.total ?? d.total ?? d.amount ?? d.subtotal ?? itemSum),
-    status: String(d.status || 'draft'), paid: toBool(d.paid) === true || d.status === 'paid',
+    email: String(d.clientEmail || d.email || ''), total,
+    status: String(d.status || 'draft'), paid, received, outstanding: Math.max(0, total - received),
     date: String(d.date || d.createdAt || d.updatedAt || ''), createdAt: String(d.createdAt || ''),
   };
 }
@@ -963,7 +970,7 @@ async function monthlyReport(env, back, fetchImpl = fetch, at = new Date()) {
   const topSvc = Object.entries(svc).sort((a, b) => b[1] - a[1])[0];
 
   const paid = invoices.filter(i => i.paid || i.status === 'paid');
-  const unpaid = invoices.filter(i => !i.paid && i.status !== 'cancelled');
+  const billable = invoices.filter(i => i.status !== 'cancelled');
   const accepted = quotes.filter(q => q.status === 'accepted');
 
   const busiest = (() => {
@@ -997,8 +1004,8 @@ async function monthlyReport(env, back, fetchImpl = fetch, at = new Date()) {
     'MONEY',
     `  Invoices issued   ${padL(invoices.length, 5)}`,
     `  Invoices paid     ${padL(paid.length, 5)}`,
-    `  Collected         ${padL(num(paid.reduce((n, i) => n + i.total, 0)), 8)} ${S_CURRENCY}`,
-    `  Still unpaid      ${padL(num(unpaid.reduce((n, i) => n + i.total, 0)), 8)} ${S_CURRENCY}`,
+    `  Collected         ${padL(num(billable.reduce((n, i) => n + i.received, 0)), 8)} ${S_CURRENCY}`,
+    `  Still unpaid      ${padL(num(billable.reduce((n, i) => n + i.outstanding, 0)), 8)} ${S_CURRENCY}`,
     `  Quotes sent       ${padL(quotes.length, 5)}`,
     `  Quotes accepted   ${padL(accepted.length, 5)}`,
     `  Quote value       ${padL(num(quotes.reduce((n, q) => n + q.total, 0)), 8)} ${S_CURRENCY}`,
@@ -1040,9 +1047,16 @@ const HELP_TEXT = [
   '  /pay ABCD https://link   approve + Gmail draft',
   '  /deliver ABCD mark the kit as delivered',
   '',
+  'STUDIO ORDER SHEETS',
+  '  /sheets                 recent saved files (drafts too)',
+  '  /sheet ref or name      order, amount due and PDF email status',
+  '  /receipts ref or name   recent payments for that order',
+  '  /outstanding            page through order balances',
+  '  /pdf EGZ-…              download the issued quotation here',
+  '',
   'INVOICES & QUOTES',
   '  /invoices     every invoice you saved',
-  '  /unpaid       who still owes money',
+  '  /unpaid       invoice balances after deposits',
   '  /quote name   look up a quote',
   '  /pdf ahmed    send that quotation as a PDF file',
   '  /reportpdf    last month report as a PDF',
@@ -1110,6 +1124,7 @@ function parseIntent(raw) {
     noshow: '/noshow', clients: '/clients', services: '/services',
     slots: '/slots', unsent: '/unsent', digest: '/digest',
     quotes: '/quote', help: '/help', id: '/id',
+    sheets: '/sheets', sheet: '/sheet', receipts: '/receipts', outstanding: '/outstanding',
     moulds: '/moulds', mould: '/mould', orders: '/moulds', order: '/mould',
     sets: '/sets', setvis: '/setvis', status: '/status', calc: '/calc', rates: '/calc',
     invoice: '/invoice', pay: '/pay', deliver: '/deliver', delivered: '/deliver',
@@ -1142,35 +1157,223 @@ async function findQuote(arg, env, fetchImpl = fetch) {
   return { ok: true, quote: hits[0] || null, all };
 }
 
-/** Read the raw quote document (we need order + lines, not the flat map) */
-async function rawQuote(id, env, fetchImpl = fetch) {
-  try {
-    const r = await fetchImpl(`${FS_BASE}/quotes/${encodeURIComponent(id)}?key=${env.FIREBASE_API_KEY}`,
-      { method:'GET', headers:await fsHeaders(env, fetchImpl) });
-    if (!r.ok) return null;
-    const doc = await r.json();
-    return doc.fields ? { ...globalThis.CalcEngine.decodeFirestoreValue({mapValue:doc}), id } : null;
-  } catch { return null; }
+// Telegram order desk: read headers and issued amounts, never artwork or
+// signatures. All writes (including receipts and emailing) stay in the studio.
+const isSheetRef = (ref) => /^EGZ-\d{6}-[A-F\d]{12}$/i.test(ref);
+const shortText = (v) =>
+  String(v ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+const sheetLabel = (h) =>
+  `${
+    shortText(
+      String(h.label || '')
+        .replace(h.id, '')
+        .replace(/\s*·\s*$/, ''),
+    ) || 'Order'
+  } · ${h.id}`;
+const headerFields = ['label', 'quoteId', 'updatedAt'];
+const balanceFields = ['sheetId', 'clientName', 'order.total', 'order.deposit', 'payments'];
+const projection = (paths) => ({ fields: paths.map((fieldPath) => ({ fieldPath })) });
+function decodeDoc(doc, id = doc.name.split('/').pop()) {
+  return { ...globalThis.CalcEngine.decodeFirestoreValue({ mapValue: doc }), id };
 }
 
-/** /pdf <name> — send the quotation as a real PDF file */
-async function sendQuoteFile(arg, env, fetchImpl = fetch) {
-  const found = await findQuote(arg, env, fetchImpl);
-  if (!found.ok) return fsErrorText(found.error);
-  if (!found.quote) {
-    return arg ? `No quote for "${arg}".` : 'No quotes saved yet.';
+async function readBotDocument(col, id, env, f, fields = []) {
+  if (!env.FIREBASE_API_KEY) return { ok: false, error: 'no-firebase-key' };
+  const params = new URLSearchParams({ key: env.FIREBASE_API_KEY });
+  for (const field of fields) params.append('mask.fieldPaths', field);
+  try {
+    const r = await f(`${FS_BASE}/${col}/${encodeURIComponent(id)}?${params}`, {
+      headers: await fsHeaders(env, f),
+    });
+    if (!r.ok) return { ok: false, error: fsCause(r.status) };
+    const doc = await r.json();
+    if (!doc.fields) return { ok: false, error: 'invalid-document' };
+    return { ok: true, doc: decodeDoc(doc, id) };
+  } catch {
+    return { ok: false, error: 'network' };
   }
-  if (!env.FIREBASE_API_KEY) return fsErrorText('no-firebase-key');
+}
 
-  const raw = await rawQuote(found.quote.id, env, fetchImpl);
-  if (!raw) return 'Could not open that quote document.';
+async function orderBalances(after, env, f) {
+  const limit = 20;
+  if (after && !isSheetRef(after)) return 'Usage: /outstanding or /outstanding EGZ-… (next page)';
+  // The sheetId is unique and equal to the document ID on issued order quotes.
+  // orderBy excludes standalone quotes (no sheetId); no composite index needed.
+  const result = await fsQuery(
+    env,
+    {
+      from: [{ collectionId: 'quotes' }],
+      select: projection(balanceFields),
+      orderBy: [{ field: { fieldPath: 'sheetId' }, direction: 'DESCENDING' }],
+      limit: limit + 1,
+      ...(after && { startAt: { values: [{ stringValue: after.toUpperCase() }], before: false } }),
+    },
+    f,
+  );
+  if (!result.ok) return fsErrorText(result.error);
+  const page = result.rows.slice(0, limit).map((d) => decodeDoc(d));
+  const lines = ['OUTSTANDING — ISSUED ORDER SHEETS', LINE];
+  let due = 0,
+    unpaid = 0;
+  for (const row of page) {
+    if (row.sheetId !== row.id || !isSheetRef(row.id) || !Number.isFinite(row.order?.total))
+      return 'An order quotation is incomplete. Check Quotes before relying on these balances.';
+    const money = globalThis.CalcEngine.paymentSummary(row);
+    if (money.outstanding > 0) {
+      lines.push(
+        `${shortText(row.clientName) || 'Order'} · ${row.id}: paid ${num(money.paid)} / due ${num(money.outstanding)} EGP`,
+      );
+      unpaid++;
+      due += money.outstanding;
+    }
+  }
+  lines.push(`${unpaid} outstanding of ${page.length} checked on this page · ${num(due)} EGP due.`);
+  if (result.rows.length > limit) lines.push('Next: /outstanding ' + page.at(-1).id);
+  else lines.push('End of order ledger. Invoices are separate: /unpaid.');
+  return lines.join('\n');
+}
+
+async function sheetDetail(header, receiptsOnly, env, f) {
+  const open = {
+    inline_keyboard: [
+      [
+        {
+          text: 'Open order · payments & email',
+          url: 'https://egygrillz.com/order-sheet.html?sheet=' + encodeURIComponent(header.id),
+        },
+      ],
+    ],
+  };
+  const lines = [receiptsOnly ? 'ORDER RECEIPTS' : 'STUDIO ORDER', sheetLabel(header)];
+  if (!header.quoteId)
+    return {
+      text: [...lines, 'Draft — no quotation issued or payments posted.'].join('\n'),
+      keyboard: open,
+    };
+  if (header.quoteId !== header.id) return 'The saved order link is inconsistent. Check the order sheet.';
+  const fields = [
+    ...balanceFields,
+    'order.lineCount',
+    'order.teethTotal',
+    'order.services',
+    'deliveryVersion',
+    'emailedVersion',
+    'emailedAt',
+  ];
+  const r = await readBotDocument('quotes', header.id, env, f, receiptsOnly ? balanceFields : fields);
+  if (!r.ok)
+    return r.error === 'not-found'
+      ? 'The linked quotation is missing. Open Quotes to check.'
+      : fsErrorText(r.error);
+  const q = r.doc,
+    order = q.order;
+  if (q.sheetId !== header.id || !Number.isFinite(order?.total) || !Number.isFinite(order.deposit))
+    return 'The issued quotation is incomplete. Check the order sheet.';
+  const money = globalThis.CalcEngine.paymentSummary(q);
+  if (!receiptsOnly) {
+    lines.push(`${order.lineCount || 0} designs · ${order.teethTotal || 0} teeth`);
+    for (const s of (order.services || []).slice(0, 6))
+      lines.push(`${shortText(s.name)} × ${s.qty}: ${num(s.subtotal)} EGP`);
+    lines.push(
+      `Quoted: ${num(order.total)} EGP`,
+      `Deposit requested: ${num(order.deposit)} EGP (${num(Math.max(0, order.deposit - money.paid))} still due)`,
+    );
+  }
+  lines.push(`Paid: ${num(money.paid)} EGP · Outstanding: ${num(money.outstanding)} EGP · ${money.status}`);
+  const receipts = q.payments || [],
+    recent = receipts.slice(receiptsOnly ? -20 : -3).reverse();
+  if (receipts.length) lines.push(`Latest ${recent.length} of ${receipts.length} receipts:`);
+  else lines.push('No receipts recorded.');
+  for (const p of recent)
+    lines.push(`${shortText(p.at).slice(0, 10)} · ${shortText(p.method)} · ${num(p.amount)} EGP`);
+  if (!receiptsOnly) {
+    const sent = q.emailedVersion && q.emailedVersion === q.deliveryVersion;
+    lines.push(
+      'PDF email: ' +
+        (sent
+          ? 'accepted by provider (current version)'
+          : q.emailedAt
+            ? 'an earlier version was submitted'
+            : 'no submission recorded'),
+      `Quotation PDF here: /pdf ${header.id}`,
+    );
+  }
+  return { text: lines.join('\n'), keyboard: open };
+}
+
+async function studioDeskCommand(cmd, arg, env, f) {
+  if (!env.FIREBASE_API_KEY) return fsErrorText('no-firebase-key');
+  const token = await staffToken(env, f);
+  if (!token) return fsErrorText('staff-login-required');
+  const asBot = { ...env, REQ_TOKEN: token };
+  if (cmd === '/outstanding') return orderBalances(arg, asBot, f);
+  if (isSheetRef(arg)) {
+    const h = await readBotDocument('order_sheets', arg.toUpperCase(), asBot, f, headerFields);
+    if (!h.ok)
+      return h.error === 'not-found' ? 'No saved order sheet with that reference.' : fsErrorText(h.error);
+    return sheetDetail(h.doc, cmd === '/receipts', asBot, f);
+  }
+  if (!arg && cmd !== '/sheets')
+    return `Usage: ${cmd} <order ref or client>. List recent references with /sheets.`;
+  const r = await fsQuery(
+    asBot,
+    {
+      from: [{ collectionId: 'order_sheets' }],
+      select: projection(headerFields),
+      orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'DESCENDING' }],
+      limit: arg ? 80 : 12,
+    },
+    f,
+  );
+  if (!r.ok) return fsErrorText(r.error);
+  const term = arg.toLowerCase();
+  const hits = r.rows
+    .map((d) => decodeDoc(d))
+    .filter((h) =>
+      [h.label, h.id].some((v) =>
+        String(v || '')
+          .toLowerCase()
+          .includes(term),
+      ),
+    );
+  if (!hits.length)
+    return arg
+      ? 'No match in the latest 80 sheets. Try the full order reference.'
+      : 'No saved order sheets yet.';
+  if (cmd !== '/sheets' && hits.length === 1) return sheetDetail(hits[0], cmd === '/receipts', asBot, f);
+  return [
+    arg ? 'MATCHING SHEETS — choose a reference' : 'RECENT STUDIO SHEETS',
+    LINE,
+    ...hits
+      .slice(0, 12)
+      .map((h) => `${sheetLabel(h)} · ${h.quoteId ? 'quotation saved' : 'unpriced draft'}`),
+    ...(hits.length > 12 ? [`Showing 12 of ${hits.length} recent matches.`] : []),
+    'Details: /sheet EGZ-…   ·   Payments: /receipts EGZ-…   ·   Balances: /outstanding',
+  ].join('\n');
+}
+
+/** Exact studio refs work even outside the recent-name search window. */
+async function sendQuoteFile(arg, env, fetchImpl = fetch) {
+  let id = arg.toUpperCase();
+  if (!isSheetRef(id)) {
+    const found = await findQuote(arg, env, fetchImpl);
+    if (!found.ok) return fsErrorText(found.error);
+    if (!found.quote) return arg ? `No quote for "${arg}".` : 'No quotes saved yet.';
+    id = found.quote.id;
+  }
+  const result = await readBotDocument('quotes', id, env, fetchImpl);
+  if (!result.ok) return result.error === 'not-found' ? 'No saved quotation with that reference.' : fsErrorText(result.error);
+  const raw = result.doc;
 
   const engine = globalThis.CalcEngine;
   const order = engine.savedQuoteOrder(raw);
   if (!order) return 'No priced order was saved on that quotation.';
   const site = await loadMouldPrices(env, fetchImpl);
   const meta = { clientName: raw.clientName, clientPhone: raw.clientPhone, clientEmail: raw.clientEmail,
-    date: raw.createdAt, notes: raw.notes, id: raw.id, studioName: raw.studioName || site?.studioName,
+    date: raw.issuedAt || raw.createdAt, notes: raw.notes, orderNo:raw.orderNo, sheetId:raw.sheetId, payments:raw.payments, id: raw.id, studioName: raw.studioName || site?.studioName,
     validDays: raw.validDays ?? site?.quoteValidDays ?? 14 };
   return {
     pdf: engine.buildQuotePdfBytes(order, meta),
@@ -1204,8 +1407,9 @@ async function runCommand(text, env, fetchImpl = fetch) {
   let raw = String(text || '').trim();
   const intent = parseIntent(raw);
   if (intent) raw = intent.cmd + (intent.arg ? ' ' + intent.arg : '');
-  const cmd = (raw.split(/\s+/)[0] || '').toLowerCase().replace(/@[\w_]+$/, '');
-  const arg = raw.slice(cmd.length).trim();
+  const commandWord = raw.split(/\s+/)[0] || '';
+  const cmd = commandWord.toLowerCase().replace(/@[\w_]+$/, '');
+  const arg = raw.slice(commandWord.length).trim();
   const todayIso = cairoDay(0);
 
   const need = (r) => {
@@ -1355,6 +1559,12 @@ async function runCommand(text, env, fetchImpl = fetch) {
       return buildSlots(r.appts, todayIso);
     }
 
+    case '/sheets':
+    case '/sheet':
+    case '/outstanding':
+    case '/receipts':
+      return studioDeskCommand(cmd, arg, env, fetchImpl);
+
     /* ── invoices & quotes ── */
     case '/invoices': {
       const r = await fetchCollection(env, 'invoices', fetchImpl);
@@ -1387,15 +1597,14 @@ async function runCommand(text, env, fetchImpl = fetch) {
       const r = await fetchCollection(env, 'invoices', fetchImpl);
       const err = need(r); if (err) return err;
       const list = r.rows.map(mapInvoice)
-        .filter(i => !i.paid && i.status !== 'cancelled')
+        .filter(i => i.outstanding > 0 && i.status !== 'cancelled')
         .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-      if (!list.length) return 'UNPAID INVOICES\n' + LINE + '\nEverything is settled.';
-      const lines = ['UNPAID INVOICES', LINE, `${list.length} invoice(s)`, ''];
+      const lines = ['UNPAID INVOICES', LINE, `${list.length} unpaid of ${r.rows.length} recent invoices checked`, ''];
       list.forEach((inv, i) => {
-        lines.push(`${i + 1}. ${inv.clientName || '—'}   ${num(inv.total)} EGP`);
+        lines.push(`${i + 1}. ${inv.clientName || '—'}   ${num(inv.outstanding)} EGP due`);
         lines.push(`   ${inv.phone || 'no phone'}   ${shortDate(inv.date)}   ${inv.status}`);
       });
-      lines.push(LINE, `Outstanding: ${num(list.reduce((n, i) => n + i.total, 0))} EGP`);
+      lines.push(LINE, `Invoice balance in this list: ${num(list.reduce((n, i) => n + i.outstanding, 0))} EGP`, 'Order sheets (separate ledger): /outstanding.');
       return lines.join('\n');
     }
 
@@ -1448,12 +1657,13 @@ async function runCommand(text, env, fetchImpl = fetch) {
       const month = (d) => (d || '').slice(0, 7) === todayIso.slice(0, 7);
       const invM = invoices.filter(i => month(i.date));
       const quoM = quotes.filter(q => month(q.date));
-      const paid = invM.filter(i => i.paid || i.status === 'paid');
+      const billable = invM.filter(i => i.status !== 'cancelled');
+      const paid = billable.filter(i => i.paid);
       const lines = ['REVENUE — THIS MONTH', LINE,
         `Invoices issued   ${padL(invM.length, 4)}`,
         `Invoices paid     ${padL(paid.length, 4)}`,
-        `Collected         ${padL(num(paid.reduce((n, i) => n + i.total, 0)), 7)} EGP`,
-        `Still unpaid      ${padL(num(invM.filter(i => !i.paid && i.status !== 'cancelled').reduce((n, i) => n + i.total, 0)), 7)} EGP`,
+        `Collected         ${padL(num(billable.reduce((n, i) => n + i.received, 0)), 7)} EGP`,
+        `Still unpaid      ${padL(num(billable.reduce((n, i) => n + i.outstanding, 0)), 7)} EGP`,
         LINE,
         `Quotes sent       ${padL(quoM.length, 4)}`,
         `Quotes accepted   ${padL(quoM.filter(q => q.status === 'accepted').length, 4)}`,
@@ -1730,6 +1940,8 @@ async function runCommand(text, env, fetchImpl = fetch) {
         lines.push('', 'Titanium anodize (per tooth):');
         Object.entries(p.anodizeFlat).filter(([k]) => k !== 'none').forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
       }
+      lines.push('', 'Mold services (per unit):', `  Normal per arch: ${num(p.moldFlat.normalperarch)} EGP`,
+        `  Digital full mouth: ${num(p.moldFlat.digitalfullmouth)} EGP`);
       lines.push('', `Rounding:   ${p.roundTo} EGP`);
       lines.push(`Deposit:    ${p.depositPct}%`);
       if (!p.studioLoaded) lines.push('Studio settings unavailable. Showing calculator defaults.');
@@ -1756,7 +1968,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
       if (today.ok) lines.push(`Today:       ${today.appts.length} appointment(s)`);
       if (invs.ok) lines.push(`Invoices:    ${invs.rows.length} saved`);
       lines.push(`Sets hidden: ${vis.hidden.length}`);
-      lines.push('', 'Type /moulds, /today or /sets for the details.');
+      lines.push('', 'Type /sheets for studio orders; /moulds, /today or /sets for other details.');
       return lines.join('\n');
     }
 
@@ -2664,8 +2876,8 @@ async function handleTelegramUpdate(update, env, fetchImpl = fetch) {
     return { ok: r.ok, command: text.split(/\s+/)[0], buttons: !!out.keyboard };
   }
 
-  await sendReport(String(out), env, chatId, fetchImpl);
-  return { ok: true, command: text.split(/\s+/)[0] };
+  const report = await sendReport(String(out), env, chatId, fetchImpl);
+  return { ok: report.ok, command: text.split(/\s+/)[0], ...(!report.ok && { error: 'telegram-send-failed' }) };
 }
 
 /** Poll Telegram for new messages — called by the Cron Trigger every minute */
@@ -3004,6 +3216,119 @@ async function sendEmail(subject, text, to, env, fetchImpl = fetch) {
   return { channel: 'email', ok: r.ok, status: r.status, error: d?.message };
 }
 
+/* Attachments exist only in memory. A private quotation read using the caller's
+ * Firebase token authorizes the operation AND determines the recipient, amounts
+ * and filenames. This is not a public relay; never fall back to the bot login. */
+const ORDER_PDF_LIMIT = 6 * 1024 * 1024;
+async function orderPdfBody(req) {
+  if (!req.body || Number(req.headers.get('Content-Length')) > ORDER_PDF_LIMIT) return null;
+  const reader = req.body.getReader(),
+    parts = [];
+  let length = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    length += value.length;
+    if (length > ORDER_PDF_LIMIT) {
+      await reader.cancel();
+      return null;
+    }
+    parts.push(value);
+  }
+  const bytes = new Uint8Array(length);
+  let off = 0;
+  for (const part of parts) {
+    bytes.set(part, off);
+    off += part.length;
+  }
+  return bytes;
+}
+function attachmentBase64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 16384) s += String.fromCharCode(...bytes.subarray(i, i + 16384));
+  return btoa(s);
+}
+async function emailOrderDocuments(req, env, id, version, origin) {
+  const reply = (status, error, more = {}) =>
+    json({ ok: !error, ...(error && { error }), ...more }, status, { origin });
+  if (req.method !== 'POST') return reply(405, 'use-post');
+  if (!originAllowed(origin, env)) return reply(403, 'bad-origin');
+  const caller = envAsCaller({}, req);
+  if (!caller.REQ_TOKEN) return reply(401, 'unauthorized');
+  if (
+    !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(version || '') ||
+    req.headers.get('Content-Type')?.split(';')[0] !== 'application/pdf'
+  )
+    return reply(400, 'invalid-document');
+  if (!env.RESEND_KEY || !env.RESEND_FROM) return reply(503, 'email-unconfigured');
+  const f = env.fetchImpl || fetch,
+    E = globalThis.CalcEngine;
+  const url = `${FS_BASE}/quotes/${encodeURIComponent(id)}`,
+    headers = { Authorization: 'Bearer ' + caller.REQ_TOKEN, 'Content-Type': 'application/json' };
+  try {
+    const access = new URLSearchParams();
+    if (env.FIREBASE_API_KEY) access.set('key', env.FIREBASE_API_KEY);
+    const r = await f(url + (access.size ? '?' + access : ''), { headers });
+    if (!r.ok) return reply([401, 403, 404].includes(r.status) ? r.status : 502, fsCause(r.status));
+    const doc = await r.json(),
+      q = E.decodeFirestoreValue({ mapValue: doc });
+    if (q.sheetId !== id || q.orderNo !== id || !E.savedQuoteOrder(q) || q.deliveryVersion !== version)
+      return reply(409, 'stale-order');
+    if (q.emailedVersion === version) return reply(200, null, { alreadySubmitted: true, recorded: true });
+    const to = String(q.clientEmail || '').trim();
+    if (to.length > 254 || !/^[^\s<>,;@]+@[^\s<>,;@]+\.[^\s<>,;@]+$/.test(to))
+      return reply(422, 'bad-recipient');
+    const production = await orderPdfBody(req);
+    if (!production) return reply(413, 'pdf-too-large');
+    const decoder = new TextDecoder();
+    if (
+      decoder.decode(production.subarray(0, 5)) !== '%PDF-' ||
+      !decoder.decode(production.slice(-100)).includes('%%EOF')
+    )
+      return reply(400, 'invalid-document');
+    const quotation = E.buildQuotePdfBytes(q.order, { ...q, date: q.issuedAt || q.createdAt });
+    const mail = await f('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + env.RESEND_KEY,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': `studio-order/${id}/${version}`,
+      },
+      body: JSON.stringify({
+        from: env.RESEND_FROM,
+        to: [to],
+        subject: `Your EGYGRILLZ order and quotation · ${id}`,
+        text: `Hello${q.clientName ? ' ' + q.clientName : ''},\n\nYour order sheet and quotation for ${id} are attached. If anything needs changing, reply to the studio.\n\nEGYGRILLZ`,
+        attachments: [
+          { filename: E.documentFilename('Order', q), content: attachmentBase64(production) },
+          { filename: E.quotePdfFilename(q), content: attachmentBase64(quotation) },
+        ],
+      }),
+    });
+    if (!mail.ok || !(await mail.json().catch(() => null))?.id) return reply(502, 'email-rejected');
+    // Provider acceptance is not proof of inbox delivery. Never mark a newer
+    // revision (or undo an intervening status/payment) after an in-flight send.
+    const receipt = {
+      emailedVersion: version,
+      emailedAt: new Date().toISOString(),
+      ...(q.status === 'draft' && { status: 'sent' }),
+    };
+    const params = new URLSearchParams(access);
+    for (const k of Object.keys(receipt)) params.append('updateMask.fieldPaths', k);
+    params.set('currentDocument.updateTime', doc.updateTime);
+    const ack = await f(`${url}?${params}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        fields: Object.fromEntries(Object.entries(receipt).map(([k, v]) => [k, { stringValue: v }])),
+      }),
+    }).catch(() => null);
+    return reply(200, null, { recorded: !!ack?.ok });
+  } catch {
+    return reply(502, 'submission-unconfirmed');
+  }
+}
+
 /** customer-friendly confirmation text */
 function formatClientConfirmation(data) {
   return [
@@ -3319,6 +3644,7 @@ export default {
           turnstile: !!env.TURNSTILE_SECRET,
           firebase: !!env.FIREBASE_API_KEY,
           staff_login: !!(env.STAFF_EMAIL && env.STAFF_PASSWORD),
+          order_email: !!(env.RESEND_KEY && env.RESEND_FROM),
         },
         endpoints: {
           health: '/api/health',
@@ -3326,6 +3652,8 @@ export default {
           telegram_digest: 'POST /api/remind',
           telegram_bot: 'POST /api/telegram',
           pdf: 'POST /api/pdf',
+          order_email: 'POST /api/orders/{ref}/email?version={deliveryVersion}',
+          studio_read_check: 'GET /api/telegram/check',
           moulds_order: 'POST /api/moulds/order',
           moulds_approve: 'POST /api/moulds/approve',
           moulds_orders: 'GET /api/moulds/orders',
@@ -3371,6 +3699,9 @@ export default {
       return json({ ok: !!d.ok, webhook: hook, telegram: d.description || d.ok }, 200, { origin });
     }
 
+    const orderMail = /^\/api\/orders\/(EGZ-[0-9]{6}-[A-F0-9]{12})\/email$/.exec(url.pathname);
+    if (orderMail) return emailOrderDocuments(req, env, orderMail[1], url.searchParams.get('version'), origin);
+
     if (url.pathname === '/api/remind') {
       if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
       if (!originAllowed(origin, env)) return json({ ok: false, error: 'bad-origin' }, 403, { origin });
@@ -3390,30 +3721,25 @@ export default {
 
     /* GET /api/telegram/check — verify bot access to Firestore */
     if (url.pathname === '/api/telegram/check') {
+      if (req.method !== 'GET') return json({ok:false, error:'use-get'}, 405, {origin});
+      if (rateLimited('read-check:' + (req.headers.get('CF-Connecting-IP') || 'unknown'), 6, 60_000))
+        return json({ok:false, error:'rate-limited'}, 429, {origin});
       if (!env.FIREBASE_API_KEY) {
         return json({ ok:false, step:'key', message:'FIREBASE_API_KEY is not set in Cloudflare.' }, 200, { origin });
       }
-      const token = await staffToken(env).catch(() => '');
-      if (!token) {
-        return json({ ok:false, step:'login',
-          message:'STAFF_EMAIL / STAFF_PASSWORD are not set (or wrong), so the bot is anonymous and Firestore refuses it.' }, 200, { origin });
+      const f = env.fetchImpl || fetch;
+      const token = await staffToken(env, f);
+      if (!token) return json({ok:false, step:'login', message:fsErrorText('staff-login-required')}, 200, {origin});
+      // Probe list access even on an empty database. Return no IDs, records, tokens
+      // or upstream error bodies. Do not claim Telegram/Resend delivery was tested.
+      const collections = ['appointments', 'order_sheets', 'quotes'];
+      for (const col of collections) {
+        const r = await fsQuery({...env, REQ_TOKEN:token}, {
+          from:[{collectionId:col}], select:projection(['__name__']), limit:1,
+        }, f);
+        if (!r.ok) return json({ok:false, step:'read', collection:col, error:r.error, message:fsErrorText(r.error)}, 200, {origin});
       }
-      // Run lightweight read check
-      const r = await fetch(`https://firestore.googleapis.com/v1/projects/egygrillz-studio/databases/(default)/documents:runQuery?key=${env.FIREBASE_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'appointments' }], limit: 1 } }),
-      }).catch(() => null);
-      if (!r) return json({ ok:false, step:'network', message:'Could not reach Firestore.' }, 200, { origin });
-      if (!r.ok) {
-        const t = await r.text().catch(()=> '');
-        return json({ ok:false, step:'read', status:r.status,
-          message: r.status === 403
-            ? 'Signed in, but private reads are denied. Verify the admin email or trusted UID/claim, the published studio rules and App Check settings.'
-            : 'Firestore said ' + r.status,
-          detail: t.slice(0,200) }, 200, { origin });
-      }
-      return json({ ok:true, step:'ready', message:'The bot can read the database. Everything is connected.' }, 200, { origin });
+      return json({ok:true, step:'ready', collections, message:'Private studio reads passed. Telegram and email delivery were not tested.'}, 200, {origin});
     }
 
 

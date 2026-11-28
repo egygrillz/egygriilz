@@ -2,12 +2,14 @@
 import { readFile } from 'node:fs/promises';
 import { chromium as pw } from 'playwright-core';
 import assert from 'node:assert/strict';
+import { observeSheet } from './fixtures/working-sheet.mjs';
 const browser = await pw.launch({
   executablePath: process.env.CHROMIUM_EXECUTABLE || undefined,
   headless: true,
 });
 const ctx = await browser.newContext({ viewport: { width: 1360, height: 938 } }),
   page = await ctx.newPage();
+await observeSheet(ctx);
 page.setDefaultTimeout(5500);
 const errors = [];
 page.on('pageerror', (e) => {
@@ -91,7 +93,7 @@ const nav = (file) =>
 const $ = (s) => page.locator(s),
   step = (s) => $(`[data-step="${s}"]`).click();
 const val = (s) => $(s).inputValue(),
-  state = () => page.evaluate(() => JSON.parse(localStorage.egygz_order_sheet_active_v1)),
+  state = () => page.evaluate(() => window.__testSheet),
   table = (key) => page.evaluate((k) => JSON.parse(localStorage.__fixture)[k], key);
 const tooth = async (n) => {
   await $(`path[data-tooth="${n}"]`).focus();
@@ -148,7 +150,7 @@ try {
   assert.deepEqual(s.groups[1], original);
   assert.equal(s.ink.length, 1);
   console.log('PASS mixed specs, actual ink, non-destructive group edit');
-  await $('.library summary').click();
+  await $('#step-design .library summary').click();
   await $('#save-current-design').click();
   await wait(() => document.querySelector('#saved-design-templates').options.length > 1);
   await $('#load-saved-design').click();
@@ -171,7 +173,7 @@ try {
   await page.mouse.move(pad.x + 115, pad.y + 52, { steps: 8 });
   await page.mouse.up();
   await $('#agreement').check();
-  assert.ok((await state()).signature?.startsWith('data:image/png'));
+  assert.ok((await state()).signatureLines[0].length > 2);
   await $('#preview-sheet').click();
   assert.equal(await $('.design-layer-print').count(), 2);
   const inkStats = await $('.print-layer-ink').evaluateAll(async (imgs) =>
@@ -188,7 +190,7 @@ try {
     ),
   );
   assert.deepEqual(inkStats, [true, true]);
-  assert.equal(await $('.print-signatures img').getAttribute('src'), (await state()).signature);
+  assert.match(await $('.print-signatures img').getAttribute('src'), /^data:image\/png/);
   assert.match(await $('.print-legal').innerText(), /REVIEWED BY CLIENT/);
   await page.emulateMedia({ media: 'print' });
   assert.ok(await $('#print-sheet').isVisible());
@@ -210,39 +212,20 @@ try {
   await $('#new-sheet').click();
   assert.equal(await val('#client-name'), '');
   await $('#saved-drafts').selectOption({ index: 1 });
+  await wait(() => document.querySelector('#client-name').value === 'Marten');
   assert.equal((await state()).clientName, 'Marten');
-  console.log('PASS artwork in hidden-step print, save quotation, local draft');
+  console.log('PASS artwork in hidden-step print, save linked quotation, cloud order');
   await step('review');
   await $('#open-saved-quote').click();
-  await wait(() => document.querySelector('#agreedTotal')?.value === '5000');
-  assert.equal(await val('#agreedTotal'), '5000');
-  assert.equal(await val('#agreedDeposit'), '1200');
-  assert.match(await $('#totalVal').innerText(), /5,000/);
-  await $('[data-pdf]').first().focus();
-  const [historical] = await Promise.all([page.waitForEvent('download'), page.keyboard.press('Enter')]);
-  assert.equal(historical.suggestedFilename(), 'EGYGRILLZ-Quotation-Marten.pdf');
-  await $('#agreedTotal').fill('0');
-  await $('#agreedDeposit').fill('0');
-  await $('#saveBtn').evaluate((el) => el.click());
-  await wait(() => Object.values(JSON.parse(localStorage.__fixture).quotes)[0].order.total === 0);
-  await $('[data-open]')
-    .first()
-    .evaluate((el) => el.click());
-  assert.equal(await val('#agreedTotal'), '0');
-  assert.equal(await val('#agreedDeposit'), '0');
-  await $('#agreedTotal').fill('');
-  await $('#agreedDeposit').fill('');
-  await $('#saveBtn').evaluate((el) => el.click());
-  await wait(() => Object.values(JSON.parse(localStorage.__fixture).quotes)[0].order.calculatedTotal == null);
-  await $('[data-open]')
-    .first()
-    .evaluate((el) => el.click());
-  assert.equal(await val('#agreedTotal'), '');
-  assert.equal(await val('#agreedDeposit'), '');
-  await $('#newQuoteBtn').evaluate((el) => el.click());
-  assert.equal(await val('#clientName'), '');
-  assert.equal(await $('#agreedFields').getAttribute('open'), null);
-  console.log('PASS Quotes history, open/save/update/new, zero and cleared overrides');
+  await $('#issued-order').waitFor({ state: 'visible' });
+  assert.match(
+    await $('#issued-amounts').innerText(),
+    /Total 5,000 EGP · Deposit due 1,200 · Paid 0 · Outstanding 5,000/,
+  );
+  const [historical] = await Promise.all([page.waitForEvent('download'), $('#issued-download').click()]);
+  assert.equal(historical.suggestedFilename(), `EGYGRILLZ-Quotation-Marten-${saved.orderNo}.pdf`);
+  await $('#issued-close').click();
+  console.log('PASS issued quote history, unique filename, deposit remains unpaid');
   const code = await page.evaluate(() =>
     CalcEngine.encodeCode({
       lines: [{ material: 'chrome', teeth: 1 }],
@@ -255,6 +238,27 @@ try {
   await wait(() => document.querySelector('#clientName')?.value === 'Tester');
   assert.match(await $('#totalVal').innerText(), /2,100/);
   await $('#agreedFields summary').evaluate((el) => el.click());
+  // Standalone Quotes still supports revising (and clearing) a zero override;
+  // an order-linked receipt record cannot be overwritten in this editor.
+  await $('#agreedTotal').fill('0');
+  await $('#agreedDeposit').fill('0');
+  await $('#saveBtn').evaluate((el) => el.click());
+  await wait(() =>
+    Object.values(JSON.parse(localStorage.__fixture).quotes).some(
+      (q) => q.clientName === 'Tester' && q.total === 0,
+    ),
+  );
+  const standaloneId = Object.entries(await table('quotes')).find(([, q]) => q.clientName === 'Tester')[0];
+  await $(`[data-open="${standaloneId}"]`).evaluate((el) => el.click());
+  assert.equal(await val('#agreedTotal'), '0');
+  await $('#agreedTotal').fill('');
+  await $('#agreedDeposit').fill('');
+  await $('#saveBtn').evaluate((el) => el.click());
+  await wait(() =>
+    Object.values(JSON.parse(localStorage.__fixture).quotes).some(
+      (q) => q.clientName === 'Tester' && q.order.calculatedTotal == null,
+    ),
+  );
   await $('#agreedTotal').fill('1000');
   await $('#agreedDeposit').fill('300');
   await $('#toInvoiceBtn').evaluate((el) => el.click());

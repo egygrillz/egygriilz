@@ -380,14 +380,14 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
         <div class="card-h">
           <h2>Saved quotes</h2>
           <div class="spacer"></div>
-          <input class="inp" id="searchQuotes" placeholder="Search name or phone" style="max-width:220px;padding:7px 10px;font-size:12px">
+          <label><input type="checkbox" id="outstanding-only"> Outstanding orders</label><input class="inp" id="searchQuotes" placeholder="Name, phone or reference" style="max-width:220px;padding:7px 10px;font-size:12px">
         </div>
         <div class="card-b" style="padding:0">
           <table>
             <thead>
               <tr>
                 <th>Date</th><th>Client</th><th>Design</th>
-                <th style="text-align:right">Total</th><th>Status</th><th></th>
+                <th style="text-align:right">Total</th><th>Payments</th><th>Status</th><th></th>
               </tr>
             </thead>
             <tbody id="quotesBody"></tbody>
@@ -449,16 +449,17 @@ td.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
   </div>
 </div>
 
+<dialog id="issued-order" style="max-width:min(520px,94vw);border:1px solid #ccc;border-radius:8px;padding:24px"><h2>Saved order quotation</h2><p id="issued-label"></p><p id="issued-amounts"></p><p>Issued amounts are kept at their saved rates. Manage changes and receipts in the order sheet.</p><a id="issued-sheet" class="btn">Open order &amp; payments</a> <button id="issued-download" class="btn">Download quotation</button> <button id="issued-close" class="btn">Close</button></dialog>
 <div class="toast" id="toast"></div>
 
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=6"></script>
+<script src="/assets/staff-calculator.js?v=7"></script>
 <script type="module">
 /* ══════════════════════════════════════════════════════════════════
    1. AUTH
    ══════════════════════════════════════════════════════════════════ */
-import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js?v=2';
-import { db, settingsDb } from '/assets/studio-db.js';
+import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js?v=3';
+import { db, settingsDb } from '/assets/studio-db.js?v=2';
 import { doc, collection, getDoc, getDocs, query, limit, orderBy, startAfter, updateDoc, deleteDoc, setDoc, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Stops here until the admin signs in — requireAuth() shows its own overlay.
@@ -480,7 +481,7 @@ document.querySelectorAll('[data-logout]').forEach(function (el) {
 // load the engine as a classic script (it attaches to window.CalcEngine)
 await new Promise((res, rej) => {
   const s = document.createElement('script');
-  s.src = '/assets/calc-engine.js?v=9';
+  s.src = '/assets/calc-engine.js?v=10';
   s.onload = res; s.onerror = rej;
   document.head.appendChild(s);
 });
@@ -921,9 +922,8 @@ function quoteDesignLabel(q){
 
 function renderQuotes(){
   const q = ($('searchQuotes').value || '').trim().toLowerCase();
-  const list = q
-    ? QUOTES.filter(x => (x.clientName||'').toLowerCase().includes(q) || (x.clientPhone||'').includes(q))
-    : QUOTES;
+  const list = QUOTES.filter(x => (!q || [x.clientName,x.clientPhone,x.label,x.orderNo,x.id].some(v => String(v||'').toLowerCase().includes(q))) &&
+    (!$('outstanding-only').checked || (x.sheetId && E.paymentSummary(x).outstanding>0)));
 
   $('quotesEmpty').style.display = list.length ? 'none' : 'block';
   const statuses = ['draft', 'sent', 'accepted', 'declined'];
@@ -932,12 +932,12 @@ function renderQuotes(){
     const badge = { draft:'b-draft', sent:'b-sent', accepted:'b-accepted', declined:'b-declined' }[st] || 'b-draft';
     const issued = quoteDate(x);
     const date = x.createdAt && Number.isFinite(+issued) ? issued.toISOString().slice(0,10) : '';
-    const design = quoteDesignLabel(x);
+    const design = quoteDesignLabel(x), money=E.paymentSummary(x);
     return `<tr data-q="${esc(x.id)}">
       <td>${esc(date)}</td>
-      <td><strong>${esc(x.clientName || '—')}</strong><br><span style="color:var(--ink3);font-size:11px">${esc(x.clientPhone || '')}</span></td>
+      <td><strong>${esc(x.clientName || date)}</strong><br><span style="color:var(--ink3);font-size:11px">${esc(x.orderNo || x.id)}<br>${esc(x.clientPhone || '')}</span></td>
       <td style="color:var(--ink2)">${esc(design)}</td>
-      <td class="num">${fmt(quoteTotal(x))}</td>
+      <td class="num">${fmt(quoteTotal(x))}</td><td>${x.sheetId ? `<strong>${esc(money.status)}</strong><br>Paid ${fmt(money.paid)}<br>Due ${fmt(money.outstanding)}` : "—"}</td>
       <td>
         <select class="status-sel ${badge}" data-status="${esc(x.id)}">
           ${statuses.map(s => `<option value="${s}" ${st === s ? 'selected' : ''}>${s}</option>`).join('')}
@@ -947,7 +947,7 @@ function renderQuotes(){
         <button class="btn btn-ghost btn-sm" data-open="${esc(x.id)}" title="Open"><i class="fas fa-folder-open"></i></button>
         <button class="btn btn-ghost btn-sm" data-inv="${esc(x.id)}" title="Convert to Invoice"><i class="fas fa-file-invoice-dollar"></i></button>
         <button class="btn btn-ghost btn-sm" data-pdf="${esc(x.id)}" title="PDF"><i class="fas fa-file-pdf"></i></button>
-        <button class="btn btn-rose btn-sm" data-rm="${esc(x.id)}" title="Delete"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-rose btn-sm" data-rm="${esc(x.id)}" ${x.sheetId ? 'hidden disabled' : ''} title="Delete"><i class="fas fa-trash"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -978,6 +978,7 @@ function convertQuoteToInvoice(q){
   if (!q || (!((q.order && q.order.lines && q.order.lines.length) || (q.order && q.order.services && q.order.services.length)))) {
     return toast('Add at least one design or service first', true);
   }
+  if (q.sheetId) return window.location.assign('/invoice.html?quote='+encodeURIComponent(q.id));
   const transfer = E.quoteToInvoice(q);
   if (!transfer) return toast('No issued amounts on this quotation', true);
   try { localStorage.setItem('egygz_pending_invoice_from_quote', JSON.stringify(transfer)); } catch { return toast('Could not transfer the quotation. Check browser storage.', true); }
@@ -998,8 +999,17 @@ $('toInvoiceBtn').addEventListener('click', () => {
   });
 });
 
+$('outstanding-only').onchange = renderQuotes;
+$('issued-close').onclick = () => $('issued-order').close();
 function openQuote(q) {
   if (!q) return;
+  if (q.sheetId) {
+    const money=E.paymentSummary(q);
+    $('issued-label').textContent=q.label || q.orderNo;
+    $('issued-amounts').textContent=`Total ${fmt(quoteTotal(q))} EGP · Deposit due ${fmt(q.order.deposit)} · Paid ${fmt(money.paid)} · Outstanding ${fmt(money.outstanding)}`;
+    $('issued-sheet').href='/order-sheet.html?sheet='+encodeURIComponent(q.sheetId);
+    $('issued-download').onclick=()=>makePdf(q); $('issued-order').showModal();return;
+  }
   CURRENT_QUOTE_ID = q.id;
   $('clientName').value = q.clientName || '';
   $('clientPhone').value = q.clientPhone || '';
@@ -1042,6 +1052,7 @@ $('quotesBody').addEventListener('click', async (e) => {
   }
 
   if (rm) {
+    if (QUOTES.find(q => q.id===rm.dataset.rm)?.sheetId) return toast('Linked order quotations keep their payment history.',true);
     if (!confirm('Delete this quote?')) return;
     try {
       await deleteDoc(doc(db, 'quotes', rm.dataset.rm));
@@ -1060,7 +1071,6 @@ $('saveBtn').addEventListener('click', async () => {
   if ((!LINES.length && !SERVICES.length) || !LAST) return toast('Add at least one design line or service', true);
   const name = $('clientName').value.trim();
   const phone = $('clientPhone').value.trim();
-  if (!name) { $('clientName').focus(); return toast('Client name is required', true); }
 
   const saveBtn = $('saveBtn');
   isSavingQuote = true;
@@ -1069,7 +1079,9 @@ $('saveBtn').addEventListener('click', async () => {
 
   const dVal = Number($('discountVal').value) || 0;
   const existing = CURRENT_QUOTE_ID ? QUOTES.find(x => x.id === CURRENT_QUOTE_ID) : null;
+  const refName=existing?.orderNo || CURRENT_QUOTE_ID || 'Q-'+crypto.randomUUID().slice(0,13).toUpperCase();
   const payload = {
+    orderNo:refName, label:(name || new Date().toISOString().slice(0,10))+' · '+refName,
     clientName: name,
     clientPhone: phone,
     clientEmail: $('clientEmail').value.trim(),
@@ -1138,7 +1150,7 @@ function renderMonth(){
 function makePdf(q) {
   const order = E.savedQuoteOrder(q);
   if (!order) return toast('No priced items on this quote', true);
-  const meta = { ...q, date: q.createdAt, validDays: q.validDays ?? validDays(), studioName: q.studioName || SiteConfig.get('studioName') };
+  const meta = { ...q, date: q.issuedAt || q.createdAt, validDays: q.validDays ?? validDays(), studioName: q.studioName || SiteConfig.get('studioName') };
   if (q.returnBlob) return { blob: new Blob([E.buildQuotePdfBytes(order, meta)], { type: 'application/pdf' }), name: E.quotePdfFilename(meta) };
   E.downloadQuotePdf(order, meta);
   toast('PDF downloaded');

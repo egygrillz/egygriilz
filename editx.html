@@ -1554,7 +1554,7 @@
           </div>
           <div class="section-card" style="padding:26px;">
             <p class="ph-title" style="font-size:16px;margin-bottom:6px;">Pricing Calculator Rates</p>
-            <p class="pages-hint" style="margin-bottom:20px;"><i class="fas fa-calculator"></i> Live gold rate, base prices, design levels, stone pricing, finishing, and service fees shared across Atelier, Quotes, Invoices, and the Staff Panel.</p>
+            <p class="pages-hint" style="margin-bottom:20px;"><i class="fas fa-calculator"></i> Live gold rate, base prices, design levels, stone pricing, finishing, mold options, and service fees shared with Order Sheet, Atelier, Quotes, Invoices, and the Staff Panel.</p>
             <div id="calc-settings-box"></div>
           </div>
         </div>
@@ -1969,8 +1969,8 @@
       msg =
         reason === 'permission'
           ? unverified
-            ? 'Verify the admin email below, open the link from Firebase, then retry access.'
-            : 'Private reads denied. Check the published rules and App Check in egygrillz-studio. Use the verified admin address, or a trusted UID / staff claim.'
+            ? 'Private reads denied. Publish the studio rules with your UID, then retry. The listed owner does not need email verification. Only verify the mailbox if using the email fallback.'
+            : 'Private reads denied. Check your UID against the published rules in egygrillz-studio, then retry. If they match, check App Check and project settings.'
           : reason === 'quota'
             ? 'Firestore quota reached. Check studio project usage, then retry.'
             : 'Cannot reach the studio database. Check your connection and retry.';
@@ -5073,11 +5073,11 @@
 
 
 
-<script data-cfasync="false" src="assets/calc-engine.js?v=9"></script>
+<script data-cfasync="false" src="assets/calc-engine.js?v=10"></script>
 <script src="/assets/rates.js?v=7"></script>
 <script data-cfasync="false" src="assets/crops.js?v=3"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script data-cfasync="false" src="assets/staff-calculator.js?v=6"></script>
+<script data-cfasync="false" src="assets/staff-calculator.js?v=7"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
 <script data-cfasync="false">
@@ -5594,8 +5594,8 @@
     el('inv-notes').value = transfer.notes || '';
     el('inv-discount-val').value = transfer.discountAmount || 0;
     el('inv-discount-type').value = 'egp';
-    el('inv-deposit-val').value = 0;
-    el('inv-status').value = 'pending';
+    el('inv-deposit-val').value = transfer.depositAmount || 0;
+    el('inv-status').value = transfer.depositAmount > 0 ? (transfer.depositAmount >= transfer.total ? 'paid' : 'partial') : 'pending';
     renderItems();
     updatePreview();
     toast('Quote imported', 'success');
@@ -6710,7 +6710,7 @@
         else failure = 'Worker: ' + why;
         if (why === 'permission-denied' || why === 'firestore-403') {
           failure += ' — the database refuses to let this account read mould_orders. ' +
-                     'Verify the admin email or authorize its trusted UID and publish the studio rules.';
+                     'Publish the rules with the studio owner UID in egygrillz-studio, then retry.';
         }
       }
     } catch (e) {
@@ -6753,7 +6753,7 @@
         '<div style="margin-top:16px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto;font-size:12px;line-height:1.9;color:#6b6b6b;">' +
         '<strong style="color:#1f1f1f;">How to fix it</strong><br>' +
         '1 — Firebase → Firestore → Rules: paste <code>firestore.rules</code> from this repository and Publish. ' +
-        'Use the verified <code>admin@egygrillz.com</code> account, or its trusted UID / claim.' +
+        'Use the registered studio owner account; its UID does not require email verification.' +
         (who && who !== 'not signed in' ? ' This dashboard is signed in as <code>' + escHtml(who) + '</code>.' : '') +
         (uid ? ' (UID <code>' + escHtml(uid) + '</code>.)' : '') +
         '<br>2 — Then deploy the current Worker (see <code>STUDIO-ORDERS.md</code>) and reload: ' +

@@ -2199,6 +2199,8 @@
       ['anodize.multi', 'Anodize — multi'],
     ] },
     { id: 'services', title: 'Studio services', keys: [
+      ['moldFlat.normalperarch', 'Mold — per arch'],
+      ['moldFlat.digitalfullmouth', 'Mold — digital full mouth'],
       ['servicePrices.impression', 'Dental Impression'],
       ['servicePrices.consultation', 'Studio Consultation'],
       ['servicePrices.toothgem', 'Toothgem Application'],
@@ -2211,9 +2213,6 @@
       ['timelinePct.standard', 'Timeline — standard %'],
       ['timelinePct.rush', 'Timeline — rush %'],
       ['timelinePct.emergency', 'Timeline — emergency %'],
-      ['moldFlat.none', 'Mold — none'],
-      ['moldFlat.normalperarch', 'Mold — per arch'],
-      ['moldFlat.digitalfullmouth', 'Mold — digital full mouth'],
       ['roundTo', 'Round totals up to'],
       ['depositPct', 'Default deposit %'],
     ] },
@@ -2330,11 +2329,11 @@
   // Only a studio settings WRITE needs the separate EditX Firebase credential.
   const studioSettingsDb = {
     _egygzProjectId: 'egygrillz-studio',
-    async _egygzGet(...args) { return (await import('/assets/studio-db.js')).settingsDb._egygzGet(...args); },
+    async _egygzGet(...args) { return (await import('/assets/studio-db.js?v=2')).settingsDb._egygzGet(...args); },
     async _egygzSet(...args) {
-      const {requireAuth} = await import('/assets/firebase-auth-gate.js?v=2');
+      const {requireAuth} = await import('/assets/firebase-auth-gate.js?v=3');
       await requireAuth();
-      return (await import('/assets/studio-db.js')).settingsDb._egygzSet(...args);
+      return (await import('/assets/studio-db.js?v=2')).settingsDb._egygzSet(...args);
     },
   };
   global.StaffCalculator = {

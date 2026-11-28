@@ -2,9 +2,9 @@
   "name": "egygrillz-studio-checks",
   "private": true,
   "scripts": {
-    "unit": "node --test studio-orders.test.mjs design-reminders.test.mjs",
+    "unit": "node --test studio-orders.test.mjs design-reminders.test.mjs order-delivery.test.mjs worker-order-desk.test.mjs",
     "rules": "node --test firestore-rules.test.mjs",
-    "browser": "node order-journey.mjs && node design-journey.mjs"
+    "browser": "node order-journey.mjs && node design-journey.mjs && node order-account-journey.mjs && node studio-access-journey.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "5.0.0",

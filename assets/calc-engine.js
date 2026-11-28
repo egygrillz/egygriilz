@@ -724,7 +724,7 @@
 
     const tlPct = Number(S.timelinePct[o.timeline] || 0);
     const timelineAmount = linesSubtotalRaw * (tlPct / 100);
-    const moldCost = Number(S.moldFlat[o.mold] || 0);
+    const moldCost = o.mold === 'none' ? 0 : Number(S.moldFlat[o.mold] || 0);
 
     const gross = linesSubtotalRaw + timelineAmount + moldCost + servicesSubtotal;
     let discountAmount = 0;
@@ -1560,9 +1560,26 @@
       .replace(/[–—]/g, '-').replace(/[·•]/g, ' - ').replace(/×/g, 'x').replace(/[^\S ]+/g, ' ').replace(/[^ -~]/g, '').trim();
   }
   const pdfEsc = s => pdfClean(s).replace(/[\\()]/g, '\\$&');
-  function quotePdfFilename(meta = {}) {
-    const stem = meta.filename || ['EGYGRILLZ-Quotation', pdfClean(meta.clientName || meta.id)].filter(Boolean).join('-');
-    return (pdfClean(stem).replace(/\.pdf$/i, '').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 110) || 'EGYGRILLZ-Quotation') + '.pdf';
+  function documentFilename(kind, meta = {}) {
+    const clean = (value) =>
+      pdfClean(value)
+        .replace(/[^\w-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    const issued = meta.date || meta.createdAt;
+    const date = new Date(issued?.toDate?.() || issued || Date.now());
+    const day = (Number.isFinite(+date) ? date : new Date()).toISOString().slice(0, 10);
+    const ref = clean(meta.orderNo || meta.id || globalThis.crypto.randomUUID());
+    return `EGYGRILLZ-${kind}-${clean(meta.clientName).slice(0, 44) || day}-${ref.slice(0, 48)}.pdf`;
+  }
+  const quotePdfFilename = (meta) => documentFilename('Quotation', meta);
+  // Only posted receipts count as cash collected. Deposit/balance in the quotation are terms.
+  function paymentSummary(q) {
+    const paid = (Array.isArray(q?.payments) ? q.payments : []).reduce(
+      (n, p) => n + (Number.isSafeInteger(p.amount) && p.amount > 0 ? p.amount : 0),
+      0,
+    );
+    const outstanding = Math.max(0, (q?.order?.total ?? q?.total ?? 0) - paid);
+    return { paid, outstanding, status: !outstanding ? 'Settled' : paid ? 'Part-paid' : 'Unpaid' };
   }
 
   // Issued quotations are snapshots: a later change to the gold rate or studio
@@ -1603,20 +1620,20 @@
     const gap = order.total - (items.reduce((n,i) => n + money(i.qty * i.price), 0) - discountAmount);
     if (gap > 0) items.push({ name: order.calculatedTotal != null ? 'Agreed price adjustment' : 'Rounding adjustment', spec: '', qty: 1, price: gap });
     if (gap < 0) discountAmount -= gap;
-    return { quoteId: q.id || '', clientName: q.clientName || '', clientPhone: q.clientPhone || '', clientEmail: q.clientEmail || '',
+    return { quoteId: q.id || '', clientName: q.clientName || (q.sheetId ? q.label || q.sheetId : ''), clientPhone: q.clientPhone || '', clientEmail: q.clientEmail || '',
       notes: [q.orderNo, q.notes, order.deposit ? `Deposit due: ${fmt(order.deposit)} ${order.currency || 'EGP'}.` : ''].filter(Boolean).join('\n'),
-      items, total: order.total, discountAmount, depositDue: order.deposit || 0, depositAmount: 0 };
+      items, total: order.total, discountAmount, depositDue: order.deposit || 0, depositAmount: paymentSummary(q).paid };
   }
 
   // Same reconciled rows on the estimate screen, Quotes and the issued PDF.
-  function quoteTotalRows(order) {
+  function quoteTotalRows(order, { omitEmptyMold = false } = {}) {
     const autoTotal = order.calculatedTotal ?? order.total;
     const rounding = autoTotal - order.linesSubtotal - order.servicesSubtotal - (order.timelineAmount || 0) - (order.moldCost || 0) + (order.discountAmount || 0);
     const adj = order.total - autoTotal;
     const rows = [[`Subtotal (${order.lines.length} designs)`, order.linesSubtotal]];
     if (order.services.length) rows.push(['Additional services', order.servicesSubtotal]);
     rows.push([`Timeline - ${L.timeline[order.timeline] || 'Standard'}${order.timelinePct ? ' (+'+order.timelinePct+'%)' : ' (no surcharge)'}`, order.timelineAmount || 0]);
-    rows.push(['Mold - ' + (L.mold[order.mold] || 'None'), order.moldCost || 0]);
+    if (!omitEmptyMold || order.mold !== 'none') rows.push(['Mold - ' + (L.mold[order.mold] || 'None'), order.moldCost || 0]);
     if (order.discountAmount) rows.push(['Discount', -order.discountAmount]);
     if (rounding) rows.push(['Rounding adjustment', rounding]);
     if (adj) rows.push(['Agreed price adjustment', adj]);
@@ -1727,11 +1744,16 @@
       services.forEach(s => { row(`${s.name} (x${s.qty || 1})`, amt(s.subtotal)); if (s.notes) paragraph(s.notes, 8, 0.4); }); y += 5;
     }
     // Match the reference: let the breakdown finish before breaking for the total band.
-    title('Quote totals'); quoteTotalRows(order).forEach(([k,v]) => row(k,amt(v),false,0));
+    title('Quote totals'); quoteTotalRows(order,{omitEmptyMold:!!m.sheetId}).forEach(([k,v]) => row(k,amt(v),false,0));
     need(48); y += 6; rule(y, true); y += 26; text('TOTAL', M, y, 14, true); text(amt(order.total), R, y, 14, true, true); y += 24;
     if (order.depositPct || order.deposit || order.depositManual) {
       row(order.depositManual ? 'Agreed deposit due' : `Deposit (${order.depositPct}%) to start production`, amt(order.deposit));
-      row('Balance before delivery / pickup', amt(order.balance));
+      row(m.sheetId ? 'Balance if deposit paid' : 'Balance before delivery / pickup', amt(order.balance));
+    }
+    if (m.sheetId) {
+      const receipts = paymentSummary({...m, order});
+      title('Payment record'); row('Amount received', amt(receipts.paid)); row('Outstanding today', amt(receipts.outstanding),true);
+      paragraph('Order reference: '+m.sheetId, 8, 0.4);
     }
     if (m.notes) { y += 4; title('Notes'); paragraph(m.notes, 9, 0.2); }
     if (m.validDays > 0) paragraph(`Valid for ${m.validDays} days from the date of issue.`, 8, 0.45);
@@ -2069,7 +2091,7 @@
     calculateLine, calculateService, calculateOrder, describeOrder,
     lineLabel, groupLabel, cleanLineSpec, cleanGroupSpec, cleanToothIds,
     encodeCode, encodeLineCode, decodeCode, extractCode,
-    buildQuotePdfBytes, downloadQuotePdf, quotePdfFilename, savedQuoteOrder, quoteToInvoice, quoteTotalRows, matchQuoteClient,
+    buildQuotePdfBytes, downloadQuotePdf, quotePdfFilename, documentFilename, paymentSummary, savedQuoteOrder, quoteToInvoice, quoteTotalRows, matchQuoteClient,
     basePerTooth, allowsStones, money, fmt, roundPrice, roundUpTo, syncServiceDefaults,
     cleanCut, cleanSize, cutPctOf, sizeFactorOf, stoneUnitPrice, CUTS, SIZE_PRESETS,
     load, save, fetchSettingsRest, restSettings,

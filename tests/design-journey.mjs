@@ -3,6 +3,8 @@
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { observeSheet } from './fixtures/working-sheet.mjs';
+const sdk = await readFile(new URL('./fixtures/firebase-modular.mjs', import.meta.url), 'utf8');
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_EXECUTABLE || undefined,
   headless: true,
@@ -22,12 +24,21 @@ try {
       isMobile: mobile,
       deviceScaleFactor: mobile ? 2 : 1,
     });
-    await ctx.route(/^https:\/\//, (r) => r.abort());
+    await observeSheet(ctx);
+    await ctx.addInitScript(() => {
+      if (!localStorage.__fixture)
+        localStorage.__fixture = JSON.stringify({ settings: { pricing: {}, site: {} } });
+    });
+    await ctx.route(/^https:\/\//, (r) =>
+      r.request().url().includes('/firebasejs/')
+        ? r.fulfill({ contentType: 'application/javascript', body: sdk })
+        : r.abort(),
+    );
     const p = await ctx.newPage();
     watch(p);
     const $ = (s) => p.locator(s),
       click = (s) => $(s).click();
-    const state = () => p.evaluate(() => JSON.parse(localStorage.egygz_order_sheet_active_v1));
+    const state = () => p.evaluate(() => window.__testSheet);
     const cdp = await ctx.newCDPSession(p);
     const point = async (id, fx = 0.5, fy = 0.48) => {
       const el = $(`[data-tooth="${id}"]`);
@@ -184,7 +195,10 @@ try {
     assert.equal(await $('[data-detail="diamondType"]').count(), 1);
     assert.equal(await $('[data-detail="accentType"]').count(), 0);
     await click('#save-design-details');
+    await click('#save-draft');
+    await p.waitForURL(/sheet=EGZ/);
     await p.reload();
+    await p.waitForFunction(() => window.__testSheet?.gems?.length > 0);
     assert.ok((await state()).gems.length > 0);
     assert.equal(await $('#quote-pdf-btn').isEnabled(), true);
     if (process.env.DESIGN_SCREENSHOT_DIR) {
@@ -195,6 +209,8 @@ try {
     }
     await click('[data-step="review"]');
     await p.reload();
+    await p.waitForFunction(() => window.__testSheet?.gems?.length > 0);
+    await click('[data-step="review"]');
     await $('[data-fdi-label="11"]').waitFor({ state: 'attached' });
     await click('#preview-sheet');
     assert.ok(
@@ -261,7 +277,7 @@ try {
   await p.goto(base + 'editx.html');
   const $ = (s) => p.locator(s);
   await p.waitForFunction(() =>
-    document.querySelector('#pw-err').textContent.includes('Verify the admin email'),
+    document.querySelector('#pw-err').textContent.includes('Private reads denied'),
   );
   assert.equal(await $('#app').isVisible(), false);
   assert.equal(await $('#verify-access').isVisible(), true);

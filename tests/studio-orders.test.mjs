@@ -13,7 +13,7 @@ const martenSpec = [
   { teeth: 1, level: '2' },
   { teeth: 1, level: '4' },
 ];
-const meta = { clientName: 'Marten', date: '2026-10-17T14:50:00Z' };
+const meta = { id:'sample', clientName: 'Marten', date: '2026-10-17T14:50:00Z' };
 const state = (patch) => ({
   designLayers: [{ id: 'A', name: 'Set A' }],
   groups: [],
@@ -46,7 +46,7 @@ test('Marten: four quoted subtotals, two A4 pages, ruled total on page two', () 
   assert.equal(o.total, 5000);
   const bytes = E.buildQuotePdfBytes(o, meta),
     text = pdfText(bytes);
-  assert.equal(E.quotePdfFilename(meta), 'EGYGRILLZ-Quotation-Marten.pdf');
+  assert.equal(E.quotePdfFilename(meta), 'EGYGRILLZ-Quotation-Marten-sample.pdf');
   assert.deepEqual(
     Buffer.from(bytes),
     readFileSync(new URL('../examples/EGYGRILLZ-Quotation-Marten.pdf', import.meta.url)),

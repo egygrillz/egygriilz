@@ -12,10 +12,10 @@
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="/assets/calc-engine.js?v=9"></script>
+<script src="/assets/calc-engine.js?v=10"></script>
 <script src="/assets/rates.js?v=7"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=6"></script>
+<script src="/assets/staff-calculator.js?v=7"></script>
 <script src="/assets/catalog.js?v=6"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
@@ -1001,10 +1001,10 @@ footer { background:#fff; color:#1a1a1a; padding:50px 5% 20px; margin-top:80px; 
 
 <!-- Firebase SDK -->
 <script type="module">
-import { collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, runTransaction, increment, serverTimestamp, getCountFromServer }
+import { collection, getDocFromServer, getDocs, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, runTransaction, increment, serverTimestamp, getCountFromServer }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js?v=2';
-import { db, settingsDb } from '/assets/studio-db.js';
+import { requireAuth, signOut as fbSignOut } from '/assets/firebase-auth-gate.js?v=3';
+import { db, settingsDb } from '/assets/studio-db.js?v=2';
 const E = window.CalcEngine;
 
 
@@ -1196,7 +1196,7 @@ async function initApp() {
   });
 
   setDefaultDates();
-  consumePendingQuoteTransfer();
+  await consumePendingQuoteTransfer();
   loadAccountingTab();
   updateHeroStats();
   updatePreview();
@@ -1970,14 +1970,26 @@ function applyImportedQuote(transfer) {
   document.getElementById('inv-notes').value = transfer.notes || '';
   document.getElementById('discount-val').value = transfer.discountAmount || 0;
   document.getElementById('discount-type').value = 'egp';
-  document.getElementById('deposit-val').value = 0;
-  document.getElementById('inv-status').value = 'pending';
+  document.getElementById('deposit-val').value = transfer.depositAmount || 0;
+  document.getElementById('inv-status').value = transfer.depositAmount > 0 ? (transfer.depositAmount >= transfer.total ? 'paid' : 'partial') : 'pending';
   renderItems();
   updatePreview();
   showToast('Imported quote into Invoice Studio', 'success');
 }
 
-function consumePendingQuoteTransfer() {
+async function consumePendingQuoteTransfer() {
+  const id = new URLSearchParams(location.search).get('quote');
+  if (id) {
+    try {
+      const snap = await getDocFromServer(doc(db, 'quotes', id));
+      const transfer = snap.exists() && E.quoteToInvoice({...snap.data(), id});
+      if (!transfer) throw Error('Missing quotation');
+      applyImportedQuote(transfer);
+      history.replaceState(null, '', location.pathname);
+    } catch { showToast('Could not open the saved quotation. Check studio access.', 'error-toast'); }
+    return;
+  }
+
   try {
     const raw = localStorage.getItem('egygz_pending_invoice_from_quote');
     if (raw) {

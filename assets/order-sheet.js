@@ -2,8 +2,6 @@
   'use strict';
   const $ = (s, r = document) => r.querySelector(s),
     $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const ACTIVE_KEY = 'egygz_order_sheet_active_v1',
-    DRAFTS_KEY = 'egygz_order_sheet_drafts_v1';
   const MATERIALS = {
     chrome: { label: 'Cobalt Chrome', color: '#aeb7bd', ink: '#4f5f6a', edge: '#45525b' },
     silver: { label: 'Sterling Silver 925', color: '#d8dce0', ink: '#7d8790', edge: '#68747c' },
@@ -113,7 +111,14 @@
     records = null,
     currentOrder = null,
     orderBlock = '',
-    savingQuote = false,
+    busy = false,
+    saved = null, // header revision and last issued quotation
+    cleanSheet = '',
+    lockedTerms = '',
+    repriceRequested = false,
+    dirty = false,
+    pendingReceipt = null,
+    stopPrices = null,
     staffUser = null,
     savedDesignDocs = new Map(),
     printDesignMapHtml = '',
@@ -138,7 +143,7 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const makeOrderNo = () =>
-    `EGZ-${today().replace(/-/g, '').slice(2)}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+    `EGZ-${today().replace(/-/g, '').slice(2)}-${crypto.randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`;
   function blankState() {
     return {
       id: '',
@@ -179,7 +184,7 @@
       paymentMethod: 'Not decided',
       depositAuto: true,
       agreement: false,
-      signature: '',
+      signatureLines: [],
       editor: {
         name: '',
         material: 'Cobalt Chrome',
@@ -200,18 +205,8 @@
       },
     };
   }
-  function loadActive() {
-    try {
-      const raw = localStorage.getItem(ACTIVE_KEY);
-      if (!raw) return blankState();
-      return Object.assign(blankState(), JSON.parse(raw));
-    } catch (e) {
-      return blankState();
-    }
-  }
-  let state = loadActive(),
-    toastTimer = 0,
-    signatureDirty = false;
+  let state = blankState(),
+    toastTimer = 0;
   function normalizeDesignState() {
     const defaults = blankState(),
       teeth = (arr) => [
@@ -311,14 +306,29 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
   }
+  // Edits are in memory until the studio confirms an explicit database save.
   function persist() {
-    try {
-      localStorage.setItem(ACTIVE_KEY, JSON.stringify(state));
-      $('#save-status').textContent = 'Saved on this device';
-    } catch (e) {
-      $('#save-status').textContent = 'Browser storage is full';
-    }
+    dirty = repriceRequested || OrderFile.pack(state) !== cleanSheet;
+    $('#save-status').textContent = dirty
+      ? 'Unsaved changes'
+      : saved
+        ? 'Saved to studio database'
+        : 'Not saved';
+    renderFileActions();
   }
+  function fileBase() {
+    cleanSheet = OrderFile.pack(state);
+    dirty = false;
+  }
+  function priceLocked() {
+    return !!saved?.quote && lockedTerms === OrderFile.termsKey(state);
+  }
+  window.addEventListener('beforeunload', (e) => {
+    if (dirty || busy) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
   function syncInputs() {
     $$('[data-field]').forEach((el) => {
       const k = el.dataset.field;
@@ -401,7 +411,7 @@
     $('#design-groups-title').textContent = 'Added designs';
     $('#design-groups-help').textContent = 'Only the applied design details below go to the calculator.';
     $('#apply-design').disabled = selecting && !state.selectedTeeth.length;
-    $('#apply-design').textContent = selecting ? 'Start drawing →' : 'Finish drawing → Design details';
+    $('#apply-design').textContent = selecting ? 'Start drawing' : 'Finish drawing: design details';
     $('#apply-hint').textContent = selecting
       ? 'Choose at least one tooth to open a drawing layer.'
       : 'Done sketching? Review this layer before adding its price.';
@@ -578,7 +588,11 @@
     if (!host) return;
     host.innerHTML =
       (state.services || [])
-        .map((s) => CalcEngine.calculateService(s))
+        .map(
+          (s, i) =>
+            (priceLocked() && saved.quote.order.services[i]) ||
+            CalcEngine.calculateService(OrderPricing.serviceSpec(s, CalcEngine)),
+        )
         .map(
           (svc, i) =>
             `<div class="order-service-row" data-service-id="${esc(state.services[i].id)}"><strong>${esc(svc.name || svc.type || 'Service')}</strong><span>${Number(svc.qty) || 1} × ${Number(svc.unitPrice || 0).toLocaleString('en-US')} EGP = ${esc(formatMoney(svc.subtotal))}</span><button type="button" class="icon-btn" data-remove-service="${esc(state.services[i].id)}" aria-label="Remove service ${esc(svc.name || '')}">Remove</button></div>`,
@@ -594,32 +608,30 @@
   function renderServiceCatalog() {
     const select = $('#order-service-type');
     if (!select || !window.CalcEngine) return;
-    const labels = CalcEngine.LABELS?.service || {},
-      prices = CalcEngine.get?.()?.servicePrices || {},
-      current = select.value || 'impression',
-      types = Object.keys(prices).filter((type) => type !== 'custom');
-    select.innerHTML =
-      types.map((type) => `<option value="${esc(type)}">${esc(labels[type] || type)}</option>`).join('') +
-      '<option value="custom">Custom service</option>';
-    select.value = types.includes(current) || current === 'custom' ? current : types[0] || 'custom';
+    const catalog = OrderPricing.serviceCatalog(CalcEngine),
+      current = select.value;
+    select.replaceChildren(
+      ...Object.entries(catalog).map(([k, v]) => new Option(v.name, k)),
+      new Option('Custom service', 'custom'),
+    );
+    select.value = current === 'custom' || catalog[current] ? current : Object.keys(catalog)[0];
     updateServicePriceHint();
   }
   function updateServicePriceHint() {
     const host = $('#order-service-price-hint');
     if (!host) return;
     const type = $('#order-service-type').value,
-      labels = CalcEngine?.LABELS?.service || {},
-      prices = CalcEngine?.get?.()?.servicePrices || {},
+      item = OrderPricing.serviceCatalog(CalcEngine)[type],
       override = $('#order-service-price').value;
     if (type === 'custom') {
       host.textContent = 'Custom service · enter the studio-agreed unit price.';
       return;
     }
-    const price = Number(prices[type]) || 0;
+    const price = Number(item?.price) || 0;
     host.textContent =
       override !== ''
-        ? `Manual unit price: ${Number(override || 0).toLocaleString('en-US')} EGP · clear to use the shared ${labels[type] || type} price.`
-        : `${labels[type] || type}: ${price.toLocaleString('en-US')} EGP per unit · synced with EditX and Invoice pricing.`;
+        ? `Manual unit price: ${Number(override || 0).toLocaleString('en-US')} EGP · clear to use the shared ${item?.name || type} price.`
+        : `${item?.name || type}: ${price.toLocaleString('en-US')} EGP per unit · synced with EditX and Invoice pricing.`;
   }
   function addOrderService() {
     const type = $('#order-service-type').value,
@@ -637,7 +649,7 @@
     const name =
       type === 'custom'
         ? $('#order-service-name').value.trim() || 'Custom service'
-        : CalcEngine.LABELS.service[type] || type;
+        : OrderPricing.serviceCatalog(CalcEngine)[type]?.name || type;
     state.services.push({
       id: crypto.randomUUID(),
       type,
@@ -698,19 +710,22 @@
       $('#summary-total').textContent = '—';
       return;
     }
-    const { order, issues } = OrderPricing.build(state, CalcEngine);
+    const locked = priceLocked();
+    const { order, issues } = locked
+      ? { order: saved.quote.order, issues: [] }
+      : OrderPricing.build(state, CalcEngine);
     const hasItems = order.lineCount > 0 || order.services.length > 0;
     const pending = pendingTeeth();
     currentOrder = order;
     const gold = orderUsesGold(order);
-    if (gold && !window.MetalRates?.goldEgpPerGram24())
+    if (!locked && gold && !window.MetalRates?.goldEgpPerGram24())
       issues.push('Live gold rate unavailable. Refresh before issuing a gold quote.');
     if (pending) issues.push('Review the drawing and apply its design details before issuing documents.');
-    if (pricingSource === 'loading') issues.push('Loading studio pricing…');
+    if (!locked && pricingSource === 'loading') issues.push('Loading studio pricing…');
     orderBlock = issues[0] || (!hasItems && 'Add a design or service first.');
-    if (unverifiedPricing())
+    if (!locked && unverifiedPricing())
       issues.push('Studio pricing could not be verified. Refresh or confirm the estimate before export.');
-    if (gold && window.MetalRates?.snapshot().stale)
+    if (!locked && gold && window.MetalRates?.snapshot().stale)
       issues.push('Using the last known gold rate. Confirm the rate before production.');
     const amount = hasItems ? order.total : null;
     if (isAuto) state.price = amount == null ? '' : String(amount);
@@ -718,9 +733,9 @@
     if (state.depositAuto !== false) state.deposit = amount == null ? '' : String(order.deposit);
     $('#deposit').value = state.deposit;
     $('#auto-deposit').textContent =
-      state.depositAuto === false ? 'Use studio %' : `Auto · ${CalcEngine.get().depositPct}%`;
+      state.depositAuto === false ? 'Use studio %' : `Auto · ${order.depositPct}%`;
     $('#auto-deposit').disabled = state.depositAuto !== false;
-    $('#deposit').setAttribute('placeholder', `${CalcEngine.get().depositPct}% of total`);
+    $('#deposit').setAttribute('placeholder', `${order.depositPct}% of total`);
     const source =
       {
         loading: 'Loading pricing',
@@ -730,35 +745,33 @@
         rest: 'Studio pricing',
         firestore: 'Studio pricing',
       }[pricingSource] || 'Studio pricing';
-    $('#auto-price-note').textContent =
-      `${source}${gold && window.MetalRates ? ' · Gold: ' + MetalRates.statusLine() : ''}`;
+    $('#reprice').hidden = !locked;
+    $('#auto-price-note').textContent = locked
+      ? 'Saved quotation · issued amounts'
+      : `${source}${gold && window.MetalRates ? ' · Gold: ' + MetalRates.statusLine() : ''}`;
     $('#summary-total').textContent = amount == null ? '—' : formatMoney(order.total);
     $('#summary-balance').textContent = hasItems
-      ? `Deposit ${formatMoney(order.deposit)} · Balance ${formatMoney(order.balance)}`
+      ? `Deposit due ${formatMoney(order.deposit)} · Paid ${formatMoney(CalcEngine.paymentSummary(saved?.quote).paid)} · Outstanding ${formatMoney(Math.max(0, order.total - CalcEngine.paymentSummary(saved?.quote).paid))}`
       : 'Add a design or a studio service to begin.';
     $('#price-breakdown').hidden = !hasItems;
     const amounts = [
       ...order.lines.map((l, i) => [l.name || `Design ${i + 1}`, l.subtotal]),
       ...order.services.map((s) => [`${s.name} × ${s.qty}`, s.subtotal]),
-      ...CalcEngine.quoteTotalRows(order),
+      ...CalcEngine.quoteTotalRows(order, { omitEmptyMold: true }),
     ];
     $('#price-rows').innerHTML = amounts
       .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(formatMoney(v))}</dd>`)
       .join('');
     const link = $('#open-saved-quote');
-    link.hidden = !state.quoteId || !staffUser;
-    if (!link.hidden) link.href = '/quotes.html?id=' + encodeURIComponent(state.quoteId);
+    link.hidden = !saved?.quote || !staffUser;
+    if (!link.hidden) link.href = '/quotes.html?id=' + encodeURIComponent(state.orderNo);
     $('#summary-teeth').textContent = order.teethTotal;
     $('#summary-group-count').textContent = order.lineCount;
     $('#summary-service-count').textContent = order.services.reduce((n, s) => n + s.qty, 0);
     $('#summary-unassigned').textContent = pending;
     $('#order-warning').textContent = issues.join(' ');
     $('#order-warning').hidden = !issues.length || (!hasItems && !pending);
-    $('#quote-pdf-btn').disabled = $('#create-proforma-btn').disabled = !!orderBlock;
-    $('#save-quote-btn').disabled = !!orderBlock || !staffUser || savingQuote;
-    $('#save-quote-btn').title = staffUser
-      ? 'Save the priced quotation to EditX / Quotes'
-      : 'Sign in to EditX to save a studio quotation';
+    renderFileActions();
     return order;
   }
   function pendingTeeth() {
@@ -788,8 +801,9 @@
       notify(orderBlock || 'Calculator unavailable');
       return null;
     }
-    const fallback = unverifiedPricing();
-    const staleGold = orderUsesGold(order) && window.MetalRates?.snapshot().stale;
+    const locked = priceLocked();
+    const fallback = !locked && unverifiedPricing();
+    const staleGold = !locked && orderUsesGold(order) && window.MetalRates?.snapshot().stale;
     const warning = [
       fallback && 'Studio prices could not be verified.',
       staleGold && 'Gold is priced at the last known rate.',
@@ -803,88 +817,273 @@
     )
       return null;
     return {
-      id: state.quoteId || '',
+      id: state.orderNo,
       orderNo: state.orderNo,
       clientName: state.clientName.trim(),
       clientPhone: state.clientPhone.trim(),
       clientEmail: state.clientEmail.trim(),
       notes: [
         state.notes.trim(),
-        warning && state.priceMode !== 'manual' ? warning + ' Confirm before production.' : '',
+        locked
+          ? saved.quote.pricingWarning
+          : warning && state.priceMode !== 'manual'
+            ? warning + ' Confirm before production.'
+            : '',
       ]
         .filter(Boolean)
         .join('\n'),
       order,
-      validDays: SiteConfig.num('quoteValidDays'),
-      studioName: SiteConfig.get('studioName'),
+      pricingWarning: locked
+        ? saved.quote.pricingWarning || ''
+        : warning && state.priceMode !== 'manual'
+          ? warning + ' Confirm before production.'
+          : '',
+      validDays: locked ? saved.quote.validDays : SiteConfig.num('quoteValidDays'),
+      studioName: locked ? saved.quote.studioName : SiteConfig.get('studioName'),
     };
   }
-  function sendProforma() {
-    const quote = issuedQuote();
-    if (!quote) return;
-    if (!quote.clientName) {
-      showStep('client');
-      $('#client-name').focus();
-      notify('Enter a client name for the invoice');
-      return;
+  function renderFileActions() {
+    const q = saved?.quote,
+      auth = !!(records && staffUser),
+      canIssue = auth && !busy && !orderBlock;
+    const paid = CalcEngine.paymentSummary(q);
+    $('#save-draft').disabled = !auth || busy;
+    $('#saved-drafts').disabled = !auth || busy;
+    for (const id of [
+      'quote-pdf-btn',
+      'save-quote-btn',
+      'order-pdf-btn',
+      'create-proforma-btn',
+      'print-sheet-btn',
+    ]) {
+      const b = $('#' + id);
+      b.disabled = !canIssue;
+      b.title = !auth ? 'Sign in to EditX to save orders' : orderBlock || '';
     }
+    const email = state.clientEmail.trim(),
+      validEmail = email && $('#client-email').validity.valid;
+    const sent = q?.emailedVersion && q.emailedVersion === q.deliveryVersion && !dirty && priceLocked();
+    $('#email-order').disabled = !canIssue || !validEmail || !!sent;
+    $('#mail-recipient').textContent = [
+      validEmail ? 'Attachments: order sheet and quotation.' : 'Enter one valid client email address.',
+      !auth && 'Sign in to EditX to save and email.',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    $('#email-order').textContent = sent ? 'Both PDFs submitted' : 'Save & email both PDFs';
+    $('#payment-summary').textContent = q
+      ? `${paid.status} · Quoted ${formatMoney(q.total)} · Paid ${formatMoney(paid.paid)} · Outstanding ${formatMoney(paid.outstanding)} · Deposit still due ${formatMoney(Math.max(0, q.order.deposit - paid.paid))}`
+      : 'Save the quotation to record a payment.';
+    $('#payment-history').innerHTML = (q?.payments || [])
+      .map(
+        (p) =>
+          `<li>${esc(String(p.at).slice(0, 10))} · ${esc(p.method)} · ${esc(formatMoney(p.amount))}</li>`,
+      )
+      .join('');
+    $('#receipt-amount').max = String(paid.outstanding);
+    $('#record-payment').disabled = !canIssue || !q || !priceLocked() || dirty || paid.outstanding < 1;
+    $('#record-payment').title = dirty ? 'Save your changes before posting a receipt.' : '';
+  }
+  const fileError = (e, action) =>
+    ['order/document', 'order/conflict', 'order/delivery'].includes(e?.code)
+      ? e.message
+      : recordError(e, action);
+  async function deskAction(action) {
+    if (busy) return;
+    busy = true;
+    const shell = $('.app-shell');
+    shell.inert = true;
     try {
-      localStorage.setItem(
-        'egygz_pending_invoice_from_quote',
-        JSON.stringify(CalcEngine.quoteToInvoice(quote)),
-      );
-      location.assign('/invoice.html');
-    } catch {
-      notify('Could not transfer this quote. Check browser storage.');
+      return await action();
+    } catch (e) {
+      const message = fileError(e, 'complete this action');
+      $('#save-status').textContent = message;
+      notify(message);
+    } finally {
+      busy = false;
+      shell.inert = false;
+      renderFileActions();
     }
   }
-  async function saveStudioQuote() {
-    if (savingQuote || !records || !staffUser) return;
-    const q = issuedQuote();
-    if (!q) return;
-    if (!q.clientName) {
-      showStep('client');
-      $('#client-name').focus();
-      notify('Enter a client name first');
-      return;
+  function requireDesk() {
+    if (!staffUser || !records)
+      throw Object.assign(new Error('Sign in to EditX before saving this order.'), {
+        code: 'order/conflict',
+      });
+  }
+  async function saveFile(requireQuote) {
+    requireDesk();
+    refreshOrder();
+    if (requireQuote && orderBlock) {
+      notify(orderBlock);
+      return null;
     }
-    const target = state,
-      now = new Date().toISOString();
-    const data = {
+    const q = !orderBlock ? issuedQuote() : null;
+    if (!q && !orderBlock) return null; // staff declined a stale-rate estimate
+    const user = staffUser,
+      target = state,
+      locked = priceLocked(),
+      sheetJson = OrderFile.pack(state),
+      label = OrderFile.label(state);
+    const data = q && {
+      orderNo: state.orderNo,
+      label,
       clientName: q.clientName,
       clientPhone: q.clientPhone,
       clientEmail: q.clientEmail,
-      orderNo: q.orderNo,
       notes: q.notes,
-      source: 'order-sheet',
+      pricingWarning: q.pricingWarning,
       validDays: q.validDays,
       studioName: q.studioName,
+      source: 'order-sheet',
       lines: q.order.lines.map(CalcEngine.cleanLineSpec),
       services: q.order.services,
       order: q.order,
       total: q.order.total,
       designLabel: `${q.order.lineCount} designs / ${q.order.teethTotal} teeth`,
-      updatedAt: now,
-      ...(!q.id && { status: 'draft', createdAt: now, createdBy: staffUser.email || staffUser.uid }),
     };
-    savingQuote = true;
-    $('#save-quote-btn').disabled = true;
+    $('#save-status').textContent = 'Saving to studio…';
+    const result = await records.saveSheet({
+      id: state.orderNo,
+      expected: saved?.revision || '',
+      label,
+      sheetJson,
+      step: state.step,
+      uid: user.uid,
+      quote: data && JSON.parse(JSON.stringify(data)),
+      locked,
+      unchanged: !!saved && sheetJson === cleanSheet && (!q || locked),
+    });
+    if (staffUser !== user || state !== target) return null;
+    saved = result;
+    cleanSheet = sheetJson;
+    repriceRequested = false;
+    if (q) lockedTerms = OrderFile.termsKey(state);
+    history.replaceState(null, '', location.pathname + '?sheet=' + encodeURIComponent(state.orderNo));
+    persist();
+    refreshOrder();
+    const msg = q
+      ? 'Order and quotation saved to studio.'
+      : 'Draft saved. Unfinished details have not been issued as a quotation.';
+    $('#save-status').textContent = msg;
+    notify(msg);
+    const picker = $('#saved-drafts');
+    let opt = Array.from(picker.options).find((x) => x.value === state.orderNo);
+    if (!opt) {
+      opt = new Option('', state.orderNo);
+      picker.add(opt, 1);
+    }
+    opt.textContent = label;
+    picker.value = state.orderNo;
+    return q ? { ...result.quote, id: state.orderNo } : null;
+  }
+  async function recordPayment() {
+    requireDesk();
+    const q = saved?.quote,
+      user = staffUser,
+      target = state;
+    if (!q || dirty || !priceLocked()) {
+      notify('Save the quotation before recording a payment.');
+      return;
+    }
+    const amount = Number($('#receipt-amount').value),
+      method = $('#receipt-method').value;
+    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > CalcEngine.paymentSummary(q).outstanding) {
+      notify('Check the amount and the outstanding balance.');
+      return;
+    }
+    if (!confirm(`Record ${formatMoney(amount)} received by ${method} for ${OrderFile.label(state)}?`))
+      return;
+    if (!pendingReceipt || pendingReceipt.amount !== amount || pendingReceipt.method !== method)
+      pendingReceipt = {
+        id: crypto.randomUUID(),
+        at: new Date().toISOString(),
+        amount,
+        method,
+        by: user.uid,
+      };
+    const updated = await records.postPayment(state.orderNo, q.deliveryVersion, pendingReceipt);
+    if (user !== staffUser || target !== state) return;
+    saved.quote = updated;
+    pendingReceipt = null;
+    $('#receipt-amount').value = '';
+    $('#mail-status').textContent = '';
+    $('#receipt-status').textContent = 'Payment recorded in the studio ledger.';
+    refreshOrder();
+    renderPrint();
+  }
+  async function productionDocument(q) {
+    const { build, download } = await import('/assets/order-document.js?v=1');
+    if (q.id !== state.orderNo || !staffUser) throw Error('Order changed');
+    renderPrint(true);
+    if (
+      $('#print-sheet').querySelectorAll('.design-layer-print').length <
+      state.designLayers.filter((l) => l.teeth.length).length
+    )
+      throw Object.assign(new Error('The drawing is not ready. Reload the saved order and try again.'), {
+        code: 'order/document',
+      });
+    const blob = await build($('#print-sheet'), q);
+    return { blob, download };
+  }
+  async function emailDocuments() {
+    const status = $('#mail-status'),
+      user = staffUser,
+      target = state;
+    if (!state.clientEmail.trim() || !$('#client-email').validity.valid) return;
+    if (!confirm(`Send the order sheet and quotation as PDF attachments to ${state.clientEmail.trim()}?`))
+      return;
+    status.textContent = 'Saving the order and preparing both PDFs…';
     try {
-      const id = await records.saveQuote(JSON.parse(JSON.stringify(data)), q.id);
-      if (
-        state === target &&
-        state.clientName.trim() === q.clientName &&
-        state.clientPhone.trim() === q.clientPhone
-      ) {
-        state.quoteId = id;
-        persist();
+      const q = await saveFile(true);
+      if (!q) {
+        status.textContent = 'No email sent.';
+        return;
       }
-      notify('Quotation saved to Quotes');
+      const { blob } = await productionDocument(q),
+        token = await user.getIdToken();
+      if (user !== staffUser || state !== target) return;
+      status.textContent = 'Submitting both PDFs…';
+      const res = await fetch(
+        `https://egygillz-api.egygrillz.workers.dev/api/orders/${encodeURIComponent(q.id)}/email?version=${encodeURIComponent(q.deliveryVersion)}`,
+        {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/pdf' },
+          body: blob,
+          signal: AbortSignal.timeout(45000),
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (user !== staffUser || state !== target) return;
+      if (!res.ok || !data.ok) {
+        const msg = {
+          'email-unconfigured':
+            'Studio email is not configured. Set RESEND_KEY and a verified RESEND_FROM on the Worker.',
+          'stale-order': 'The saved version changed. Reopen the order before sending.',
+          'bad-recipient': 'Check the client email in step 1.',
+          'email-rejected':
+            'The email provider rejected the request. Check the verified sender and provider log.',
+          'pdf-too-large': 'The order PDF exceeds the email size limit.',
+          'permission-denied': 'The studio account cannot read this saved quotation.',
+        }[data.error];
+        throw Object.assign(
+          new Error(
+            msg ||
+              (res.status === 404
+                ? 'Order email is not available on this Worker. Deploy the updated Worker.'
+                : 'Email submission was not confirmed. Check the sender log before retrying.'),
+          ),
+          { code: 'order/delivery' },
+        );
+      }
+      saved.quote.emailedVersion = q.deliveryVersion;
+      status.textContent =
+        data.recorded === false
+          ? 'Email accepted; saving its status failed. Check the provider log before retrying.'
+          : 'Both PDFs accepted by the email provider for ' + q.clientEmail + '.';
     } catch (e) {
-      notify(recordError(e, 'save this quotation'));
-    } finally {
-      savingQuote = false;
-      refreshOrder();
+      if (user === staffUser && target === state)
+        status.textContent = fileError(e, 'confirm email submission. Check the provider log before retrying');
     }
   }
 
@@ -923,12 +1122,12 @@
       path.style.fill = '#fff';
       path.style.fillOpacity = '1';
       const member = !state.newDesignSelection && active?.teeth.includes(id);
-      path.style.stroke = selected || member ? '#856826' : '#777872';
+      path.style.stroke = selected || member ? '#222222' : '#777777';
       path.style.strokeWidth = selected ? '3' : member ? '2.1' : '1.15';
       path.style.filter = '';
       const label = svgChart.querySelector(`[data-fdi-label="${id}"]`);
       if (label) {
-        label.setAttribute('fill', selected || member ? '#856826' : '#78766e');
+        label.setAttribute('fill', selected || member ? '#222222' : '#777777');
         label.style.display = state.isolateDesign && !state.showAllDesigns && !member ? 'none' : '';
       }
     });
@@ -937,10 +1136,11 @@
       ['draw', 'pave', 'laser', 'emboss'].includes(state.tool),
     );
     $('#chart-stage-inner').classList.toggle('interacting', state.tool !== 'select');
-    updateFinishSwatches();
-    $$('.material-chip').forEach((chip) =>
-      chip.classList.toggle('active', chip.dataset.material === selectedMaterial()),
-    );
+    $$('.material-chip').forEach((chip) => {
+      const selected = chip.dataset.material === selectedMaterial();
+      chip.classList.toggle('active', selected);
+      chip.setAttribute('aria-pressed', String(selected));
+    });
     const drawn = inkTeeth.size;
     $('#ink-count').textContent = drawn
       ? `${drawn} ${drawn === 1 ? 'tooth' : 'teeth'} with sketches`
@@ -1112,7 +1312,7 @@
           'font-size': 9,
           'text-anchor': 'middle',
           'font-family': 'monospace',
-          fill: '#78766e',
+          fill: '#777777',
           'pointer-events': 'none',
           'aria-hidden': 'true',
         }).forEach(([k, v]) => t.setAttribute(k, v));
@@ -1174,13 +1374,6 @@
   }
   function finishColor(material, plating) {
     return FINISH_DEFAULTS[material]?.[finishKey(plating)] || FINISH_DEFAULTS[material]?.none || '#aeb7bd';
-  }
-  function updateFinishSwatches() {
-    $$('.material-chip').forEach((chip) => {
-      const color = finishColor(chip.dataset.material, 'None');
-      chip.dataset.color = color;
-      chip.querySelector('.material-dot')?.style.setProperty('--mat-color', color);
-    });
   }
   function strokeMaterial(st) {
     return st.material || materialKeyForLayerTooth(st.designId, st.tooth) || selectedMaterial() || 'chrome';
@@ -1960,11 +2153,13 @@
           })
           .join('')
       : '<div class="print-notes"><p>No design groups have been assigned yet.</p></div>';
-    const signature = state.signature ? `<img src="${esc(state.signature)}" alt="Client signature">` : '';
+    const signature = state.signatureLines?.length
+      ? `<img src="${signatureImage()}" alt="Client signature">`
+      : '';
     const toothIds = [...new Set([...all, ...state.selectedTeeth])].sort((a, b) => a - b).join(', ') || '—';
     const depositPct =
       Number(state.price) > 0 ? Math.round((Number(state.deposit || 0) / Number(state.price)) * 100) : 0;
-    host.innerHTML = `<div class="print-header"><img class="print-logo" src="/logo/logo_black.png" alt="EGYGRILLZ"><div class="print-heading"><h2>CLIENT ORDER SHEET</h2><div><strong>${esc(state.orderNo)}</strong><br>${esc(state.status)} · ${esc(state.date || '')}</div></div></div><div class="print-meta"><div><span>Client</span><br><strong>${esc(state.clientName || '—')}</strong>${state.clientPhone ? `<br>${esc(state.clientPhone)}` : ''}</div><div><span>Delivery</span><br><strong>${esc(state.deliveryDate || 'To confirm')}</strong></div><div><span>Teeth · FDI</span><br><strong>${esc(toothIds)}</strong></div><div><span>Reference</span><br><strong>${esc(state.reference || '—')}</strong></div></div>${designMaps}<h3 class="print-section-title">Design specification</h3>${groupHtml}<div class="print-notes"><h3 class="print-section-title" style="margin:0">Notes &amp; special requests</h3><p>${esc(state.notes || '—')}</p><p><strong>Production:</strong> ${esc(productionNotes())}</p>${state.services.length ? `<p><strong>Services:</strong> ${state.services.map((x) => `${esc(x.name)} ×${Number(x.qty) || 1} · ${formatMoney(CalcEngine.calculateService(x).subtotal)}`).join(' · ')}</p>` : ''}<p><strong>Payment:</strong> ${esc(state.paymentMethod)} · Deposit ${esc(Number(state.deposit || 0).toLocaleString('en-US'))} EGP</p></div><div class="print-price"><span>${state.priceMode === 'manual' ? 'Agreed price' : 'Estimated price'} · ${depositPct}% deposit due</span><strong>${esc(formatMoney(state.price))}</strong></div><section class="print-material-rollup"><strong>Materials &amp; finishes used</strong><div class="rollup-row">${materialPics}${platingPics}${levelPics}${gemPics || '<span class="rollup-empty">No placed diamonds</span>'}</div></section><div class="print-signatures"><div class="signature-line">${signature}<span>Client approval</span></div></div><div class="print-legal">${state.agreement ? 'DESIGN SPECIFICATIONS REVIEWED BY CLIENT.' : 'CLIENT REVIEW PENDING.'}</div>`;
+    host.innerHTML = `<div class="print-header"><img class="print-logo" src="/logo/logo_black.png" alt="EGYGRILLZ"><div class="print-heading"><h2>CLIENT ORDER SHEET</h2><div><strong>${esc(state.orderNo)}</strong><br>${esc(state.status)} · ${esc(state.date || '')}</div></div></div><div class="print-meta"><div><span>Client</span><br><strong>${esc(state.clientName || '—')}</strong>${state.clientPhone ? `<br>${esc(state.clientPhone)}` : ''}</div><div><span>Delivery</span><br><strong>${esc(state.deliveryDate || 'To confirm')}</strong></div><div><span>Teeth · FDI</span><br><strong>${esc(toothIds)}</strong></div><div><span>Reference</span><br><strong>${esc(state.reference || '—')}</strong></div></div>${designMaps}<h3 class="print-section-title">Design specification</h3>${groupHtml}<div class="print-notes"><h3 class="print-section-title" style="margin:0">Notes &amp; special requests</h3><p>${esc(state.notes || '—')}</p><p><strong>Production:</strong> ${esc(productionNotes())}</p>${state.services.length ? `<p><strong>Services:</strong> ${state.services.map((x, i) => `${esc(x.name)} ×${Number(x.qty) || 1} · ${formatMoney(currentOrder?.services[i]?.subtotal ?? CalcEngine.calculateService(OrderPricing.serviceSpec(x, CalcEngine)).subtotal)}`).join(' · ')}</p>` : ''}<p><strong>Payment:</strong> ${esc(state.paymentMethod)} · Deposit ${esc(Number(state.deposit || 0).toLocaleString('en-US'))} EGP due · Paid ${esc(formatMoney(CalcEngine.paymentSummary(saved?.quote).paid))} · Outstanding ${esc(formatMoney(Math.max(0, Number(state.price) - CalcEngine.paymentSummary(saved?.quote).paid)))}</p></div><div class="print-price"><span>${state.priceMode === 'manual' ? 'Agreed price' : 'Estimated price'} · ${depositPct}% deposit due</span><strong>${esc(formatMoney(state.price))}</strong></div><section class="print-material-rollup"><strong>Materials &amp; finishes used</strong><div class="rollup-row">${materialPics}${platingPics}${levelPics}${gemPics || '<span class="rollup-empty">No placed diamonds</span>'}</div></section><div class="print-signatures"><div class="signature-line">${signature}<span>Client approval</span></div></div><div class="print-legal">${state.agreement ? 'DESIGN SPECIFICATIONS REVIEWED BY CLIENT.' : 'CLIENT REVIEW PENDING.'}</div>`;
   }
   async function loadPricing(force = false) {
     const E = window.CalcEngine;
@@ -1988,17 +2183,13 @@
     }
   }
   function renderOrderOptions() {
-    const cfg = CalcEngine.get();
-    for (const [id, key, table, labels] of [
-      ['#order-timeline', 'timeline', 'timelinePct', 'timeline'],
-      ['#order-mold', 'mold', 'moldFlat', 'mold'],
-    ]) {
-      const el = $(id);
-      el.replaceChildren(
-        ...Object.keys(cfg[table]).map((k) => new Option(CalcEngine.LABELS[labels][k] || k, k)),
-      );
-      el.value = state[key];
-    }
+    const el = $('#order-timeline');
+    el.replaceChildren(
+      ...Object.keys(CalcEngine.get().timelinePct).map(
+        (k) => new Option(CalcEngine.LABELS.timeline[k] || k, k),
+      ),
+    );
+    el.value = state.timeline;
     renderServiceCatalog();
   }
   function setupChartEvents() {
@@ -2069,7 +2260,6 @@
     });
     $('#edit-palette').onclick = chooseEnamel;
     renderGemOptions();
-    updateFinishSwatches();
     setTool(state.tool || 'select');
     $('#save-current-design').addEventListener('click', saveCurrentDesignTemplate);
     $('#load-saved-design').addEventListener('click', loadSelectedDesignTemplate);
@@ -2603,9 +2793,13 @@
       ? 'Studio permission denied. Check the signed-in EditX account and published Firestore rules.'
       : `Could not ${action}. Check your connection and retry.`;
   const signInHint =
-    'Sign in to <a href="/editx.html" target="_blank" rel="noopener">EditX ↗</a> to use studio records, or enter details manually.';
+    'Sign in to <a href="/editx.html" target="_blank" rel="noopener">EditX</a> to use studio records, or enter details manually.';
   let directoryVersion = 0;
   function useClient(c) {
+    if (saved?.quote && (state.clientId !== (c.id || '') || state.clientName !== (c.name || ''))) {
+      notify('Start a new order for a different client.');
+      return;
+    }
     if (
       state.clientName &&
       state.clientName !== c.name &&
@@ -2621,8 +2815,7 @@
     state.appointmentDate = c.appointmentDate || '';
     state.appointmentTime = c.appointmentTime || '';
     if (changed) {
-      state.quoteId = '';
-      state.signature = '';
+      state.signatureLines = [];
       state.agreement = false;
     } // never transfer a different client's approval
     syncInputs();
@@ -2697,9 +2890,14 @@
       if (connecting) return;
       connecting = true;
       try {
-        records = await import('/assets/order-records.js?v=1');
+        records = await import('/assets/order-records.js?v=2');
         records.watchUser(async (user) => {
+          if (staffUser && staffUser.uid !== user?.uid) resetSheet();
           staffUser = user;
+          legacyFiles = [];
+          $('#legacy-files').hidden = true;
+          $('#legacy-files').open = false;
+          $('#legacy-picker').replaceChildren();
           appointmentClients = [];
           savedDesignDocs.clear();
           $('#client-results').replaceChildren();
@@ -2707,6 +2905,25 @@
           refreshOrder();
           refreshDirectory();
           loadSavedDesignTemplates();
+          populateDrafts();
+          initialPrices.then(() => {
+            if (user !== staffUser) return;
+            if (stopPrices) stopPrices();
+            stopPrices = records.watchPrices(applyLivePrices, () => {
+              if (pricingSource === 'firestore') {
+                pricingSource = 'stale-cache';
+                refreshOrder();
+              }
+            });
+          });
+          const sheetId = new URLSearchParams(location.search).get('sheet');
+          if (sheetId && !saved && /^EGZ-\d{6}-[A-F\d]{12}$/i.test(sheetId)) {
+            // Direct Telegram links use the same sign-in, without putting a token in the URL.
+            try {
+              const granted = await records.signInToStudio();
+              if (staffUser === user && user?.uid === granted.uid) await loadDraft(sheetId);
+            } catch (e) { notify(recordError(e, 'open the studio order')); }
+          }
           if (user && new URLSearchParams(location.search).get('from') === 'editx') {
             try {
               const id = sessionStorage.getItem('egygz_order_client');
@@ -2739,31 +2956,47 @@
     renderServiceRows();
     renderProductionChecklist();
   }
-  function syncSignature(force = false) {
-    const canvas = $('#signature-pad');
-    if (!canvas) return;
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(300, Math.floor(rect.width * ratio)),
-      h = Math.max(100, Math.floor(rect.height * ratio));
-    const resized = canvas.width !== w || canvas.height !== h;
-    if (resized) {
-      canvas.width = w;
-      canvas.height = h;
-    }
-    if (resized || force) {
-      const ctx = canvas.getContext('2d');
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      ctx.clearRect(0, 0, rect.width, rect.height);
-      if (state.signature) {
-        const src = state.signature,
-          img = new Image();
-        img.onload = () => {
-          if (state.signature === src) ctx.drawImage(img, 0, 0, rect.width, rect.height);
-        };
-        img.src = src;
+  // Normalised pen coordinates survive a change of screen size. Rasterise only
+  // when the user previews/prints/emails; no signature PNG goes into storage.
+  function drawSignature(c) {
+    const ctx = c.getContext('2d'),
+      w = c.width,
+      h = c.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = '#161616';
+    ctx.lineWidth = Math.max(1, h / 62);
+    ctx.lineCap = ctx.lineJoin = 'round';
+    for (const line of state.signatureLines || []) {
+      ctx.beginPath();
+      for (let i = 0; i < line.length; i += 2) {
+        const x = (line[i] * w) / 10000,
+          y = (line[i + 1] * h) / 10000;
+        if (i) ctx.lineTo(x, y);
+        else ctx.moveTo(x, y);
       }
+      ctx.stroke();
     }
+  }
+  function syncSignature(force = false) {
+    const c = $('#signature-pad'),
+      r = c.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const scale = Math.min(2, window.devicePixelRatio || 1),
+      w = Math.round(r.width * scale),
+      h = Math.round(r.height * scale);
+    if (c.width !== w || c.height !== h) {
+      c.width = w;
+      c.height = h;
+      force = true;
+    }
+    if (force) drawSignature(c);
+  }
+  function signatureImage() {
+    const c = document.createElement('canvas');
+    c.width = 720;
+    c.height = 180;
+    drawSignature(c);
+    return c.toDataURL('image/png');
   }
   async function loadSavedDesignTemplates() {
     const select = $('#saved-design-templates'),
@@ -2785,7 +3018,10 @@
       select.innerHTML =
         '<option value="">Choose a saved design</option>' +
         [...savedDesignDocs.entries()]
-          .map(([id, d]) => `<option value="${esc(id)}">${esc(d.name || 'Unnamed design')}</option>`)
+          .map(
+            ([id, d]) =>
+              `<option value="${esc(id)}">${esc(d.label || (d.name || 'Design') + ' · ' + id.slice(0, 8))}</option>`,
+          )
           .join('');
       if (savedDesignDocs.has(current)) select.value = current;
       if (status)
@@ -2816,6 +3052,7 @@
         name: String(layer.name || 'Design')
           .trim()
           .slice(0, 60),
+        label: `${layer.name || state.date} · ${state.orderNo} · ${crypto.randomUUID().slice(0, 8)}`,
         teeth: (layer.teeth || []).map(Number),
         materials: layer.materials || {},
         mode: layer.mode,
@@ -2914,51 +3151,194 @@
       notify('Could not load the saved design');
     }
   }
-  function saveDraft(show = true) {
+  let sheetCursor = null,
+    listVersion = 0;
+  async function populateDrafts(append = false) {
+    const select = $('#saved-drafts'),
+      user = staffUser,
+      version = ++listVersion;
+    if (!append) {
+      sheetCursor = null;
+      select.replaceChildren(
+        new Option(user ? 'Choose a studio order' : 'Sign in to open studio orders', ''),
+      );
+    }
+    if (!records || !user) return;
     try {
-      const drafts = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]');
-      if (!state.id) state.id = crypto.randomUUID();
-      const entry = {
-        id: state.id,
-        label: `${state.clientName || 'New client'} · ${state.orderNo}`,
-        updatedAt: new Date().toISOString(),
-        state,
-      };
-      const index = drafts.findIndex((d) => d.id === state.id);
-      if (index >= 0) drafts[index] = entry;
-      else drafts.unshift(entry);
-      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts.slice(0, 40)));
-      populateDrafts();
-      persist();
-      if (show) notify('Draft saved on this device');
-      return true;
+      const { rows, more } = await records.sheets(append ? sheetCursor : null);
+      if (user !== staffUser || version !== listVersion) return;
+      select.querySelector('[value=":more"]')?.remove();
+      const ids = new Set(Array.from(select.options, (x) => x.value));
+      for (const r of rows) if (!ids.has(r.id)) select.add(new Option(r.label || r.id, r.id));
+      sheetCursor = more;
+      if (more) select.add(new Option('Load earlier orders…', ':more'));
+      select.value = saved ? state.orderNo : '';
+      offerLegacyFiles();
     } catch (e) {
-      notify('Could not save draft — browser storage may be full');
-      return false;
+      if (user === staffUser && version === listVersion) {
+        $('#save-status').textContent = recordError(e, 'list saved orders');
+        select.value = '';
+      }
     }
   }
-  function populateDrafts() {
-    try {
-      const drafts = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]');
-      const select = $('#saved-drafts');
-      select.innerHTML =
-        '<option value="">Saved sheets</option>' +
-        drafts.map((d) => `<option value="${esc(d.id)}">${esc(d.label)}</option>`).join('');
-    } catch (e) {}
+  function resetSheet() {
+    state = blankState();
+    saved = null;
+    lockedTerms = '';
+    repriceRequested = false;
+    pendingReceipt = null;
+    printDesignMapHtml = '';
+    $('#print-sheet').replaceChildren();
+    for (const id of ['mail-status', 'receipt-status', 'receipt-amount', 'client-search']) {
+      const e = $('#' + id);
+      if (e.tagName === 'INPUT') e.value = '';
+      else e.textContent = '';
+    }
+    $('#saved-drafts').value = '';
+    history.replaceState(null, '', location.pathname);
+    normalizeDesignState();
+    fileBase();
+    syncInputs();
+    renderAll();
+    showStep('client', false);
   }
-  function loadDraft(id) {
+  async function loadDraft(id) {
+    if (!staffUser || busy) return;
+    if (dirty && !confirm('Discard unsaved changes and open this saved order?')) {
+      $('#saved-drafts').value = saved ? state.orderNo : '';
+      return;
+    }
+    return deskAction(() => restoreFile(id));
+  }
+  async function restoreFile(id) {
+    const user = staffUser,
+      file = await records.openSheet(id);
+    if (user !== staffUser) return;
+    const fields = OrderFile.unpack(file.sheetJson);
+    resetSheet();
+    state = Object.assign(blankState(), fields, { orderNo: id });
+    normalizeDesignState();
+    saved = { revision: file.revision, quote: file.quote };
+    lockedTerms = file.locked && file.quote ? OrderFile.termsKey(state) : '';
+    fileBase();
+    syncInputs();
+    renderAll();
+    showStep(steps.includes(file.step) ? file.step : 'review', false);
+    $('#saved-drafts').value = id;
+    history.replaceState(null, '', location.pathname + '?sheet=' + encodeURIComponent(id));
+    notify('Studio order opened');
+  }
+  // Read-only bridge for people with v1 files. Never automatically upload/delete
+  // an old consultation. No device write, raster signature or old payment claim.
+  const oldActive = 'egygz_order_sheet_active_v1',
+    oldDrafts = 'egygz_order_sheet_drafts_v1';
+  let legacyFiles = [];
+  function offerLegacyFiles() {
     try {
-      const d = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]').find((x) => x.id === id);
-      if (!d) return;
-      state = Object.assign(blankState(), d.state);
+      $('#legacy-files').hidden =
+        !staffUser || !(localStorage.getItem(oldActive) || localStorage.getItem(oldDrafts));
+    } catch {
+      $('#legacy-files').hidden = true;
+    }
+  }
+  $('#legacy-files').ontoggle = () => {
+    const el = $('#legacy-files'),
+      picker = $('#legacy-picker');
+    legacyFiles = [];
+    picker.replaceChildren();
+    if (el.hidden || !el.open || !staffUser) return;
+    try {
+      const drafts = JSON.parse(localStorage.getItem(oldDrafts) || '[]');
+      const candidates = [
+        JSON.parse(localStorage.getItem(oldActive) || 'null'),
+        ...drafts.map((d) => d.state),
+      ];
+      const seen = new Set();
+      for (const file of candidates) {
+        if (
+          !file?.orderNo ||
+          seen.has(file.orderNo) ||
+          !(
+            file.clientName ||
+            file.groups?.length ||
+            file.services?.length ||
+            file.ink?.length ||
+            file.notes ||
+            file.clientPhone
+          )
+        )
+          continue;
+        seen.add(file.orderNo);
+        picker.add(new Option(OrderFile.label(file), String(legacyFiles.length)));
+        legacyFiles.push(file);
+      }
+      $('#legacy-open').disabled = !legacyFiles.length;
+      if (!legacyFiles.length) picker.add(new Option('No earlier sheets found', ''));
+    } catch {
+      picker.add(new Option('Could not read earlier sheets', ''));
+      $('#legacy-open').disabled = true;
+    }
+  };
+  $('#legacy-open').onclick = () =>
+    deskAction(async () => {
+      requireDesk();
+      const old = legacyFiles[Number($('#legacy-picker').value)],
+        user = staffUser;
+      if (!old) return;
+      const note = old.quoteId ? ' Its earlier quotation remains separate in Quotes.' : '';
+      if (
+        !confirm(
+          'Open this older draft as an editable studio order? The old image signature will not transfer. Review current prices and sign again before saving.' +
+            note +
+            (dirty ? ' Unsaved changes here will be discarded.' : ''),
+        )
+      )
+        return;
+      const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(old.orderNo)));
+      const tag = Array.from(new Uint8Array(hash).slice(0, 6), (b) => b.toString(16).padStart(2, '0'))
+        .join('')
+        .toUpperCase();
+      const day = String(old.orderNo).match(/^EGZ-(\d{6})-/)?.[1] || today().replaceAll('-', '').slice(2),
+        id = `EGZ-${day}-${tag}`;
+      const exists = await records.hasSheet(id);
+      if (user !== staffUser) return;
+      if (exists) {
+        await restoreFile(id);
+        return;
+      }
+      resetSheet();
+      state = Object.assign(blankState(), OrderFile.unpack(OrderFile.pack(old)), {
+        orderNo: id,
+        signatureLines: [],
+        agreement: false,
+      });
+      if (state.mold && state.mold !== 'none') {
+        const type = 'mold:' + state.mold;
+        state.services.push({
+          id: crypto.randomUUID(),
+          type,
+          qty: 1,
+          name: OrderPricing.serviceCatalog(CalcEngine)[type]?.name || 'Mold',
+        });
+        state.mold = 'none';
+      }
       normalizeDesignState();
       syncInputs();
       renderAll();
-      showStep(steps.includes(state.step) ? state.step : 'client');
-      notify('Saved sheet opened');
-    } catch (e) {
-      notify('Could not open this sheet');
-    }
+      showStep('client', false);
+      notify('Earlier draft opened. Review and save to the studio.');
+    });
+  function applyLivePrices(pricing, site) {
+    CalcEngine.reset();
+    CalcEngine.set(pricing || {});
+    SiteConfig.data = { ...SiteConfig.DEFAULTS, ...site };
+    SiteConfig.source = site ? 'firestore' : 'defaults';
+    CalcEngine.syncServiceDefaults(SiteConfig.data);
+    const gold = window.MetalRates?.goldEgpPerGram24();
+    if (gold > 0) CalcEngine.set({ goldPrice: gold });
+    pricingSource = pricing ? 'firestore' : 'defaults';
+    renderOrderOptions();
+    renderAll();
   }
   function syncLayerTeeth(layer) {
     const groups = state.groups.filter((g) => g.layerId === layer.id);
@@ -3008,11 +3388,10 @@
       setDesignMode(el.value);
       return;
     }
-    if (['clientName', 'clientPhone', 'clientEmail'].includes(key) && el.value !== state[key]) {
-      state.quoteId = '';
+    if (['clientName', 'clientPhone'].includes(key) && el.value !== state[key]) {
       state.clientId = '';
       state.agreement = false;
-      state.signature = '';
+      state.signatureLines = [];
       $('#agreement').checked = false;
       syncSignature(true);
     }
@@ -3110,41 +3489,37 @@
     renderAll();
   });
   $('#saved-drafts').addEventListener('change', (e) => {
-    if (e.target.value) loadDraft(e.target.value);
+    if (e.target.value === ':more') populateDrafts(true);
+    else if (e.target.value) loadDraft(e.target.value);
   });
-  $('#save-draft').addEventListener('click', () => saveDraft(true));
-  $('#new-sheet').addEventListener('click', () => {
-    if (
-      state.clientName ||
-      state.services.length ||
-      state.groups.length ||
-      state.notes ||
-      state.selectedTeeth.length ||
-      state.ink.length ||
-      state.signature
-    ) {
-      if (!confirm('Save this sheet as a local draft and start a new one?') || !saveDraft(false)) return;
-    }
-    state = blankState();
-    normalizeDesignState();
-    syncInputs();
-    renderAll();
-    persist();
-    showStep('client');
+  $('#save-draft').onclick = () => deskAction(() => saveFile(false));
+  $('#new-sheet').onclick = () => {
+    if (busy || (dirty && !confirm('Discard unsaved changes and start a new order?'))) return;
+    resetSheet();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  };
   let printPrepared = false;
-  $('#print-sheet-btn').addEventListener('click', async () => {
-    renderPrint(true);
-    printPrepared = true;
-    try {
-      await Promise.allSettled([...$('#print-sheet').querySelectorAll('img')].map((img) => img.decode()));
-      window.print();
-    } finally {
-      printPrepared = false;
-    }
-  });
-  $('#create-proforma-btn').addEventListener('click', sendProforma);
+  const deskTitle = document.title;
+  $('#print-sheet-btn').onclick = () =>
+    deskAction(async () => {
+      if (!(await saveFile(true))) return;
+      renderPrint(true);
+      printPrepared = true;
+      try {
+        await Promise.allSettled([...$('#print-sheet').querySelectorAll('img')].map((img) => img.decode()));
+        window.print();
+      } finally {
+        printPrepared = false;
+      }
+    });
+  $('#create-proforma-btn').onclick = () =>
+    deskAction(async () => {
+      const q = await saveFile(true);
+      if (q) {
+        busy = false;
+        location.assign('/invoice.html?quote=' + encodeURIComponent(q.id));
+      }
+    });
   $('#add-order-service').addEventListener('click', addOrderService);
   $('#order-service-type').addEventListener('change', () => {
     $('#custom-service-label').hidden = $('#order-service-name').hidden =
@@ -3175,51 +3550,44 @@
     }),
   );
   $('#clear-signature').addEventListener('click', () => {
-    state.signature = '';
-    signatureDirty = true;
+    state.signatureLines = [];
     syncSignature(true);
     persist();
     renderPrint();
   });
-  $('#signature-pad').addEventListener('pointerdown', (e) => {
-    const canvas = e.currentTarget,
-      rect = canvas.getBoundingClientRect(),
-      ctx = canvas.getContext('2d');
-    canvas.setPointerCapture(e.pointerId);
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#161616';
-    signatureDirty = true;
-  });
-  $('#signature-pad').addEventListener('pointermove', (e) => {
-    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-    const rect = e.currentTarget.getBoundingClientRect(),
-      ctx = e.currentTarget.getContext('2d');
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.stroke();
-  });
-  $('#signature-pad').addEventListener('pointerup', (e) => {
-    const canvas = e.currentTarget;
-    if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
-    if (signatureDirty) {
-      state.signature = canvas.toDataURL('image/png');
-      persist();
-      renderPrint();
-      signatureDirty = false;
-    }
-  });
-  $('#signature-pad').addEventListener('pointercancel', () => {
-    const canvas = $('#signature-pad');
-    state.signature = canvas.toDataURL('image/png');
+  const pad = $('#signature-pad');
+  let signing = null;
+  const signaturePoint = (e) => {
+    const r = pad.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height].map((v) =>
+      Math.round(Math.max(0, Math.min(1, v)) * 10000),
+    );
+  };
+  pad.onpointerdown = (e) => {
+    if (signing !== null) return;
+    e.preventDefault();
+    signing = e.pointerId;
+    pad.setPointerCapture(signing);
+    state.signatureLines.push(signaturePoint(e));
+  };
+  pad.onpointermove = (e) => {
+    if (e.pointerId !== signing) return;
+    state.signatureLines.at(-1).push(...signaturePoint(e));
+    drawSignature(pad);
+  };
+  pad.onpointerup = pad.onpointercancel = (e) => {
+    if (e.pointerId !== signing) return;
+    signing = null;
+    if (pad.hasPointerCapture(e.pointerId)) pad.releasePointerCapture(e.pointerId);
     persist();
     renderPrint();
-    signatureDirty = false;
-  });
+  };
   window.addEventListener('resize', () => syncSignature(true));
+  window.addEventListener('afterprint', () => {
+    document.title = deskTitle;
+  });
   window.addEventListener('beforeprint', () => {
+    document.title = CalcEngine.documentFilename('Order', state).replace(/\.pdf$/i, '');
     if (!printPrepared) renderPrint(true);
   });
 
@@ -3236,7 +3604,7 @@
     });
     $('#step-back').hidden = i === 0;
     $('#step-next').hidden = i === 3;
-    $('#step-next').textContent = `Continue to ${steps[i + 1] || ''} →`;
+    $('#step-next').textContent = `Continue to ${steps[i + 1] || ''}`;
     $('#step-position').textContent = `Step ${i + 1} of 4`;
     $('#print-sheet').hidden = true;
     $('#preview-sheet').setAttribute('aria-expanded', 'false');
@@ -3263,11 +3631,37 @@
       sheet.scrollIntoView({ behavior: 'smooth' });
     }
   });
-  $('#quote-pdf-btn').addEventListener('click', () => {
-    const q = issuedQuote();
-    if (q) CalcEngine.downloadQuotePdf(q.order, q);
-  });
-  $('#save-quote-btn').addEventListener('click', saveStudioQuote);
+  $('#quote-pdf-btn').onclick = () =>
+    deskAction(async () => {
+      const q = await saveFile(true);
+      if (q) CalcEngine.downloadQuotePdf(q.order, { ...q, date: q.issuedAt });
+    });
+  $('#save-quote-btn').onclick = () => deskAction(() => saveFile(true));
+  $('#order-pdf-btn').onclick = () =>
+    deskAction(async () => {
+      const q = await saveFile(true);
+      if (q) {
+        const { download, blob } = await productionDocument(q);
+        download(blob, CalcEngine.documentFilename('Order', q));
+      }
+    });
+  $('#email-order').onclick = () => deskAction(emailDocuments);
+  $('#payment-form').onsubmit = (e) => {
+    e.preventDefault();
+    deskAction(recordPayment);
+  };
+  $('#reprice').onclick = () => {
+    if (
+      !confirm(
+        'Recalculate this order at the current EditX rates? The saved quotation changes only when you save.',
+      )
+    )
+      return;
+    lockedTerms = '';
+    repriceRequested = true;
+    refreshOrder();
+    persist();
+  };
   $('#price-mode').addEventListener('click', () => {
     state.priceMode = state.priceMode === 'auto' ? 'manual' : 'auto';
     refreshOrder();
@@ -3282,13 +3676,14 @@
     persist();
   });
   $('#refresh-pricing').addEventListener('click', () => loadPricing(true));
+  fileBase();
   renderOrderOptions();
   syncInputs();
   populateDrafts();
   renderAll();
   showStep(steps.includes(state.step) ? state.step : 'client', false);
   loadChart();
-  loadPricing();
+  const initialPrices = loadPricing(true);
   setupAppointments();
   if (window.MetalRates) {
     MetalRates.attach(CalcEngine);
