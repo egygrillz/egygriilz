@@ -1,25 +1,17 @@
 import test from 'node:test';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import worker from '../cloudflare-worker.js';
 import '../assets/order-pricing.js';
 import '../assets/order-file.js';
 import '../assets/order-design.js';
+import '../assets/order-email.js';
 const E = globalThis.CalcEngine,
   id = 'EGZ-261127-ABCDEF012345',
   version = 'a9679897-9035-4e05-9b09-5df477ed3b0c',
   url = `https://worker.test/api/orders/${id}/email?version=${version}`;
-const val = (x) =>
-  x == null
-    ? { nullValue: null }
-    : Array.isArray(x)
-      ? { arrayValue: { values: x.map(val) } }
-      : typeof x === 'object'
-        ? { mapValue: { fields: Object.fromEntries(Object.entries(x).map(([k, v]) => [k, val(v)])) } }
-        : typeof x === 'number'
-          ? { doubleValue: x }
-          : typeof x === 'boolean'
-            ? { booleanValue: x }
-            : { stringValue: x };
 const order = E.calculateOrder([], { services: [{ type: 'custom', name: 'Mold', unitPrice: 800 }] }),
   q = {
     sheetId: id,
@@ -33,97 +25,83 @@ const order = E.calculateOrder([], { services: [{ type: 'custom', name: 'Mold', 
     status: 'draft',
     payments: [{ amount: 130 }],
   };
-const sheet = '%PDF-1.4\norder bytes\n%%EOF';
-function fixture(opts = {}) {
-  const calls = [];
-  let receipt;
+test('client draft links encode one recipient and a personal message, never private links, notes or a submission', () => {
+  const to = 'desk+fitting@example.test',
+    name = 'Nour & ليلى';
+  const links = OrderEmail.compose({
+    ...q,
+    clientEmail: to,
+    clientName: name,
+    notes: 'PRIVATE-NOTES',
+    token: 'PRIVATE-TOKEN',
+  });
+  const g = new URL(links.gmail),
+    m = new URL(links.mailto);
+  assert.equal(g.origin + g.pathname, 'https://mail.google.com/mail/');
+  assert.deepEqual([...g.searchParams.keys()].sort(), ['body', 'fs', 'su', 'tf', 'to', 'view']);
+  assert.equal(g.searchParams.get('view'), 'cm');
+  assert.equal(g.searchParams.get('to'), to);
+  assert.match(g.searchParams.get('su'), new RegExp(id));
+  assert.ok(g.searchParams.get('body').includes('Hello ' + name));
+  assert.ok(g.searchParams.get('body').includes(id));
+  assert.equal(m.protocol, 'mailto:');
+  assert.equal(decodeURIComponent(m.pathname), to);
+  assert.equal(m.searchParams.get('subject'), g.searchParams.get('su'));
+  assert.equal(m.searchParams.get('body').replaceAll('\r\n', '\n'), g.searchParams.get('body'));
+  assert.doesNotMatch(decodeURIComponent(links.gmail), /order-sheet|editx|sheet=|PRIVATE-|file:|data:/i);
+  for (const bad of [
+    '',
+    'one@test',
+    'one@test.com,two@test.com',
+    'one@test.com\nBcc:b@test.com',
+    'a'.repeat(250) + '@a.test',
+  ]) {
+    assert.equal(OrderEmail.validRecipient(bad), false);
+    assert.throws(() => OrderEmail.compose({ ...q, clientEmail: bad }));
+  }
+});
+test('retired order email endpoint performs no external fetch, even with old bindings and a signed-in caller', async () => {
+  let calls = 0;
   const env = {
-    STAFF_EMAIL: 'not-used',
-    STAFF_PASSWORD: 'not-used',
     RESEND_KEY: 'fixture',
     RESEND_FROM: 'studio@example.test',
-    fetchImpl: async (url, init) => {
-      calls.push([url, init]);
-      if (url.startsWith('https://firestore.googleapis.com/')) {
-        assert.equal(init.headers.Authorization, 'Bearer fake');
-        assert.ok(url.includes(`/quotes/${id}`));
-        if (init.method === 'PATCH') {
-          receipt = JSON.parse(init.body);
-          assert.ok(url.includes('currentDocument.updateTime='));
-          return Response.json({}, { status: opts.patch || 200 });
-        }
-        return Response.json(
-          { fields: val({ ...q, ...opts.q }).mapValue.fields, updateTime: '2026-11-27T12:00:00Z' },
-          { status: opts.db || 200 },
-        );
-      }
-      assert.equal(url, 'https://api.resend.com/emails');
-      return Response.json({ id: 'test-message' }, { status: opts.mail || 200 });
+    fetchImpl: () => {
+      calls++;
+      throw Error('Unexpected fetch');
     },
   };
-  async function send(extra = {}, body = sheet) {
-    const req = new Request(url, {
-      method: 'POST',
-      body,
-      headers: { Authorization: 'Bearer fake', 'Content-Type': 'application/pdf', ...extra },
-    });
-    return worker.fetch(req, env);
+  for (const headers of [{}, { Authorization: 'Bearer fixture', 'Content-Type': 'application/pdf' }]) {
+    const res = await worker.fetch(
+      new Request(url, { method: 'POST', headers, body: '%PDF-1.4\n%%EOF' }),
+      env,
+    );
+    assert.equal(res.status, 410);
+    assert.deepEqual(await res.json(), { ok: false, error: 'manual-draft-only' });
   }
-  return { env, calls, send, receipt: () => receipt };
-}
-test('only the signed-in caller can email a saved current order; no service-account fallback', async () => {
-  const a = fixture();
-  assert.equal((await worker.fetch(new Request(url), a.env)).status, 405);
-  assert.equal((await a.send({ Authorization: '' })).status, 401);
-  assert.equal((await a.send({ Origin: 'https://bad.invalid' })).status, 403);
-  assert.equal(a.calls.length, 0);
-  for (const [opts, code] of [
-    [{ db: 403 }, 403],
-    [{ q: { deliveryVersion: 'new' } }, 409],
-    [{ q: { sheetId: 'other' } }, 409],
-    [{ q: { clientEmail: 'first@test.com, second@test.com' } }, 422],
-  ]) {
-    const f = fixture(opts);
-    assert.equal((await f.send()).status, code);
-    assert.equal(f.calls.length, 1);
+  assert.equal(calls, 0);
+});
+test('the committed Dashboard file is the reproducible builder output and runs without any sibling modules', async () => {
+  const path = new URL('../worker.js', import.meta.url),
+    bytes = readFileSync(path);
+  const built = execFileSync(process.execPath, [
+    fileURLToPath(new URL('../scripts/build-worker.mjs', import.meta.url)),
+  ]);
+  assert.ok(bytes.equals(built), 'Refresh with node scripts/build-worker.mjs > worker.js');
+  // Relative imports cannot resolve from a data: URL. Start the module the way
+  // Dashboard does, as one file, and exercise the embedded pricing engine too.
+  delete globalThis.CalcEngine;
+  try {
+    const { default: dashboard } = await import('data:text/javascript;base64,' + bytes.toString('base64'));
+    assert.equal(typeof dashboard.scheduled, 'function');
+    const health = await (await dashboard.fetch(new Request('https://worker.test/api/health'), {})).json();
+    assert.equal(health.orderEmailMode, 'manual-draft');
+    assert.equal(health.endpoints.order_email, undefined);
+    assert.equal((await dashboard.fetch(new Request(url, { method: 'POST' }), {})).status, 410);
+    assert.deepEqual(globalThis.CalcEngine.buildQuotePdfBytes(order, q), E.buildQuotePdfBytes(order, q));
+    assert.notEqual(globalThis.CalcEngine, E);
+  } finally {
+    globalThis.CalcEngine = E;
   }
-});
-test('missing sender, invalid or oversized attachments, and provider failure never mark emailed', async () => {
-  const f = fixture();
-  delete f.env.RESEND_FROM;
-  assert.equal((await f.send()).status, 503);
-  const bad = fixture();
-  assert.equal((await bad.send({}, 'not a PDF')).status, 400);
-  assert.equal((await bad.send({ 'Content-Length': String(7 * 1024 * 1024) })).status, 413);
-  assert.equal(bad.calls.length, 2);
-  const unavailable = fixture({ mail: 422 });
-  assert.equal((await unavailable.send()).status, 502);
-  assert.equal(unavailable.receipt(), undefined);
-});
-test('email has the real order attachment and immutable saved quotation; duplicate and unrecorded outcomes', async () => {
-  const f = fixture();
-  assert.equal((await f.send()).status, 200);
-  assert.equal(f.calls.length, 3);
-  const init = f.calls[1][1],
-    msg = JSON.parse(init.body);
-  assert.deepEqual(msg.to, [q.clientEmail]);
-  assert.equal(init.headers['Idempotency-Key'], `studio-order/${id}/${version}`);
-  const [production, quotation] = msg.attachments;
-  assert.equal(production.filename, E.documentFilename('Order', q));
-  assert.equal(Buffer.from(production.content, 'base64').toString(), sheet);
-  assert.equal(quotation.filename, E.quotePdfFilename(q));
-  assert.deepEqual(Buffer.from(quotation.content, 'base64'), Buffer.from(E.buildQuotePdfBytes(order, q)));
-  assert.match(
-    Buffer.from(quotation.content, 'base64').toString(),
-    /Amount received.*130 EGP.*Outstanding today.*670 EGP/s,
-  );
-  assert.deepEqual(f.receipt().fields.emailedVersion, { stringValue: version });
-  assert.ok(!JSON.stringify(f.receipt()).includes('attachment'));
-  const again = fixture({ q: { emailedVersion: version } });
-  assert.equal((await (await again.send()).json()).alreadySubmitted, true);
-  assert.equal(again.calls.length, 1);
-  const partial = fixture({ patch: 409 });
-  assert.deepEqual(await (await partial.send()).json(), { ok: true, recorded: false });
 });
 test('compact editable files omit raster/PDF data; same-client and nameless orders have distinct names', () => {
   const s = {

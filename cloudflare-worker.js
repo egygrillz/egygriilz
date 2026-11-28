@@ -1,7 +1,7 @@
 import './assets/calc-engine.js';
 
 /* ═══════════════════════════════════════════════════════════════════════════
- *  EGYGRILLZ — CLOUDFLARE WORKER  (module entry; see STUDIO-ORDERS.md for single-file paste)
+ *  EGYGRILLZ — CLOUDFLARE WORKER  (Wrangler entry; paste the root worker.js in the Dashboard)
  *  ---------------------------------------------------------------------------
  *  1. Telegram bot — schedule, clients, studio orders, receipts, invoices, quotation PDFs
  *  2. Instant alerts — new booking, new message
@@ -17,7 +17,6 @@ import './assets/calc-engine.js';
  *    TELEGRAM_WEBHOOK_SECRET required only for webhook mode
  *    CRON_SECRET         optional; required for operator-only HTTP calls
  *    PDF_KEY             optional
- *    RESEND_KEY / RESEND_FROM required only for sending both order PDFs by email
  *
  *  Check it works:  GET /api/telegram/check
  *  Cron Trigger:    * * * * *
@@ -1049,7 +1048,7 @@ const HELP_TEXT = [
   '',
   'STUDIO ORDER SHEETS',
   '  /sheets                 recent saved files (drafts too)',
-  '  /sheet ref or name      order, amount due and PDF email status',
+  '  /sheet ref or name      order, amount due and a link to the desk',
   '  /receipts ref or name   recent payments for that order',
   '  /outstanding            page through order balances',
   '  /pdf EGZ-…              download the issued quotation here',
@@ -1158,7 +1157,7 @@ async function findQuote(arg, env, fetchImpl = fetch) {
 }
 
 // Telegram order desk: read headers and issued amounts, never artwork or
-// signatures. All writes (including receipts and emailing) stay in the studio.
+// signatures. All writes (including receipts) stay in the studio.
 const isSheetRef = (ref) => /^EGZ-\d{6}-[A-F\d]{12}$/i.test(ref);
 const shortText = (v) =>
   String(v ?? '')
@@ -1259,9 +1258,6 @@ async function sheetDetail(header, receiptsOnly, env, f) {
     'order.lineCount',
     'order.teethTotal',
     'order.services',
-    'deliveryVersion',
-    'emailedVersion',
-    'emailedAt',
   ];
   const r = await readBotDocument('quotes', header.id, env, f, receiptsOnly ? balanceFields : fields);
   if (!r.ok)
@@ -1290,14 +1286,8 @@ async function sheetDetail(header, receiptsOnly, env, f) {
   for (const p of recent)
     lines.push(`${shortText(p.at).slice(0, 10)} · ${shortText(p.method)} · ${num(p.amount)} EGP`);
   if (!receiptsOnly) {
-    const sent = q.emailedVersion && q.emailedVersion === q.deliveryVersion;
     lines.push(
-      'PDF email: ' +
-        (sent
-          ? 'accepted by provider (current version)'
-          : q.emailedAt
-            ? 'an earlier version was submitted'
-            : 'no submission recorded'),
+      'Email: open the sheet to prepare a draft. You press Send in your email app.',
       `Quotation PDF here: /pdf ${header.id}`,
     );
   }
@@ -2933,7 +2923,6 @@ async function clearWebhook(env, fetchImpl = fetch) {
  *   TELEGRAM   → free, unlimited, no per-message cost   (recommended primary)
  *   NTFY       → free, unlimited, open-source, or self-host later (backup)
  *   WHATSAPP   → Meta Cloud API, optional, 1 000 service msgs/month free
- *   EMAIL      → Resend / MailChannels free tier (optional)
  *
  * Endpoints
  *   POST /api/notify        public, Turnstile-protected, rate-limited
@@ -3194,11 +3183,7 @@ async function sendWhatsAppToClient(data, type, env, fetchImpl = fetch) {
   return { channel: 'wa-client', ok: r.ok, status: r.status, error: d?.error?.message };
 }
 
-/* ───────────────── Resend email (free 3 000/month) ─────────────────
- * wrangler secret put RESEND_KEY      (re_XXXXXXXX)
- * wrangler secret put RESEND_FROM     (alerts@egygrillz.com — domain must be verified)
- * wrangler secret put ALERT_EMAIL     (where YOU want the copy)
- * ───────────────────────────────────────────────────────────────── */
+// Optional studio alerts only (bookings, contact and mould kits). Never used for client order documents.
 async function sendEmail(subject, text, to, env, fetchImpl = fetch) {
   if (!env.RESEND_KEY || !to) return { channel: 'email', ok: false, skipped: true };
   const r = await fetchImpl('https://api.resend.com/emails', {
@@ -3214,119 +3199,6 @@ async function sendEmail(subject, text, to, env, fetchImpl = fetch) {
   let d = {};
   try { d = await r.json(); } catch { /* ignore */ }
   return { channel: 'email', ok: r.ok, status: r.status, error: d?.message };
-}
-
-/* Attachments exist only in memory. A private quotation read using the caller's
- * Firebase token authorizes the operation AND determines the recipient, amounts
- * and filenames. This is not a public relay; never fall back to the bot login. */
-const ORDER_PDF_LIMIT = 6 * 1024 * 1024;
-async function orderPdfBody(req) {
-  if (!req.body || Number(req.headers.get('Content-Length')) > ORDER_PDF_LIMIT) return null;
-  const reader = req.body.getReader(),
-    parts = [];
-  let length = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    length += value.length;
-    if (length > ORDER_PDF_LIMIT) {
-      await reader.cancel();
-      return null;
-    }
-    parts.push(value);
-  }
-  const bytes = new Uint8Array(length);
-  let off = 0;
-  for (const part of parts) {
-    bytes.set(part, off);
-    off += part.length;
-  }
-  return bytes;
-}
-function attachmentBase64(bytes) {
-  let s = '';
-  for (let i = 0; i < bytes.length; i += 16384) s += String.fromCharCode(...bytes.subarray(i, i + 16384));
-  return btoa(s);
-}
-async function emailOrderDocuments(req, env, id, version, origin) {
-  const reply = (status, error, more = {}) =>
-    json({ ok: !error, ...(error && { error }), ...more }, status, { origin });
-  if (req.method !== 'POST') return reply(405, 'use-post');
-  if (!originAllowed(origin, env)) return reply(403, 'bad-origin');
-  const caller = envAsCaller({}, req);
-  if (!caller.REQ_TOKEN) return reply(401, 'unauthorized');
-  if (
-    !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(version || '') ||
-    req.headers.get('Content-Type')?.split(';')[0] !== 'application/pdf'
-  )
-    return reply(400, 'invalid-document');
-  if (!env.RESEND_KEY || !env.RESEND_FROM) return reply(503, 'email-unconfigured');
-  const f = env.fetchImpl || fetch,
-    E = globalThis.CalcEngine;
-  const url = `${FS_BASE}/quotes/${encodeURIComponent(id)}`,
-    headers = { Authorization: 'Bearer ' + caller.REQ_TOKEN, 'Content-Type': 'application/json' };
-  try {
-    const access = new URLSearchParams();
-    if (env.FIREBASE_API_KEY) access.set('key', env.FIREBASE_API_KEY);
-    const r = await f(url + (access.size ? '?' + access : ''), { headers });
-    if (!r.ok) return reply([401, 403, 404].includes(r.status) ? r.status : 502, fsCause(r.status));
-    const doc = await r.json(),
-      q = E.decodeFirestoreValue({ mapValue: doc });
-    if (q.sheetId !== id || q.orderNo !== id || !E.savedQuoteOrder(q) || q.deliveryVersion !== version)
-      return reply(409, 'stale-order');
-    if (q.emailedVersion === version) return reply(200, null, { alreadySubmitted: true, recorded: true });
-    const to = String(q.clientEmail || '').trim();
-    if (to.length > 254 || !/^[^\s<>,;@]+@[^\s<>,;@]+\.[^\s<>,;@]+$/.test(to))
-      return reply(422, 'bad-recipient');
-    const production = await orderPdfBody(req);
-    if (!production) return reply(413, 'pdf-too-large');
-    const decoder = new TextDecoder();
-    if (
-      decoder.decode(production.subarray(0, 5)) !== '%PDF-' ||
-      !decoder.decode(production.slice(-100)).includes('%%EOF')
-    )
-      return reply(400, 'invalid-document');
-    const quotation = E.buildQuotePdfBytes(q.order, { ...q, date: q.issuedAt || q.createdAt });
-    const mail = await f('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + env.RESEND_KEY,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': `studio-order/${id}/${version}`,
-      },
-      body: JSON.stringify({
-        from: env.RESEND_FROM,
-        to: [to],
-        subject: `Your EGYGRILLZ order and quotation · ${id}`,
-        text: `Hello${q.clientName ? ' ' + q.clientName : ''},\n\nYour order sheet and quotation for ${id} are attached. If anything needs changing, reply to the studio.\n\nEGYGRILLZ`,
-        attachments: [
-          { filename: E.documentFilename('Order', q), content: attachmentBase64(production) },
-          { filename: E.quotePdfFilename(q), content: attachmentBase64(quotation) },
-        ],
-      }),
-    });
-    if (!mail.ok || !(await mail.json().catch(() => null))?.id) return reply(502, 'email-rejected');
-    // Provider acceptance is not proof of inbox delivery. Never mark a newer
-    // revision (or undo an intervening status/payment) after an in-flight send.
-    const receipt = {
-      emailedVersion: version,
-      emailedAt: new Date().toISOString(),
-      ...(q.status === 'draft' && { status: 'sent' }),
-    };
-    const params = new URLSearchParams(access);
-    for (const k of Object.keys(receipt)) params.append('updateMask.fieldPaths', k);
-    params.set('currentDocument.updateTime', doc.updateTime);
-    const ack = await f(`${url}?${params}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({
-        fields: Object.fromEntries(Object.entries(receipt).map(([k, v]) => [k, { stringValue: v }])),
-      }),
-    }).catch(() => null);
-    return reply(200, null, { recorded: !!ack?.ok });
-  } catch {
-    return reply(502, 'submission-unconfirmed');
-  }
 }
 
 /** customer-friendly confirmation text */
@@ -3635,6 +3507,7 @@ export default {
     if (url.pathname === '/api/health') {
       return json({
         ok: true,
+        orderEmailMode: 'manual-draft',
         turnstileSiteKey: env.TURNSTILE_SITE_KEY || '',
         channels: {
           telegram: !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID),
@@ -3644,7 +3517,6 @@ export default {
           turnstile: !!env.TURNSTILE_SECRET,
           firebase: !!env.FIREBASE_API_KEY,
           staff_login: !!(env.STAFF_EMAIL && env.STAFF_PASSWORD),
-          order_email: !!(env.RESEND_KEY && env.RESEND_FROM),
         },
         endpoints: {
           health: '/api/health',
@@ -3652,7 +3524,6 @@ export default {
           telegram_digest: 'POST /api/remind',
           telegram_bot: 'POST /api/telegram',
           pdf: 'POST /api/pdf',
-          order_email: 'POST /api/orders/{ref}/email?version={deliveryVersion}',
           studio_read_check: 'GET /api/telegram/check',
           moulds_order: 'POST /api/moulds/order',
           moulds_approve: 'POST /api/moulds/approve',
@@ -3700,7 +3571,8 @@ export default {
     }
 
     const orderMail = /^\/api\/orders\/(EGZ-[0-9]{6}-[A-F0-9]{12})\/email$/.exec(url.pathname);
-    if (orderMail) return emailOrderDocuments(req, env, orderMail[1], url.searchParams.get('version'), origin);
+    // Stale tabs must not send anything, even if old mail credentials still exist.
+    if (orderMail) return json({ ok: false, error: 'manual-draft-only' }, 410, { origin });
 
     if (url.pathname === '/api/remind') {
       if (req.method !== 'POST') return json({ ok: false, error: 'use-post' }, 405, { origin });
@@ -3731,7 +3603,7 @@ export default {
       const token = await staffToken(env, f);
       if (!token) return json({ok:false, step:'login', message:fsErrorText('staff-login-required')}, 200, {origin});
       // Probe list access even on an empty database. Return no IDs, records, tokens
-      // or upstream error bodies. Do not claim Telegram/Resend delivery was tested.
+      // or upstream error bodies. Do not claim Telegram delivery was tested.
       const collections = ['appointments', 'order_sheets', 'quotes'];
       for (const col of collections) {
         const r = await fsQuery({...env, REQ_TOKEN:token}, {

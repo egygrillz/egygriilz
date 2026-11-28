@@ -80,7 +80,7 @@ export async function build(sheet, q) {
     packedBytes += str.length;
     if (packedBytes > 6 * 1024 * 1024 - 12000)
       throw Object.assign(
-        new Error('Order PDF exceeds the 6 MiB email limit. Split the designs or print the sheet instead.'),
+        new Error('Order PDF is too large to build in this browser. Use Print order sheet and choose Save as PDF.'),
         { code: 'order/document' },
       );
     pages.push(Uint8Array.from(str, (ch) => ch.charCodeAt(0)));

@@ -1061,3 +1061,66 @@
     width: 100%;
   }
 }
+
+@media screen {
+  .delivery-files {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--studio-rule);
+  }
+  #draft-links {
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  #draft-links a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+@media screen {
+  .gem-adjustments {
+    display: flex;
+    flex: 1 0 100%;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--studio-rule);
+  }
+  .gem-edit-hint {
+    width: 100%;
+    margin: 0;
+    color: var(--studio-ink);
+    font-size: 13px;
+  }
+  #gem-tools :is(button, label) {
+    min-height: 38px;
+  }
+  #gem-tools button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  #step-design .gem-preview-fallback {
+    background: linear-gradient(
+      135deg,
+      #656a70,
+      var(--gem-color) 32%,
+      #fff 46%,
+      #8a8f95 55%,
+      var(--gem-color) 72%,
+      #42464c
+    );
+  }
+  #step-design .gem-swatch {
+    border-color: #777;
+  }
+  #ink-layer:focus-visible {
+    outline: 2px solid #595959;
+    outline-offset: -2px;
+  }
+}

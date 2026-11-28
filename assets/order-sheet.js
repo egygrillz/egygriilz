@@ -118,6 +118,7 @@
     repriceRequested = false,
     dirty = false,
     pendingReceipt = null,
+    draftVersion = '',
     stopPrices = null,
     staffUser = null,
     savedDesignDocs = new Map(),
@@ -257,6 +258,12 @@
       if (!mark.designId)
         mark.designId =
           state.designLayers.find((l) => l.teeth.includes(mark.tooth))?.id || state.activeDesignId;
+    }
+    // Selection IDs are ephemeral. Older device drafts may lack them entirely.
+    const seenGems = new Set();
+    for (const g of state.gems) {
+      if (!g.id || seenGems.has(g.id)) g.id = crypto.randomUUID();
+      seenGems.add(g.id);
     }
     // Hydrate v1 specs once, retaining their pricing until explicitly reviewed.
     const oldLayers = new Set(
@@ -861,16 +868,18 @@
       b.title = !auth ? 'Sign in to EditX to save orders' : orderBlock || '';
     }
     const email = state.clientEmail.trim(),
-      validEmail = email && $('#client-email').validity.valid;
-    const sent = q?.emailedVersion && q.emailedVersion === q.deliveryVersion && !dirty && priceLocked();
-    $('#email-order').disabled = !canIssue || !validEmail || !!sent;
-    $('#mail-recipient').textContent = [
-      validEmail ? 'Attachments: order sheet and quotation.' : 'Enter one valid client email address.',
-      !auth && 'Sign in to EditX to save and email.',
-    ]
-      .filter(Boolean)
-      .join(' · ');
-    $('#email-order').textContent = sent ? 'Both PDFs submitted' : 'Save & email both PDFs';
+      validEmail = OrderEmail.validRecipient(email) && $('#delivery-email').validity.valid;
+    $('#email-order').disabled = !canIssue || !validEmail;
+    $('#mail-recipient').textContent = !auth
+      ? 'Sign in to EditX to save and prepare the documents.'
+      : !validEmail
+        ? 'Enter one valid client email address.'
+        : '';
+    if (
+      !$('#draft-links').hidden &&
+      (!auth || dirty || q?.deliveryVersion !== draftVersion || q?.clientEmail !== email)
+    )
+      clearDraftLinks();
     $('#payment-summary').textContent = q
       ? `${paid.status} · Quoted ${formatMoney(q.total)} · Paid ${formatMoney(paid.paid)} · Outstanding ${formatMoney(paid.outstanding)} · Deposit still due ${formatMoney(Math.max(0, q.order.deposit - paid.paid))}`
       : 'Save the quotation to record a payment.';
@@ -885,9 +894,7 @@
     $('#record-payment').title = dirty ? 'Save your changes before posting a receipt.' : '';
   }
   const fileError = (e, action) =>
-    ['order/document', 'order/conflict', 'order/delivery'].includes(e?.code)
-      ? e.message
-      : recordError(e, action);
+    ['order/document', 'order/conflict'].includes(e?.code) ? e.message : recordError(e, action);
   async function deskAction(action) {
     if (busy) return;
     busy = true;
@@ -1013,7 +1020,7 @@
     renderPrint();
   }
   async function productionDocument(q) {
-    const { build, download } = await import('/assets/order-document.js?v=1');
+    const { build, download } = await import('/assets/order-document.js?v=2');
     if (q.id !== state.orderNo || !staffUser) throw Error('Order changed');
     renderPrint(true);
     if (
@@ -1026,64 +1033,58 @@
     const blob = await build($('#print-sheet'), q);
     return { blob, download };
   }
-  async function emailDocuments() {
+  function clearDraftLinks() {
+    draftVersion = '';
+    $('#draft-links').hidden = true;
+    $('#draft-gmail').removeAttribute('href');
+    $('#draft-mailto').removeAttribute('href');
+    $('#mail-status').textContent = '';
+  }
+  async function openOrderDraft() {
+    requireDesk();
+    if (!OrderEmail.validRecipient(state.clientEmail.trim()) || !$('#delivery-email').validity.valid) return;
     const status = $('#mail-status'),
       user = staffUser,
       target = state;
-    if (!state.clientEmail.trim() || !$('#client-email').validity.valid) return;
-    if (!confirm(`Send the order sheet and quotation as PDF attachments to ${state.clientEmail.trim()}?`))
-      return;
-    status.textContent = 'Saving the order and preparing both PDFs…';
+    clearDraftLinks();
+    status.textContent = 'Saving the order before opening your draft…';
+    // Reserve the tab in the click gesture, before Firestore (or a pricing prompt).
+    // No recipient or message leaves the sheet until that save succeeds.
+    let tab = null;
+    try {
+      tab = window.open('about:blank', '_blank');
+      if (tab) {
+        tab.opener = null;
+        tab.document.title = 'Preparing Gmail draft';
+        tab.document.body.textContent = 'Saving the EGYGRILLZ order before opening Gmail…';
+      }
+    } catch {
+      // Some embedded browsers throw instead of returning null for a blocked popup.
+      tab?.close();
+      tab = null;
+    }
     try {
       const q = await saveFile(true);
+      if (user !== staffUser || target !== state) return;
       if (!q) {
-        status.textContent = 'No email sent.';
+        status.textContent = 'No draft opened. Save a valid quotation first.';
         return;
       }
-      const { blob } = await productionDocument(q),
-        token = await user.getIdToken();
-      if (user !== staffUser || state !== target) return;
-      status.textContent = 'Submitting both PDFs…';
-      const res = await fetch(
-        `https://egygillz-api.egygrillz.workers.dev/api/orders/${encodeURIComponent(q.id)}/email?version=${encodeURIComponent(q.deliveryVersion)}`,
-        {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/pdf' },
-          body: blob,
-          signal: AbortSignal.timeout(45000),
-        },
-      );
-      const data = await res.json().catch(() => ({}));
-      if (user !== staffUser || state !== target) return;
-      if (!res.ok || !data.ok) {
-        const msg = {
-          'email-unconfigured':
-            'Studio email is not configured. Set RESEND_KEY and a verified RESEND_FROM on the Worker.',
-          'stale-order': 'The saved version changed. Reopen the order before sending.',
-          'bad-recipient': 'Check the client email in step 1.',
-          'email-rejected':
-            'The email provider rejected the request. Check the verified sender and provider log.',
-          'pdf-too-large': 'The order PDF exceeds the email size limit.',
-          'permission-denied': 'The studio account cannot read this saved quotation.',
-        }[data.error];
-        throw Object.assign(
-          new Error(
-            msg ||
-              (res.status === 404
-                ? 'Order email is not available on this Worker. Deploy the updated Worker.'
-                : 'Email submission was not confirmed. Check the sender log before retrying.'),
-          ),
-          { code: 'order/delivery' },
-        );
+      const links = OrderEmail.compose(q);
+      $('#draft-gmail').href = links.gmail;
+      $('#draft-mailto').href = links.mailto;
+      $('#draft-links').hidden = false;
+      draftVersion = q.deliveryVersion;
+      status.textContent = 'Draft ready. If Gmail didn’t open, choose a link below.';
+      if (tab && !tab.closed) {
+        tab.location.replace(links.gmail);
+        tab = null; // the operator owns the compose tab now
       }
-      saved.quote.emailedVersion = q.deliveryVersion;
-      status.textContent =
-        data.recorded === false
-          ? 'Email accepted; saving its status failed. Check the provider log before retrying.'
-          : 'Both PDFs accepted by the email provider for ' + q.clientEmail + '.';
     } catch (e) {
-      if (user === staffUser && target === state)
-        status.textContent = fileError(e, 'confirm email submission. Check the provider log before retrying');
+      if (user === staffUser && target === state && $('#draft-links').hidden)
+        status.textContent = fileError(e, 'prepare this email draft');
+    } finally {
+      tab?.close(); // declined estimate, failed save or account changed: no empty tab
     }
   }
 
@@ -1147,10 +1148,9 @@
       : 'No sketched teeth yet';
     $('#isolate-design').classList.toggle('active', !!state.isolateDesign);
     $('#isolate-design').textContent = state.isolateDesign ? 'Show full chart' : 'Isolate active design';
-    $('#delete-selected-gem').disabled = !state.selectedGemId;
     renderDesignLayers();
     renderInk();
-    setTool(state.tool || 'select');
+    if (!capturingPrintMap) setTool(state.tool || 'select');
   }
   function selectedMaterial() {
     return (
@@ -1163,7 +1163,7 @@
   }
   function setTool(tool) {
     if (tool === 'enamel' && !state.editor.palette?.length) tool = 'draw';
-    if (['gem', 'pave', 'ice'].includes(tool) && !stoneToolAvailable()) {
+    if (['gem', 'gem-edit', 'pave', 'ice'].includes(tool) && !stoneToolAvailable()) {
       notify('Choose Gold or Silver 925 to add diamonds');
       tool = 'draw';
     }
@@ -1188,28 +1188,20 @@
     const brush = ready && ['draw', 'laser', 'white', 'emboss'].includes(tool);
     $('.brush-control').hidden = !brush;
     $('.free-draw-toggle').hidden = !brush;
-    $('#gem-tools')
-      .querySelectorAll('label, [data-rotate], #delete-selected-gem')
-      .forEach((el) => {
-        const id = el.querySelector('input')?.id;
-        el.hidden =
-          id === 'gem-size'
-            ? !['gem', 'ice', 'pave'].includes(tool)
-            : id === 'gem-spacing'
-              ? !['ice', 'pave'].includes(tool)
-              : tool !== 'gem' || !state.selectedGemId;
-      });
+    $('#diamond-material-note').hidden = !ready || stones;
+    syncGemControls(tool);
 
     $('#canvas-mode-hint').textContent =
       {
-        select: 'Tap the teeth for this design. Selected teeth have a gold outline.',
+        select: 'Tap tooth outlines to select or deselect them for this design.',
         draw: 'Draw with a finger, pen or mouse. Pinch with two fingers to zoom.',
         laser: 'Draw a dark engraved line inside the selected teeth.',
         white: 'Draw a white cutout. Its fine grey edge stays visible on bare teeth.',
         enamel:
           'Tap a tooth to fill it with your palette. Tap again with a different palette to replace the fill.',
         emboss: 'Draw a raised metal detail.',
-        gem: 'Tap a tooth to place a stone. Drag an existing stone to move it.',
+        gem: 'Tap an empty spot to place a diamond. Tap an existing diamond to edit it.',
+        'gem-edit': 'Tap a diamond on this layer, or choose Next diamond. Drag to move it.',
         pave: 'Draw a line of stones on gold or silver.',
         ice: 'Tap a gold or silver tooth for a full iced setting.',
       }[tool] || '';
@@ -1223,7 +1215,7 @@
       const text = await res.text();
       $('#chart-stage-inner').innerHTML =
         text +
-        '<canvas id="ink-layer" width="900" height="331" class="ink-layer" aria-label="Apple Pencil design canvas"></canvas>';
+        '<canvas id="ink-layer" width="900" height="331" class="ink-layer" tabindex="-1" aria-label="Design canvas" aria-describedby="canvas-mode-hint"></canvas>';
       svgChart = $('#teeth-chart-root');
       measureChart();
       const layer = $('#ink-layer');
@@ -1401,28 +1393,41 @@
         const c = document.createElement('canvas');
         c.width = c.height = 144;
         const x = c.getContext('2d');
-        x.drawImage(img, 0, 0, c.width, c.height);
-        const image = x.getImageData(0, 0, c.width, c.height),
-          pixels = image.data,
-          tint = GEM_COLORS.find((v) => v[0] === color)?.[1] || '#f6f8fb',
-          tr = parseInt(tint.slice(1, 3), 16),
-          tg = parseInt(tint.slice(3, 5), 16),
-          tb = parseInt(tint.slice(5, 7), 16);
-        for (let i = 0; i < pixels.length; i += 4) {
-          const lum = 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2],
-            oldA = pixels[i + 3];
-          if (lum < 16) {
-            pixels[i + 3] = 0;
-            continue;
+        x.drawImage(img, 5, 5, c.width - 10, c.height - 10);
+        // The cut photos already have transparent backgrounds. Clear keeps the
+        // original dark and bright facets; lifting every pixel towards white
+        // makes it disappear on paper. Tint the other stones without erasing shadows.
+        if (color !== 'clear') {
+          const image = x.getImageData(0, 0, c.width, c.height),
+            pixels = image.data;
+          const tint = GEM_COLORS.find((v) => v[0] === color)?.[1] || '#f6f8fb';
+          const rgb = [1, 3, 5].map((i) => parseInt(tint.slice(i, i + 2), 16));
+          for (let i = 0; i < pixels.length; i += 4) {
+            if (!pixels[i + 3]) continue;
+            const lum = (0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]) / 255;
+            const shade = 0.2 + 0.8 * lum,
+              glint = 0.58 * lum ** 4;
+            for (let ch = 0; ch < 3; ch++) pixels[i + ch] = rgb[ch] * shade * (1 - glint) + 255 * glint;
           }
-          const keep = (Math.min(1, (lum - 10) / 48) * oldA) / 255,
-            shine = Math.min(0.82, (lum / 255) * 0.72);
-          pixels[i] = Math.round(tr * (1 - shine) + 255 * shine);
-          pixels[i + 1] = Math.round(tg * (1 - shine) + 255 * shine);
-          pixels[i + 2] = Math.round(tb * (1 - shine) + 255 * shine);
-          pixels[i + 3] = Math.round(keep * 255);
+          x.putImageData(image, 0, 0);
         }
-        x.putImageData(image, 0, 0);
+        // Bake a subtle cut-shaped rim into the shared sprite once, not a square
+        // tile behind each stone. The palette, canvas and printed overlay match.
+        const rim = document.createElement('canvas');
+        rim.width = rim.height = c.width;
+        const mask = rim.getContext('2d');
+        mask.drawImage(c, 0, 0);
+        mask.globalCompositeOperation = 'source-in';
+        mask.fillStyle = color === 'black' ? '#bec1c6' : '#535861';
+        mask.fillRect(0, 0, rim.width, rim.height);
+        x.globalCompositeOperation = 'destination-over';
+        for (const [dx, dy] of [
+          [-3, 0],
+          [3, 0],
+          [0, -3],
+          [0, 3],
+        ])
+          x.drawImage(rim, dx, dy);
         entry.canvas = c;
         entry.url = c.toDataURL();
         entry.loading = false;
@@ -1444,12 +1449,15 @@
     canvasCtx.save();
     canvasCtx.translate(x, y);
     canvasCtx.fillStyle = tint;
-    canvasCtx.strokeStyle = '#ffffff';
-    canvasCtx.lineWidth = 0.65;
+    canvasCtx.strokeStyle = color === 'black' ? '#d7d9de' : '#535861';
+    canvasCtx.lineWidth = Math.max(0.65, size * 0.09);
     canvasCtx.beginPath();
     if (cut === 'princess' || cut === 'emerald' || cut.includes('baguette'))
       canvasCtx.rect(-size / 2, -size / 2, size, size);
-    else canvasCtx.arc(0, 0, size / 2, 0, Math.PI * 2);
+    else if (cut === 'pear') {
+      canvasCtx.moveTo(0, -size / 2);
+      canvasCtx.bezierCurveTo(size * 0.7, size / 2, -size * 0.7, size / 2, 0, -size / 2);
+    } else canvasCtx.arc(0, 0, size / 2, 0, Math.PI * 2);
     canvasCtx.fill();
     canvasCtx.stroke();
     canvasCtx.beginPath();
@@ -1544,8 +1552,8 @@
     (state.gems || [])
       .filter((g) => visible.has(g.designId) && supportsStones(materialKeyForLayerTooth(g.designId, g.tooth)))
       .forEach((g) => {
-        const size = Math.max(2, (Number(g.sizeMm) || 1.5) * 4.5),
-          sprite = getGemSprite(g.cut || 'round', g.color || 'clear'),
+        const size = Math.max(2, gemSize(g) * 4.5),
+          sprite = getGemSprite(gemCut(g), g.color || 'clear'),
           tooth = paths.get(Number(g.tooth));
         canvasCtx.save();
         if (tooth)
@@ -1555,28 +1563,76 @@
         canvasCtx.translate(g.x, g.y);
         canvasCtx.rotate(((Number(g.rotation) || 0) * Math.PI) / 180);
         if (sprite) canvasCtx.drawImage(sprite, -size / 2, -size / 2, size, size);
-        else drawGemFallback(0, 0, size, g.color || 'clear', g.cut || 'round');
+        else drawGemFallback(0, 0, size, g.color || 'clear', gemCut(g));
         canvasCtx.restore();
-        if (!capturingPrintMap && g.id === state.selectedGemId) {
-          canvasCtx.save();
-          canvasCtx.strokeStyle = '#191919';
-          canvasCtx.lineWidth = 0.8;
-          canvasCtx.beginPath();
-          canvasCtx.arc(g.x, g.y, size * 0.68, 0, Math.PI * 2);
-          canvasCtx.stroke();
-          canvasCtx.restore();
-        }
       });
+    const selected = !capturingPrintMap && selectedGem();
+    if (selected && visible.has(selected.designId)) {
+      canvasCtx.save();
+      canvasCtx.beginPath();
+      canvasCtx.arc(selected.x, selected.y, Math.max(4, gemSize(selected) * 3.2), 0, Math.PI * 2);
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = '#fff';
+      canvasCtx.stroke();
+      canvasCtx.lineWidth = 1;
+      canvasCtx.strokeStyle = '#242424';
+      canvasCtx.stroke();
+      canvasCtx.restore();
+    }
   }
-  // An iced fill has ONE per-tooth price, so its priced attributes change together.
-  function selectedStoneBatch() {
-    const selected = state.gems.find((g) => g.id === state.selectedGemId);
-    if (!selected) return [];
-    return selected.kind === 'iced'
-      ? state.gems.filter(
-          (g) => g.kind === 'iced' && g.designId === selected.designId && g.tooth === selected.tooth,
-        )
-      : [selected];
+  // Iced settings have one priced cut/size per tooth. Retouching a single iced
+  // stone changes its artwork, not its neighbours or the setting's quoted rate.
+  function gemSize(g) {
+    return Number(g?.visualSizeMm || g?.sizeMm) || 1.5;
+  }
+  function gemCut(g) {
+    return g?.visualCut || g?.cut || 'round';
+  }
+  function brushSize() {
+    return Number(state.editor.gemSize) || 1.5;
+  }
+  function selectedGem() {
+    return state.tool === 'gem-edit' && state.selectedGemId
+      ? state.gems.find((g) => g.id === state.selectedGemId && onEditableLayer(g))
+      : null;
+  }
+  function syncGemControls(tool) {
+    const edit = tool === 'gem-edit',
+      multiple = ['pave', 'ice'].includes(tool),
+      g = selectedGem();
+    const size = g ? gemSize(g) : brushSize(),
+      rotation = Number(g?.rotation) || 0;
+    $('#gem-adjustments').hidden = !edit && tool !== 'gem' && !multiple;
+    $('#gem-edit-hint').hidden = $('#next-gem').hidden = !edit;
+    if (edit) {
+      const any = state.gems.some(onEditableLayer);
+      $('#next-gem').disabled = !any;
+      $('#gem-edit-hint').textContent = g
+        ? `Selected: ${g.color || 'clear'} ${gemCut(g)} · FDI ${g.tooth}. ${g.kind === 'iced' ? 'Adjust this stone only; the iced setting is priced per tooth.' : 'Drag to move, or adjust below.'}`
+        : any
+          ? 'Tap a diamond on the chart or choose Next diamond.'
+          : 'No diamonds on this layer yet. Choose Place diamond first.';
+      $('#diamond-options').hidden = !g;
+    }
+    $('#gem-spacing-control').hidden = !multiple;
+    $('#gem-size').disabled = edit && !g;
+    $('#gem-size').value = size;
+    $('#gem-size-value').textContent = `${size.toFixed(1)} mm`;
+    $('#gem-rotation').value = rotation;
+    $('#gem-rotation-value').textContent = `${rotation}°`;
+    for (const el of $$('#gem-tools [data-gem-edit]')) {
+      el.hidden = !edit;
+      (el.querySelector('input') || el).disabled =
+        !g || (el.dataset.sizeStep < 0 && size <= 0.5) || (el.dataset.sizeStep > 0 && size >= 5);
+    }
+    const canvas = $('#ink-layer');
+    if (canvas) canvas.tabIndex = edit ? 0 : -1;
+  }
+  function selectGem(g) {
+    state.selectedGemId = g?.id || '';
+    setTool('gem-edit');
+    renderGemOptions();
+    renderInk();
   }
   function gemCountOnTooth(designId, tooth) {
     return state.gems.filter((g) => g.designId === designId && Number(g.tooth) === Number(tooth)).length;
@@ -1599,7 +1655,7 @@
       tooth: Number(tooth),
       x,
       y,
-      sizeMm: Number($('#gem-size')?.value) || 1.5,
+      sizeMm: brushSize(),
       cut: state.editor.diamondCut || 'round',
       color: state.editor.gemColor || 'clear',
 
@@ -1610,8 +1666,6 @@
     state.selectedGemId = '';
     renderGemOptions();
 
-    $('#gem-size').value = gem.sizeMm;
-    $('#gem-size-value').textContent = `${Number(gem.sizeMm).toFixed(1)} mm`;
     layer.teeth = [...new Set([...(layer.teeth || []), Number(tooth)])];
     persist();
     renderTeeth();
@@ -1634,7 +1688,7 @@
     layer.teeth = [...new Set([...(layer.teeth || []), Number(tooth)])];
     const operationId = `ice-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
       b = path.getBBox(),
-      size = (Number($('#gem-size').value) || 1.5) * 4.5,
+      size = brushSize() * 4.5,
       space = (Number($('#gem-spacing').value) || 1) * 4.5,
       step = Math.max(2, size + space),
       pt = svgChart.createSVGPoint(),
@@ -1689,7 +1743,7 @@
       tooth: Number(tooth),
       x,
       y,
-      sizeMm: Number($('#gem-size').value) || 1.5,
+      sizeMm: brushSize(),
       cut: kind === 'iced' || kind === 'pave' ? 'round' : state.editor.diamondCut || 'round',
       color: state.editor.gemColor || 'clear',
 
@@ -1703,10 +1757,7 @@
     const layer = activeLayer();
     layer.teeth = [...new Set([...(layer.teeth || []), Number(tooth)])];
     const operationId = `line-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
-      dist = Math.max(
-        2,
-        (Number($('#gem-size').value) || 1.5) * 4.5 + (Number($('#gem-spacing').value) || 1) * 4.5,
-      );
+      dist = Math.max(2, brushSize() * 4.5 + (Number($('#gem-spacing').value) || 1) * 4.5);
     let carry = 0,
       prev = points[0],
       placed = 0;
@@ -1758,23 +1809,40 @@
     }
     return null;
   }
-  function gemAt(x, y) {
-    const layer = activeLayer();
-    return [...state.gems]
-      .reverse()
-      .find(
-        (g) =>
-          g.designId === layer.id &&
-          Math.hypot(g.x - x, g.y - y) < Math.max(7, (Number(g.sizeMm) || 1.5) * 4),
-      );
+  function onEditableLayer(g) {
+    return (
+      g.designId === state.activeDesignId &&
+      (!state.showAllDesigns || activeLayer()?.visible !== false) &&
+      supportsStones(materialKeyForLayerTooth(g.designId, g.tooth))
+    );
+  }
+  function gemAt(x, y, slopPx) {
+    // Translate a finger/mouse target into chart units at the current zoom. In
+    // dense pavé pick the nearest centre (last drawn wins ties), not the last in range.
+    const slop = slopPx / (svgChart.getScreenCTM()?.a || 1);
+    let hit = null,
+      distance = Infinity;
+    for (const g of state.gems) {
+      const d = Math.hypot(g.x - x, g.y - y);
+      if (d <= distance && d <= Math.max(slop, gemSize(g) * 2.25) && onEditableLayer(g)) {
+        hit = g;
+        distance = d;
+      }
+    }
+    return hit;
   }
   function renderGemOptions() {
     const rail = $('#gem-cut-rail'),
       colors = $('#gem-colors'),
       preview = $('#gem-selection-preview');
     if (!rail || !colors) return;
-    const selectedCut = ['ice', 'pave'].includes(state.tool) ? 'round' : state.editor.diamondCut || 'round',
-      selectedColor = state.editor.gemColor || 'clear',
+    const selected = selectedGem(),
+      selectedCut = selected
+        ? gemCut(selected)
+        : ['ice', 'pave'].includes(state.tool)
+          ? 'round'
+          : state.editor.diamondCut || 'round',
+      selectedColor = selected?.color || state.editor.gemColor || 'clear',
       cutLabel = GEM_CUTS.find((x) => x[0] === selectedCut)?.[1] || selectedCut,
       colorHex = GEM_COLORS.find((x) => x[0] === selectedColor)?.[1] || '#f6f8fb';
     rail.innerHTML = GEM_CUTS.map(
@@ -1787,7 +1855,7 @@
     ).join('');
     if (preview) {
       const sprite = getGemSprite(selectedCut, selectedColor);
-      preview.innerHTML = `${sprite ? `<img src="${gemSpriteCache.get(`${selectedCut}:${selectedColor}`).url}" alt="${esc(cutLabel)} · ${esc(colorLabel(selectedColor))} selected">` : `<i class="gem-preview-fallback" style="--gem-color:${colorHex}" aria-hidden="true"></i>`}<span>${state.selectedGemId ? 'Editing stone' : 'Next stone'} · ${esc(cutLabel)} · ${esc(colorLabel(selectedColor))}</span>`;
+      preview.innerHTML = `${sprite ? `<img src="${gemSpriteCache.get(`${selectedCut}:${selectedColor}`).url}" alt="${esc(cutLabel)} · ${esc(colorLabel(selectedColor))} selected">` : `<i class="gem-preview-fallback" style="--gem-color:${colorHex}" aria-hidden="true"></i>`}<span>${selected ? 'Editing diamond' : 'Next diamond'} · ${esc(cutLabel)} · ${esc(colorLabel(selectedColor))}</span>`;
     }
   }
   function newDesignLayer() {
@@ -2122,11 +2190,12 @@
     const gemKinds = [
       ...new Map(
         (state.gems || []).map((g) => {
-          const key = [g.cut || 'round', g.color || 'clear', Number(g.rotation) || 0].join('|');
+          const key = [gemCut(g), g.color || 'clear', gemSize(g), Number(g.rotation) || 0].join('|');
           return [
             key,
             {
-              cut: g.cut || 'round',
+              cut: gemCut(g),
+              size: gemSize(g),
               color: g.color || 'clear',
               rotation: Number(g.rotation) || 0,
             },
@@ -2135,9 +2204,10 @@
       ).values(),
     ];
     const gemPics = gemKinds
-      .map(({ cut, color, rotation }) => {
+      .map(({ cut, color, size, rotation }) => {
         const cutName = GEM_CUTS.find((x) => x[0] === cut)?.[1] || cut;
-        return `<div class="rollup-item gem-rollup"><img src="${DIAMOND_FILE(cut)}" alt=""><i style="--gem-color:${GEM_COLORS.find((x) => x[0] === color)?.[1] || '#f6f8fb'}"></i><span>${esc(colorLabel(color))} · ${esc(cutName)} · ${esc(rotation)}°</span></div>`;
+        const photo = gemSpriteCache.get(`${cut}:${color}`)?.url || DIAMOND_FILE(cut);
+        return `<div class="rollup-item gem-rollup"><img src="${photo}" alt=""><i style="--gem-color:${GEM_COLORS.find((x) => x[0] === color)?.[1] || '#f6f8fb'}"></i><span>${esc(colorLabel(color))} · ${esc(cutName)} · ${size.toFixed(1)} mm · ${esc(rotation)}°</span></div>`;
       })
       .join('');
     const groupHtml = state.groups.length
@@ -2273,19 +2343,12 @@
         persist();
         return;
       }
-      const rotateBtn = e.target.closest('[data-rotate]');
-      if (rotateBtn) {
-        const gem = state.gems.find((x) => x.id === state.selectedGemId);
-        if (gem) {
-          gem.rotation = ((Number(gem.rotation) || 0) + Number(rotateBtn.dataset.rotate) + 360) % 360;
-          $('#gem-rotation').value = gem.rotation;
-          $('#gem-rotation-value').textContent = `${gem.rotation}°`;
-          renderInk();
-          persist();
-          renderPrint();
-        } else notify('Tap a diamond to select it before rotating');
-        return;
-      }
+      const rotateBtn = e.target.closest('[data-rotate]'),
+        sizeBtn = e.target.closest('[data-size-step]');
+      if (rotateBtn)
+        return setGemRotation((Number(selectedGem()?.rotation) || 0) + Number(rotateBtn.dataset.rotate));
+      if (sizeBtn && selectedGem())
+        return setGemSize(gemSize(selectedGem()) + Number(sizeBtn.dataset.sizeStep));
       const tool = e.target.closest('[data-tool]');
       if (tool) {
         if (tool.disabled) return;
@@ -2294,7 +2357,7 @@
           return;
         }
         state.reviewLayerId = '';
-        state.selectedGemId = '';
+        if (tool.dataset.tool !== 'gem-edit') state.selectedGemId = '';
         renderDesignMode();
         setTool(tool.dataset.tool);
         renderGemOptions();
@@ -2311,8 +2374,10 @@
       }
       const cut = e.target.closest('[data-cut]');
       if (cut) {
-        state.editor.diamondCut = cut.dataset.cut;
-        selectedStoneBatch().forEach((g) => (g.cut = state.editor.diamondCut));
+        const g = selectedGem();
+        if (g) g[g.kind === 'iced' ? 'visualCut' : 'cut'] = cut.dataset.cut;
+        else state.editor.diamondCut = cut.dataset.cut;
+        syncGemControls(state.tool);
         renderGemOptions();
         persist();
         renderInk();
@@ -2322,20 +2387,24 @@
       }
       const gemColor = e.target.closest('[data-gem-color]');
       if (gemColor) {
-        state.editor.gemColor = gemColor.dataset.gemColor;
+        const g = selectedGem();
+        if (g) g.color = gemColor.dataset.gemColor;
+        else state.editor.gemColor = gemColor.dataset.gemColor;
+        syncGemControls(state.tool);
         renderGemOptions();
-        if (state.selectedGemId) {
-          const gem = state.gems.find((x) => x.id === state.selectedGemId);
-          if (gem) gem.color = state.editor.gemColor;
-          refreshOrder();
-        }
+        if (g) refreshOrder();
         persist();
         renderInk();
         renderPrint();
         return;
       }
     });
+    $('#next-gem').onclick = () => {
+      const gems = state.gems.filter(onEditableLayer);
+      if (gems.length) selectGem(gems[(gems.indexOf(selectedGem()) + 1) % gems.length]);
+    };
     let draggingGemId = null,
+      dragStart = null,
       tapAction = null,
       dragOrigin = null,
       drawingPointer = null;
@@ -2378,7 +2447,7 @@
               state.gems.find((g) => g.id === draggingGemId),
               dragOrigin,
             );
-          draggingGemId = dragOrigin = tapAction = activeStroke = drawingPointer = null;
+          draggingGemId = dragOrigin = dragStart = tapAction = activeStroke = drawingPointer = null;
           renderInk();
           for (const id of activeTouches.keys()) viewport.setPointerCapture(id);
           e.stopPropagation();
@@ -2476,22 +2545,19 @@
       if (!state.freeDraw && state.isolateDesign && !pointInActiveDesignBounds(coords)) return;
       drawingPointer = e.pointerId;
       canvas.setPointerCapture(e.pointerId);
-      if (state.tool === 'gem') {
+      if (state.tool === 'gem' || state.tool === 'gem-edit') {
         e.preventDefault();
-        canvas.setPointerCapture(e.pointerId);
-        let gem = gemAt(coords.x, coords.y);
+        const editing = state.tool === 'gem-edit',
+          touch = e.pointerType === 'touch';
+        const gem = gemAt(coords.x, coords.y, editing ? (touch ? 16 : 9) : touch ? 5 : 3);
         if (gem) {
-          state.selectedGemId = gem.id;
-          state.editor.diamondCut = gem.cut || 'round';
-          state.editor.gemColor = gem.color || 'clear';
-
-          $('#gem-size').value = gem.sizeMm;
-          $('#gem-size-value').textContent = `${Number(gem.sizeMm).toFixed(1)} mm`;
-          $('#gem-rotation').value = Number(gem.rotation) || 0;
-          $('#gem-rotation-value').textContent = `${Number(gem.rotation) || 0}°`;
+          // Do not expand controls above the canvas under a moving finger. Commit
+          // the selection on pointerup; a second finger can still cancel the drag.
           draggingGemId = gem.id;
           dragOrigin = { x: gem.x, y: gem.y, tooth: gem.tooth };
-          renderInk();
+          dragStart = { x: coords.x, y: coords.y, clientX: e.clientX, clientY: e.clientY };
+        } else if (editing) {
+          tapAction = () => selectGem(null); // an empty tap must never create a stone in Edit
         } else {
           const point = pointOnTooth(e);
           if (!point || !activeLayer().teeth.includes(point.tooth)) return;
@@ -2571,17 +2637,19 @@
       if (draggingGemId && canvas.hasPointerCapture(e.pointerId)) {
         const p = svgCoordFromEvent(e),
           gem = state.gems.find((x) => x.id === draggingGemId);
-        const tooth = pointOnTooth(e)?.tooth;
+        if (!p || !gem || Math.hypot(e.clientX - dragStart.clientX, e.clientY - dragStart.clientY) < 3)
+          return;
+        const x = dragOrigin.x + p.x - dragStart.x,
+          y = dragOrigin.y + p.y - dragStart.y;
+        const tooth = pointInAnyTooth(x, y);
         if (
-          p &&
-          gem &&
           activeLayer().teeth.includes(tooth) &&
           supportsStones(materialKeyForLayerTooth(gem.designId, tooth)) &&
           (tooth === gem.tooth ||
             (gem.kind !== 'iced' && gemCountOnTooth(gem.designId, tooth) < MAX_STONES_PER_TOOTH))
         ) {
-          gem.x = p.x;
-          gem.y = p.y;
+          gem.x = x;
+          gem.y = y;
           gem.tooth = tooth;
           renderInk();
         }
@@ -2607,7 +2675,7 @@
             state.gems.find((g) => g.id === draggingGemId),
             dragOrigin,
           );
-        activeStroke = draggingGemId = tapAction = dragOrigin = null;
+        activeStroke = draggingGemId = tapAction = dragOrigin = dragStart = null;
         renderInk();
         return;
       }
@@ -2619,10 +2687,12 @@
       }
       dragOrigin = null;
       if (draggingGemId) {
-        draggingGemId = null;
+        const g = state.gems.find((s) => s.id === draggingGemId);
+        draggingGemId = dragStart = null;
+        selectGem(g);
+        canvas.focus({ preventScroll: true });
         persist();
         renderTeeth();
-        renderGemOptions();
         renderPrint();
         refreshOrder();
         return;
@@ -2659,7 +2729,12 @@
     canvas.addEventListener('pointerup', finish);
     canvas.addEventListener('pointercancel', finish);
     canvas.addEventListener('keydown', (e) => {
-      if (!state.selectedGemId || state.tool !== 'gem') return;
+      if (!selectedGem()) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        return deleteSelectedGem();
+      }
+      if (e.key === 'Escape') return selectGem(null);
       if (e.key === '[' || e.key === ']') {
         e.preventDefault();
         const current = Number($('#gem-rotation').value) || 0;
@@ -2671,57 +2746,55 @@
       $('#brush-value').textContent = String(n);
       $('#brush-dot').style.setProperty('--brush-size', `${Math.max(2, n)}px`);
     });
-    $('#gem-size').addEventListener('input', (e) => {
-      const n = Number(e.target.value);
-      $('#gem-size-value').textContent = `${n.toFixed(1)} mm`;
-      selectedStoneBatch().forEach((g) => (g.sizeMm = n));
+    function setGemSize(value) {
+      const n = Math.max(0.5, Math.min(5, Math.round(Number(value) * 10) / 10));
+      const g = selectedGem();
+      if (g) g[g.kind === 'iced' ? 'visualSizeMm' : 'sizeMm'] = n;
+      else if (state.tool !== 'gem-edit') state.editor.gemSize = n;
+      syncGemControls(state.tool);
       renderInk();
       persist();
       renderPrint();
       refreshOrder();
-    });
-    const setGemRotation = (value) => {
-      const gem = state.gems.find((x) => x.id === state.selectedGemId);
-      if (!gem) {
-        notify('Tap a diamond to select it before rotating');
-        return;
-      }
+    }
+    $('#gem-size').addEventListener('input', (e) => setGemSize(e.target.value));
+    function setGemRotation(value) {
+      const gem = selectedGem();
+      if (!gem) return;
       gem.rotation = ((Math.round(Number(value) || 0) % 360) + 360) % 360;
       $('#gem-rotation').value = gem.rotation;
       $('#gem-rotation-value').textContent = `${gem.rotation}°`;
       renderInk();
       persist();
       renderPrint();
-    };
+    }
     $('#gem-rotation').addEventListener('input', (e) => setGemRotation(e.target.value));
     $('#gem-spacing').addEventListener(
       'input',
       (e) => ($('#gem-spacing-value').textContent = `${Number(e.target.value).toFixed(1)} mm`),
     );
-    $('#delete-selected-gem').addEventListener('click', () => {
-      if (!state.selectedGemId) return;
-      const selected = state.gems.find((g) => g.id === state.selectedGemId),
-        operation = selected?.kind === 'iced' ? selected.operationId : '';
-      state.gems = state.gems.filter((g) =>
-        operation
-          ? !(g.designId === selected.designId && g.operationId === operation)
-          : g.id !== state.selectedGemId,
-      );
+    function deleteSelectedGem() {
+      const g = selectedGem();
+      if (!g) return;
+      state.gems.splice(state.gems.indexOf(g), 1);
+      if (g.kind === 'iced') {
+        const rec = state.icedTeeth?.find(
+          (i) => i.designId === g.designId && Number(i.tooth) === Number(g.tooth),
+        );
+        if (rec) {
+          rec.count = state.gems.filter(
+            (s) => s.kind === 'iced' && s.designId === g.designId && s.tooth === g.tooth,
+          ).length;
+          if (!rec.count) state.icedTeeth.splice(state.icedTeeth.indexOf(rec), 1);
+        }
+      }
       state.selectedGemId = '';
-      state.icedTeeth = (state.icedTeeth || [])
-        .map((rec) => ({
-          ...rec,
-          count: state.gems.filter(
-            (g) => g.designId === rec.designId && Number(g.tooth) === Number(rec.tooth) && g.kind === 'iced',
-          ).length,
-        }))
-        .filter((rec) => rec.count > 0);
+      renderGemOptions();
+      renderAll();
       persist();
-      renderTeeth();
-      renderPrint();
-      refreshOrder();
-      notify(operation ? 'Iced fill removed' : 'Stone removed');
-    });
+      notify('Selected diamond deleted');
+    }
+    $('#delete-selected-gem').addEventListener('click', deleteSelectedGem);
     $('#add-design-layer').onclick = () => {
       if (state.newDesignSelection) {
         $('#chart-viewport').scrollIntoView({ block: 'center' });
@@ -2766,7 +2839,8 @@
         state.gems = state.gems.filter(
           (g) => g.designId !== layer.id || (op ? g.operationId !== op : g !== lastGem),
         );
-        if (state.selectedGemId === lastGem.id) state.selectedGemId = '';
+        if (!selectedGem()) state.selectedGemId = '';
+        renderGemOptions();
       } else if (strokeIndex >= 0) state.ink.splice(strokeIndex, 1);
       state.icedTeeth = (state.icedTeeth || [])
         .map((rec) => ({
@@ -2922,7 +2996,9 @@
             try {
               const granted = await records.signInToStudio();
               if (staffUser === user && user?.uid === granted.uid) await loadDraft(sheetId);
-            } catch (e) { notify(recordError(e, 'open the studio order')); }
+            } catch (e) {
+              notify(recordError(e, 'open the studio order'));
+            }
           }
           if (user && new URLSearchParams(location.search).get('from') === 'editx') {
             try {
@@ -2957,7 +3033,7 @@
     renderProductionChecklist();
   }
   // Normalised pen coordinates survive a change of screen size. Rasterise only
-  // when the user previews/prints/emails; no signature PNG goes into storage.
+  // when the user previews, prints or downloads a PDF; no signature PNG goes into storage.
   function drawSignature(c) {
     const ctx = c.getContext('2d'),
       w = c.width,
@@ -3135,7 +3211,7 @@
       source.gems?.forEach((g) =>
         state.gems.push({
           ...g,
-          id: `gem-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: crypto.randomUUID(),
           designId: newId,
         }),
       );
@@ -3189,7 +3265,8 @@
     pendingReceipt = null;
     printDesignMapHtml = '';
     $('#print-sheet').replaceChildren();
-    for (const id of ['mail-status', 'receipt-status', 'receipt-amount', 'client-search']) {
+    clearDraftLinks();
+    for (const id of ['receipt-status', 'receipt-amount', 'client-search']) {
       const e = $('#' + id);
       if (e.tagName === 'INPUT') e.value = '';
       else e.textContent = '';
@@ -3645,7 +3722,7 @@
         download(blob, CalcEngine.documentFilename('Order', q));
       }
     });
-  $('#email-order').onclick = () => deskAction(emailDocuments);
+  $('#email-order').onclick = () => deskAction(openOrderDraft);
   $('#payment-form').onsubmit = (e) => {
     e.preventDefault();
     deskAction(recordPayment);

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="theme-color" content="#fafafa">
 <title>Client Order Sheet | EGYGRILLZ</title>
@@ -10,6 +11,7 @@
 <script src="/assets/rates.js?v=7"></script>
 <script src="/assets/order-design.js?v=1"></script>
 <script src="/assets/order-file.js?v=1"></script>
+<script src="/assets/order-email.js?v=1"></script>
 <script src="/assets/order-pricing.js?v=3"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,7 +99,7 @@
 .gem-selection-preview{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;margin:6px 0 8px;padding:6px 10px;border:1px solid #e4e4e4;border-radius:9px;background:#fff}.gem-selection-preview[hidden]{display:none}.gem-selection-preview img,.gem-preview-fallback{width:38px;height:38px;object-fit:contain}.gem-preview-fallback{display:block;clip-path:polygon(50% 0,100% 25%,82% 100%,18% 100%,0 25%);background:linear-gradient(135deg,#fff 0%,var(--gem-color) 34%,#fff 50%,var(--gem-color) 72%,#555 100%)}.gem-selection-preview span{font:500 12px 'Playfair Display',serif;color:#444444}
 .diamond-options{margin:7px 0 10px;padding:8px 10px;border:1px solid #e8e8e8;border-radius:9px;background:#fbfbfb}.diamond-options[hidden]{display:none}.diamond-options>summary{cursor:pointer;font-size:11px;font-weight:700;color:#555}.free-draw-toggle input{accent-color:#111}.gem-cut.active img{filter:brightness(1.2)}
 </style>
-<link rel="stylesheet" href="/assets/order-sheet.css?v=3">
+<link rel="stylesheet" href="/assets/order-sheet.css?v=4">
 </head>
 <body>
 <div class="app-shell">
@@ -163,7 +165,26 @@
           </div>
 
           <div class="design-layer-tools"><div class="map-hint"><strong id="active-layer-label">Design 1</strong> · draw and add stones on this layer</div><button type="button" class="mini-btn" id="isolate-design">Isolate active design</button><div class="design-layers" id="design-layers"></div><button type="button" class="mini-btn" id="show-all-designs">View all together</button></div>
-          <div class="gem-tools" id="gem-tools" hidden><button type="button" class="mini-btn stone-action" id="place-gem-mode" data-tool="gem" data-stone-tool>Place selected diamond</button><button type="button" class="mini-btn stone-action" id="pave-mode" data-tool="pave" data-stone-tool>Pavé line</button><button type="button" class="mini-btn stone-action" id="ice-mode" data-tool="ice" data-stone-tool>Iced fill</button><label>Stone size <input id="gem-size" type="range" min="0.5" max="5" step="0.1" value="1.5"><span id="gem-size-value">1.5 mm</span></label><label>Rotate <input id="gem-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Rotate selected diamond"><span id="gem-rotation-value">0°</span></label><button type="button" class="mini-btn rotate-gem" data-rotate="-15" aria-label="Rotate diamond counterclockwise">−15°</button><button type="button" class="mini-btn rotate-gem" data-rotate="15" aria-label="Rotate diamond clockwise">+15°</button><label>Spacing <input id="gem-spacing" type="range" min="0.4" max="3" step="0.1" value="1"><span id="gem-spacing-value">1 mm</span></label><button type="button" class="mini-btn" id="delete-selected-gem" disabled>Remove selected stone</button></div>
+          <p class="map-hint" id="diamond-material-note" hidden>Diamond tools are available on gold and sterling silver teeth.</p>
+          <div class="gem-tools" id="gem-tools" role="group" aria-label="Diamond tools" hidden>
+            <span class="micro-label">Diamonds</span>
+            <button type="button" class="mini-btn stone-action" id="place-gem-mode" data-tool="gem">Place diamond</button>
+            <button type="button" class="mini-btn stone-action" data-tool="gem-edit">Select / edit diamond</button>
+            <button type="button" class="mini-btn stone-action" id="pave-mode" data-tool="pave">Pavé line</button>
+            <button type="button" class="mini-btn stone-action" id="ice-mode" data-tool="ice">Iced fill</button>
+            <div class="gem-adjustments" id="gem-adjustments" hidden>
+              <p class="gem-edit-hint" id="gem-edit-hint" role="status" hidden></p>
+              <button type="button" class="mini-btn" id="next-gem" hidden>Next diamond</button>
+              <label>Size <input id="gem-size" type="range" min="0.5" max="5" step="0.1" value="1.5" aria-label="Diamond size in millimetres"><span id="gem-size-value">1.5 mm</span></label>
+              <button type="button" class="mini-btn" data-gem-edit data-size-step="-0.5" aria-label="Shrink selected diamond by 0.5 mm">Smaller</button>
+              <button type="button" class="mini-btn" data-gem-edit data-size-step="0.5" aria-label="Enlarge selected diamond by 0.5 mm">Larger</button>
+              <label data-gem-edit>Rotate <input id="gem-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Rotate selected diamond"><span id="gem-rotation-value">0°</span></label>
+              <button type="button" class="mini-btn" data-gem-edit data-rotate="-15" aria-label="Rotate diamond counterclockwise">−15°</button>
+              <button type="button" class="mini-btn" data-gem-edit data-rotate="15" aria-label="Rotate diamond clockwise">+15°</button>
+              <label id="gem-spacing-control">Spacing <input id="gem-spacing" type="range" min="0.4" max="3" step="0.1" value="1"><span id="gem-spacing-value">1 mm</span></label>
+              <button type="button" class="mini-btn" id="delete-selected-gem" data-gem-edit>Delete diamond</button>
+            </div>
+          </div>
           <details class="diamond-options" id="diamond-options"><summary>Diamond cut &amp; color · optional</summary><div class="gem-selection-preview" id="gem-selection-preview" hidden aria-live="polite"></div><div class="gem-cut-rail" id="gem-cut-rail" hidden></div><div class="gem-colors" id="gem-colors" hidden aria-label="Gem color palette"></div></details>
           <div class="chart-viewport" id="chart-viewport"><div class="chart-loading" id="chart-loading" aria-live="polite">Loading tooth chart…</div><div class="chart-stage-inner" id="chart-stage-inner" hidden></div></div>
           <div id="mixed-tooth-specs" class="mixed-tooth-specs" hidden></div>
@@ -217,9 +238,17 @@
         <div class="payment-register"><strong id="payment-summary">Save a quotation to start tracking payments.</strong><ul id="payment-history" aria-label="Payments received"></ul>
         <form class="service-builder" id="payment-form"><label>Amount received (EGP)<input id="receipt-amount" type="number" required min="1" step="1" inputmode="numeric"></label><label>Received by<select id="receipt-method"><option>Cash</option><option>Card</option><option>Bank transfer</option><option>Instapay</option></select></label><button class="btn" id="record-payment" disabled>Record payment</button></form><p id="receipt-status" role="status"></p></div></section>
   <section class="card output-card"><div class="card-head"><div><h2>Order documents</h2><p>The quotation contains pricing. The signed order sheet includes the artwork and production instructions.</p></div></div>
-          <div class="client-delivery"><div class="field"><label for="delivery-email">Send both PDFs to</label><input id="delivery-email" type="email" data-field="clientEmail" maxlength="254" autocomplete="email" placeholder="Client email address"></div>
-            <button type="button" class="btn btn-primary" id="email-order" disabled>Save &amp; email both PDFs</button><div class="delivery-note"><p id="mail-recipient"></p><p id="mail-status" role="status" aria-live="polite"></p></div></div>
-          <div class="output-actions"><button class="btn" id="quote-pdf-btn" type="button">Download quotation PDF</button><button class="btn" id="save-quote-btn" type="button" disabled>Save order &amp; quotation</button><a id="open-saved-quote" class="text-btn" hidden>Open saved quotation</a><button class="btn" id="create-proforma-btn" type="button">Prepare invoice</button><button class="btn" id="order-pdf-btn" type="button">Download order PDF</button><button class="btn" id="print-sheet-btn" type="button">Print order sheet</button><button class="text-btn" id="preview-sheet" aria-expanded="false" type="button">Preview order sheet</button></div></section>
+          <div class="client-delivery">
+            <div class="delivery-files"><span class="micro-label">1 · Download attachments</span>
+              <button class="btn" id="order-pdf-btn" type="button">Download order PDF</button>
+              <button class="btn" id="quote-pdf-btn" type="button">Download quotation PDF</button></div>
+            <div class="field"><label for="delivery-email">2 · Draft email to</label><input id="delivery-email" type="email" data-field="clientEmail" maxlength="254" autocomplete="email" placeholder="Client email address" aria-describedby="mail-recipient"></div>
+            <button type="button" class="btn btn-primary" id="email-order" disabled>Open Gmail draft</button>
+            <div class="delivery-note"><p>Attach both downloaded PDFs with the paperclip, review the message, then press Send in your mail app. Nothing is sent automatically.</p>
+              <p id="mail-recipient"></p><p id="mail-status" role="status"></p>
+              <div id="draft-links" hidden><a id="draft-gmail" target="_blank" rel="noopener noreferrer">Open Gmail</a> · <a id="draft-mailto">Use my mail app</a></div></div>
+          </div>
+          <div class="output-actions"><button class="btn" id="save-quote-btn" type="button" disabled>Save order &amp; quotation</button><a id="open-saved-quote" class="text-btn" hidden>Open saved quotation</a><button class="btn" id="create-proforma-btn" type="button">Prepare invoice</button><button class="btn" id="print-sheet-btn" type="button">Print order sheet</button><button class="text-btn" id="preview-sheet" aria-expanded="false" type="button">Preview order sheet</button></div></section>
       </div>
       <div class="stage-actions"><button type="button" class="btn" id="step-back" hidden>Back</button><span id="step-position">Step 1 of 4</span><button type="button" class="btn btn-primary" id="step-next">Continue to design</button></div>
     </main>
@@ -246,6 +275,6 @@
   <section id="print-sheet" class="print-sheet" aria-label="Printable client order sheet" hidden></section>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script src="/assets/order-sheet.js?v=3"></script>
+<script src="/assets/order-sheet.js?v=4"></script>
 </body>
 </html>
