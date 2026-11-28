@@ -7,12 +7,15 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="theme-color" content="#fafafa">
 <title>Client Order Sheet | EGYGRILLZ</title>
-<script src="/assets/calc-engine.js?v=10"></script>
+<script src="/assets/calc-engine.js?v=12"></script>
 <script src="/assets/rates.js?v=7"></script>
-<script src="/assets/order-design.js?v=1"></script>
+<script src="/assets/order-design.js?v=2"></script>
+<script src="/assets/order-pave.js?v=1"></script>
+<script src="/assets/order-recipe.js?v=2"></script>
 <script src="/assets/order-file.js?v=1"></script>
-<script src="/assets/order-email.js?v=1"></script>
-<script src="/assets/order-pricing.js?v=3"></script>
+<script src="/assets/order-email.js?v=2"></script>
+<script src="/assets/order-gmail.js?v=1"></script>
+<script src="/assets/order-pricing.js?v=4"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -99,7 +102,7 @@
 .gem-selection-preview{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;margin:6px 0 8px;padding:6px 10px;border:1px solid #e4e4e4;border-radius:9px;background:#fff}.gem-selection-preview[hidden]{display:none}.gem-selection-preview img,.gem-preview-fallback{width:38px;height:38px;object-fit:contain}.gem-preview-fallback{display:block;clip-path:polygon(50% 0,100% 25%,82% 100%,18% 100%,0 25%);background:linear-gradient(135deg,#fff 0%,var(--gem-color) 34%,#fff 50%,var(--gem-color) 72%,#555 100%)}.gem-selection-preview span{font:500 12px 'Playfair Display',serif;color:#444444}
 .diamond-options{margin:7px 0 10px;padding:8px 10px;border:1px solid #e8e8e8;border-radius:9px;background:#fbfbfb}.diamond-options[hidden]{display:none}.diamond-options>summary{cursor:pointer;font-size:11px;font-weight:700;color:#555}.free-draw-toggle input{accent-color:#111}.gem-cut.active img{filter:brightness(1.2)}
 </style>
-<link rel="stylesheet" href="/assets/order-sheet.css?v=4">
+<link rel="stylesheet" href="/assets/order-sheet.css?v=6">
 </head>
 <body>
 <div class="app-shell">
@@ -132,14 +135,16 @@
 </div>
 <div class="step-panel" id="step-design" data-panel="design" hidden>
 <section class="card" id="design-details-card">
-        <div class="card-head"><div><span class="micro-label">DESIGN ATELIER &nbsp; / &nbsp; 01</span><h2>Set up your design</h2><p>Give this piece a name, choose its material, then select its teeth on the chart.</p></div><span class="step-label">02</span></div>
+        <div class="card-head"><div><span class="micro-label">DESIGN ATELIER &nbsp; / &nbsp; 01</span><h2>Set up your design</h2><p>Choose the material and teeth. You can name the piece after drawing.</p></div><span class="step-label">02</span></div>
         <div class="card-body">
           <div class="design-session-bar">
-            <label class="design-session-name">Design name<input id="group-name" data-editor="name" placeholder="e.g. Scorpion top 6"></label>
+            <label class="design-session-name">Working name (optional)<input id="group-name" maxlength="40" data-editor="name" placeholder="e.g. Scorpion top 6"></label>
             <label>Mode<select id="design-mode" data-field="designMode"><option value="single">One design · shared details</option><option value="mix">Mix · details per tooth</option></select></label>
             <button class="btn" type="button" id="add-design-layer">Select teeth for new design</button>
           </div>
-          <details class="library"><summary>Studio design library</summary><div class="saved-design-bar"><select id="saved-design-templates" aria-label="Saved designs"><option value="">Sign in to load saved designs</option></select><button class="mini-btn" type="button" disabled id="load-saved-design">Load saved design</button><button class="mini-btn" type="button" disabled id="save-current-design">Save active design</button><span id="design-template-status" role="status">Saved designs require staff sign-in.</span></div></details>
+          <details class="library"><summary>Studio design library</summary><div class="saved-design-bar"><select id="saved-design-templates" aria-label="Saved designs"><option value="">Sign in to load saved designs</option></select><button class="mini-btn" type="button" disabled id="load-saved-design">Load for redrawing</button><button class="mini-btn" type="button" disabled id="save-current-design">Save design details</button><span id="design-template-status" role="status">Saved designs require staff sign-in.</span></div></details>
+          <div id="recipe-progress" class="recipe-progress" role="status" hidden></div>
+          <button id="customise-recipe" type="button" class="mini-btn" hidden>Change saved details…</button>
           <p id="design-mode-hint" class="map-hint"></p>
 <div class="material-palette" id="material-palette" aria-label="Material for this design">
             <span class="material-palette-label">Material</span><select id="material" data-editor="material" aria-label="Selected material" hidden><option value="Cobalt Chrome">Cobalt Chrome</option><option value="Sterling Silver 925">Sterling Silver 925</option><option value="Gold">Gold</option><option value="Titanium">Titanium</option></select>
@@ -181,7 +186,7 @@
               <label data-gem-edit>Rotate <input id="gem-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Rotate selected diamond"><span id="gem-rotation-value">0°</span></label>
               <button type="button" class="mini-btn" data-gem-edit data-rotate="-15" aria-label="Rotate diamond counterclockwise">−15°</button>
               <button type="button" class="mini-btn" data-gem-edit data-rotate="15" aria-label="Rotate diamond clockwise">+15°</button>
-              <label id="gem-spacing-control">Spacing <input id="gem-spacing" type="range" min="0.4" max="3" step="0.1" value="1"><span id="gem-spacing-value">1 mm</span></label>
+              <label id="gem-spacing-control">Edge gap <input id="gem-spacing" type="range" min="0.4" max="3" step="0.1" value="1"><span id="gem-spacing-value">1 mm</span></label>
               <button type="button" class="mini-btn" id="delete-selected-gem" data-gem-edit>Delete diamond</button>
             </div>
           </div>
@@ -194,8 +199,20 @@
       </section>
 <section class="card" id="design-review-card" hidden aria-labelledby="detail-heading">
   <div class="card-head"><div><span class="micro-label">DESIGN ATELIER &nbsp; / &nbsp; 03</span><h2 id="detail-heading">Design details</h2><p id="detail-caption"></p></div></div>
-  <div class="card-body"><div id="review-fields"></div><div class="detail-actions"><button class="btn btn-primary" id="save-design-details" type="button">Apply details to estimate</button><button class="btn" id="back-to-drawing" type="button">Back to drawing</button></div></div>
+  <div class="card-body"><div id="review-fields"></div><label class="review-name">Design name<input id="review-name" maxlength="60" placeholder="Name this piece" autocomplete="off"></label><div class="detail-actions"><button class="btn btn-primary" id="save-design-details" type="button">Apply details to estimate</button><button class="btn" id="back-to-drawing" type="button">Back to drawing</button></div></div>
 </section>
+<dialog id="match-design-dialog" aria-labelledby="match-title" aria-describedby="match-description"><form method="dialog">
+  <span class="micro-label">STUDIO DESIGN LIBRARY</span><h2 id="match-title"></h2>
+  <p id="match-description">These tooth and finish details match a saved design. Use its name for this drawing? Your artwork and the library original stay unchanged.</p>
+  <label id="match-choices" hidden>Matching designs<select id="match-name"></select></label>
+  <div class="detail-actions"><button class="btn" type="submit" value="keep" autofocus>Keep my name</button><button class="btn" type="submit" value="edit">Edit name</button><button class="btn btn-primary" type="submit" value="use">Use saved name</button></div>
+</form></dialog>
+<dialog id="extra-design-dialog" aria-labelledby="extra-title"><form method="dialog">
+  <span class="micro-label">STUDIO DESIGN LIBRARY</span><h2 id="extra-title">Start a new design?</h2>
+  <p id="extra-reason"></p><p>Keep your drawing and continue under a new design name? The studio library original will not change.</p>
+  <label id="extra-metal-label" hidden>Metal for the extra stone work<select id="extra-metal"><option value="silver">Sterling Silver 925</option><option value="gold">Gold</option></select></label>
+  <label for="extra-name">New design name</label><input type="text" id="extra-name" maxlength="40" placeholder="Name the new piece" autocomplete="off">
+  <div class="detail-actions"><button class="btn" type="submit" value="cancel" formnovalidate autofocus>No, leave it out</button><button class="btn btn-primary" type="submit" value="create">Yes, create design</button></div></form></dialog>
 <dialog id="enamel-dialog" aria-labelledby="palette-heading"><form method="dialog"><span class="micro-label">COLOUR STUDIO</span><h2 id="palette-heading">Enamel fill</h2><p>Choose the colours to fill a tooth. One is Single, two are Multi, and three or more are Master.</p>
 <div id="palette-inputs"></div><button class="mini-btn" id="add-colour" type="button">+ Add colour</button><p id="palette-tier" role="status"></p><div class="detail-actions"><button id="use-palette" type="submit" value="apply" class="btn btn-primary">Use this fill</button><button type="submit" value="cancel" class="btn">Cancel</button></div></form></dialog>
 <section class="card" id="design-groups-card">
@@ -239,20 +256,25 @@
         <form class="service-builder" id="payment-form"><label>Amount received (EGP)<input id="receipt-amount" type="number" required min="1" step="1" inputmode="numeric"></label><label>Received by<select id="receipt-method"><option>Cash</option><option>Card</option><option>Bank transfer</option><option>Instapay</option></select></label><button class="btn" id="record-payment" disabled>Record payment</button></form><p id="receipt-status" role="status"></p></div></section>
   <section class="card output-card"><div class="card-head"><div><h2>Order documents</h2><p>The quotation contains pricing. The signed order sheet includes the artwork and production instructions.</p></div></div>
           <div class="client-delivery">
-            <div class="delivery-files"><span class="micro-label">1 · Download attachments</span>
+            <div class="delivery-files"><span class="micro-label">Optional downloads</span>
               <button class="btn" id="order-pdf-btn" type="button">Download order PDF</button>
               <button class="btn" id="quote-pdf-btn" type="button">Download quotation PDF</button></div>
-            <div class="field"><label for="delivery-email">2 · Draft email to</label><input id="delivery-email" type="email" data-field="clientEmail" maxlength="254" autocomplete="email" placeholder="Client email address" aria-describedby="mail-recipient"></div>
-            <button type="button" class="btn btn-primary" id="email-order" disabled>Open Gmail draft</button>
-            <div class="delivery-note"><p>Attach both downloaded PDFs with the paperclip, review the message, then press Send in your mail app. Nothing is sent automatically.</p>
+            <div class="field"><label for="delivery-email">Email draft to</label><input id="delivery-email" type="email" data-field="clientEmail" maxlength="254" autocomplete="email" placeholder="Client email address" aria-describedby="mail-recipient"></div>
+            <button type="button" class="btn btn-primary" id="email-order" disabled>Prepare email with both PDFs</button>
+            <div class="delivery-note"><p>Creates a draft for you to review. The order and quotation are attached together; only you press Send.</p>
               <p id="mail-recipient"></p><p id="mail-status" role="status"></p>
-              <div id="draft-links" hidden><a id="draft-gmail" target="_blank" rel="noopener noreferrer">Open Gmail</a> · <a id="draft-mailto">Use my mail app</a></div></div>
+              <div id="draft-links" hidden>
+                <button class="btn btn-primary" type="button" id="attach-gmail" hidden>Choose Gmail account &amp; open attached draft</button>
+                <button class="btn" type="button" id="share-pdfs" hidden>Share both PDFs to Gmail or another app</button>
+                <p id="gmail-setup"></p><p id="attached-draft" hidden><a id="gmail-created" target="_blank" rel="noopener noreferrer">Open the attached Gmail draft</a> · <a id="gmail-folder" target="_blank" rel="noopener noreferrer">Gmail Drafts folder</a></p>
+                <details><summary>Manual alternative · attach the files yourself</summary><p>Download both PDFs above. These text-only links cannot attach files.</p><a id="draft-gmail" target="_blank" rel="noopener noreferrer">Text-only Gmail compose</a> · <a id="draft-mailto">Use my mail app</a></details>
+              </div></div>
           </div>
           <div class="output-actions"><button class="btn" id="save-quote-btn" type="button" disabled>Save order &amp; quotation</button><a id="open-saved-quote" class="text-btn" hidden>Open saved quotation</a><button class="btn" id="create-proforma-btn" type="button">Prepare invoice</button><button class="btn" id="print-sheet-btn" type="button">Print order sheet</button><button class="text-btn" id="preview-sheet" aria-expanded="false" type="button">Preview order sheet</button></div></section>
       </div>
       <div class="stage-actions"><button type="button" class="btn" id="step-back" hidden>Back</button><span id="step-position">Step 1 of 4</span><button type="button" class="btn btn-primary" id="step-next">Continue to design</button></div>
     </main>
-    <aside class="work-rail"><section class="card summary-card">
+    <aside class="work-rail"><section class="card summary-card" id="order-summary" hidden>
         <div class="summary-top"><div><div class="micro-label">Studio file</div><h2>Order summary</h2></div><select class="status-select" aria-label="Order status" data-field="status"><option>Draft</option><option>Discussing</option><option>Approved</option><option>Confirmed order</option></select></div>
         <div class="summary-body">
           <div class="summary-label">Client</div><div class="summary-client" id="summary-client">New client</div><div class="summary-phone" id="summary-phone">Add a phone number</div>
@@ -263,9 +285,8 @@
           <div class="summary-total"><div class="total-label">Quoted price</div><div class="total-amount" id="summary-total">—</div><div class="balance" id="summary-balance">Enter the agreed price below.</div></div>
         </div>
         <div id="order-warning" class="order-warning" role="status" hidden></div>
-        <div class="save-state"><span class="save-indicator"></span><span id="save-status">Not saved</span></div>
       </section>
-      <section class="card file-tools"><h3>Studio order files</h3><select id="saved-drafts" class="draft-picker" aria-label="Open a studio order"><option value="">Saved sheets</option></select>
+      <section class="card file-tools"><h3>Studio order files</h3><div class="save-state"><span class="save-indicator"></span><span id="save-status">Not saved</span></div><select id="saved-drafts" class="draft-picker" aria-label="Open a studio order"><option value="">Saved sheets</option></select>
         <div><button type="button" class="btn" id="save-draft">Save to studio</button><button type="button" class="btn btn-quiet" id="new-sheet">New sheet</button></div>
         <p>Sign in to EditX to save and reopen sheets on any studio device. Drawings and signatures are saved as strokes, never as image or PDF files.</p>
         <details class="library" id="legacy-files" hidden><summary>Import an earlier device draft</summary><p>Optional. Choose an old sheet to review before saving it online. The original stays untouched.</p><select id="legacy-picker" class="draft-picker" aria-label="Earlier device draft"></select><button class="btn" type="button" id="legacy-open">Open earlier draft</button></details>
@@ -275,6 +296,6 @@
   <section id="print-sheet" class="print-sheet" aria-label="Printable client order sheet" hidden></section>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script src="/assets/order-sheet.js?v=4"></script>
+<script src="/assets/order-sheet.js?v=6"></script>
 </body>
 </html>

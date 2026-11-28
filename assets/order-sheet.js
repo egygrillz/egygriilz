@@ -107,6 +107,7 @@
     zoom = 1,
     renderedZoom = 1,
     activeStroke = null,
+    dragPreview = null,
     pricingSource = 'loading',
     records = null,
     currentOrder = null,
@@ -119,10 +120,11 @@
     dirty = false,
     pendingReceipt = null,
     draftVersion = '',
+    preparedMail = null,
     stopPrices = null,
     staffUser = null,
     savedDesignDocs = new Map(),
-    printDesignMapHtml = '',
+    printDesignMaps = new Map(),
     printDesignMapDirty = true,
     capturingPrintMap = false;
   const UPPER = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
@@ -190,7 +192,7 @@
         name: '',
         material: 'Cobalt Chrome',
         karat: '18K',
-        level: '1 Solid',
+        level: '1',
         plating: 'None',
         enamel: 'None',
         engraving: 'None',
@@ -208,6 +210,7 @@
   }
   let state = blankState(),
     toastTimer = 0;
+  const oldBarLayers = new WeakSet();
   function normalizeDesignState() {
     const defaults = blankState(),
       teeth = (arr) => [
@@ -273,6 +276,7 @@
     for (const layer of state.designLayers) {
       const groups = state.groups.filter((g) => g.layerId === layer.id);
       if (oldLayers.has(layer.id)) layer.legacy = true;
+      if (OrderDesign.oldBarCharges(state, layer, groups)) oldBarLayers.add(layer);
       layer.mode ||= groups.length > 1 ? 'mix' : 'single';
       if (!layer.details) {
         layer.details = {};
@@ -294,7 +298,7 @@
       state.editingGroupId = '';
       state.selectedTeeth = [];
     }
-    if (!state.designLayers.find((l) => l.id === state.activeDesignId)?.teeth.length)
+    if (!activeLayer()?.teeth.length && !activeLayer()?.recipe && !activeLayer()?.customized)
       state.newDesignSelection = true;
     state.tool = state.newDesignSelection
       ? 'select'
@@ -364,7 +368,7 @@
     if (!host) return;
     host.innerHTML = '';
     state.designLayers
-      .filter((l) => l.teeth.length)
+      .filter((l) => l.teeth.length || l.recipe || l.customized)
       .forEach((layer, index) => {
         const button = document.createElement('button');
         button.type = 'button';
@@ -378,7 +382,7 @@
         const content = document.createElement('span');
         content.textContent = layer.name || `Design ${index + 1}`;
         const count = document.createElement('small');
-        count.textContent = `${layer.teeth.length} teeth${layerPending(layer) ? ' · needs review' : ''}`;
+        count.textContent = `${layer.teeth.length} teeth${layerPending(layer) ? (layer.recipe ? ' · to draw' : ' · needs review') : ''}`;
         button.append(content, count);
         host.appendChild(button);
       });
@@ -387,21 +391,15 @@
       : state.showAllDesigns
         ? 'All designs together'
         : activeLayer()?.name || 'Design layer';
-    $('.design-layer-tools').hidden = !state.designLayers.some((l) => l.teeth.length);
+    $('.design-layer-tools').hidden = !state.designLayers.some(
+      (l) => l.teeth.length || l.recipe || l.customized,
+    );
     $('#show-all-designs').hidden = state.designLayers.filter((l) => l.teeth.length).length < 2;
-    $('#isolate-design').hidden = state.newDesignSelection;
+    $('#isolate-design').hidden = state.newDesignSelection || !!activeLayer()?.recipe;
     $('#show-all-designs').classList.toggle('active', !!state.showAllDesigns);
     $('#show-all-designs').textContent = state.showAllDesigns ? 'Isolate active design' : 'View all together';
   }
-  const levels = [
-    '0.5 Bars',
-    '1 Solid',
-    '2 Open face',
-    '3 Mid detail',
-    '4 Complex',
-    '5 Scorpion',
-    '6 Ultimate',
-  ];
+  const levels = ['0.5', '1', '2', '3', '4', '5', '6'];
   const platings = ['None', 'Yellow gold', 'White gold', 'Rose gold', 'Black gold', 'Silver plating'];
   const types = ['CZ', 'Moissanite', 'Lab-grown diamond', 'Natural diamond'];
   const options = (values, current) =>
@@ -409,15 +407,36 @@
   function renderDesignMode() {
     const selecting = state.newDesignSelection,
       layer = activeLayer();
+    const reuse = !selecting && !!layer.recipe;
+    $('#recipe-progress').hidden = !reuse;
+    if (reuse) {
+      const missing = OrderRecipe.progress(layer, state);
+      const rows = layer.recipe.slots.map((slot, i) => {
+        const metal = MATERIALS[materialForGroup(slot.material)].label;
+        return `<li><strong>${layer.teeth[i] ? 'FDI ' + layer.teeth[i] : 'Tooth slot ' + (i + 1)}</strong> · ${esc(metal)} · ${esc(CalcEngine.levelName(slot.detail.level))} · ${esc(slot.detail.plating === 'None' ? 'No plating' : slot.detail.plating)}<br>${esc(missing[i] || 'Drawing complete')}</li>`;
+      });
+      $('#recipe-progress').innerHTML =
+        `<strong>${esc(layer.name)}</strong> · ${layer.teeth.length} of ${layer.recipe.slots.length} teeth assigned. ${missing.some(Boolean) ? 'Draw on the chart. Each new tooth takes the next saved slot.' : 'Ready for pricing.'}<ol>${rows.join('')}</ol>`;
+    }
+    $('#customise-recipe').hidden = !reuse;
+    $('#material-palette').hidden = reuse;
+    $$('.design-session-bar label').forEach((el) => (el.hidden = reuse));
+    $('#design-details-card h2').textContent = reuse ? 'Draw your saved design' : 'Set up your design';
+    $('#design-details-card .card-head p').hidden = reuse;
+    $('#design-mode-hint').hidden = reuse;
+    $('#apply-design').hidden = reuse;
+    $('#apply-hint').hidden = reuse;
     $('#design-mode').value = state.designMode;
     $('#design-mode').disabled = $('#group-name').disabled = !selecting;
-    $$('.material-chip').forEach((b) => (b.disabled = !selecting));
+    $$('.material-chip').forEach((b) => (b.disabled = !selecting && !layer.customized));
+    $('.material-palette-label').textContent =
+      !selecting && layer.customized ? 'Metal for the next tooth' : 'Material';
     $('#design-mode-hint').textContent = selecting
       ? 'Tap tooth outlines to select or deselect. The material colours your pencil, not the tooth.'
       : `Working on ${layer.name}. Start a new selection to add another design.`;
     $('#design-groups-title').textContent = 'Added designs';
     $('#design-groups-help').textContent = 'Only the applied design details below go to the calculator.';
-    $('#apply-design').disabled = selecting && !state.selectedTeeth.length;
+    $('#apply-design').disabled = selecting ? !state.selectedTeeth.length : !layer.teeth.length;
     $('#apply-design').textContent = selecting ? 'Start drawing' : 'Finish drawing: design details';
     $('#apply-hint').textContent = selecting
       ? 'Choose at least one tooth to open a drawing layer.'
@@ -449,14 +468,14 @@
   function renderDetailForm() {
     const layer = activeLayer(),
       card = $('#design-review-card');
-    card.hidden = state.newDesignSelection || state.reviewLayerId !== layer.id;
+    card.hidden = !!layer.recipe || state.newDesignSelection || state.reviewLayerId !== layer.id;
     if (card.hidden) {
       $('#review-fields').replaceChildren();
       return;
     }
     const facts = OrderDesign.inspect(state, layer),
       cfg = CalcEngine.get();
-    $('#detail-heading').textContent = layer.name + ' · Design details';
+    $('#detail-heading').textContent = layer.name;
     $('#detail-caption').textContent = layer.legacy
       ? 'Imported specification. Applying this review replaces the original priced details with the effects currently drawn.'
       : 'Check the finish and the effects used in this drawing. Applying these details updates the estimate.';
@@ -466,7 +485,7 @@
         const d = { ...OrderDesign.defaults, ...layer.details?.[key] },
           marks = ids.map((id) => facts.get(id));
         const field = (label, k, choices) =>
-          `<label>${label}<select data-detail="${k}" data-row="${key}">${options(choices, d[k])}</select></label>`;
+          `<label>${label}<select data-detail="${k}" data-row="${key}">${k === 'level' ? levels.map((v) => `<option value="${v}" ${CalcEngine.levelKey(v) === CalcEngine.levelKey(d.level) ? 'selected' : ''}>${CalcEngine.levelName(v)}</option>`).join('') : options(choices, d[k])}</select></label>`;
         const rate = (label, k) =>
           `<label>${label}<input data-detail="${k}" data-row="${key}" type="number" min="0" step="any" required placeholder="EGP" value="${esc(d[k])}"></label>`;
         const colors = [...new Set(marks.flatMap((m) => [...m.colors]))],
@@ -475,7 +494,16 @@
         const materials = [
           ...new Set(ids.map((id) => MATERIALS[materialForGroup(layer.materials[id])].label)),
         ];
-        return `<fieldset class="detail-row"><legend>FDI ${ids.join(' · ')} &nbsp; / &nbsp; ${esc(materials.join(' + '))}</legend><div class="detail-grid">${field('Design level', 'level', levels)}${field('Plating', 'plating', platings)}${materials.includes('Gold') ? field('Gold purity', 'karat', ['10K', '14K', '18K', '21K', '22K']) : ''}${marks.some((m) => m.laser) ? field('Laser engraving size', 'engraving', ['Small', 'Medium', 'Large']) : ''}</div>
+        return `<fieldset class="detail-row"><legend>FDI ${ids.join(' · ')} &nbsp; / &nbsp; ${esc(materials.join(' + '))}</legend><div class="detail-grid">${
+          layer.customized
+            ? `<label>Material<select data-fork-metal="${key}">${options(
+                Object.values(MATERIALS)
+                  .map((m) => m.label)
+                  .filter((m) => supportsStones(m) || (!stones.length && !iced.length)),
+                materials[0],
+              )}</select></label>`
+            : ''
+        }${field('Complexity', 'level', levels)}${field('Plating', 'plating', platings)}${materials.includes('Gold') ? field('Gold purity', 'karat', ['10K', '14K', '18K', '21K', '22K']) : ''}${marks.some((m) => m.laser) ? field('Laser engraving size', 'engraving', ['Small', 'Medium', 'Large']) : ''}</div>
       ${colors.length ? `<div class="detail-effect"><strong>Enamel · ${OrderDesign.tier(colors.length)}</strong><span>${colors.map((c) => `<i class="colour-chip" style="--colour:${c}"></i>${c}`).join(' · ')}</span></div>` : ''}
       ${
         stones.length
@@ -492,12 +520,14 @@
               )}</span><div class="detail-grid">${field('Stone type', 'accentType', types)}${field('Setting', 'setting', ['Flush', '2-Prong', '3-Prong', '4-Prong', '6-Prong', 'Bezel full', 'Bezel half', 'Bar setting', 'Channel'])}${cfg.accentPrice[stoneKey(d.accentType)] == null ? rate('Unlisted rate · EGP per stone', 'accentCustomPrice') : ''}</div></div>`
           : ''
       }
-      ${iced.length ? `<div class="detail-effect"><strong>Iced coverage · FDI ${iced.join(', ')}</strong><div class="detail-grid">${field('Diamond type', 'diamondType', types)}${field('Coverage', 'coverage', ['Standard pavé', 'French pavé', 'Micro-pavé', 'Channel', 'Invisible'])}${cfg.fullPrice[stoneKey(d.diamondType)] == null && d.level !== '0.5 Bars' ? rate('Unlisted rate · EGP per tooth', 'fullCustomPrice') : ''}</div></div>` : ''}</fieldset>`;
+      ${iced.length && OrderDesign.isBar(d.level) ? `<div class="detail-effect"><strong>Iced-out bar · FDI ${iced.join(', ')}</strong><span>One studio bar-setting rate per tooth, regardless of the line’s diamond count.</span></div>` : iced.length ? `<div class="detail-effect"><strong>Iced coverage · FDI ${iced.join(', ')}</strong><div class="detail-grid">${field('Diamond type', 'diamondType', types)}${field('Coverage', 'coverage', ['Standard pavé', 'French pavé', 'Micro-pavé', 'Channel', 'Invisible'])}${cfg.fullPrice[stoneKey(d.diamondType)] == null && !OrderDesign.isBar(d.level) ? rate('Unlisted rate · EGP per tooth', 'fullCustomPrice') : ''}</div></div>` : ''}</fieldset>`;
       })
       .join('');
   }
   function reviewDesign() {
+    if (activeLayer().recipe || !activeLayer().teeth.length) return;
     state.reviewLayerId = activeLayer().id;
+    $('#review-name').value = activeLayer().name;
     renderDesignMode();
     persist();
     $('#design-review-card').scrollIntoView({ block: 'start' });
@@ -529,12 +559,13 @@
         ]),
       ),
     };
-    state.designLayers = state.designLayers.filter((l) => l.teeth.length);
+    state.designLayers = state.designLayers.filter((l) => l.teeth.length || l.recipe || l.customized);
     state.designLayers.push(layer);
     activateLayer(layer);
     notify('Layer ready. Sketch, or finish now for a plain design.');
   }
   function activateLayer(layer) {
+    brushOverride = null;
     state.activeDesignId = layer.id;
     state.showAllDesigns = false;
     state.isolateDesign = false;
@@ -546,13 +577,65 @@
     state.reviewLayerId = '';
     state.designMode = layer.mode || 'single';
     state.editor.name = layer.name;
-    state.editor.materialKey = materialForGroup(layer.materials[layer.teeth[0]]);
+    state.editor.materialKey = materialForGroup(
+      layer.materials[layer.teeth[0]] || layer.recipe?.slots[0]?.material,
+    );
+    if (layer.recipe) state.freeDraw = false;
     state.editor.material = MATERIALS[state.editor.materialKey].label;
     syncInputs();
     setTool('draw');
+    renderGemOptions();
     renderAll();
     persist();
   }
+  const askedNames = new WeakMap();
+  let naming = null;
+  function suggestName(layer, specs, applying) {
+    if (!staffUser || !savedDesignDocs.size || layer.recipe || naming) return false;
+    const key = OrderRecipe.matchKey(OrderRecipe.fromLayer(layer, state, specs));
+    if (askedNames.get(layer) === key) return false;
+    const names = [
+      ...new Set(
+        [...savedDesignDocs.values()].filter((r) => OrderRecipe.matchKey(r) === key).map((r) => r.name),
+      ),
+    ].sort();
+    if (!names.length || names.includes($('#review-name').value.trim())) return false;
+    const dialog = $('#match-design-dialog');
+    askedNames.set(layer, key);
+    naming = { layer, applying, user: staffUser, target: state };
+    $('#match-title').textContent =
+      names.length === 1 ? `Is this ${names[0]}?` : 'Which saved design is this?';
+    $('#match-name').replaceChildren(...names.map((n) => new Option(n, n)));
+    $('#match-choices').hidden = names.length === 1;
+    dialog.returnValue = '';
+    dialog.showModal();
+    return true;
+  }
+  $('#review-name').onfocus = () => {
+    const l = activeLayer();
+    if (l.id === state.reviewLayerId && !l.recipe)
+      suggestName(l, OrderDesign.compile(l, OrderDesign.inspect(state, l)), false);
+  };
+  $('#match-design-dialog').onclose = (e) => {
+    const pending = naming;
+    naming = null;
+    if (
+      !pending ||
+      pending.layer !== activeLayer() ||
+      pending.target !== state ||
+      pending.user !== staffUser ||
+      activeLayer().id !== state.reviewLayerId
+    )
+      return;
+    const choice = e.target.returnValue;
+    if (choice === 'edit') {
+      $('#review-name').focus();
+      $('#review-name').select();
+      return;
+    }
+    if (choice === 'use') $('#review-name').value = $('#match-name').value;
+    if (pending.applying && ['keep', 'use'].includes(choice)) saveDesignDetails();
+  };
   function saveDesignDetails() {
     const layer = activeLayer();
     if (layer.id !== state.reviewLayerId) return;
@@ -561,10 +644,21 @@
       invalid.reportValidity();
       return;
     }
+    if (suggestName(layer, OrderDesign.compile(layer, OrderDesign.inspect(state, layer)), true)) return;
     if (layer.legacy && !confirm('Replace the imported pricing specification with the details shown here?'))
       return;
-    const oldGroups = state.groups.filter((g) => g.layerId === layer.id),
-      specs = OrderDesign.compile(layer, OrderDesign.inspect(state, layer));
+    layer.name = state.editor.name = $('#review-name').value.trim() || layer.name;
+    $('#group-name').value = layer.name;
+    applySpecs(layer, OrderDesign.compile(layer, OrderDesign.inspect(state, layer)));
+    delete layer.legacy;
+    state.reviewLayerId = '';
+    renderAll();
+    persist();
+    notify('Design details applied to the estimate');
+  }
+  function applySpecs(layer, specs) {
+    oldBarLayers.delete(layer);
+    const oldGroups = state.groups.filter((g) => g.layerId === layer.id);
     const groups = specs.map((g) => ({
       ...g,
       id: oldGroups.find((old) => String(old.teeth) === String(g.teeth))?.id || crypto.randomUUID(),
@@ -573,14 +667,138 @@
     const start = state.groups.findIndex((g) => g.layerId === layer.id);
     state.groups = state.groups.filter((g) => g.layerId !== layer.id);
     state.groups.splice(start < 0 ? state.groups.length : start, 0, ...groups);
-    layer.draft = false;
-    delete layer.legacy;
+    layer.draft = !specs.length;
     layer.revision = JSON.stringify(specs);
-    state.reviewLayerId = '';
+  }
+  function reconcileRemovedMark(layer) {
+    if (!layer.recipe) return;
+    const used = new Set(
+      [...state.ink, ...state.gems]
+        .filter((m) => m.designId === layer.id)
+        .flatMap((m) => (m.touchedTeeth?.length ? m.touchedTeeth : [m.tooth])),
+    );
+    while (layer.teeth.length && !used.has(layer.teeth.at(-1))) {
+      const id = layer.teeth.pop();
+      delete layer.materials[id];
+      delete layer.details[id];
+    }
+    syncRecipePrice(layer);
+  }
+  function syncRecipePrice(layer) {
+    if (!layer.recipe) return;
+    const specs = layerPending(layer) ? [] : OrderDesign.compile(layer, OrderDesign.inspect(state, layer));
+    if (JSON.stringify(specs) !== layer.revision) applySpecs(layer, specs);
+  }
+  // Stage additions, including tooth bindings, until the entire gesture fits.
+  // Nothing here prompts for the saved name, metal, complexity or finish again.
+  let extraWork = null,
+    brushOverride = null;
+  const acceptsNewTooth = (layer) => layer.recipe || layer.customized;
+  const slotMaterial = (layer, id, teeth = layer.teeth) =>
+    materialForGroup(
+      layer.materials[id] ||
+        OrderRecipe.slotAt(layer, id, teeth)?.material ||
+        layer.nextMaterial ||
+        layer.remainingSlots?.[
+          Math.max(0, (teeth.includes(id) ? teeth.indexOf(id) : teeth.length) - layer.teeth.length)
+        ]?.material ||
+        layer.recipe?.slots.at(-1)?.material ||
+        state.editor.material,
+    );
+  function bindSlots(layer, actions) {
+    for (const id of OrderRecipe.teethAfter(layer, actions)) {
+      if (layer.teeth.includes(id)) continue;
+      layer.materials[id] = slotMaterial(layer, id);
+      const slot =
+        OrderRecipe.slotAt(layer, id) || layer.recipe?.slots.at(-1) || layer.remainingSlots?.shift();
+      layer.details[id] = { ...OrderDesign.defaults, ...slot?.detail };
+      layer.teeth.push(id);
+    }
+  }
+  function withScope(actions, apply, { excludeId, reason } = {}) {
+    const layer = activeLayer();
+    const proposedTeeth = OrderRecipe.teethAfter(layer, actions);
+    const needsMetal = layer.recipe
+      ? actions.filter(
+          (a) =>
+            ['gem', 'pave', 'ice'].includes(a.tool) &&
+            !supportsStones(slotMaterial(layer, a.tooth, proposedTeeth)),
+        )
+      : [];
+    const why =
+      layer.recipe &&
+      (reason ||
+        OrderRecipe.problem(layer, actions, state.gems, excludeId) ||
+        (needsMetal.length && 'This tooth needs silver or gold for a stone setting.'));
+    if (why) {
+      extraWork = { layer, actions, apply, sheet: state, user: staffUser, needsMetal };
+      $('#extra-reason').textContent = why;
+      $('#extra-name').value = '';
+      $('#extra-name').setCustomValidity('');
+      $('#extra-metal-label').hidden = !needsMetal.length;
+      const dialog = $('#extra-design-dialog');
+      dialog.returnValue = 'cancel';
+      dialog.showModal();
+      syncGemControls(state.tool);
+      renderInk();
+      return;
+    }
+    if (acceptsNewTooth(layer)) bindSlots(layer, actions);
+    apply(layer);
+    syncRecipePrice(layer);
+    if (layer.recipe) renderGemOptions();
     renderAll();
     persist();
-    notify('Design details applied to the estimate');
   }
+  $('#extra-name').oninput = (e) => e.target.setCustomValidity('');
+  $('#extra-design-dialog form').onsubmit = (e) => {
+    if (e.submitter?.value === 'create' && !$('#extra-name').value.trim()) {
+      e.preventDefault();
+      $('#extra-name').setCustomValidity('Name the new design first.');
+      $('#extra-name').reportValidity();
+    }
+  };
+  $('#extra-design-dialog').onclose = (e) => {
+    const work = extraWork;
+    extraWork = null;
+    if (
+      e.target.returnValue !== 'create' ||
+      !work ||
+      work.sheet !== state ||
+      work.layer !== activeLayer() ||
+      work.user !== staffUser
+    )
+      return;
+    const layer = work.layer,
+      name = $('#extra-name').value.trim();
+    if (!name) return;
+    // Fork this order instance, not the library document. Keep its existing marks
+    // and tooth bindings; don't bill a second base for editing the same tooth.
+    bindSlots(layer, work.actions);
+    for (const a of work.needsMetal) layer.materials[a.tooth] = $('#extra-metal').value;
+    layer.remainingSlots = layer.recipe.slots.slice(layer.teeth.length);
+    delete layer.recipe;
+    layer.customized = true;
+    layer.name = state.editor.name = name;
+    state.designMode = layer.mode = 'mix';
+    state.editor.materialKey = slotMaterial(layer, 0);
+    state.editor.material = MATERIALS[state.editor.materialKey].label;
+    brushOverride = null;
+    applySpecs(layer, []);
+    syncInputs();
+    work.apply(layer);
+    renderAll();
+    persist();
+    notify(`Continuing as “${name}”.`);
+  };
+  $('#customise-recipe').onclick = () =>
+    withScope(
+      [],
+      (layer) => {
+        if (layer.teeth.length) reviewDesign();
+      },
+      { reason: 'Changing the saved material, finish or complexity makes this a new design.' },
+    );
   function renderProductionChecklist() {
     const checks = state.productionChecks || {},
       done = ['measurements', 'materials', 'stones', 'artwork'].every((k) => !!checks[k]);
@@ -672,38 +890,14 @@
     updateServicePriceHint();
     notify(`${name} added`);
   }
-  function addProductionEffectDetails(g) {
-    return {
-      laser: 'Laser engraving / cutout',
-      emboss: 'Embossed · darker raised detail',
-      standard: 'Standard finish',
-    }[g.productionEffect || 'standard'];
-  }
   function productionNotes() {
-    const checks = state.productionChecks || {},
-      stage = $('#production-stage option:checked')?.textContent || state.productionStage,
-      laserMarks = (state.ink || []).filter((s) => s.effect === 'laser').length,
-      embossMarks = (state.ink || []).filter((s) => s.effect === 'emboss').length,
-      icedGroups = new Map();
-    (state.groups || [])
-      .filter((g) => ['full', 'both'].includes(g.stoneMode))
-      .forEach((g) => {
-        const key = g.layerId || g.name || 'design',
-          entry = icedGroups.get(key) || { name: g.name || 'Design', teeth: new Set() };
-        (g.teeth || []).forEach((tooth) => entry.teeth.add(Number(tooth)));
-        icedGroups.set(key, entry);
-      });
-    (state.icedTeeth || []).forEach((rec) => {
-      const layer = state.designLayers.find((item) => item.id === rec.designId),
-        key = rec.designId || layer?.name || 'design',
-        entry = icedGroups.get(key) || { name: layer?.name || 'Design', teeth: new Set() };
-      entry.teeth.add(Number(rec.tooth));
-      icedGroups.set(key, entry);
-    });
-    const iced = [...icedGroups.values()].map(
-      (entry) => `${entry.name} · FDI ${[...entry.teeth].join(', ') || 'confirm teeth'}`,
+    const stage = $('#production-stage option:checked')?.textContent || state.productionStage;
+    return (
+      `Production stage: ${stage}. ` +
+      ['measurements', 'materials', 'stones', 'artwork']
+        .map((k) => `${k}: ${state.productionChecks?.[k] ? 'verified' : 'pending'}`)
+        .join(' · ')
     );
-    return `Production stage: ${stage}. ${['measurements', 'materials', 'stones', 'artwork'].map((k) => `${k}: ${checks[k] ? 'verified' : 'pending'}`).join(' · ')}${iced.length ? ` · ICED OUT: ${iced.join(' / ')}` : ''} · Laser marks: ${laserMarks} · Emboss marks: ${embossMarks}`;
   }
   function refreshOrder() {
     const input = $('#price'),
@@ -727,7 +921,12 @@
     const gold = orderUsesGold(order);
     if (!locked && gold && !window.MetalRates?.goldEgpPerGram24())
       issues.push('Live gold rate unavailable. Refresh before issuing a gold quote.');
-    if (pending) issues.push('Review the drawing and apply its design details before issuing documents.');
+    if (pending)
+      issues.push(
+        state.designLayers.some((l) => l.recipe && layerPending(l))
+          ? 'Complete the saved design’s drawing checklist, or discard it before issuing.'
+          : 'Review the drawing and apply its design details before issuing documents.',
+      );
     if (!locked && pricingSource === 'loading') issues.push('Loading studio pricing…');
     orderBlock = issues[0] || (!hasItems && 'Add a design or service first.');
     if (!locked && unverifiedPricing())
@@ -761,9 +960,10 @@
       ? `Deposit due ${formatMoney(order.deposit)} · Paid ${formatMoney(CalcEngine.paymentSummary(saved?.quote).paid)} · Outstanding ${formatMoney(Math.max(0, order.total - CalcEngine.paymentSummary(saved?.quote).paid))}`
       : 'Add a design or a studio service to begin.';
     $('#price-breakdown').hidden = !hasItems;
+    const shown = CalcEngine.designBreakdown(order);
     const amounts = [
-      ...order.lines.map((l, i) => [l.name || `Design ${i + 1}`, l.subtotal]),
-      ...order.services.map((s) => [`${s.name} × ${s.qty}`, s.subtotal]),
+      ...shown.designs.map(({ line, subtotal }, i) => [line.name || `Design ${i + 1}`, subtotal]),
+      ...shown.services.map((s) => [`${s.name} × ${s.qty}`, s.subtotal]),
       ...CalcEngine.quoteTotalRows(order, { omitEmptyMold: true }),
     ];
     $('#price-rows').innerHTML = amounts
@@ -774,7 +974,7 @@
     if (!link.hidden) link.href = '/quotes.html?id=' + encodeURIComponent(state.orderNo);
     $('#summary-teeth').textContent = order.teethTotal;
     $('#summary-group-count').textContent = order.lineCount;
-    $('#summary-service-count').textContent = order.services.reduce((n, s) => n + s.qty, 0);
+    $('#summary-service-count').textContent = shown.services.reduce((n, s) => n + s.qty, 0);
     $('#summary-unassigned').textContent = pending;
     $('#order-warning').textContent = issues.join(' ');
     $('#order-warning').hidden = !issues.length || (!hasItems && !pending);
@@ -784,10 +984,22 @@
   function pendingTeeth() {
     return (
       state.selectedTeeth.length +
-      state.designLayers.reduce((n, l) => n + (layerPending(l) ? l.teeth.length : 0), 0)
+      state.designLayers.reduce(
+        (n, l) =>
+          n +
+          (l.recipe
+            ? OrderRecipe.progress(l, state).filter(Boolean).length
+            : layerPending(l)
+              ? Math.max(1, l.teeth.length)
+              : 0),
+        0,
+      )
     );
   }
   function layerPending(layer) {
+    if (oldBarLayers.has(layer) && !priceLocked()) return true;
+    if (layer.recipe) return OrderRecipe.progress(layer, state).some(Boolean);
+    if (layer.customized && !layer.teeth.length) return true;
     return layer.teeth.length && (layer.draft || layer.revision !== OrderDesign.revision(state, layer));
   }
   const orderUsesGold = (order) =>
@@ -1020,7 +1232,7 @@
     renderPrint();
   }
   async function productionDocument(q) {
-    const { build, download } = await import('/assets/order-document.js?v=2');
+    const { build, download } = await import('/assets/order-document.js?v=3');
     if (q.id !== state.orderNo || !staffUser) throw Error('Order changed');
     renderPrint(true);
     if (
@@ -1034,66 +1246,142 @@
     return { blob, download };
   }
   function clearDraftLinks() {
+    preparedMail = null;
     draftVersion = '';
-    $('#draft-links').hidden = true;
-    $('#draft-gmail').removeAttribute('href');
-    $('#draft-mailto').removeAttribute('href');
+    $('#draft-links').hidden = $('#attached-draft').hidden = true;
+    for (const id of ['draft-gmail', 'draft-mailto', 'gmail-created', 'gmail-folder'])
+      $('#' + id).removeAttribute('href');
     $('#mail-status').textContent = '';
+  }
+  function mailCurrent(m) {
+    return (
+      !!m &&
+      preparedMail === m &&
+      staffUser === m.user &&
+      m.target === state &&
+      !dirty &&
+      saved?.quote?.deliveryVersion === m.version &&
+      state.clientEmail.trim() === m.fields.to
+    );
   }
   async function openOrderDraft() {
     requireDesk();
     if (!OrderEmail.validRecipient(state.clientEmail.trim()) || !$('#delivery-email').validity.valid) return;
-    const status = $('#mail-status'),
-      user = staffUser,
-      target = state;
+    const user = staffUser,
+      target = state,
+      status = $('#mail-status');
     clearDraftLinks();
-    status.textContent = 'Saving the order before opening your draft…';
-    // Reserve the tab in the click gesture, before Firestore (or a pricing prompt).
-    // No recipient or message leaves the sheet until that save succeeds.
-    let tab = null;
-    try {
-      tab = window.open('about:blank', '_blank');
-      if (tab) {
-        tab.opener = null;
-        tab.document.title = 'Preparing Gmail draft';
-        tab.document.body.textContent = 'Saving the EGYGRILLZ order before opening Gmail…';
-      }
-    } catch {
-      // Some embedded browsers throw instead of returning null for a blocked popup.
-      tab?.close();
-      tab = null;
-    }
+    status.textContent = 'Saving the quotation and preparing both PDFs…';
     try {
       const q = await saveFile(true);
-      if (user !== staffUser || target !== state) return;
+      if (user !== staffUser || state !== target) return;
       if (!q) {
-        status.textContent = 'No draft opened. Save a valid quotation first.';
+        status.textContent = 'No draft prepared. Save a valid quotation first.';
         return;
       }
+      const meta = { ...q, date: q.issuedAt },
+        { blob } = await productionDocument(q);
+      const files = [
+        new File([blob], CalcEngine.documentFilename('Order', q), { type: 'application/pdf' }),
+        new File([CalcEngine.buildQuotePdfBytes(q.order, meta)], CalcEngine.quotePdfFilename(meta), {
+          type: 'application/pdf',
+        }),
+      ];
+      if (
+        user !== staffUser ||
+        state !== target ||
+        dirty ||
+        saved?.quote?.deliveryVersion !== q.deliveryVersion
+      )
+        return;
+      const m = (preparedMail = {
+        target,
+        user,
+        version: q.deliveryVersion,
+        fields: OrderEmail.fields(q),
+        files,
+        clientId: String(SiteConfig.get('gmailWebClientId') || '').trim(),
+      });
+      draftVersion = m.version;
       const links = OrderEmail.compose(q);
       $('#draft-gmail').href = links.gmail;
       $('#draft-mailto').href = links.mailto;
+      $('#attach-gmail').hidden = true;
+      $('#share-pdfs').hidden = !navigator.canShare?.({ files });
       $('#draft-links').hidden = false;
-      draftVersion = q.deliveryVersion;
-      status.textContent = 'Draft ready. If Gmail didn’t open, choose a link below.';
-      if (tab && !tab.closed) {
-        tab.location.replace(links.gmail);
-        tab = null; // the operator owns the compose tab now
-      }
+      status.textContent = 'Both PDFs are ready. Nothing has been sent.';
+      const hint = $('#gmail-setup');
+      hint.textContent = '';
+      if (OrderGmail.clientIdOK(m.clientId)) {
+        try {
+          await OrderGmail.loadIdentity();
+          if (mailCurrent(m)) $('#attach-gmail').hidden = false;
+        } catch (err) {
+          if (mailCurrent(m)) hint.textContent = err.message;
+        }
+      } else
+        hint.textContent =
+          'For web Gmail, set the public Google web client ID in EditX → Site settings → Quotations. On supported devices, use Share both PDFs and choose Gmail.';
     } catch (e) {
-      if (user === staffUser && target === state && $('#draft-links').hidden)
-        status.textContent = fileError(e, 'prepare this email draft');
-    } finally {
-      tab?.close(); // declined estimate, failed save or account changed: no empty tab
+      if (user === staffUser && target === state)
+        status.textContent = fileError(e, 'prepare the two PDF attachments');
     }
   }
+  $('#attach-gmail').onclick = async () => {
+    const m = preparedMail;
+    if (!mailCurrent(m) || busy || m.created) return;
+    let destination;
+    await deskAction(async () => {
+      try {
+        const token = await OrderGmail.authorize(m.clientId);
+        if (!mailCurrent(m)) return;
+        $('#mail-status').textContent = 'Creating an unsent Gmail draft with two attachments…';
+        const draft = await OrderGmail.create(token, m.fields, m.files, () => mailCurrent(m));
+        if (!mailCurrent(m)) return;
+        m.created = true;
+        $('#gmail-created').href = draft.url;
+        $('#gmail-folder').href = draft.inbox;
+        $('#attached-draft').hidden = false;
+        $('#attach-gmail').hidden = true;
+        $('#mail-status').textContent =
+          'Gmail saved the draft with both PDFs. Review the recipient and attachments before sending.';
+        destination = draft.url;
+      } catch (e) {
+        if (mailCurrent(m)) $('#mail-status').textContent = e.message || 'Gmail was not authorized.';
+      }
+    });
+    if (destination && mailCurrent(m)) {
+      // Do not frame Gmail. In an embedded preview the ordinary new-tab link
+      // remains available if the browser blocks opening after the API call.
+      if (window.top === window) location.assign(destination);
+      else window.open(destination, '_blank', 'noopener,noreferrer');
+    }
+  };
+  $('#share-pdfs').onclick = async () => {
+    const m = preparedMail;
+    if (!mailCurrent(m) || busy) return;
+    try {
+      await navigator.share({ files: m.files, title: m.fields.subject, text: m.fields.body });
+      if (mailCurrent(m))
+        $('#mail-status').textContent =
+          'Files shared with the chosen app. Check the To address before sending.';
+    } catch (e) {
+      if (mailCurrent(m))
+        $('#mail-status').textContent =
+          e.name === 'AbortError'
+            ? 'Sharing cancelled. Nothing was sent by the sheet.'
+            : 'File sharing is unavailable. Use Gmail authorization or the manual alternative.';
+    }
+  };
 
   function renderTeeth() {
     if (!capturingPrintMap) printDesignMapDirty = true;
     const assigned = assignedIds().size;
     $('#selected-count').textContent = state.newDesignSelection
       ? `${state.selectedTeeth.length} selected`
-      : `FDI ${activeLayer().teeth.join(' · ')}`;
+      : !activeLayer().teeth.length
+        ? 'Draw on any tooth'
+        : `FDI ${activeLayer().teeth.join(' · ')}`;
     $('#assigned-count').textContent = `· ${assigned} assigned`;
     if (!capturingPrintMap) renderDesignMode();
     if (!svgChart) return;
@@ -1138,7 +1426,11 @@
     );
     $('#chart-stage-inner').classList.toggle('interacting', state.tool !== 'select');
     $$('.material-chip').forEach((chip) => {
-      const selected = chip.dataset.material === selectedMaterial();
+      const selected =
+        chip.dataset.material ===
+        (!state.newDesignSelection && activeLayer().customized
+          ? slotMaterial(activeLayer(), 0)
+          : selectedMaterial());
       chip.classList.toggle('active', selected);
       chip.setAttribute('aria-pressed', String(selected));
     });
@@ -1162,7 +1454,7 @@
     );
   }
   function setTool(tool) {
-    if (tool === 'enamel' && !state.editor.palette?.length) tool = 'draw';
+    if (tool === 'enamel' && !activeLayer().recipe && !state.editor.palette?.length) tool = 'draw';
     if (['gem', 'gem-edit', 'pave', 'ice'].includes(tool) && !stoneToolAvailable()) {
       notify('Choose Gold or Silver 925 to add diamonds');
       tool = 'draw';
@@ -1187,7 +1479,7 @@
     $('.chart-toolgroup').hidden = !ready;
     const brush = ready && ['draw', 'laser', 'white', 'emboss'].includes(tool);
     $('.brush-control').hidden = !brush;
-    $('.free-draw-toggle').hidden = !brush;
+    $('.free-draw-toggle').hidden = !brush || !!activeLayer().recipe;
     $('#diamond-material-note').hidden = !ready || stones;
     syncGemControls(tool);
 
@@ -1520,11 +1812,11 @@
         if (st.clipToTooth !== false && !clipPaths.length) return;
         const drawingPath = new Path2D(smoothD(st.points, (q) => q.x.toFixed(2) + ' ' + q.y.toFixed(2)));
         if (st.points.length === 1) drawingPath.lineTo(st.points[0].x + 0.01, st.points[0].y);
-        const paint = () => {
+        const paint = (style = st) => {
           canvasCtx.lineCap = 'round';
           canvasCtx.lineJoin = 'round';
           canvasCtx.lineWidth = Number(st.width) || 4;
-          canvasCtx.strokeStyle = strokeColor(st);
+          canvasCtx.strokeStyle = strokeColor(style);
           canvasCtx.setLineDash([]);
           if (st.effect === 'laser' && st.laserStyle === 'cutout') {
             canvasCtx.lineWidth += 1.35;
@@ -1544,15 +1836,19 @@
             canvasCtx.save();
             try {
               canvasCtx.clip(new Path2D(tooth.getAttribute('d')));
-              paint();
+              const toothId = Number(tooth.dataset.tooth);
+              const layer = state.designLayers.find((l) => l.id === st.designId);
+              const material = layer && slotMaterial(layer, toothId);
+              paint({ ...st, tooth: toothId, material: material || st.material });
             } catch (e) {}
             canvasCtx.restore();
           });
       });
     (state.gems || [])
+      .map((g) => (!capturingPrintMap && dragPreview?.id === g.id ? dragPreview : g))
       .filter((g) => visible.has(g.designId) && supportsStones(materialKeyForLayerTooth(g.designId, g.tooth)))
       .forEach((g) => {
-        const size = Math.max(2, gemSize(g) * 4.5),
+        const size = Math.max(2, gemSize(g) * OrderPave.unitsPerMm),
           sprite = getGemSprite(gemCut(g), g.color || 'clear'),
           tooth = paths.get(Number(g.tooth));
         canvasCtx.save();
@@ -1600,7 +1896,7 @@
     const edit = tool === 'gem-edit',
       multiple = ['pave', 'ice'].includes(tool),
       g = selectedGem();
-    const size = g ? gemSize(g) : brushSize(),
+    const size = g ? gemSize(g) : stoneBrush(tool).sizeMm,
       rotation = Number(g?.rotation) || 0;
     $('#gem-adjustments').hidden = !edit && tool !== 'gem' && !multiple;
     $('#gem-edit-hint').hidden = $('#next-gem').hidden = !edit;
@@ -1637,58 +1933,56 @@
   function gemCountOnTooth(designId, tooth) {
     return state.gems.filter((g) => g.designId === designId && Number(g.tooth) === Number(tooth)).length;
   }
-  function addGem(tooth, x, y, kind = 'placed') {
+  function stoneBrush(tool, tooth) {
     const layer = activeLayer();
-    if (!supportsStones(materialKeyForLayerTooth(layer.id, tooth))) {
-      notify('Stones are not priced for this material. Choose Sterling Silver 925 or Gold.');
-      return null;
-    }
-    if (gemCountOnTooth(layer.id, tooth) >= MAX_STONES_PER_TOOTH) {
-      notify('Maximum stone placement reached on this tooth');
-      return null;
-    }
-    const gem = {
-      id: `gem-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      operationId: `op-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
-      createdAt: Date.now(),
-      designId: layer.id,
-      tooth: Number(tooth),
-      x,
-      y,
+    const basic = {
       sizeMm: brushSize(),
-      cut: state.editor.diamondCut || 'round',
+      cut: tool === 'gem' ? state.editor.diamondCut || 'round' : 'round',
       color: state.editor.gemColor || 'clear',
-
-      kind,
     };
-    state.gems.push(gem);
-    // Placement keeps a brush, not a selection: choosing the next colour must not repaint the previous stone.
-    state.selectedGemId = '';
-    renderGemOptions();
-
-    layer.teeth = [...new Set([...(layer.teeth || []), Number(tooth)])];
-    persist();
-    renderTeeth();
-    renderDesignLayers();
-    renderSummary();
-    renderPrint();
-    return gem;
+    if (!layer.recipe) return basic;
+    if (brushOverride?.tool === tool) return brushOverride.brush;
+    const saved = OrderRecipe.savedBrush(layer, tooth, tool, state.gems);
+    // With no target yet, preview the next applicable brush. A tap uses its own slot.
+    const fallback = tooth
+      ? null
+      : layer.recipe.slots.flatMap((s) =>
+          tool === 'ice' ? [s.ice].filter(Boolean) : s.stones.filter((b) => b.tool === tool),
+        )[0];
+    const spec = saved || fallback || basic;
+    return { sizeMm: spec.sizeMm, cut: spec.cut, color: spec.color };
+  }
+  function eligibleStone(layer, tooth) {
+    return layer.recipe || supportsStones(slotMaterial(layer, tooth));
+  }
+  function addGem(tooth, x, y) {
+    const layer = activeLayer();
+    if (!eligibleStone(layer, tooth)) return notify('Choose silver or gold for stones.');
+    if (gemCountOnTooth(layer.id, tooth) >= MAX_STONES_PER_TOOTH)
+      return notify('Maximum stone placement reached on this tooth');
+    const brush = stoneBrush('gem', tooth);
+    withScope([{ tool: 'gem', tooth, ...brush }], (l) => {
+      addGemRecord(l.id, tooth, x, y, 'placed', crypto.randomUUID(), brush);
+      state.selectedGemId = '';
+      renderGemOptions();
+    });
   }
   function fillToothWithGems(tooth) {
-    const path = svgChart.querySelector(`[data-tooth="${Number(tooth)}"]`);
+    const path = svgChart.querySelector(`[data-tooth="${tooth}"]`);
     if (!path) return;
-    const layer = activeLayer();
-    if (!supportsStones(materialKeyForLayerTooth(layer.id, tooth))) {
-      notify('Iced-out stones are not priced for this material. Choose Sterling Silver 925 or Gold.');
-      return;
-    }
+    const layer = activeLayer(),
+      brush = stoneBrush('ice', tooth);
+    if (!eligibleStone(layer, tooth)) return notify('Choose silver or gold for an iced setting.');
+    withScope([{ tool: 'ice', tooth, ...brush }], (l) => fillIce(l, path, tooth, brush));
+  }
+  function fillIce(layer, path, tooth, brush) {
     state.gems = state.gems.filter(
       (g) => !(g.designId === layer.id && Number(g.tooth) === Number(tooth) && g.kind === 'iced'),
     );
     layer.teeth = [...new Set([...(layer.teeth || []), Number(tooth)])];
     const operationId = `ice-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
       b = path.getBBox(),
-      size = brushSize() * 4.5,
+      size = brush.sizeMm * OrderPave.unitsPerMm,
       space = (Number($('#gem-spacing').value) || 1) * 4.5,
       step = Math.max(2, size + space),
       pt = svgChart.createSVGPoint(),
@@ -1719,7 +2013,10 @@
       maxCount = Math.max(0, MAX_STONES_PER_TOOTH - gemCountOnTooth(layer.id, tooth));
     for (let y = b.y - size / 2; y <= b.y + b.height + size / 2 && count < maxCount; y += step) {
       for (let x = b.x - size / 2; x <= b.x + b.width + size / 2 && count < maxCount; x += step) {
-        if (overlaps(x, y) && addGemRecord(layer.id, tooth, x, y, 'iced', operationId)) count++;
+        if (overlaps(x, y)) {
+          addGemRecord(layer.id, tooth, x, y, 'iced', operationId, brush);
+          count++;
+        }
       }
     }
     state.icedTeeth = state.icedTeeth || [];
@@ -1727,73 +2024,66 @@
       (i) => !(i.designId === layer.id && Number(i.tooth) === Number(tooth)),
     );
     state.icedTeeth.push({ designId: layer.id, tooth: Number(tooth), count });
-    persist();
-    renderTeeth();
-    renderSummary();
-    renderPrint();
     notify(`Iced-out preview applied to tooth ${tooth}`);
   }
-  function addGemRecord(designId, tooth, x, y, kind = 'placed', operationId = '') {
-    if (gemCountOnTooth(designId, tooth) >= MAX_STONES_PER_TOOTH) return null;
-    const gem = {
-      id: `gem-${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${state.gems.length}`,
-      operationId: operationId || `op-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
+  function addGemRecord(designId, tooth, x, y, kind, operationId, brush) {
+    state.gems.push({
+      id: crypto.randomUUID(),
       createdAt: Date.now(),
       designId,
-      tooth: Number(tooth),
+      tooth,
       x,
       y,
-      sizeMm: brushSize(),
-      cut: kind === 'iced' || kind === 'pave' ? 'round' : state.editor.diamondCut || 'round',
-      color: state.editor.gemColor || 'clear',
-
       kind,
-    };
-    state.gems.push(gem);
-    return gem;
+      operationId,
+      sizeMm: brush.sizeMm,
+      cut: brush.cut,
+      color: brush.color,
+    });
   }
   function placePaveAlong(points, tooth) {
-    if (points.length < 1) return;
-    const layer = activeLayer();
-    layer.teeth = [...new Set([...(layer.teeth || []), Number(tooth)])];
-    const operationId = `line-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
-      dist = Math.max(2, brushSize() * 4.5 + (Number($('#gem-spacing').value) || 1) * 4.5);
-    let carry = 0,
-      prev = points[0],
-      placed = 0;
-    if (addGemRecord(layer.id, tooth, prev.x, prev.y, 'pave', operationId)) placed++;
-    for (let i = 1; i < points.length; i++) {
-      const next = points[i],
-        dx = next.x - prev.x,
-        dy = next.y - prev.y,
-        len = Math.hypot(dx, dy);
-      if (len < 0.01) {
-        prev = next;
-        continue;
-      }
-      let offset = dist - carry;
-      while (offset <= len && placed < MAX_STONES_PER_TOOTH * 32) {
-        const t = offset / len,
-          x = prev.x + dx * t,
-          y = prev.y + dy * t,
-          under = pointInAnyTooth(x, y);
-        if (
-          under &&
-          layer.teeth.includes(under) &&
-          supportsStones(materialKeyForLayerTooth(layer.id, under)) &&
-          addGemRecord(layer.id, under, x, y, 'pave', operationId)
-        )
-          placed++;
-        offset += dist;
-      }
-      carry = (carry + len) % dist;
-      prev = next;
+    const layer = activeLayer(),
+      brush = stoneBrush('pave', tooth);
+    const cursor = layer.recipe && OrderRecipe.brushCursor(layer, 'pave', state.gems);
+    const proposedTeeth = [...layer.teeth];
+    const counts = new Map();
+    for (const g of state.gems)
+      if (g.designId === layer.id) counts.set(g.tooth, (counts.get(g.tooth) || 0) + 1);
+    const dots = OrderPave.plan(points, {
+      sizeMm: brush.sizeMm,
+      gapMm: Number($('#gem-spacing').value),
+      cut: brush.cut,
+      existing: state.gems,
+      ...(cursor && {
+        brushAt: (id) => (brushOverride?.tool === 'pave' ? brushOverride.brush : cursor.at(id) || brush),
+      }),
+      onPlace(p) {
+        cursor?.place(p);
+        if (!proposedTeeth.includes(p.tooth)) proposedTeeth.push(p.tooth);
+      },
+      toothAt: (x, y) => {
+        const id = pointInAnyTooth(x, y);
+        return id &&
+          (acceptsNewTooth(layer) || layer.teeth.includes(id)) &&
+          (layer.recipe || supportsStones(slotMaterial(layer, id, proposedTeeth)))
+          ? id
+          : null;
+      },
+      room: (id) => MAX_STONES_PER_TOOTH - (counts.get(id) || 0),
+    });
+    if (!dots.length) {
+      renderInk();
+      notify('No room for another stone along this line.');
+      return;
     }
-    persist();
-    renderTeeth();
-    renderSummary();
-    renderPrint();
-    notify('Diamond line preview added');
+    withScope(
+      dots.map((p) => ({ ...brush, ...p, tool: 'pave' })),
+      (l) => {
+        const op = crypto.randomUUID();
+        for (const p of dots) addGemRecord(l.id, p.tooth, p.x, p.y, 'pave', op, p.sizeMm ? p : brush);
+        notify(`${dots.length} pavé ${dots.length === 1 ? 'stone' : 'stones'} placed`);
+      },
+    );
   }
   function pointInAnyTooth(x, y) {
     const pt = svgChart.createSVGPoint();
@@ -1803,6 +2093,8 @@
     for (const path of svgChart.querySelectorAll('[data-tooth]')) {
       const id = Number(path.dataset.tooth);
       if (allowed && !allowed.has(id)) continue;
+      const box = toothBoxes.get(id);
+      if (box && (x < box.x || y < box.y || x > box.x + box.width || y > box.y + box.height)) continue;
       try {
         if (path.isPointInFill(pt)) return id;
       } catch (e) {}
@@ -1837,12 +2129,9 @@
       preview = $('#gem-selection-preview');
     if (!rail || !colors) return;
     const selected = selectedGem(),
-      selectedCut = selected
-        ? gemCut(selected)
-        : ['ice', 'pave'].includes(state.tool)
-          ? 'round'
-          : state.editor.diamondCut || 'round',
-      selectedColor = selected?.color || state.editor.gemColor || 'clear',
+      previewBrush = stoneBrush(state.tool),
+      selectedCut = selected ? gemCut(selected) : previewBrush.cut,
+      selectedColor = selected?.color || previewBrush.color,
       cutLabel = GEM_CUTS.find((x) => x[0] === selectedCut)?.[1] || selectedCut,
       colorHex = GEM_COLORS.find((x) => x[0] === selectedColor)?.[1] || '#f6f8fb';
     rail.innerHTML = GEM_CUTS.map(
@@ -1936,6 +2225,13 @@
       : key === 'silver' || key === 'gold';
   }
   function stoneToolAvailable() {
+    if (
+      !state.newDesignSelection &&
+      activeLayer()?.customized &&
+      supportsStones(slotMaterial(activeLayer(), 0))
+    )
+      return true;
+    if (!state.newDesignSelection && activeLayer()?.recipe) return true; // propose an extra stone: the fork dialog can switch its tooth to a valid metal
     const ids = state.selectedTeeth.length ? state.selectedTeeth : activeLayer()?.teeth || [];
     if (!ids.length) return supportsStones(selectedMaterial());
     return ids.some((id) => {
@@ -1952,78 +2248,82 @@
   }
   const stoneKey = (v) =>
     ({ 'Lab-grown diamond': 'labgrown', 'Natural diamond': 'natural' })[v] || String(v || 'cz').toLowerCase();
-  function groupDescription(g) {
-    const bits = [
-      g.material === 'Gold' ? `Gold ${g.karat}` : g.material,
-      g.level,
-      g.plating !== 'None' ? g.plating + ' plating' : '',
-      g.enamel !== 'None' ? g.enamel + ' enamel' : '',
-      g.engraving !== 'None' ? g.engraving + ' engraving' : '',
+  // Screen, print and the production PDF all consume the same tooth details.
+  function toothDetails(g) {
+    const details = [
+      ['Material', g.material === 'Gold' ? `Gold ${g.karat}` : g.material],
+      ['Complexity', CalcEngine.levelName(g.level)],
     ];
-    if (g.stoneMode === 'accent' || g.stoneMode === 'both')
-      bits.push(`${g.accentCount} ${g.accentType} · ${g.setting}`);
-    if (g.stoneMode === 'full' || g.stoneMode === 'both') bits.push(`Full ${g.diamondType} · ${g.coverage}`);
-    if (g.pricedStones?.length)
-      bits.push(`${g.pricedStones.reduce((n, x) => n + x.count, 0)} hand-set stones`);
-    bits.push(addProductionEffectDetails(g));
-    if (g.stoneNotes) bits.push(g.stoneNotes);
-    return bits.filter(Boolean).join(' / ');
+    if (g.plating && g.plating !== 'None') details.push(['Plating', g.plating]);
+    if (g.enamel && g.enamel !== 'None')
+      details.push(['Enamel', [g.enamel, ...(g.enamelColors || [])].join(' · ')]);
+    if (g.engraving && g.engraving !== 'None') details.push(['Laser engraving', g.engraving]);
+    if (g.productionEffect === 'emboss') details.push(['Production finish', 'Embossed']);
+    const full = ['full', 'both'].includes(g.stoneMode),
+      ice = Object.keys(g.pricedIce || {});
+    if (full || ice.length)
+      details.push([
+        'Stone setting',
+        (OrderDesign.isBar(g.level)
+          ? 'Iced-out bar'
+          : `Full iced · ${g.diamondType || 'Moissanite'} · ${g.coverage || 'Standard pavé'}`) +
+          (!full && ice.length < g.teeth.length ? ' · FDI ' + ice.join(', ') : ''),
+      ]);
+    if (['accent', 'both'].includes(g.stoneMode))
+      details.push(['Accents', `${g.accentCount} × ${g.accentType} · ${g.setting}`]);
+    const batches = new Map();
+    for (const stone of g.pricedStones || []) {
+      const desc = `${stone.color || 'clear'} ${GEM_CUTS.find((c) => c[0] === stone.cut)?.[1] || stone.cut || 'Round brilliant'} · ${stone.stoneType || 'CZ'} · ${Number(stone.sizeMm || 1).toFixed(1)} mm`;
+      if (!batches.has(desc)) batches.set(desc, { count: 0, teeth: new Set() });
+      const batch = batches.get(desc);
+      batch.count += Number(stone.count) || 1;
+      batch.teeth.add(stone.tooth);
+    }
+    if (batches.size)
+      details.push([
+        'Hand-set stones',
+        [...batches]
+          .map(
+            ([desc, b]) =>
+              `${b.count} × ${desc}` +
+              (b.teeth.size < g.teeth.length ? ' · FDI ' + [...b.teeth].join(', ') : ''),
+          )
+          .join('; ') + (g.setting ? ` · ${g.setting}` : ''),
+      ]);
+    if (g.stoneNotes) details.push(['Stone notes', g.stoneNotes]);
+    return details;
+  }
+  function toothCaption(g) {
+    const summary = toothDetails(g).map(([k, v]) =>
+      ['Material', 'Complexity', 'Stone setting'].includes(k) ? v : `${k}: ${v}`,
+    );
+    return `<div class="group-sub"><strong>FDI ${esc(g.teeth.join(' · '))}</strong><br>${esc(summary.join(' / '))}</div>`;
+  }
+  // Group by layer identity, not the display name (two independent designs may share a name).
+  function designSections() {
+    return state.designLayers.map((layer) => ({
+      layer,
+      groups: state.groups.filter((g) => g.layerId === layer.id),
+    }));
   }
   function renderGroups() {
     const host = $('#design-groups'),
       summary = $('#summary-groups');
-    if (!state.groups.length) {
-      host.innerHTML =
-        '<div class="empty-designs">No design groups yet. Select teeth above and add the first design.</div>';
-      summary.innerHTML =
-        '<div style="font-size:10px;color:#888;padding:8px 0">Groups appear here as you build the order.</div>';
-      return;
-    }
-    host.innerHTML = '';
-    summary.innerHTML = '';
-    state.groups.forEach((g, i) => {
-      const tone = GROUP_TONES[i % GROUP_TONES.length];
-      const card = document.createElement('article');
-      card.className = 'design-group';
-      card.style.setProperty('--group-tone', tone[0]);
-      card.style.setProperty('--group-bg', tone[1]);
-      const sw = document.createElement('div');
-      sw.className = 'group-swatch';
-      sw.textContent = String(i + 1).padStart(2, '0');
-      const info = document.createElement('div');
-      const title = document.createElement('div');
-      title.className = 'group-title';
-      title.textContent = g.name || `Design group ${i + 1}`;
-      const sub = document.createElement('div');
-      sub.className = 'group-sub';
-      sub.textContent = `Teeth ${(g.teeth || []).join(', ')} · ${groupDescription(g)}`;
-      info.append(title, sub);
-      const actions = document.createElement('div');
-      actions.className = 'group-actions';
-      const edit = document.createElement('button');
-      edit.className = 'icon-btn';
-      edit.type = 'button';
-      edit.dataset.action = 'edit-group';
-      edit.dataset.id = g.id;
-      edit.textContent = 'Edit';
-      const remove = document.createElement('button');
-      remove.className = 'icon-btn';
-      remove.type = 'button';
-      remove.dataset.action = 'remove-group';
-      remove.dataset.id = g.id;
-      remove.textContent = 'Remove';
-      actions.append(edit, remove);
-      card.append(sw, info, actions);
-      host.appendChild(card);
-      const row = document.createElement('div');
-      row.className = 'summary-line';
-      const strong = document.createElement('strong');
-      strong.textContent = g.name || `Design group ${i + 1}`;
-      const span = document.createElement('span');
-      span.textContent = `${(g.teeth || []).length} teeth · ${(g.teeth || []).join(', ')} · ${groupDescription(g)}`;
-      row.append(strong, span);
-      summary.appendChild(row);
-    });
+    const sections = designSections().filter((s) => s.groups.length);
+    host.innerHTML =
+      sections
+        .map(({ layer, groups }, i) => {
+          const tone = GROUP_TONES[i % GROUP_TONES.length];
+          return `<article class="design-group" style="--group-tone:${tone[0]};--group-bg:${tone[1]}"><div class="group-swatch">${String(i + 1).padStart(2, '0')}</div><div><h3 class="group-title">${esc(layer.name)}</h3>${groups.map(toothCaption).join('')}</div><div class="group-actions"><button type="button" class="icon-btn" data-action="edit-group" data-id="${esc(groups[0].id)}">${layer.recipe ? 'Draw' : 'Edit'}</button><button type="button" class="icon-btn" data-action="remove-group" data-id="${esc(groups[0].id)}">Remove</button></div></article>`;
+        })
+        .join('') || '<div class="empty-designs">No applied designs yet.</div>';
+    summary.innerHTML =
+      sections
+        .map(
+          ({ layer, groups }) =>
+            `<div class="summary-line"><strong>${esc(layer.name)}</strong><div>${groups.map(toothCaption).join('')}</div></div>`,
+        )
+        .join('') || 'No applied designs yet.';
   }
   function formatMoney(value) {
     return value === '' || value == null ? '—' : `${CalcEngine.fmt(value)} ${CalcEngine.get().currency}`;
@@ -2057,8 +2357,43 @@
   };
   const assetUrl = (folder, name) => `/${folder}/${encodeURIComponent(name)}`;
   const colorLabel = (id) => GEM_COLORS.find((c) => c[0] === id)?.[0] || 'clear';
+  // Crop only the printed illustration. Coordinates of the editable SVG/canvas
+  // never change, and freehand artwork outside a tooth must not be cropped off.
+  function illustrationBounds(teeth, ink) {
+    const v = chartView();
+    let left = Infinity,
+      top = Infinity,
+      right = -Infinity,
+      bottom = -Infinity;
+    const include = (x, y) => {
+      left = Math.min(left, x);
+      top = Math.min(top, y);
+      right = Math.max(right, x);
+      bottom = Math.max(bottom, y);
+    };
+    for (const id of teeth) {
+      const b = toothBoxes.get(id);
+      if (b) {
+        include(b.x, b.y);
+        include(b.x + b.width, b.y + b.height);
+      }
+    }
+    for (const mark of ink)
+      if (mark.clipToTooth === false) for (const p of mark.points || []) include(p.x, p.y);
+    if (!Number.isFinite(left)) return [0, 0, 1, 1];
+    left = Math.max(v.x, left - 18);
+    top = Math.max(v.y, top - 20);
+    right = Math.min(v.x + v.width, right + 18);
+    bottom = Math.min(v.y + v.height, bottom + 20);
+    return [
+      (left - v.x) / v.width,
+      (top - v.y) / v.height,
+      (right - left) / v.width,
+      (bottom - top) / v.height,
+    ];
+  }
   function createPrintDesignMaps() {
-    if (!svgChart || !$('#ink-layer')) return '';
+    if (!svgChart || !$('#ink-layer')) return new Map();
     capturingPrintMap = true;
     const original = {
       tool: state.tool,
@@ -2069,13 +2404,13 @@
       activeStroke,
     };
     const archOrder = UPPER.concat(LOWER),
-      cards = [];
+      cards = new Map();
     try {
       state.showAllDesigns = false;
       state.isolateDrawn = false;
       state.selectedTeeth = [];
       activeStroke = null;
-      state.designLayers.forEach((design, index) => {
+      state.designLayers.forEach((design) => {
         const ink = (state.ink || []).filter((st) => st.designId === design.id),
           gems = (state.gems || []).filter((g) => g.designId === design.id),
           groups = state.groups.filter((g) => g.layerId === design.id);
@@ -2092,6 +2427,8 @@
         renderTeeth();
         renderInk();
         const clone = svgChart.cloneNode(true);
+        clone.setAttribute('width', chartView().width);
+        clone.setAttribute('height', chartView().height);
         clone.setAttribute('color', '#565650');
         clone.classList.remove('isolate-drawn', 'isolate-design');
         clone.removeAttribute('id');
@@ -2107,13 +2444,12 @@
         const svgText = new XMLSerializer().serializeToString(clone),
           svgImage = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText))),
           inkImage = $('#ink-layer').toDataURL('image/png');
-        const heading = design.name || `Design ${index + 1}`,
-          groupNames = groups.map((g) => `${g.name || 'Design'} · ${(g.teeth || []).join(', ')}`).join(' / '),
-          caption = [`FDI teeth: ${teeth.join(', ') || 'Freehand artwork'}`, groupNames]
-            .filter(Boolean)
-            .join(' · ');
-        cards.push(
-          `<figure class="design-layer-print"><h4 class="design-layer-print-title">${esc(heading)}</h4><div class="print-layer-map"><img class="print-layer-teeth" src="${svgImage}" alt="FDI tooth chart for ${esc(heading)}"><img class="print-layer-ink" src="${inkImage}" alt="Sketch and stone overlay for ${esc(heading)}"></div><figcaption>${esc(caption)}</figcaption></figure>`,
+        const rect = illustrationBounds(teeth, ink),
+          [x, y, w, h] = rect;
+        const aspect = (w * CHART_VIEW.width) / (h * CHART_VIEW.height);
+        cards.set(
+          design.id,
+          `<figure class="design-layer-print" data-crop="${rect.join(',')}"><div class="print-layer-map" style="--aspect:${aspect};--full-w:${100 / w}%;--full-h:${100 / h}%;--crop-x:${(-100 * x) / w}%;--crop-y:${(-100 * y) / h}%"><img class="print-layer-teeth" src="${svgImage}" alt="FDI tooth outlines"><img class="print-layer-ink" src="${inkImage}" alt="Artwork for ${esc(design.name)}"></div></figure>`,
         );
       });
     } catch (error) {
@@ -2129,16 +2465,14 @@
       renderTeeth();
       renderInk();
     }
-    if (!cards.length) return '';
-    return `<section class="print-design-map"><h3 class="print-section-title">Design drawings · FDI tooth chart</h3><p class="print-design-map-note">Each design layer is shown separately. The same tooth may appear in more than one layer.</p><div class="print-design-map-grid">${cards.join('')}</div></section>`;
+    return cards;
   }
   function renderPrint(captureDesignMaps = false) {
     if (!captureDesignMaps && $('#print-sheet').hidden) return;
     if ((captureDesignMaps || printDesignMapDirty) && svgChart) {
-      printDesignMapHtml = createPrintDesignMaps();
+      printDesignMaps = createPrintDesignMaps();
       printDesignMapDirty = false;
     }
-    const designMaps = printDesignMapHtml;
     const host = $('#print-sheet'),
       all = assignedIds();
     const layerMaterials = state.designLayers
@@ -2162,8 +2496,8 @@
     ];
     const levelKeys = [
       ...new Set([
-        ...state.groups.map((g) => String(g.level || '1').split(' ')[0]),
-        ...(state.selectedTeeth.length ? [String(state.editor.level || '1').split(' ')[0]] : []),
+        ...state.groups.map((g) => CalcEngine.levelKey(g.level)),
+        ...(state.selectedTeeth.length ? [CalcEngine.levelKey(state.editor.level)] : []),
       ]),
     ];
     const materialPics = materialKeys
@@ -2183,7 +2517,7 @@
     const levelPics = levelKeys
       .map((level) =>
         ASSET_LEVEL[level]
-          ? `<div class="rollup-item"><img src="${assetUrl('levels', ASSET_LEVEL[level])}" alt=""><span>Complexity ${esc(level)}</span></div>`
+          ? `<div class="rollup-item"><img src="${assetUrl('levels', ASSET_LEVEL[level])}" alt=""><span>${esc(CalcEngine.levelName(level))}</span></div>`
           : '',
       )
       .join('');
@@ -2210,26 +2544,31 @@
         return `<div class="rollup-item gem-rollup"><img src="${photo}" alt=""><i style="--gem-color:${GEM_COLORS.find((x) => x[0] === color)?.[1] || '#f6f8fb'}"></i><span>${esc(colorLabel(color))} · ${esc(cutName)} · ${size.toFixed(1)} mm · ${esc(rotation)}°</span></div>`;
       })
       .join('');
-    const groupHtml = state.groups.length
-      ? state.groups
-          .map((g, i) => {
-            const groupTeeth = (g.teeth || []).map(Number),
-              icedOut = ['full', 'both'].includes(g.stoneMode) || Object.keys(g.pricedIce || {}).length > 0,
-              handSet = (g.pricedStones || []).map(
-                (x) =>
-                  `${x.count || 1} × ${x.color || 'clear'} ${GEM_CUTS.find((c) => c[0] === x.cut)?.[1] || x.cut || 'Round brilliant'} · ${x.stoneType || 'CZ'} · ${Number(x.sizeMm || 1.5).toFixed(1)} mm · FDI ${x.tooth}`,
-              );
-            return `<article class="print-group"><div class="print-group-head"><strong>${esc(g.name || `Design group ${i + 1}`)}</strong><span>${groupTeeth.length} ${groupTeeth.length === 1 ? 'tooth' : 'teeth'} · ${groupTeeth.join(', ')}</span></div><div class="print-details"><div class="print-detail"><span>Material</span><span>${esc(g.material === 'Gold' ? `Gold ${g.karat}` : g.material)}</span></div><div class="print-detail"><span>Design level</span><span>${esc(g.level)}</span></div><div class="print-detail"><span>Plating</span><span>${esc(g.plating)}</span></div><div class="print-detail"><span>Enamel</span><span>${esc([g.enamel, ...(g.enamelColors || [])].join(' · '))}</span></div><div class="print-detail"><span>Engraving</span><span>${esc(g.engraving)}</span></div><div class="print-detail"><span>Production finish</span><span>${esc(addProductionEffectDetails(g))}</span></div>${g.stoneMode === 'accent' || g.stoneMode === 'both' ? `<div class="print-detail"><span>Accent</span><span>${esc(g.accentCount + ' × ' + g.accentType + ' · ' + g.setting)}</span></div>` : ''}${icedOut ? `<div class="print-detail"><span>Stone coverage</span><span>${esc(g.diamondType || 'Moissanite')} · ${esc(g.coverage || 'Standard pavé')}</span></div>` : ''}${handSet.length ? `<div class="print-detail"><span>Hand-set stones</span><span>${handSet.map(esc).join(' · ')}</span></div>` : ''}${g.stoneNotes ? `<div class="print-detail"><span>Stone notes</span><span>${esc(g.stoneNotes)}</span></div>` : ''}</div></article>`;
-          })
-          .join('')
-      : '<div class="print-notes"><p>No design groups have been assigned yet.</p></div>';
+    const groupHtml = designSections()
+      .filter(({ layer, groups }) => groups.length || printDesignMaps.has(layer.id))
+      .map(({ layer, groups }) => {
+        const rows = groups
+          .map(
+            (g) =>
+              `<article class="print-group"><div class="print-group-head"><h5>FDI ${esc(g.teeth.join(' · '))}</h5></div><div class="print-details">${toothDetails(
+                g,
+              )
+                .map(
+                  ([k, v]) => `<div class="print-detail"><span>${esc(k)}</span><span>${esc(v)}</span></div>`,
+                )
+                .join('')}</div></article>`,
+          )
+          .join('');
+        return `<section class="print-design"><h4>${esc(layer.name)}</h4>${printDesignMaps.get(layer.id) || ''}${rows || '<p>Drawing in progress · details not yet issued.</p>'}</section>`;
+      })
+      .join('');
     const signature = state.signatureLines?.length
       ? `<img src="${signatureImage()}" alt="Client signature">`
       : '';
     const toothIds = [...new Set([...all, ...state.selectedTeeth])].sort((a, b) => a - b).join(', ') || '—';
     const depositPct =
       Number(state.price) > 0 ? Math.round((Number(state.deposit || 0) / Number(state.price)) * 100) : 0;
-    host.innerHTML = `<div class="print-header"><img class="print-logo" src="/logo/logo_black.png" alt="EGYGRILLZ"><div class="print-heading"><h2>CLIENT ORDER SHEET</h2><div><strong>${esc(state.orderNo)}</strong><br>${esc(state.status)} · ${esc(state.date || '')}</div></div></div><div class="print-meta"><div><span>Client</span><br><strong>${esc(state.clientName || '—')}</strong>${state.clientPhone ? `<br>${esc(state.clientPhone)}` : ''}</div><div><span>Delivery</span><br><strong>${esc(state.deliveryDate || 'To confirm')}</strong></div><div><span>Teeth · FDI</span><br><strong>${esc(toothIds)}</strong></div><div><span>Reference</span><br><strong>${esc(state.reference || '—')}</strong></div></div>${designMaps}<h3 class="print-section-title">Design specification</h3>${groupHtml}<div class="print-notes"><h3 class="print-section-title" style="margin:0">Notes &amp; special requests</h3><p>${esc(state.notes || '—')}</p><p><strong>Production:</strong> ${esc(productionNotes())}</p>${state.services.length ? `<p><strong>Services:</strong> ${state.services.map((x, i) => `${esc(x.name)} ×${Number(x.qty) || 1} · ${formatMoney(currentOrder?.services[i]?.subtotal ?? CalcEngine.calculateService(OrderPricing.serviceSpec(x, CalcEngine)).subtotal)}`).join(' · ')}</p>` : ''}<p><strong>Payment:</strong> ${esc(state.paymentMethod)} · Deposit ${esc(Number(state.deposit || 0).toLocaleString('en-US'))} EGP due · Paid ${esc(formatMoney(CalcEngine.paymentSummary(saved?.quote).paid))} · Outstanding ${esc(formatMoney(Math.max(0, Number(state.price) - CalcEngine.paymentSummary(saved?.quote).paid)))}</p></div><div class="print-price"><span>${state.priceMode === 'manual' ? 'Agreed price' : 'Estimated price'} · ${depositPct}% deposit due</span><strong>${esc(formatMoney(state.price))}</strong></div><section class="print-material-rollup"><strong>Materials &amp; finishes used</strong><div class="rollup-row">${materialPics}${platingPics}${levelPics}${gemPics || '<span class="rollup-empty">No placed diamonds</span>'}</div></section><div class="print-signatures"><div class="signature-line">${signature}<span>Client approval</span></div></div><div class="print-legal">${state.agreement ? 'DESIGN SPECIFICATIONS REVIEWED BY CLIENT.' : 'CLIENT REVIEW PENDING.'}</div>`;
+    host.innerHTML = `<div class="print-header"><img class="print-logo" src="/logo/logo_black.png" alt="EGYGRILLZ"><div class="print-heading"><h2>CLIENT ORDER SHEET</h2><div><strong>${esc(state.orderNo)}</strong><br>${esc(state.status)} · ${esc(state.date || '')}</div></div></div><div class="print-meta"><div><span>Client</span><br><strong>${esc(state.clientName || '—')}</strong>${state.clientPhone ? `<br>${esc(state.clientPhone)}` : ''}</div><div><span>Delivery</span><br><strong>${esc(state.deliveryDate || 'To confirm')}</strong></div><div><span>Teeth · FDI</span><br><strong>${esc(toothIds)}</strong></div><div><span>Reference</span><br><strong>${esc(state.reference || '—')}</strong></div></div>${groupHtml}<div class="print-notes"><h3 class="print-section-title" style="margin:0">Notes &amp; special requests</h3><p>${esc(state.notes || '—')}</p><p><strong>Production:</strong> ${esc(productionNotes())}</p>${state.services.length ? `<p><strong>Services:</strong> ${state.services.map((x, i) => `${esc(x.name)} ×${Number(x.qty) || 1} · ${formatMoney(currentOrder?.services[i]?.subtotal ?? CalcEngine.calculateService(OrderPricing.serviceSpec(x, CalcEngine)).subtotal)}`).join(' · ')}</p>` : ''}<p><strong>Payment:</strong> ${esc(state.paymentMethod)} · Deposit ${esc(Number(state.deposit || 0).toLocaleString('en-US'))} EGP due · Paid ${esc(formatMoney(CalcEngine.paymentSummary(saved?.quote).paid))} · Outstanding ${esc(formatMoney(Math.max(0, Number(state.price) - CalcEngine.paymentSummary(saved?.quote).paid)))}</p></div><div class="print-price"><span>${state.priceMode === 'manual' ? 'Agreed price' : 'Estimated price'} · ${depositPct}% deposit due</span><strong>${esc(formatMoney(state.price))}</strong></div><section class="print-material-rollup"><strong>Materials &amp; finishes used</strong><div class="rollup-row">${materialPics}${platingPics}${levelPics}${gemPics || '<span class="rollup-empty">No placed diamonds</span>'}</div></section><div class="print-signatures"><div class="signature-line">${signature}<span>Client approval</span></div></div><div class="print-legal">${state.agreement ? 'DESIGN SPECIFICATIONS REVIEWED BY CLIENT.' : 'CLIENT REVIEW PENDING.'}</div>`;
   }
   async function loadPricing(force = false) {
     const E = window.CalcEngine;
@@ -2328,7 +2667,8 @@
         persist();
       }
     });
-    $('#edit-palette').onclick = chooseEnamel;
+    $('#edit-palette').onclick = () =>
+      withScope([], chooseEnamel, { reason: 'Changing the saved enamel palette makes a new design.' });
     renderGemOptions();
     setTool(state.tool || 'select');
     $('#save-current-design').addEventListener('click', saveCurrentDesignTemplate);
@@ -2336,6 +2676,9 @@
     document.addEventListener('click', (e) => {
       const chip = e.target.closest('.material-chip');
       if (chip) {
+        if (chip.disabled) return;
+        if (!state.newDesignSelection && activeLayer().customized)
+          activeLayer().nextMaterial = chip.dataset.material;
         state.editor.materialKey = chip.dataset.material;
         state.editor.material = MATERIALS[chip.dataset.material].label;
         $('#material').value = state.editor.material;
@@ -2352,7 +2695,15 @@
       const tool = e.target.closest('[data-tool]');
       if (tool) {
         if (tool.disabled) return;
-        if (tool.dataset.tool === 'enamel') {
+        if (
+          tool.dataset.tool === 'enamel' &&
+          activeLayer().recipe &&
+          !activeLayer().recipe.slots.some((s) => s.colors.length)
+        ) {
+          withScope([], chooseEnamel, { reason: 'Enamel is not in the saved design.' });
+          return;
+        }
+        if (tool.dataset.tool === 'enamel' && !activeLayer().recipe) {
           chooseEnamel();
           return;
         }
@@ -2369,35 +2720,13 @@
       const layerButton = e.target.closest('[data-layer]');
       if (layerButton) {
         const l = state.designLayers.find((l) => l.id === layerButton.dataset.layer);
-        if (l?.teeth.length) activateLayer(l);
+        if (l && (l.teeth.length || l.recipe || l.customized)) activateLayer(l);
         return;
       }
-      const cut = e.target.closest('[data-cut]');
-      if (cut) {
-        const g = selectedGem();
-        if (g) g[g.kind === 'iced' ? 'visualCut' : 'cut'] = cut.dataset.cut;
-        else state.editor.diamondCut = cut.dataset.cut;
-        syncGemControls(state.tool);
-        renderGemOptions();
-        persist();
-        renderInk();
-        renderPrint();
-        refreshOrder();
-        return;
-      }
-      const gemColor = e.target.closest('[data-gem-color]');
-      if (gemColor) {
-        const g = selectedGem();
-        if (g) g.color = gemColor.dataset.gemColor;
-        else state.editor.gemColor = gemColor.dataset.gemColor;
-        syncGemControls(state.tool);
-        renderGemOptions();
-        if (g) refreshOrder();
-        persist();
-        renderInk();
-        renderPrint();
-        return;
-      }
+      const cut = e.target.closest('[data-cut]'),
+        color = e.target.closest('[data-gem-color]');
+      if (cut) changeStone('cut', cut.dataset.cut);
+      if (color) changeStone('color', color.dataset.gemColor);
     });
     $('#next-gem').onclick = () => {
       const gems = state.gems.filter(onEditableLayer);
@@ -2442,11 +2771,7 @@
             startScrollTop: viewport.scrollTop,
           };
         } else if (activeTouches.size === 2) {
-          if (dragOrigin && draggingGemId)
-            Object.assign(
-              state.gems.find((g) => g.id === draggingGemId),
-              dragOrigin,
-            );
+          dragPreview = null;
           draggingGemId = dragOrigin = dragStart = tapAction = activeStroke = drawingPointer = null;
           renderInk();
           for (const id of activeTouches.keys()) viewport.setPointerCapture(id);
@@ -2536,7 +2861,7 @@
     canvas.addEventListener('pointerdown', (e) => {
       if (activeTouches.size > 1 || drawingPointer != null || e.button !== 0 || state.tool === 'select')
         return;
-      if (state.newDesignSelection || !activeLayer()?.teeth.length) {
+      if (state.newDesignSelection || (!activeLayer()?.teeth.length && !acceptsNewTooth(activeLayer()))) {
         notify('Add a design before drawing');
         return;
       }
@@ -2560,17 +2885,16 @@
           tapAction = () => selectGem(null); // an empty tap must never create a stone in Edit
         } else {
           const point = pointOnTooth(e);
-          if (!point || !activeLayer().teeth.includes(point.tooth)) return;
+          if (!point || (!acceptsNewTooth(activeLayer()) && !activeLayer().teeth.includes(point.tooth)))
+            return;
           tapAction = () => addGem(point.tooth, point.x, point.y);
         }
         return;
       }
       const toothPoint = pointOnTooth(e);
-      if (toothPoint && !activeLayer().teeth.includes(toothPoint.tooth)) return;
-      if (
-        state.tool === 'pave' &&
-        (!toothPoint || !supportsStones(materialKeyForLayerTooth(activeLayer().id, toothPoint.tooth)))
-      ) {
+      if (toothPoint && !acceptsNewTooth(activeLayer()) && !activeLayer().teeth.includes(toothPoint.tooth))
+        return;
+      if (state.tool === 'pave' && (!toothPoint || !eligibleStone(activeLayer(), toothPoint.tooth))) {
         notify('Pavé needs a gold or silver tooth');
         return;
       }
@@ -2581,15 +2905,17 @@
       if (state.tool === 'enamel') {
         if (toothPoint)
           tapAction = () => {
-            state.ink.push({
-              effect: 'enamel',
-              designId: activeLayer().id,
-              tooth: toothPoint.tooth,
-              colors: [...state.editor.palette],
-              createdAt: Date.now(),
+            const tooth = toothPoint.tooth;
+            const colors = OrderRecipe.slotAt(activeLayer(), tooth)?.colors;
+            withScope([{ tooth, tool: 'enamel' }], (l) => {
+              state.ink.push({
+                effect: 'enamel',
+                designId: l.id,
+                tooth,
+                colors: [...(colors?.length ? colors : state.editor.palette || ['#b32841'])],
+                createdAt: Date.now(),
+              });
             });
-            renderAll();
-            persist();
           };
         return;
       }
@@ -2605,7 +2931,6 @@
           state.selectedTeeth[0] ||
           (layer?.teeth || [])[0] ||
           0;
-      if (tooth) layer.teeth = [...new Set([...(layer.teeth || []), tooth])];
       const clipTeeth = [
         ...new Set([
           ...(layer?.teeth || []),
@@ -2626,7 +2951,7 @@
             : 'standard',
         freeDraw: !!state.freeDraw,
         clipToTooth: !state.freeDraw,
-        clipTeeth,
+        clipTeeth: acceptsNewTooth(layer) ? [...UPPER, ...LOWER] : clipTeeth,
         width: Number($('#brush-size').value) || 2,
         points: [{ x: point.x, y: point.y }],
       };
@@ -2643,14 +2968,13 @@
           y = dragOrigin.y + p.y - dragStart.y;
         const tooth = pointInAnyTooth(x, y);
         if (
-          activeLayer().teeth.includes(tooth) &&
-          supportsStones(materialKeyForLayerTooth(gem.designId, tooth)) &&
+          tooth &&
+          (acceptsNewTooth(activeLayer()) || activeLayer().teeth.includes(tooth)) &&
+          eligibleStone(activeLayer(), tooth) &&
           (tooth === gem.tooth ||
             (gem.kind !== 'iced' && gemCountOnTooth(gem.designId, tooth) < MAX_STONES_PER_TOOTH))
         ) {
-          gem.x = x;
-          gem.y = y;
-          gem.tooth = tooth;
+          dragPreview = { ...gem, x, y, tooth };
           renderInk();
         }
         return;
@@ -2670,11 +2994,7 @@
       drawingPointer = null;
       if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
       if (e.type === 'pointercancel') {
-        if (draggingGemId && dragOrigin)
-          Object.assign(
-            state.gems.find((g) => g.id === draggingGemId),
-            dragOrigin,
-          );
+        dragPreview = null;
         activeStroke = draggingGemId = tapAction = dragOrigin = dragStart = null;
         renderInk();
         return;
@@ -2689,12 +3009,29 @@
       if (draggingGemId) {
         const g = state.gems.find((s) => s.id === draggingGemId);
         draggingGemId = dragStart = null;
-        selectGem(g);
-        canvas.focus({ preventScroll: true });
-        persist();
-        renderTeeth();
-        renderPrint();
-        refreshOrder();
+        const move = dragPreview;
+        dragPreview = null;
+        const select = () => {
+          selectGem(g);
+          canvas.focus({ preventScroll: true });
+        };
+        if (move && move.tooth !== g.tooth) {
+          const tool = g.kind === 'pave' ? 'pave' : 'gem';
+          withScope(
+            [{ ...move, tool }],
+            () => {
+              Object.assign(g, move);
+              select();
+            },
+            { excludeId: g.id },
+          );
+        } else {
+          if (move) Object.assign(g, move);
+          select();
+          renderTeeth();
+          renderPrint();
+          persist();
+        }
         return;
       }
       if (!activeStroke) return;
@@ -2702,7 +3039,7 @@
       activeStroke = null;
       if (stroke.kind === 'pave') placePaveAlong(stroke.points, stroke.tooth);
       else {
-        if (stroke.effect === 'laser' || stroke.effect === 'emboss') {
+        if (acceptsNewTooth(activeLayer()) || stroke.effect === 'laser' || stroke.effect === 'emboss') {
           const touched = new Set();
           let prev = stroke.points[0];
           for (const p of stroke.points) {
@@ -2712,18 +3049,23 @@
                 prev.x + ((p.x - prev.x) * i) / steps,
                 prev.y + ((p.y - prev.y) * i) / steps,
               );
-              if (activeLayer().teeth.includes(id)) touched.add(id);
+              if (id && (acceptsNewTooth(activeLayer()) || activeLayer().teeth.includes(id))) touched.add(id);
             }
             prev = p;
           }
           stroke.touchedTeeth = [...touched];
         }
-        stroke.createdAt = Date.now();
-        state.ink.push(stroke);
-        persist();
-        renderTeeth();
-        refreshOrder();
-        renderPrint();
+        const ids = stroke.touchedTeeth?.length ? stroke.touchedTeeth : [stroke.tooth];
+        withScope(
+          ids.map((tooth) => ({ tooth, tool: stroke.kind })),
+          (l) => {
+            stroke.designId = l.id;
+            stroke.material = slotMaterial(l, stroke.tooth);
+            if (stroke.clipToTooth) stroke.clipTeeth = [...l.teeth];
+            stroke.createdAt = Date.now();
+            state.ink.push(stroke);
+          },
+        );
       }
     };
     canvas.addEventListener('pointerup', finish);
@@ -2746,16 +3088,59 @@
       $('#brush-value').textContent = String(n);
       $('#brush-dot').style.setProperty('--brush-size', `${Math.max(2, n)}px`);
     });
+    function changeStone(field, value) {
+      const g = selectedGem(),
+        l = activeLayer();
+      if (!g && state.tool === 'gem-edit') return;
+      const tool = g
+        ? g.kind === 'iced'
+          ? 'ice'
+          : g.kind === 'pave'
+            ? 'pave'
+            : 'gem'
+        : ['ice', 'pave'].includes(state.tool)
+          ? state.tool
+          : 'gem';
+      const old = g ? { cut: gemCut(g), sizeMm: gemSize(g), color: g.color } : stoneBrush(tool);
+      if (old[field] === value) return;
+      const brush = { ...old, [field]: value };
+      const actions = g ? [{ tooth: g.tooth, tool, ...brush }] : [];
+      const inRecipe = l.recipe?.slots.some((s) =>
+        (tool === 'ice' ? [s.ice].filter(Boolean) : s.stones.filter((b) => b.tool === tool)).some(
+          (b) => OrderRecipe.signature(tool, b) === OrderRecipe.signature(tool, brush),
+        ),
+      );
+      withScope(
+        actions,
+        (layer) => {
+          if (g)
+            g[
+              g.kind === 'iced' && field !== 'color'
+                ? field === 'cut'
+                  ? 'visualCut'
+                  : 'visualSizeMm'
+                : field
+            ] = value;
+          else if (layer.recipe) brushOverride = { tool, brush };
+          else {
+            state.editor.gemSize = brush.sizeMm;
+            state.editor.gemColor = brush.color;
+            if (tool === 'gem') state.editor.diamondCut = brush.cut;
+          }
+          renderGemOptions();
+        },
+        {
+          excludeId: g?.id,
+          reason:
+            l.recipe && !g && !inRecipe
+              ? 'This diamond cut, colour or size is outside the saved design.'
+              : '',
+        },
+      );
+    }
     function setGemSize(value) {
       const n = Math.max(0.5, Math.min(5, Math.round(Number(value) * 10) / 10));
-      const g = selectedGem();
-      if (g) g[g.kind === 'iced' ? 'visualSizeMm' : 'sizeMm'] = n;
-      else if (state.tool !== 'gem-edit') state.editor.gemSize = n;
-      syncGemControls(state.tool);
-      renderInk();
-      persist();
-      renderPrint();
-      refreshOrder();
+      changeStone('sizeMm', n);
     }
     $('#gem-size').addEventListener('input', (e) => setGemSize(e.target.value));
     function setGemRotation(value) {
@@ -2789,6 +3174,7 @@
         }
       }
       state.selectedGemId = '';
+      reconcileRemovedMark(activeLayer());
       renderGemOptions();
       renderAll();
       persist();
@@ -2850,10 +3236,9 @@
           ).length,
         }))
         .filter((rec) => rec.count > 0);
+      reconcileRemovedMark(layer);
+      renderAll();
       persist();
-      renderTeeth();
-      renderPrint();
-      refreshOrder();
     });
     $('#zoom-in').addEventListener('click', () => applyZoom(zoom + 0.25));
     $('#zoom-out').addEventListener('click', () => applyZoom(zoom - 0.25));
@@ -2964,7 +3349,7 @@
       if (connecting) return;
       connecting = true;
       try {
-        records = await import('/assets/order-records.js?v=2');
+        records = await import('/assets/order-records.js?v=3');
         records.watchUser(async (user) => {
           if (staffUser && staffUser.uid !== user?.uid) resetSheet();
           staffUser = user;
@@ -3089,14 +3474,21 @@
     try {
       const docs = await records.templates();
       if (staffUser !== user) return;
-      savedDesignDocs = new Map(docs.map((d) => [d.id, d]));
+      savedDesignDocs = new Map();
+      for (const d of docs) {
+        try {
+          savedDesignDocs.set(d.id, OrderRecipe.read(d));
+        } catch {
+          /* Skip an unusable old entry, not the whole library. */
+        }
+      }
       const current = select.value;
       select.innerHTML =
         '<option value="">Choose a saved design</option>' +
         [...savedDesignDocs.entries()]
           .map(
             ([id, d]) =>
-              `<option value="${esc(id)}">${esc(d.label || (d.name || 'Design') + ' · ' + id.slice(0, 8))}</option>`,
+              `<option value="${esc(id)}">${esc(d.name || 'Design')} · ${(d.slots || d.teeth || []).length} teeth · ${esc(id.slice(0, 6))}</option>`,
           )
           .join('');
       if (savedDesignDocs.has(current)) select.value = current;
@@ -3123,31 +3515,14 @@
       notify('Start a named design with selected teeth first');
       return;
     }
-    const groups = state.groups.filter((g) => g.layerId === layer.id),
-      template = {
-        name: String(layer.name || 'Design')
-          .trim()
-          .slice(0, 60),
-        label: `${layer.name || state.date} · ${state.orderNo} · ${crypto.randomUUID().slice(0, 8)}`,
-        teeth: (layer.teeth || []).map(Number),
-        materials: layer.materials || {},
-        mode: layer.mode,
-        details: structuredClone(layer.details),
-        legacy: !!layer.legacy,
-        groups: JSON.parse(JSON.stringify(groups)),
-        icedTeeth: state.icedTeeth
-          .filter((x) => x.designId === layer.id)
-          .map((x) => ({ ...x, designId: '' })),
-        ink: state.ink.filter((x) => x.designId === layer.id).map((x) => ({ ...x, designId: '' })),
-        gems: state.gems.filter((x) => x.designId === layer.id).map((x) => ({ ...x, designId: '' })),
-        createdBy: staffUser.uid,
-        updatedAt: new Date().toISOString(),
-      };
+    const groups = state.groups.filter((g) => g.layerId === layer.id);
     if (!groups.length || layerPending(layer)) {
       notify('Apply the design details before saving a template');
       return;
     }
     try {
+      if (layer.recipe) return notify('These details are already in the studio library.');
+      const template = OrderRecipe.fromLayer(layer, state, groups);
       const ref = await records.saveTemplate(template);
       await loadSavedDesignTemplates();
       $('#saved-design-templates').value = ref.id;
@@ -3177,51 +3552,23 @@
         notify('Refresh the studio library and try again');
         return;
       }
-      const newId = `design-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
-        teeth = [...new Set((source.teeth || []).map(Number).filter((n) => n > 0))],
-        layer = {
-          id: newId,
-          name: String(source.name || 'Saved design').slice(0, 60),
-          teeth,
-          materials: { ...(source.materials || {}) },
-          mode: source.mode,
-          details: source.details && structuredClone(source.details),
-          legacy: !!source.legacy,
-          visible: true,
-        };
-      state.designLayers = state.designLayers.filter((l) => l.teeth.length);
-      layer.draft = !source.groups?.length;
+      const recipe = OrderRecipe.read(source);
+      const layer = {
+        id: crypto.randomUUID(),
+        name: recipe.name,
+        recipe,
+        mode: recipe.mode,
+        materials: {},
+        details: {},
+        teeth: [],
+        draft: true,
+        visible: true,
+      };
+      state.designLayers = state.designLayers.filter((l) => l.teeth.length || l.recipe || l.customized);
       state.designLayers.push(layer);
-      source.icedTeeth?.forEach((x) => state.icedTeeth.push({ ...x, designId: newId }));
-      source.groups?.forEach((g) =>
-        state.groups.push({
-          ...g,
-          id: `g-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          layerId: newId,
-          teeth: (g.teeth || []).map(Number),
-        }),
-      );
-      source.ink?.forEach((st) =>
-        state.ink.push({
-          ...st,
-          id: `ink-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          designId: newId,
-        }),
-      );
-      source.gems?.forEach((g) =>
-        state.gems.push({
-          ...g,
-          id: crypto.randomUUID(),
-          designId: newId,
-        }),
-      );
-      Object.entries(layer.materials).forEach(([tooth, material]) => {
-        state.toothMaterials[tooth] = material;
-      });
-      state.activeDesignId = newId;
-      normalizeDesignState();
-      activateLayer(activeLayer());
-      notify(`Loaded “${layer.name}” as a new design layer`);
+      activateLayer(layer);
+      $('#chart-viewport').scrollIntoView({ block: 'center' });
+      notify(`Draw “${layer.name}” on any ${recipe.slots.length} teeth.`);
     } catch (e) {
       console.error('Load design template:', e);
       notify('Could not load the saved design');
@@ -3263,7 +3610,8 @@
     lockedTerms = '';
     repriceRequested = false;
     pendingReceipt = null;
-    printDesignMapHtml = '';
+    printDesignMaps = new Map();
+    brushOverride = null;
     $('#print-sheet').replaceChildren();
     clearDraftLinks();
     for (const id of ['receipt-status', 'receipt-amount', 'client-search']) {
@@ -3417,30 +3765,15 @@
     renderOrderOptions();
     renderAll();
   }
-  function syncLayerTeeth(layer) {
-    const groups = state.groups.filter((g) => g.layerId === layer.id);
-    layer.teeth = [...new Set(groups.flatMap((g) => g.teeth))];
-    layer.materials = Object.fromEntries(
-      groups.flatMap((g) => g.teeth.map((t) => [t, materialForGroup(g.material)])),
-    );
-    const keep = (x) =>
-      x.designId !== layer.id || (layer.teeth.length && (!x.tooth || layer.teeth.includes(x.tooth)));
-    state.ink = state.ink.filter(keep);
-    state.gems = state.gems.filter(keep);
-    state.icedTeeth = state.icedTeeth.filter(keep);
-    state.toothMaterials = Object.assign({}, ...state.designLayers.map((l) => l.materials));
-  }
   function removeGroup(id) {
     const group = state.groups.find((g) => g.id === id);
-    if (!group || !confirm('Remove this design group and its artwork?')) return;
-    state.groups = state.groups.filter((g) => g !== group);
-    const layer = state.designLayers.find((l) => l.id === group.layerId);
-    if (layer) {
-      const wasPending = layerPending(layer);
-      syncLayerTeeth(layer);
-      if (!wasPending) layer.revision = OrderDesign.revision(state, layer);
-      if (!layer.teeth.length) state.designLayers = state.designLayers.filter((l) => l !== layer);
-    }
+    if (!group || !confirm(`Remove the entire “${group.name}” design and its drawing from this order?`))
+      return;
+    for (const k of ['ink', 'gems', 'icedTeeth'])
+      state[k] = state[k].filter((x) => x.designId !== group.layerId);
+    state.groups = state.groups.filter((g) => g.layerId !== group.layerId);
+    state.designLayers = state.designLayers.filter((l) => l.id !== group.layerId);
+    state.toothMaterials = Object.assign({}, ...state.designLayers.map((l) => l.materials));
     state.editingGroupId = '';
     state.selectedTeeth = [];
     state.selectedGemId = '';
@@ -3515,6 +3848,16 @@
     if (editor) updateEditor(editor);
   });
   document.addEventListener('change', (e) => {
+    if (
+      e.target.matches('[data-fork-metal]') &&
+      activeLayer().customized &&
+      state.reviewLayerId === activeLayer().id
+    ) {
+      activeLayer().materials[e.target.dataset.forkMetal] = materialForGroup(e.target.value);
+      renderAll();
+      persist();
+      return;
+    }
     const mix = e.target.closest('[data-mix-tooth]');
     if (mix) {
       const id = Number(mix.dataset.mixTooth),
@@ -3674,6 +4017,7 @@
     if (i < 0) return;
     state.step = step;
     document.body.dataset.workspace = step;
+    $('#order-summary').hidden = step === 'client';
     $$('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== step));
     $$('[data-step]').forEach((b) => {
       if (b.dataset.step === step) b.setAttribute('aria-current', 'step');

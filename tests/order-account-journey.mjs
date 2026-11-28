@@ -31,10 +31,41 @@ const $ = (s) => p.locator(s),
   wait = (fn) => p.waitForFunction(fn);
 let orderId,
   attempts = 0;
-const composeNavigations = [];
+const composeNavigations = [],
+  drafts = [];
 await ctx.route(/^https:\/\//, async (r) => {
   const req = r.request(),
     url = req.url();
+  if (url === 'https://accounts.google.com/gsi/client')
+    return r.fulfill({
+      contentType: 'application/javascript',
+      body: `window.google={accounts:{oauth2:{initTokenClient(opts){return {requestAccessToken(){if(window.__deny) opts.error_callback({type:'popup_closed'});else opts.callback({access_token:'test-mailbox',scope:opts.scope})}}}}}};`,
+    });
+  if (
+    url === 'https://www.googleapis.com/oauth2/v3/userinfo' ||
+    url === 'https://gmail.googleapis.com/gmail/v1/users/me/drafts'
+  ) {
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    };
+    if (req.method() === 'OPTIONS') return r.fulfill({ status: 204, headers });
+    assert.equal(req.headers().authorization, 'Bearer test-mailbox');
+    if (url.endsWith('/drafts')) {
+      assert.equal(req.method(), 'POST');
+      drafts.push(req.postDataJSON().message.raw);
+    }
+    return r.fulfill({
+      headers,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        url.endsWith('/drafts')
+          ? { id: 'r-1', message: { threadId: 'abc123' } }
+          : { email: 'artist@example.test' },
+      ),
+    });
+  }
   if (url.includes('firebasejs/')) return r.fulfill({ contentType: 'application/javascript', body: sdk });
   if (url.includes('/api/orders/') || url.includes('api.resend.com')) attempts++;
   if (new URL(url).origin === 'https://mail.google.com') {
@@ -145,15 +176,44 @@ try {
     priced.toString('latin1'),
     /Payment record.*Amount received.*5,000 EGP.*Outstanding today.*0 EGP/s,
   );
-  const [tab] = await Promise.all([ctx.waitForEvent('page'), click('#email-order')]);
-  await tab.waitForURL('https://mail.google.com/**');
-  assert.equal(await tab.evaluate(() => window.opener === null), true);
-  const draft = composeNavigations.at(-1).searchParams;
-  assert.equal(draft.get('to'), 'order-test@example.test');
-  assert.ok(draft.get('su').includes(orderId));
-  assert.ok(draft.get('body').includes(orderId));
-  assert.doesNotMatch(draft.get('body'), /order-sheet|editx|sheet=|Upper arch fitting|Bearer /);
-  await tab.close(); // closing a draft is not sending
+  await p.evaluate(() => {
+    SiteConfig.set('gmailWebClientId', 'studio-fixture.apps.googleusercontent.com');
+    window.__deny = true;
+  });
+  await click('#email-order');
+  await $('#attach-gmail').waitFor({ state: 'visible' });
+  const manual = new URL(await $('#draft-gmail').getAttribute('href')).searchParams;
+  assert.equal(manual.get('to'), 'order-test@example.test');
+  assert.ok(manual.get('su').includes(orderId));
+  assert.doesNotMatch(manual.get('body'), /order-sheet|editx|sheet=|Upper arch fitting|Bearer /);
+  await click('#attach-gmail');
+  await wait(() => document.querySelector('#mail-status').textContent.includes('not authorized'));
+  assert.equal(drafts.length, 0);
+  await p.evaluate(() => {
+    window.__deny = false;
+  });
+  await click('#attach-gmail');
+  await p.waitForURL('https://mail.google.com/**');
+  assert.equal(new URL(p.url()).searchParams.get('authuser'), 'artist@example.test');
+  assert.match(p.url(), /#drafts\/abc123$/);
+  assert.equal(drafts.length, 1);
+  const mime = Buffer.from(drafts[0], 'base64url').toString();
+  assert.match(mime, /To: order-test@example.test/);
+  assert.doesNotMatch(mime, /Bearer |test-mailbox/);
+  const attachments = [
+    ...mime.matchAll(
+      /filename="([^"\r\n]+)"\r\nContent-Transfer-Encoding: base64\r\n\r\n([a-z0-9+/=\r\n]+)/gi,
+    ),
+  ];
+  assert.deepEqual(
+    attachments.map((x) => x[1]),
+    [download.suggestedFilename(), quotation.suggestedFilename()],
+  );
+  assert.deepEqual(Buffer.from(attachments[0][2], 'base64'), bytes);
+  assert.deepEqual(Buffer.from(attachments[1][2], 'base64'), priced);
+  await p.goto(base + 'order-sheet.html?sheet=' + orderId);
+  await wait(() => document.querySelector('#payment-summary').textContent.includes('Settled'));
+  await step('review');
   assert.equal(await $('#email-order').isEnabled(), true);
   assert.equal((await quote()).emailedVersion, undefined);
   assert.equal((await quote()).status, 'draft');
@@ -163,8 +223,13 @@ try {
   assert.equal(await $('#draft-mailto').getAttribute('href'), null);
   await $('#delivery-email').fill('new+address@example.test');
   await p.evaluate(() => {
-    window.open = () => null;
-  }); // no popup permission
+    Object.defineProperty(navigator, 'canShare', { value: (d) => d.files.length === 2 });
+    Object.defineProperty(navigator, 'share', {
+      value: async (d) => {
+        window.__shared = d.files.map((f) => [f.name, f.type]);
+      },
+    });
+  }); // file-sharing fallback without Google OAuth setup
   await click('#email-order');
   await $('#draft-links').waitFor({ state: 'visible' });
   assert.equal(
@@ -176,6 +241,9 @@ try {
     'new+address@example.test',
   );
   assert.equal((await quote()).clientEmail, 'new+address@example.test');
+  await click('#share-pdfs');
+  assert.equal((await p.evaluate(() => window.__shared)).length, 2);
+  assert.equal(drafts.length, 1);
   assert.equal(composeNavigations.length, 1);
   assert.equal(attempts, 0, 'no order mail API/provider request');
   const stored = await db();
@@ -255,7 +323,7 @@ try {
   assert.equal(await $('#order-number-badge').textContent(), oldId);
   assert.deepEqual(errors, []);
   console.log(
-    'PASS cloud draft → unique nameless order + quotation · EditX mold updates · receipts, overpayment, settled invoice · two real PDF downloads, Gmail draft, blocked-popup fallback and failed save · no PDF/image/device saves',
+    'PASS cloud draft → unique nameless order + quotation · EditX mold updates · receipts, overpayment, settled invoice · two byte-identical Gmail PDF attachments, OAuth denial, native sharing and failed save · no PDF/image/device saves',
   );
 } finally {
   await browser.close();

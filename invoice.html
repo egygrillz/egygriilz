@@ -12,10 +12,10 @@
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="/assets/calc-engine.js?v=10"></script>
+<script src="/assets/calc-engine.js?v=12"></script>
 <script src="/assets/rates.js?v=7"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script src="/assets/staff-calculator.js?v=7"></script>
+<script src="/assets/staff-calculator.js?v=8"></script>
 <script src="/assets/catalog.js?v=6"></script>
 <script>
 // Normalize jsPDF — UMD bundle may expose as window.jspdf.jsPDF or window.jsPDF
@@ -2124,7 +2124,7 @@ function updatePreview() {
   } else {
     tbody.innerHTML = lineItems.map(i => `
       <tr>
-        <td>${escHtml(i.name) || '—'}${i.spec ? `<div style="font-size:10px;color:#888;margin-top:2px">${escHtml(i.spec)}</div>` : ''}</td>
+        <td>${escHtml(i.name) || '—'}${i.spec ? `<div style="white-space:pre-line;font-size:10px;color:#888;margin-top:2px">${escHtml(i.spec)}</div>` : ''}</td>
         <td style="text-align:right">${i.qty}</td>
         <td style="text-align:right">${fmt(i.price)} EGP</td>
         <td style="text-align:right">${fmt(i.qty * i.price)} EGP</td>

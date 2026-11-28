@@ -107,10 +107,7 @@
 
   const LABELS = {
     material: { chrome: 'Cobalt Chrome', titanium: 'Titanium', silver: 'Sterling Silver 925', gold: 'Gold' },
-    level: {
-      '0.5': '0.5 Bars', '1': '1 Solid', '2': '2 Open face', '3': '3 Mid detail',
-      '4': '4 Complex', '5': '5 Scorpion', '6': '6 Ultimate',
-    },
+    level: { '0.5': 'Bars', '1': 'Solid', '2': 'Open face', '3': 'Mid detail', '4': 'Complex', '5': 'Scorpion', '6': 'Ultimate' },
     accentType: { cz: 'CZ', moissanite: 'Moissanite', labgrown: 'Lab-Grown', natural: 'Natural' },
     setting: {
       flush: 'Flush', twoprong: '2-Prong', threeprong: '3-Prong', fourprong: '4-Prong',
@@ -364,7 +361,7 @@
     if (tids.length) line.toothIds = tids;
     else delete line.toothIds;
 
-    line.level = String(line.level || '1');
+    line.level = levelKey(line.level);
     if (S.designPct[line.level] === undefined && line.level !== '0.5') line.level = '1';
     line.teeth = Math.max(1, Math.min(cap, Math.round(Number(line.teeth) || (tids.length || 6))));
     if (line.material === 'gold') {
@@ -531,6 +528,7 @@
     // Single-group array collapses cleanly into a uniform line
     if (rawGroups.length === 1) {
       const merged = mergeGroupDefaults(src, rawGroups[0]);
+      if (src.designId) merged.designId = src.designId;
       if (src.name) merged.name = String(src.name).trim().slice(0, 40);
       else if (rawGroups[0].label) merged.name = String(rawGroups[0].label).trim().slice(0, 40);
       if (!merged.toothIds && Array.isArray(src.toothIds)) merged.toothIds = src.toothIds;
@@ -575,6 +573,7 @@
       : (materialTotal > 0 ? Math.round((designCost / materialTotal) * 1000) / 10 : 0);
 
     const out = {
+      ...(src.designId && {designId:src.designId}),
       name: src.name ? String(src.name).trim().slice(0, 40) : '',
       isMixed: true,
       mixedMaterials,
@@ -612,7 +611,7 @@
     const out = {
       material: g.material || 'chrome',
       teeth: Math.max(1, Math.min(32, Math.round(Number(g.teeth) || 1))),
-      level: String(g.level && g.level !== 'mixed' ? g.level : '1'),
+      level: levelKey(g.level),
       plating: (g.plating && g.plating !== 'mixed') ? g.plating : 'none',
       enamel: (g.enamel && g.enamel !== 'mixed') ? g.enamel : 'none',
       engraving: (g.engraving && g.engraving !== 'mixed') ? g.engraving : 'none',
@@ -675,6 +674,7 @@
         isMixed: true,
         groups: gs,
       };
+      if (line.designId) out.designId=line.designId;
       if (line.name) out.name = String(line.name).trim().slice(0, 40);
       const fg = gs.find((g) => g.material === 'gold');
       if (fg) {
@@ -691,6 +691,7 @@
     const single = cleanGroupSpec(base);
     if (!single) return null;
     delete single.label;
+    if (line.designId) single.designId=line.designId;
     if (line.name) single.name = String(line.name).trim().slice(0, 40);
     return single;
   }
@@ -705,7 +706,9 @@
     const name = (input && input.name && String(input.name).trim()) || LABELS.service[type] || 'Studio Service';
     const notes = (input && input.notes && String(input.notes).trim()) || '';
     const subtotal = money(qty * unitPrice);
-    return { type, name, qty, unitPrice: money(unitPrice), notes, subtotal };
+    const teeth = cleanToothIds(input?.forTeeth);
+    return { type, name, qty, unitPrice: money(unitPrice), notes, subtotal,
+      ...(typeof input?.forDesign==='string' && teeth.length && { forDesign:input.forDesign, forTeeth:teeth }) };
   }
 
   /** Whole order: design lines + services + timeline + mold + discount + rounding + deposit */
@@ -776,48 +779,51 @@
     };
   }
 
+  // Placed-stone charges retain their original pricing basis (e.g. timeline
+  // surcharge does not apply to setting labour). Nest them in the owning tooth
+  // detail for display, without repricing a posted quote or matching names.
+  function designBreakdown(order) {
+    const designs=(order.lines || []).map(line=>({line,subtotal:line.subtotal,
+      groups:(line.groups || [line]).map(group=>({group,stones:[],subtotal:group.subtotal}))}));
+    const byId = new Map(designs.filter(d=>d.line.designId).map(d=>[d.line.designId,d]));
+    const services=[];
+    let settingTotal=0;
+    for(const s of order.services || []) {
+      const design=byId.get(s.forDesign);
+      const row=s.forTeeth?.length && design?.groups.find(({group})=>s.forTeeth.every(id=>group.toothIds?.includes(id)));
+      if(!row) {services.push(s);continue;}
+      row.stones.push(s);row.subtotal+=s.subtotal;design.subtotal+=s.subtotal;settingTotal+=s.subtotal;
+    }
+    return {designs,services,linesSubtotal:order.linesSubtotal+settingTotal,servicesSubtotal:order.servicesSubtotal-settingTotal};
+  }
+
   /** Plain-text breakdown, ready for a PDF, email, or WhatsApp */
   function describeOrder(order, opts) {
     const o = opts || {};
     const out = [];
-    (order.lines || []).forEach((l, i) => {
-      const title = l.name ? `${l.name} — ${lineLabel(l)}` : lineLabel(l);
-      out.push(`DESIGN ${i + 1}: ${title}`);
-      if (l.isMixed && Array.isArray(l.groups) && l.groups.length > 1) {
-        l.groups.forEach((g, gi) => {
-          const gName = g.label ? `${g.label}: ` : '';
-          out.push(`  [${gi + 1}] ${gName}${groupLabel(g, { includeMaterial: !!l.mixedMaterials })} = ${fmt(g.subtotal)} ${S.currency}`);
-        });
-        out.push(`  Breakdown: Material ${fmt(l.materialTotal)}`
-          + (l.designCost ? ` + Complexity ${fmt(l.designCost)}` : '')
-          + (l.stoneCost ? ` + Stones ${fmt(l.stoneCost)}` : '')
-          + (l.platingCost ? ` + Plating ${fmt(l.platingCost)}` : '')
-          + (l.enamelCost ? ` + Enamel ${fmt(l.enamelCost)}` : '')
-          + (l.engravingCost ? ` + Engraving ${fmt(l.engravingCost)}` : '')
-          + (l.anodizeCost ? ` + Anodize ${fmt(l.anodizeCost)}` : '')
-          + ` ${S.currency}`);
-      } else {
-        const matTitle = l.material === 'gold' ? `Gold ${l.karat || '18'}K` : (L.material[l.material] || l.material);
-        out.push(`  Material: ${matTitle} x ${l.teeth} ${l.teeth === 1 ? 'tooth' : 'teeth'} = ${fmt(l.materialTotal)} ${S.currency}`);
-        out.push(`  Design:   ${l.level === '0.5' && !l.designPct ? 'Bars (0.5x base, no surcharge)' : l.level === '0.5' ? `Bars (0.5x base, +${l.designPct}%) = ${fmt(l.designCost)} ${S.currency}` : `+${l.designPct}% = ${fmt(l.designCost)} ${S.currency}`}`);
-        if (l.stoneCost) out.push(`  Stones:   ${fmt(l.stoneCost)} ${S.currency}`);
-        if (l.platingCost) out.push(`  Plating:  ${L.plating[l.plating] || l.plating} = ${fmt(l.platingCost)} ${S.currency}`);
-        if (l.enamelCost) out.push(`  Enamel:   ${L.enamel[l.enamel] || l.enamel} = ${fmt(l.enamelCost)} ${S.currency}`);
-        if (l.engravingCost) out.push(`  Engraving: ${L.engraving[l.engraving] || l.engraving} = ${fmt(l.engravingCost)} ${S.currency}`);
-        if (l.anodizeCost) out.push(`  Anodize:  ${L.anodize[l.anodize] || l.anodize} = ${fmt(l.anodizeCost)} ${S.currency}`);
+    const shown=designBreakdown(order);
+    shown.designs.forEach(({line:l,groups,subtotal},i)=>{
+      out.push(l.name || `Design ${i+1}`);
+      for(const {group:g,stones,subtotal:sub} of groups) {
+        out.push('  '+toothHeading(g,l.name)+': '+groupLabel(g,{includeMaterial:true,omitCount:true}));
+        out.push(`    Material ${fmt(g.materialTotal)} + complexity ${fmt(g.designCost)} ${S.currency}`);
+        if(g.material==='gold' && g.goldPrice) out.push(`    Gold rate used: ${fmt(g.goldPrice)} ${S.currency}/g`);
+        if(g.accent) out.push(`    ${g.accent.count} × ${g.accent.cut}, ${g.accent.size} mm, ${L.setting[g.accent.setting] || g.accent.setting}: ${fmt(g.accentCost)} ${S.currency}`);
+        if(g.full) out.push(`    ${g.full.bars ? 'Bar setting' : L.coverage[g.full.coverage] || 'Full setting'}: ${fmt(g.fullCost)} ${S.currency}`);
+        for(const [field,label] of [['plating','Plating'],['enamel','Enamel'],['engraving','Engraving'],['anodize','Anodizing']])
+          if(g[field+'Cost']) out.push(`    ${label}: ${fmt(g[field+'Cost'])} ${S.currency}`);
+        for(const stone of stones) out.push(`    ${stone.qty} × ${stone.name} (${stone.notes}): ${fmt(stone.subtotal)} ${S.currency}`);
+        if(groups.length>1) out.push(`    Subtotal: ${fmt(sub)} ${S.currency}`);
       }
-      out.push(`  Subtotal: ${fmt(l.subtotal)} ${S.currency}`);
-      out.push('');
+      out.push(`  Design subtotal: ${fmt(subtotal)} ${S.currency}`, '');
     });
-    if ((order.services || []).length) {
+    if(shown.services.length) {
       out.push('STUDIO SERVICES:');
-      order.services.forEach((sv) => {
-        out.push(`  - ${sv.name}${sv.qty > 1 ? ' x' + sv.qty : ''}: ${fmt(sv.subtotal)} ${S.currency}`);
-      });
+      for(const s of shown.services) out.push(`  - ${s.name} x${s.qty}: ${fmt(s.subtotal)} ${S.currency}`);
       out.push('');
     }
-    if (order.linesSubtotal) out.push(`Designs subtotal: ${fmt(order.linesSubtotal)} ${S.currency}`);
-    if (order.servicesSubtotal) out.push(`Services subtotal: ${fmt(order.servicesSubtotal)} ${S.currency}`);
+    if(shown.linesSubtotal) out.push(`Designs subtotal: ${fmt(shown.linesSubtotal)} ${S.currency}`);
+    if(shown.servicesSubtotal) out.push(`Services subtotal: ${fmt(shown.servicesSubtotal)} ${S.currency}`);
     if (order.timelineAmount) out.push(`Timeline (${L.timeline[order.timeline]} +${order.timelinePct}%): ${fmt(order.timelineAmount)} ${S.currency}`);
     if (order.moldCost) out.push(`Mold (${L.mold[order.mold]}): ${fmt(order.moldCost)} ${S.currency}`);
     if (order.discountAmount) out.push(`Discount: -${fmt(order.discountAmount)} ${S.currency}`);
@@ -838,15 +844,22 @@
   const L = LABELS;
   const fmt = (n) => String(money(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-  const SHORT_LEVEL = {
-    '0.5': 'L0.5 Bars',
-    '1': 'L1 Simple',
-    '2': 'L2 Moderate',
-    '3': 'L3 Detailed',
-    '4': 'L4 Complex',
-    '5': 'L5 Intricate',
-    '6': 'L6 Master',
-  };
+  const SHORT_LEVEL = LABELS.level;
+  // Numeric keys stay in settings, saved quotes and design codes. Accept earlier
+  // sheet labels such as "0.5 Bars" without displaying their pricing keys.
+  function levelKey(value) {
+    const v = String(value ?? '').trim().toLowerCase();
+    const key = v.match(/^l?(0\.5|[1-6])(?:[\s:–—-]|$)/)?.[1];
+    if (Object.hasOwn(LABELS.level, key)) return key;
+    if (v === 'bar') return '0.5';
+    return Object.keys(LABELS.level).find(k => LABELS.level[k].toLowerCase() === v) || '1';
+  }
+  const levelName = v => LABELS.level[levelKey(v)];
+  function toothHeading(g, name) {
+    const teeth = g.toothIds?.map(id=>/^[UL][RL][1-8]$/.test(id) ? ({UR:1, UL:2, LL:3, LR:4})[id.slice(0,2)]+id[2] : id).join(', ');
+    const label = g.label && g.label !== name ? g.label : '';
+    return [(teeth ? 'FDI '+teeth : '') || `${g.teeth} ${g.teeth === 1 ? 'tooth' : 'teeth'}`, label && label !== teeth ? label : ''].filter(Boolean).join(' · ');
+  }
 
   function groupLabel(g, opts) {
     if (!g) return '';
@@ -855,13 +868,13 @@
     const parts = [];
     if (o.includeMaterial) {
       const m = g.material === 'gold' ? `Gold ${g.karat || '18'}K` : (L.material[g.material] || g.material);
-      parts.push(`${tWord} ${m}`);
-    } else {
+      parts.push(o.omitCount ? m : `${tWord} ${m}`);
+    } else if (!o.omitCount) {
       parts.push(tWord);
     }
-    parts.push(SHORT_LEVEL[String(g.level)] || L.level[g.level] || ('L' + g.level));
+    parts.push(o.levelLabel || levelName(g.level));
     if (g.accent && g.accent.count) parts.push(`${g.accent.count}x ${L.accentType[g.accent.type] || g.accent.type}`.trim());
-    if (g.full && (g.full.bars || String(g.level) === '0.5')) parts.push('Full coverage bars');
+    if (g.full && (g.full.bars || String(g.level) === '0.5')) parts.push('Iced-out bar');
     else if (g.full) parts.push(`Full coverage ${L.accentType[g.full.type] || g.full.type}`.trim());
     if (g.plating && g.plating !== 'none') parts.push(L.plating[g.plating] || g.plating);
     if (g.enamel && g.enamel !== 'none') parts.push('Enamel ' + (L.enamel[g.enamel] || g.enamel));
@@ -882,16 +895,16 @@
         ? `Mixed Materials / ${totalT} teeth`
         : `${firstMat} / ${totalT} teeth (Mixed)`;
       const detail = gs.map((g) => {
-        const lbl = g.label ? `${g.label}: ` : '';
-        return lbl + groupLabel(g, { includeMaterial: mixedMat });
+        const lbl = toothHeading(g, line.name) + ': ';
+        return lbl + groupLabel(g, { includeMaterial: mixedMat, omitCount:true });
       }).join(' + ');
       return `${head} — ${detail}`;
     }
     const mat = line.material === 'gold' ? `Gold ${line.karat || '18'}K` : (L.material[line.material] || line.material);
     const tWord = Number(line.teeth) === 1 ? '1 tooth' : `${line.teeth} teeth`;
-    const bits = [`${mat} / ${tWord} / ${L.level[line.level] || line.level}`];
+    const bits = [`${mat} / ${tWord} / ${levelName(line.level)}`];
     if (line.accent && line.accent.count) bits.push(`${line.accent.count}x ${L.accentType[line.accent.type] || ''}`.trim());
-    if (line.full && (line.full.bars || String(line.level) === '0.5')) bits.push('Full coverage bars');
+    if (line.full && (line.full.bars || String(line.level) === '0.5')) bits.push('Iced-out bar');
     else if (line.full) bits.push(`Full coverage ${L.accentType[line.full.type] || ''}`.trim());
     if (line.plating && line.plating !== 'none') bits.push(L.plating[line.plating]);
     if (line.enamel && line.enamel !== 'none') bits.push('Enamel ' + L.enamel[line.enamel]);
@@ -1254,6 +1267,13 @@
       if (hasGroupLabels) meta.g = groupLabels;
       if (hasTeeth) meta.t = toothMap;
       if (hasSvcNames) meta.s = svcNames;
+      // Transfer the relationship, not a studio layer ID. The full code already
+      // carries the corresponding tooth IDs; compact legacy codes remain unchanged.
+      const linked = rawServices.map(s => {
+        const i = s.forDesign ? rawLines.findIndex(l => l.designId === s.forDesign) : -1;
+        return i < 0 ? null : [i, cleanToothIds(s.forTeeth), String(s.notes || '').slice(0,160)];
+      });
+      if(linked.some(Boolean)) meta.h=linked;
       const cn = String(input.clientName || '').trim().slice(0, 60);
       const cp = String(input.clientPhone || '').trim().slice(0, 30);
       const nt = String(input.notes || '').trim().slice(0, 160);
@@ -1505,8 +1525,13 @@
           const defP = Number((S.servicePrices && S.servicePrices[type]) || 0);
           const unitPrice = um[3] !== undefined ? Math.max(0, parseFloat(um[3]) || 0) : defP;
           const customName = svcNames[svcIdx] ? String(svcNames[svcIdx]).slice(0, 40) : '';
+          const link=meta.h?.[svcIdx];
           svcIdx++;
+          const target=Array.isArray(link) && Number.isInteger(link[0]) && lines[link[0]];
+          const teeth=target && cleanToothIds(link[1]);
+          if(teeth?.length) target.designId ||= 'set-'+link[0];
           services.push({
+            ...(teeth?.length && {forDesign:target.designId,forTeeth:teeth,notes:String(link[2] || '').slice(0,160)}),
             type,
             name: customName || L.service[type] || 'Studio Service',
             qty,
@@ -1611,12 +1636,13 @@
   function quoteToInvoice(q) {
     const order = savedQuoteOrder(q);
     if (!order) return null;
-    const items = order.lines.map(l => ({ name: l.name || (LABELS.material[l.material] || 'Custom') + ' Grillz',
-      spec: (l.groups || [l]).map(g => [g.label, lineLabel(g), (g.toothIds || []).join(', '),
+    const shown=designBreakdown(order);
+    const items=shown.designs.map(({line:l,groups,subtotal})=>({name:l.name || (LABELS.material[l.material] || 'Custom')+' Grillz',
+      spec:groups.map(({group:g,stones})=>toothHeading(g,l.name)+': '+[groupLabel(g,{includeMaterial:true,omitCount:true}),
         g.accent && `${g.accent.cut || 'round'} ${g.accent.size || 1} mm, ${LABELS.setting[g.accent.setting] || g.accent.setting}`,
-        g.full && !g.full.bars && LABELS.coverage[g.full.coverage]].filter(Boolean).join(' / ')).join(' ; '),
-      qty: 1, price: l.subtotal, line: l }));
-    order.services.forEach(s => items.push({ name: s.name, spec: s.notes || 'Studio service', qty: s.qty, price: s.unitPrice, serviceType: s.type }));
+        g.full && !g.full.bars && LABELS.coverage[g.full.coverage], ...stones.map(s=>`${s.qty} × ${s.name} (${s.notes})`)].filter(Boolean).join(' / ')).join('\n'),
+      qty:1,price:subtotal,line:l}));
+    shown.services.forEach(s=>items.push({name:s.name,spec:s.notes || 'Studio service',qty:s.qty,price:s.unitPrice,serviceType:s.type}));
     if (order.timelineAmount) items.push({ name: LABELS.timeline[order.timeline] + ' timeline', spec: `+${order.timelinePct}%`, qty: 1, price: order.timelineAmount });
     if (order.moldCost) items.push({ name: 'Mold', spec: LABELS.mold[order.mold], qty: 1, price: order.moldCost });
     let discountAmount = Number(order.discountAmount) || 0;
@@ -1633,8 +1659,9 @@
     const autoTotal = order.calculatedTotal ?? order.total;
     const rounding = autoTotal - order.linesSubtotal - order.servicesSubtotal - (order.timelineAmount || 0) - (order.moldCost || 0) + (order.discountAmount || 0);
     const adj = order.total - autoTotal;
-    const rows = [[`Subtotal (${order.lines.length} designs)`, order.linesSubtotal]];
-    if (order.services.length) rows.push(['Additional services', order.servicesSubtotal]);
+    const shown=designBreakdown(order);
+    const rows = [[`Subtotal (${order.lines.length} ${order.lines.length===1?'design':'designs'})`, shown.linesSubtotal]];
+    if (shown.services.length) rows.push(['Additional services', shown.servicesSubtotal]);
     rows.push([`Timeline - ${L.timeline[order.timeline] || 'Standard'}${order.timelinePct ? ' (+'+order.timelinePct+'%)' : ' (no surcharge)'}`, order.timelineAmount || 0]);
     if (!omitEmptyMold || order.mold !== 'none') rows.push(['Mold - ' + (L.mold[order.mold] || 'None'), order.moldCost || 0]);
     if (order.discountAmount) rows.push(['Discount', -order.discountAmount]);
@@ -1668,7 +1695,7 @@
   function buildQuotePdfBytes(rawOrder, meta = {}) {
     const m = meta;
     const order = savedQuoteOrder(rawOrder) || calculateOrder(rawOrder?.lines || [], rawOrder || {});
-    const { lines, services } = order, cur = order.currency || 'EGP';
+    const {lines}=order, {designs,services}=designBreakdown(order), cur = order.currency || 'EGP';
     const amt = n => fmt(n) + ' ' + cur;
     const issued = m.date || m.createdAt;
     const when = new Date(issued?.toDate?.() || issued || Date.now());
@@ -1719,28 +1746,27 @@
     if (contact) paragraph(contact, 8, 0.35);
     paragraph(`Prices in ${cur}. This quotation is an estimate - gold and diamond rates are confirmed against the day of production.`, 8, 0.48);
     y += 6;
-    function details(g) {
+    function details(g, stones) {
       const stone = [];
       if (g.accent) stone.push(`${g.accent.count} x ${L.accentType[g.accent.type] || g.accent.type}, ${L.setting[g.accent.setting] || g.accent.setting}, ${g.accent.cut || 'round'} ${g.accent.size || 1} mm`);
-      if (g.full) stone.push(g.full.bars ? 'Full coverage bars' : `Full ${L.accentType[g.full.type] || g.full.type}, ${L.coverage[g.full.coverage] || g.full.coverage}, ${g.full.cut || 'round'} ${g.full.size || 1} mm`);
+      if (g.full) stone.push(g.full.bars ? 'Iced-out bar' : `Full ${L.accentType[g.full.type] || g.full.type}, ${L.coverage[g.full.coverage] || g.full.coverage}, ${g.full.cut || 'round'} ${g.full.size || 1} mm`);
       row('Material', g.material === 'gold' ? `Gold ${g.karat}K` : L.material[g.material] || g.material);
-      row('Teeth', `${g.teeth}${g.toothIds?.length ? ' (' + g.toothIds.join(', ') + ')' : ''}`);
-      row('Design level', `${L.level[g.level] || g.level} (+${g.designPct || 0}%)`);
+      row('Complexity', levelName(g.level));
       if (g.material === 'gold' && g.goldPrice) row('Gold rate used', amt(g.goldPrice) + '/g');
       row('Base cost', amt(g.materialTotal)); row('Design cost', g.designCost ? amt(g.designCost) : '-');
-      row('Stones', stone.length ? stone.join(' / ') + ' - ' + amt(g.stoneCost) : 'None');
+      if(stone.length || !stones.length) row('Stones', stone.length ? stone.join(' / ') + ' - ' + amt(g.stoneCost) : 'None');
+      for(const s of stones) row(`${s.qty} x ${s.name}`, `${s.notes} - ${amt(s.subtotal)}`);
       for (const [k, label] of [['plating','Plating'],['enamel','Enamel'],['engraving','Engraving'],['anodize','Anodizing']]) {
         if (g[k] && g[k] !== 'none') row(label, `${L[k][g[k]] || g[k]} - ${amt(g[k+'Cost'])}`);
       }
     }
-    lines.forEach((l, i) => {
-      title(`${i+1}. ${pdfClean(l.name) || 'Design ' + (i+1)}`);
-      if (l.groups?.length > 1) {
-        l.groups.forEach((g, j) => {
-          need(48); row(`Group ${j+1}`, g.label || '', true); details(g); row('Group subtotal', amt(g.subtotal), true);
-        });
-      } else details(l);
-      row('Design subtotal', amt(l.subtotal), true); y += 5;
+    designs.forEach(({line:l,groups,subtotal},i)=>{
+      title(pdfClean(l.name) || 'Design '+(i+1));
+      for(const {group,stones,subtotal:sub} of groups){
+        need(60);row(toothHeading(group,l.name),'',true);details(group,stones);
+        if(groups.length>1) row('Subtotal',amt(sub),true);
+      }
+      row('Design subtotal',amt(subtotal),true);y+=5;
     });
     if (services.length) {
       title('Additional services');
@@ -2083,7 +2109,7 @@
   global.CalcEngine = {
     DEFAULTS,
     LABELS,
-    SHORT_LEVEL,
+    SHORT_LEVEL, levelKey, levelName, toothHeading, designBreakdown,
     get, set, reset, apply, onChange,
     // Concurrent Worker requests must never share mutable pricing settings.
     withSettings(settings) {
@@ -2146,6 +2172,7 @@ const SITE_DEFAULTS = {
 
   /* Quotations */
   quoteValidDays: 14,
+  gmailWebClientId: '', // Public web OAuth client ID, never a client secret
 
   /* General */
   vatPct: 0,
@@ -2177,6 +2204,7 @@ const SITE_LABELS = {
   reminderHour: 'Reminder hour (24h)',
   reminderDaysBefore: 'Remind days before',
   quoteValidDays: 'Quote valid (days)',
+  gmailWebClientId: 'Gmail drafts — Google web client ID (public .apps.googleusercontent.com ID only)',
   vatPct: 'VAT %',
   workingDays: 'Working days (1=Mon)',
   openHour: 'Opens at',
@@ -2188,7 +2216,7 @@ const SITE_GROUPS = [
   { id:'booking',  title:'Booking', keys:['impressionPrice','impressionMinutes','gemFromPrice','consultPrice','consultMinutes','pickupMinutes','fittingMinutes','bookingSlotMinutes','cancelFreeHours','bookingLeadDays','maxBookingsPerDay'] },
   { id:'moulds',   title:'Mould kit', keys:['mouldPerArch','mouldDeliveryFee'] },
   { id:'hours',    title:'Working hours', keys:['openHour','closeHour','workingDays'] },
-  { id:'quotes',   title:'Quotations', keys:['quoteValidDays','vatPct'] },
+  { id:'quotes',   title:'Quotations', keys:['quoteValidDays','vatPct','gmailWebClientId'] },
   { id:'auto',     title:'Automatic', keys:['reminderHour','reminderDaysBefore'] },
 ];
 
@@ -2310,6 +2338,9 @@ const SiteConfig = {
 
   async save(db) {
     const E = _g.CalcEngine;
+    const id=String(this.data.gmailWebClientId || '').trim();
+    if(id && !/^[\w-]+\.apps\.googleusercontent\.com$/.test(id)) throw Error('Use a public Google web client ID, never a client secret.');
+    this.data.gmailWebClientId=id;
     const payload = {};
     for (const k of Object.keys(SITE_DEFAULTS)) {
       const v = this.data[k];
@@ -4362,7 +4393,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
       lines.push('', 'Material base (per tooth):');
       Object.entries(p.materialBase).forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
       lines.push('', 'Design level add-on (% of material):');
-      Object.entries(p.designPct).forEach(([k, v]) => lines.push(`  level ${pad(k, 4)} ${padL(v + '%', 6)}`));
+      Object.entries(p.designPct).forEach(([k, v]) => lines.push(`  ${pad(globalThis.CalcEngine.levelName(k), 12)} ${padL(v + '%', 6)}`));
       if (p.anodizeFlat && Object.keys(p.anodizeFlat).length) {
         lines.push('', 'Titanium anodize (per tooth):');
         Object.entries(p.anodizeFlat).filter(([k]) => k !== 'none').forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
@@ -5848,6 +5879,68 @@ async function sendTelegramDigest(env, at = new Date()) {
 
 /* ───────────────────────── handler ───────────────────────── */
 
+// A short rolling window, independent of the noon digest and of client email.
+// The appointment's updateTime acts as an atomic compare-and-set: a reschedule,
+// cancellation or overlapping cron prevents claiming the stale version.
+function noticeLead(env) {
+  const n=Number(env.APPOINTMENT_LEAD_MINUTES ?? 60);
+  return Number.isInteger(n) && n>=5 && n<=180 ? n : 60;
+}
+function noticeWindow(at,lead) {
+  const days=new Map();
+  // Walk real minutes. Cairo can skip/repeat a civil hour at the DST boundary.
+  for(let n=1;n<=lead;n++) {
+    const {year,month,day,hour,minute}=cairoParts(+at+n*60000),date=`${year}-${month}-${day}`;
+    if(!days.has(date)) days.set(date,new Map());
+    const times=days.get(date), t=Number(hour)*60+Number(minute);
+    if(!times.has(t)) times.set(t,n);
+  }
+  return days;
+}
+async function noticePatch(env,docId,version,marker,f) {
+  if(!version) return {error:'missing-document-version'};
+  const params=new URLSearchParams({key:env.FIREBASE_API_KEY,'updateMask.fieldPaths':'studioTelegramNotice','currentDocument.updateTime':version});
+  const url=`${FS_BASE}/appointments/${encodeURIComponent(docId)}?${params}`;
+  const res=await f(url,{method:'PATCH',headers:await fsHeaders(env,f),body:JSON.stringify({fields:{studioTelegramNotice:{mapValue:{fields:Object.fromEntries(Object.entries(marker).map(([k,v])=>[k,{stringValue:v}]))}}}})});
+  if(res.ok) { const version=(await res.json()).updateTime;return version?{version}:{error:'missing-document-version'}; }
+  const status=(await res.json().catch(()=>({}))).error?.status;
+  return res.status===404 || res.status===409 || status==='FAILED_PRECONDITION' ? {conflict:true} : {error:fsCause(res.status)};
+}
+async function upcomingNotices(env, at, f) {
+  const result={sent:0,failed:0};
+  if(!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return {...result,ok:false,error:'telegram-not-configured'};
+  const token=await staffToken(env,f);
+  if(!token) return {...result,ok:false,error:'staff-login-required'};
+  const caller={...env,REQ_TOKEN:token}, window=noticeWindow(at,noticeLead(env));
+  for(const [date,times] of window) {
+    const day=await fsQuery(caller,{from:[{collectionId:'appointments'}],where:{fieldFilter:{field:{fieldPath:'date'},op:'EQUAL',value:{stringValue:date}}},
+      select:{fields:['date','time','name','service','status','showedUp','studioTelegramNotice'].map(fieldPath=>({fieldPath}))}},f);
+    if(!day.ok) return {...result,ok:false,error:day.error};
+    // Bound outbound subrequests per invocation; remaining slots are eligible
+    // again at the next scan. Due-soonest first, without starving on sent rows.
+    const due=day.rows.map(doc=>({doc,a:mapAppointment(doc)})).filter(({a})=>a.date===date && a.showedUp==null && /^(confirmed|pending|booked|scheduled)$/i.test(a.status) && /^(?:(?:0?[1-9]|1[0-2]):[0-5]\d\s?[ap]m|(?:[01]?\d|2[0-3]):[0-5]\d)$/i.test(a.time.trim()) && times.has(timeToMinutes(a.time))).sort((x,y)=>times.get(timeToMinutes(x.a.time))-times.get(timeToMinutes(y.a.time)));
+    for(const {doc,a} of due) {
+      if(result.sent+result.failed>=8) break;
+      const minutes=timeToMinutes(a.time),slot=date+'/'+minutes, prior=doc.fields?.studioTelegramNotice?.mapValue?.fields;
+      if(fsVal(prior?.slot)===slot && (fsVal(prior?.state)==='sent' || (fsVal(prior?.state)==='sending' && +at-Date.parse(fsVal(prior?.at))<10*60000))) continue;
+      const marker={slot,state:'sending',at:at.toISOString()};
+      const claim=await noticePatch(caller,a.id,doc.updateTime,marker,f);
+      if(claim.conflict) continue;
+      if(!claim.version) {result.failed++;result.error=claim.error;continue;}
+      const text=`UPCOMING APPOINTMENT · in ${times.get(minutes)} min\n${date} · ${a.time} (Cairo)\n${a.name || 'Studio client'}${a.service?' · '+a.service:''}`;
+      const sent=await sendTelegram(text,env,f).catch(()=>({ok:false,error:'telegram-unconfirmed'}));
+      if(sent.ok) result.sent++; else {result.failed++;result.error=sent.error;}
+      // An uncertain network outcome keeps the lease; don't immediately replay
+      // a message Telegram may have accepted. Definitive rejection is retryable.
+      if(sent.ok || sent.status && sent.status<500) {
+        const done=await noticePatch(caller,a.id,claim.version,{...marker,state:sent.ok?'sent':'retry'},f);
+        if(!done.version){result.failed++;result.error=done.error || 'notice-state-changed';}
+      }
+    }
+  }
+  return {...result,ok:!result.failed};
+}
+
 export default {
   /** Cron Trigger — daily 12:00 Cairo time + 1-min Telegram polling */
   async scheduled(event, env = {}, ctx = {}) {
@@ -5858,18 +5951,21 @@ export default {
     const work = Promise.all([
       pollTelegram(env, f).catch(() => ({ ok: false, error: 'poll-failed' })),
       noon ? sendTelegramDigest(env, at) : { skipped: true },
+      Number(minute)%5===1 ? upcomingNotices(env,new Date(Math.max(+at,Date.now())),f).catch(()=>({ok:false,error:'notice-check-failed'})) : {skipped:true},
       noon && day === '01'
         ? monthlyReport(env, 1, f, at)
             .then((text) => sendReport(text, env, env.TELEGRAM_CHAT_ID, f))
             .catch(() => ({ ok: false }))
         : null,
-    ]).then(([bot, digest]) => {
+    ]).then(([bot, digest, upcoming]) => {
+      if(!upcoming.skipped && (!upcoming.ok || upcoming.sent)) console[upcoming.ok?'log':'error']('[cron] upcoming appointments',JSON.stringify(upcoming));
+      if(!upcoming.skipped && !upcoming.ok) throw new Error('Upcoming appointment: '+upcoming.error);
       if (noon) console[digest.ok ? 'log' : 'error']('[cron] appointment digest', JSON.stringify(digest));
       if (noon && !digest.ok) {
         if (digest.sent) event.noRetry?.(); // never replay the entire digest after a confirmed partial send
         throw new Error('Appointment digest: ' + digest.error);
       }
-      return { bot, digest };
+      return { bot, digest, upcoming };
     });
     if (ctx && ctx.waitUntil) ctx.waitUntil(work);
     return work;
@@ -5945,6 +6041,7 @@ export default {
       return json({
         ok: true,
         orderEmailMode: 'manual-draft',
+        studioAppointmentLeadMinutes: noticeLead(env),
         turnstileSiteKey: env.TURNSTILE_SITE_KEY || '',
         channels: {
           telegram: !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID),

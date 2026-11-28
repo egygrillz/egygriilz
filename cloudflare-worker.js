@@ -1925,7 +1925,7 @@ async function runCommand(text, env, fetchImpl = fetch) {
       lines.push('', 'Material base (per tooth):');
       Object.entries(p.materialBase).forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
       lines.push('', 'Design level add-on (% of material):');
-      Object.entries(p.designPct).forEach(([k, v]) => lines.push(`  level ${pad(k, 4)} ${padL(v + '%', 6)}`));
+      Object.entries(p.designPct).forEach(([k, v]) => lines.push(`  ${pad(globalThis.CalcEngine.levelName(k), 12)} ${padL(v + '%', 6)}`));
       if (p.anodizeFlat && Object.keys(p.anodizeFlat).length) {
         lines.push('', 'Titanium anodize (per tooth):');
         Object.entries(p.anodizeFlat).filter(([k]) => k !== 'none').forEach(([k, v]) => lines.push(`  ${pad(cap(k), 12)} ${padL(num(v), 7)} EGP`));
@@ -3411,6 +3411,68 @@ async function sendTelegramDigest(env, at = new Date()) {
 
 /* ───────────────────────── handler ───────────────────────── */
 
+// A short rolling window, independent of the noon digest and of client email.
+// The appointment's updateTime acts as an atomic compare-and-set: a reschedule,
+// cancellation or overlapping cron prevents claiming the stale version.
+function noticeLead(env) {
+  const n=Number(env.APPOINTMENT_LEAD_MINUTES ?? 60);
+  return Number.isInteger(n) && n>=5 && n<=180 ? n : 60;
+}
+function noticeWindow(at,lead) {
+  const days=new Map();
+  // Walk real minutes. Cairo can skip/repeat a civil hour at the DST boundary.
+  for(let n=1;n<=lead;n++) {
+    const {year,month,day,hour,minute}=cairoParts(+at+n*60000),date=`${year}-${month}-${day}`;
+    if(!days.has(date)) days.set(date,new Map());
+    const times=days.get(date), t=Number(hour)*60+Number(minute);
+    if(!times.has(t)) times.set(t,n);
+  }
+  return days;
+}
+async function noticePatch(env,docId,version,marker,f) {
+  if(!version) return {error:'missing-document-version'};
+  const params=new URLSearchParams({key:env.FIREBASE_API_KEY,'updateMask.fieldPaths':'studioTelegramNotice','currentDocument.updateTime':version});
+  const url=`${FS_BASE}/appointments/${encodeURIComponent(docId)}?${params}`;
+  const res=await f(url,{method:'PATCH',headers:await fsHeaders(env,f),body:JSON.stringify({fields:{studioTelegramNotice:{mapValue:{fields:Object.fromEntries(Object.entries(marker).map(([k,v])=>[k,{stringValue:v}]))}}}})});
+  if(res.ok) { const version=(await res.json()).updateTime;return version?{version}:{error:'missing-document-version'}; }
+  const status=(await res.json().catch(()=>({}))).error?.status;
+  return res.status===404 || res.status===409 || status==='FAILED_PRECONDITION' ? {conflict:true} : {error:fsCause(res.status)};
+}
+async function upcomingNotices(env, at, f) {
+  const result={sent:0,failed:0};
+  if(!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return {...result,ok:false,error:'telegram-not-configured'};
+  const token=await staffToken(env,f);
+  if(!token) return {...result,ok:false,error:'staff-login-required'};
+  const caller={...env,REQ_TOKEN:token}, window=noticeWindow(at,noticeLead(env));
+  for(const [date,times] of window) {
+    const day=await fsQuery(caller,{from:[{collectionId:'appointments'}],where:{fieldFilter:{field:{fieldPath:'date'},op:'EQUAL',value:{stringValue:date}}},
+      select:{fields:['date','time','name','service','status','showedUp','studioTelegramNotice'].map(fieldPath=>({fieldPath}))}},f);
+    if(!day.ok) return {...result,ok:false,error:day.error};
+    // Bound outbound subrequests per invocation; remaining slots are eligible
+    // again at the next scan. Due-soonest first, without starving on sent rows.
+    const due=day.rows.map(doc=>({doc,a:mapAppointment(doc)})).filter(({a})=>a.date===date && a.showedUp==null && /^(confirmed|pending|booked|scheduled)$/i.test(a.status) && /^(?:(?:0?[1-9]|1[0-2]):[0-5]\d\s?[ap]m|(?:[01]?\d|2[0-3]):[0-5]\d)$/i.test(a.time.trim()) && times.has(timeToMinutes(a.time))).sort((x,y)=>times.get(timeToMinutes(x.a.time))-times.get(timeToMinutes(y.a.time)));
+    for(const {doc,a} of due) {
+      if(result.sent+result.failed>=8) break;
+      const minutes=timeToMinutes(a.time),slot=date+'/'+minutes, prior=doc.fields?.studioTelegramNotice?.mapValue?.fields;
+      if(fsVal(prior?.slot)===slot && (fsVal(prior?.state)==='sent' || (fsVal(prior?.state)==='sending' && +at-Date.parse(fsVal(prior?.at))<10*60000))) continue;
+      const marker={slot,state:'sending',at:at.toISOString()};
+      const claim=await noticePatch(caller,a.id,doc.updateTime,marker,f);
+      if(claim.conflict) continue;
+      if(!claim.version) {result.failed++;result.error=claim.error;continue;}
+      const text=`UPCOMING APPOINTMENT · in ${times.get(minutes)} min\n${date} · ${a.time} (Cairo)\n${a.name || 'Studio client'}${a.service?' · '+a.service:''}`;
+      const sent=await sendTelegram(text,env,f).catch(()=>({ok:false,error:'telegram-unconfirmed'}));
+      if(sent.ok) result.sent++; else {result.failed++;result.error=sent.error;}
+      // An uncertain network outcome keeps the lease; don't immediately replay
+      // a message Telegram may have accepted. Definitive rejection is retryable.
+      if(sent.ok || sent.status && sent.status<500) {
+        const done=await noticePatch(caller,a.id,claim.version,{...marker,state:sent.ok?'sent':'retry'},f);
+        if(!done.version){result.failed++;result.error=done.error || 'notice-state-changed';}
+      }
+    }
+  }
+  return {...result,ok:!result.failed};
+}
+
 export default {
   /** Cron Trigger — daily 12:00 Cairo time + 1-min Telegram polling */
   async scheduled(event, env = {}, ctx = {}) {
@@ -3421,18 +3483,21 @@ export default {
     const work = Promise.all([
       pollTelegram(env, f).catch(() => ({ ok: false, error: 'poll-failed' })),
       noon ? sendTelegramDigest(env, at) : { skipped: true },
+      Number(minute)%5===1 ? upcomingNotices(env,new Date(Math.max(+at,Date.now())),f).catch(()=>({ok:false,error:'notice-check-failed'})) : {skipped:true},
       noon && day === '01'
         ? monthlyReport(env, 1, f, at)
             .then((text) => sendReport(text, env, env.TELEGRAM_CHAT_ID, f))
             .catch(() => ({ ok: false }))
         : null,
-    ]).then(([bot, digest]) => {
+    ]).then(([bot, digest, upcoming]) => {
+      if(!upcoming.skipped && (!upcoming.ok || upcoming.sent)) console[upcoming.ok?'log':'error']('[cron] upcoming appointments',JSON.stringify(upcoming));
+      if(!upcoming.skipped && !upcoming.ok) throw new Error('Upcoming appointment: '+upcoming.error);
       if (noon) console[digest.ok ? 'log' : 'error']('[cron] appointment digest', JSON.stringify(digest));
       if (noon && !digest.ok) {
         if (digest.sent) event.noRetry?.(); // never replay the entire digest after a confirmed partial send
         throw new Error('Appointment digest: ' + digest.error);
       }
-      return { bot, digest };
+      return { bot, digest, upcoming };
     });
     if (ctx && ctx.waitUntil) ctx.waitUntil(work);
     return work;
@@ -3508,6 +3573,7 @@ export default {
       return json({
         ok: true,
         orderEmailMode: 'manual-draft',
+        studioAppointmentLeadMinutes: noticeLead(env),
         turnstileSiteKey: env.TURNSTILE_SITE_KEY || '',
         channels: {
           telegram: !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID),

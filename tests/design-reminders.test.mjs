@@ -317,3 +317,77 @@ test('cron refreshes an old staff ID token after email verification without chan
   assert.equal(logins, 2);
   assert.deepEqual(seen, ['Bearer before-verify', 'Bearer after-verify']);
 });
+
+test('studio heads-up uses Cairo appointment time, durable claims, reschedules and bounded retry; no client emails', async () => {
+  const at = Date.parse('2031-01-04T21:31:00Z'); // 23:31 in Cairo: next hour spans midnight
+  const rows = new Map(),
+    sent = [],
+    attempts = [],
+    b = backend(),
+    base = b.env.fetchImpl;
+  function put(id, date, time, status = 'confirmed') {
+    const doc0 = doc({ name: id, date, time, status, service: 'Fitting' }).document;
+    doc0.name = doc0.name.replace('example', id);
+    doc0.updateTime = 'rev1';
+    rows.set(id, doc0);
+  }
+  put('today', '2031-01-04', '11:45 PM');
+  put('tomorrow', '2031-01-05', '00:20');
+  put('past', '2031-01-04', '10:30 PM');
+  put('later', '2031-01-05', '03:00');
+  put('gone', '2031-01-04', '11:55 PM', 'cancelled');
+  put('bad', '2031-01-05', 'n/a');
+  const f = (b.env.fetchImpl = async (url, o = {}) => {
+    if (url.includes(':runQuery')) {
+      const req = JSON.parse(o.body).structuredQuery;
+      const day = req.where.fieldFilter.value.stringValue;
+      assert.ok(!req.select.fields.some((f) => ['email', 'phone', 'notes'].includes(f.fieldPath)));
+      assert.equal(o.headers.Authorization, 'Bearer cron-user');
+      return Response.json(
+        [...rows.values()].filter((d) => d.fields.date.stringValue === day).map((document) => ({ document })),
+      );
+    }
+    if (o.method === 'PATCH') {
+      const u = new URL(url),
+        d = rows.get(u.pathname.split('/').pop());
+      assert.equal(u.searchParams.get('updateMask.fieldPaths'), 'studioTelegramNotice');
+      if (u.searchParams.get('currentDocument.updateTime') !== d.updateTime)
+        return Response.json({ error: { status: 'FAILED_PRECONDITION' } }, { status: 400 });
+      Object.assign(d.fields, JSON.parse(o.body).fields);
+      d.updateTime += 'x';
+      return Response.json({ updateTime: d.updateTime });
+    }
+    if (url.endsWith('/sendMessage')) {
+      const msg = JSON.parse(o.body);
+      assert.equal(msg.chat_id, 'studio');
+      attempts.push(msg.text);
+      if (msg.text.endsWith('broken · Fitting') && attempts.filter((x) => x.includes('broken')).length === 1)
+        return Response.json({ ok: false, error_code: 429 }, { status: 429 });
+      sent.push(msg.text);
+      return Response.json({ ok: true });
+    }
+    return base(url, o);
+  });
+  const tick = (t = at) => worker.scheduled({ scheduledTime: t }, b.env);
+  await Promise.all([tick(), tick()]);
+  assert.equal(sent.length, 2);
+  assert.ok(sent.some((x) => x.includes('in 49 min') && x.includes('tomorrow')));
+  await tick(at + 300000);
+  assert.equal(sent.length, 2); // fresh invocation, same slot
+  rows.get('tomorrow').fields.time.stringValue = '00:30';
+  rows.get('tomorrow').updateTime += 'x';
+  await tick(at + 300000);
+  assert.equal(sent.length, 3);
+  assert.match(sent.at(-1), /00:30/);
+  put('broken', '2031-01-05', '12:18 AM');
+  await assert.rejects(tick(at + 600000), /telegram-429/);
+  await tick(at + 900000);
+  assert.equal(sent.filter((x) => x.includes('broken')).length, 1);
+  assert.ok(!sent.some((x) => /later|gone|past|bad/.test(x)));
+  b.env.APPOINTMENT_LEAD_MINUTES = '15';
+  put('near', '2031-06-04', '12:15 PM');
+  put('far', '2031-06-04', '12:30 PM');
+  await tick(Date.parse('2031-06-04T09:01:00Z'));
+  assert.match(sent.at(-1), /in 14 min[\s\S]*near/);
+  assert.ok(!sent.some((x) => x.includes('far')));
+});

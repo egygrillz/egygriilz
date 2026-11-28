@@ -57,16 +57,16 @@
     for (const g of state.groups || []) {
       const teeth = [...new Set((g.teeth || []).map(Number))];
       if (!teeth.length) continue;
-      const id = g.layerId || g.id;
-      if (!designs.has(id)) designs.set(id, { name: g.name || 'Design', groups: [] });
+      const layerId = g.layerId || g.id;
+      if (!designs.has(layerId))
+        designs.set(layerId, { designId: layerId, name: g.name || 'Design', groups: [] });
       const mat = material(g.material),
         precious = engine.allowsStones(mat);
       if (mat === 'gold' && !(cfg.goldPrice > 0))
         issues.add('Gold rate unavailable. Refresh studio pricing before issuing this quote.');
       const base = {
-        label: g.name,
         material: mat,
-        level: String(g.level || '1').split(' ')[0],
+        level: engine.levelKey(g.level),
         plating: key(g.plating) || 'none',
         enamel:
           { singlecolour: 'single', multicolour: 'multi', masterwork: 'master' }[key(g.enamel)] || 'none',
@@ -107,18 +107,19 @@
           };
           if (supplied(gem.customPrice)) accent.customPrice = Number(gem.customPrice);
           checkRate('accentPrice', accent);
-          const batch = JSON.stringify([g.layerId, mat, accent, gem.color]);
+          const batch = JSON.stringify([layerId, teeth, b, mat, accent, gem.color]);
           if (!extras.has(batch))
             extras.set(batch, {
               material: mat,
               accent,
               teeth: new Set(),
+              groupSize: teeth.length,
               count: 0,
               color: gem.color || 'clear',
-              design: g.name || 'Design',
+              designId: layerId,
             });
-          extras.get(batch).count += Math.max(1, Number(gem.count) || 1);
           extras.get(batch).teeth.add(id);
+          extras.get(batch).count += Math.max(1, Number(gem.count) || 1);
         }
       }
       if (precious && ['accent', 'both'].includes(g.stoneMode)) {
@@ -133,17 +134,19 @@
         checkRate('accentPrice', accent);
         buckets.values().next().value.accent = accent;
       }
-      designs.get(id).groups.push(...buckets.values());
+      designs.get(layerId).groups.push(...buckets.values());
     }
     const services = state.services.map((s) => serviceSpec(s, engine));
     for (const x of extras.values()) {
       const line = engine.calculateLine({ material: x.material, teeth: 1, accent: x.accent });
       services.push({
         type: 'custom',
-        name: `Hand-set ${engine.LABELS.accentType[x.accent.type] || x.accent.type} · ${x.design}`,
+        name: `Hand-set ${engine.LABELS.accentType[x.accent.type] || x.accent.type}`,
+        forDesign: x.designId,
+        forTeeth: [...x.teeth].map(fdi),
         qty: x.count,
         unitPrice: line.accentCost,
-        notes: `${x.color} ${x.accent.cut}, ${x.accent.size} mm · ${engine.LABELS.setting[x.accent.setting] || x.accent.setting} · FDI ${[...x.teeth].join(', ')}`,
+        notes: `${x.color} ${x.accent.cut}, ${x.accent.size} mm · ${engine.LABELS.setting[x.accent.setting] || x.accent.setting}${x.teeth.size === x.groupSize ? '' : ' · FDI ' + [...x.teeth].join(', ')}`,
       });
     }
     const manual = state.priceMode === 'manual',

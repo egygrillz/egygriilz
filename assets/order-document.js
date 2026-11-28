@@ -80,7 +80,9 @@ export async function build(sheet, q) {
     packedBytes += str.length;
     if (packedBytes > 6 * 1024 * 1024 - 12000)
       throw Object.assign(
-        new Error('Order PDF is too large to build in this browser. Use Print order sheet and choose Save as PDF.'),
+        new Error(
+          'Order PDF is too large to build in this browser. Use Print order sheet and choose Save as PDF.',
+        ),
         { code: 'order/document' },
       );
     pages.push(Uint8Array.from(str, (ch) => ch.charCodeAt(0)));
@@ -135,22 +137,34 @@ export async function build(sheet, q) {
   paragraph(view.querySelector('.print-heading div').lastChild.textContent.trim(), 18);
   const maps = [...view.querySelectorAll('.design-layer-print')];
   if (q.order.lines.length && !maps.length) throw Error('The design illustration is not ready.');
-  for (const figure of maps) {
-    const [teeth, ink] = await Promise.all([...figure.querySelectorAll('.print-layer-map img')].map(img));
-    const width = 740,
-      height = (width * 330.6) / 900;
-    space(height + 140);
-    heading(figure.querySelector('h4').textContent);
-    ctx.drawImage(teeth, (W - width) / 2, y, width, height);
-    ctx.drawImage(ink, (W - width) / 2, y, width, height);
-    y += height + 25;
-    paragraph(figure.querySelector('figcaption').textContent, 18);
-  }
-  for (const group of view.querySelectorAll('.print-group')) {
-    heading(group.querySelector('strong').textContent);
-    paragraph(group.querySelector('.print-group-head span').textContent, 20, true);
-    for (const pair of group.querySelectorAll('.print-detail'))
-      paragraph([...pair.querySelectorAll('span')].map((x) => x.textContent).join(': '), 20);
+  for (const design of view.querySelectorAll('.print-design')) {
+    const figure = design.querySelector('.design-layer-print');
+    const [x, y0, w, h] = (figure?.dataset.crop || '0,0,1,1').split(',').map(Number);
+    const aspect = (900 * w) / (330.6 * h),
+      width = Math.min(840, 220 * aspect),
+      height = width / aspect;
+    space(figure ? height + 145 : 100);
+    heading(design.querySelector('h4').textContent);
+    if (figure) {
+      const [teeth, ink] = await Promise.all([...figure.querySelectorAll('.print-layer-map img')].map(img));
+      // Draw the entire SVG at its intended aspect ratio, then clip. SVGs
+      // without intrinsic pixels do not share a bitmap's source-rect semantics.
+      const left = (W - width) / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left, y, width, height);
+      ctx.clip();
+      for (const image of [teeth, ink])
+        ctx.drawImage(image, left - (x * width) / w, y - (y0 * height) / h, width / w, height / h);
+      ctx.restore();
+      y += height + 25;
+    }
+    for (const group of design.querySelectorAll('.print-group')) {
+      space(72);
+      paragraph(group.querySelector('h5').textContent, 21, true);
+      for (const pair of group.querySelectorAll('.print-detail'))
+        paragraph([...pair.querySelectorAll('span')].map((x) => x.textContent).join(': '), 20);
+    }
   }
   const finishes = [...view.querySelectorAll('.rollup-item')];
   if (finishes.length) {

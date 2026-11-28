@@ -493,7 +493,7 @@
     .page-card:hover,.page-card.selected{border-color:#1f1f1f;background:#fafafa;}
     .page-card i{font-size:18px;color:#bbb;flex-shrink:0;}
     .page-card-name{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
-    .page-card-sub{font-size:10px;color:#888;margin-top:2px;}
+    .page-card-sub{white-space:pre-line;font-size:10px;color:#888;margin-top:2px;}
     .page-card-new{border-style:dashed;border-color:#ddd;}
     .page-card-new i{color:#7c7c7c;}
     .page-card-new .page-card-name{color:#7c7c7c;}
@@ -5073,11 +5073,11 @@
 
 
 
-<script data-cfasync="false" src="assets/calc-engine.js?v=10"></script>
+<script data-cfasync="false" src="assets/calc-engine.js?v=12"></script>
 <script src="/assets/rates.js?v=7"></script>
 <script data-cfasync="false" src="assets/crops.js?v=3"></script>
 <script data-cfasync="false" src="assets/numpad.js?v=5"></script>
-<script data-cfasync="false" src="assets/staff-calculator.js?v=7"></script>
+<script data-cfasync="false" src="assets/staff-calculator.js?v=8"></script>
 <script data-cfasync="false" src="assets/media-pipeline.js"></script>
 
 <script data-cfasync="false">
@@ -5504,7 +5504,7 @@
       } else {
         tbody.innerHTML = lineItems.map(function (i) {
           return '<tr>' +
-            '<td>' + (esc(i.name) || '—') + (i.spec ? '<div style="font-size:10px;color:#888;margin-top:2px;">' + esc(i.spec) + '</div>' : '') + '</td>' +
+            '<td>' + (esc(i.name) || '—') + (i.spec ? '<div style="white-space:pre-line;font-size:10px;color:#888;margin-top:2px;">' + esc(i.spec) + '</div>' : '') + '</td>' +
             '<td style="text-align:right;">' + esc(i.qty) + '</td>' +
             '<td style="text-align:right;">' + money(i.price) + '</td>' +
             '<td style="text-align:right;">' + money((Number(i.qty) || 0) * (Number(i.price) || 0)) + '</td>' +

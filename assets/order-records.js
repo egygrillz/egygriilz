@@ -58,7 +58,13 @@ export async function client(id) {
   return snap.exists() ? { ...snap.data(), id: snap.id } : null;
 }
 export const templates = () => list('design_templates', orderBy('updatedAt', 'desc'), limit(100));
-export const saveTemplate = (data) => addDoc(collection(db, 'design_templates'), data);
+// Whitelist again at the write boundary. Only the editable order document can
+// contain the client's tooth numbers, drawing geometry and order reference.
+export const saveTemplate = (recipe) =>
+  addDoc(collection(db, 'design_templates'), {
+    ...globalThis.OrderRecipe.read(recipe),
+    updatedAt: new Date().toISOString(),
+  });
 
 // Read lightweight headers for the picker, never an entire collection of drawings.
 export async function sheets(cursor) {

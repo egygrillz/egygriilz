@@ -12,7 +12,7 @@
   const tier = (n) => (n < 1 ? 'None' : n === 1 ? 'Single colour' : n === 2 ? 'Multi-colour' : 'Master work');
   const defaults = {
     karat: '18K',
-    level: '1 Solid',
+    level: '1',
     plating: 'None',
     engraving: 'Small',
     accentType: 'CZ',
@@ -22,6 +22,10 @@
     accentCustomPrice: '',
     fullCustomPrice: '',
   };
+  function detailFor(layer, tooth) {
+    return { ...defaults, ...layer.details?.[layer.mode === 'mix' || layer.recipe ? tooth : 'all'] };
+  }
+  const isBar = (level) => root.CalcEngine.levelKey(level) === '0.5';
   function inspect(state, layer) {
     const teeth = new Map(
       layer.teeth.map((t) => [
@@ -42,7 +46,7 @@
     for (const g of state.gems || []) {
       const t = teeth.get(Number(g.tooth));
       if (!t || g.designId !== layer.id) continue;
-      if (g.kind === 'iced') t.ice ||= g;
+      if (g.kind === 'iced' || (g.kind === 'pave' && isBar(detailFor(layer, g.tooth).level))) t.ice ||= g;
       else t.stones.push(g);
     }
     for (const i of state.icedTeeth || []) {
@@ -55,7 +59,7 @@
     const groups = new Map();
     const designColors = new Set([...facts.values()].flatMap((f) => [...f.colors]));
     for (const [tooth, f] of facts) {
-      const d = { ...defaults, ...layer.details?.[layer.mode === 'mix' ? tooth : 'all'] };
+      const d = detailFor(layer, tooth);
       const colors = [...f.colors].sort();
       const material = materials[layer.materials[tooth]] || layer.materials[tooth] || materials.chrome;
       const spec = {
@@ -77,10 +81,6 @@
         }),
         ...(f.stones.length && { setting: d.setting }),
       };
-      const key = JSON.stringify(spec);
-      if (!groups.has(key)) groups.set(key, { name: layer.name, ...spec, teeth: [], pricedStones: [] });
-      const g = groups.get(key);
-      g.teeth.push(tooth);
       const batches = new Map();
       for (const gem of f.stones) {
         const stone = {
@@ -95,6 +95,12 @@
         if (!batches.has(k)) batches.set(k, { ...stone, count: 0 });
         batches.get(k).count++;
       }
+      // A different hand-set batch is a different tooth detail, not a new design.
+      const handSet = [...batches.values()].map(({ tooth, ...b }) => JSON.stringify(b)).sort();
+      const key = JSON.stringify([spec, handSet]);
+      if (!groups.has(key)) groups.set(key, { name: layer.name, ...spec, teeth: [], pricedStones: [] });
+      const g = groups.get(key);
+      g.teeth.push(tooth);
       g.pricedStones.push(...batches.values());
     }
     return [...groups.values()];
@@ -118,7 +124,38 @@
           g.pricedIce[i.tooth] ||= {};
     }
   }
+  // A pre-recipe draft might have priced its Bars line by the stone. Never
+  // change an issued snapshot; require review before issuing NEW terms for it.
+  function oldBarCharges(state, layer, groups) {
+    const gems = state.gems.filter((g) => g.designId === layer.id);
+    return groups.some(
+      (g) =>
+        isBar(g.level) &&
+        g.teeth.some((tooth) => {
+          const on = gems.filter((s) => s.tooth === tooth);
+          if (!on.some((s) => s.kind === 'pave')) return false;
+          const oldCount = g.pricedStones
+            .filter((s) => s.tooth === tooth)
+            .reduce((n, s) => n + (s.count || 1), 0);
+          return (
+            !(g.pricedIce?.[tooth] || ['full', 'both'].includes(g.stoneMode)) ||
+            oldCount > on.filter((s) => s.kind !== 'pave' && s.kind !== 'iced').length
+          );
+        }),
+    );
+  }
   // Compress identical per-tooth pricing facts, not image pixels, for change detection.
   const revision = (state, layer) => JSON.stringify(compile(layer, inspect(state, layer)));
-  root.OrderDesign = { inspect, compile, revision, defaults, tier, hex, migrateLegacy };
+  root.OrderDesign = {
+    detailFor,
+    isBar,
+    inspect,
+    compile,
+    revision,
+    defaults,
+    tier,
+    hex,
+    migrateLegacy,
+    oldBarCharges,
+  };
 })(globalThis);

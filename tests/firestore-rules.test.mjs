@@ -315,6 +315,8 @@ test(
           );
         }
         if (u.hostname === 'api.telegram.org') {
+          if (u.pathname.endsWith('/getWebhookInfo'))
+            return Response.json({ ok: true, result: { url: 'https://fixture.test/hook' } });
           messages.push(JSON.parse(init.body));
           return Response.json({ ok: true });
         }
@@ -345,6 +347,24 @@ test(
       );
     assert.equal((await check(env)).ok, true);
     assert.equal(tokens.has(ownerUid), true);
+    const appointment = doc(db, 'appointments', 'local-upcoming-test');
+    await setDoc(appointment, {
+      date: '2031-01-04',
+      time: '12:30 PM',
+      name: 'Staging client',
+      status: 'confirmed',
+      service: 'Fit',
+      notes: 'NOT IN TELEGRAM',
+    });
+    const tick = () => worker.scheduled({ scheduledTime: Date.parse('2031-01-04T10:01:00Z') }, env);
+    assert.equal((await tick()).upcoming.sent, 1);
+    assert.equal((await tick()).upcoming.sent, 0);
+    const visit = (await getDoc(appointment)).data();
+    assert.equal(visit.studioTelegramNotice.state, 'sent');
+    assert.equal(visit.time, '12:30 PM');
+    assert.equal(visit.reminderSentAt, undefined);
+    assert.equal(messages.filter((m) => m.text?.includes('UPCOMING APPOINTMENT')).length, 1);
+    assert.ok(!JSON.stringify(messages).includes('NOT IN TELEGRAM'));
     assert.match(await cmd('/sheets'), /Fixture client.*quotation saved/);
     assert.match(await cmd('/sheet ' + id), /Paid: 850 EGP · Outstanding: 4,150 EGP/);
     assert.match(await cmd('/outstanding'), /1 outstanding of 1 checked on this page · 4,150 EGP/);
